@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.resolve.java;
+package jet.runtime.typeinfo;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
 /**
- * @author Stepan Koltsov
+ * @author Evgeny Gerashchenko
+ * @since 5/23/12
  */
-public class JdkNames {
-
-    public static final JvmClassName JL_OBJECT = new JvmClassName(Object.class);
-    public static final JvmClassName JL_STRING = new JvmClassName(String.class);
-
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.CONSTRUCTOR})
+public @interface KotlinSignature {
+    String value();
 }
