@@ -43,7 +43,7 @@ public final class WebDemoCanvasExamplesTest extends SingleFileTranslationTest {
     }
 
     public void testFancyLines() throws Exception {
-        doTest("Fancy lines.kt", "window");
+        doTest("Fancy lines.kt", "$");
     }
 
     public void testTrafficLight() throws Exception {

@@ -28,7 +28,6 @@ import org.jetbrains.k2js.test.utils.TranslationUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +44,6 @@ public abstract class BasicTest extends TestWithEnvironment {
     private static final String CASES = "cases/";
     private static final String OUT = "out/";
     private static final String KOTLIN_JS_LIB = pathToTestFilesRoot() + "kotlin_lib.js";
-    public static final String JSLINT_LIB = pathToTestFilesRoot() + "jslint.js";
     private static final String KOTLIN_JS_LIB_ECMA_3 = pathToTestFilesRoot() + "kotlin_lib_ecma3.js";
     private static final String KOTLIN_JS_LIB_ECMA_5 = pathToTestFilesRoot() + "kotlin_lib_ecma5.js";
     private static final String EXPECTED = "expected/";
@@ -91,8 +89,9 @@ public abstract class BasicTest extends TestWithEnvironment {
         assert success;
     }
 
-    protected List<String> additionalJSFiles(EcmaVersion ecmaVersion) {
-        List<String> list = new ArrayList<String>(2);
+    @NotNull
+    protected List<String> additionalJSFiles(@NotNull EcmaVersion ecmaVersion) {
+        List<String> list = Lists.newArrayList();
         list.add(ecmaVersion == EcmaVersion.v5 ? KOTLIN_JS_LIB_ECMA_5 : KOTLIN_JS_LIB_ECMA_3);
         list.add(KOTLIN_JS_LIB);
         return list;
@@ -100,7 +99,7 @@ public abstract class BasicTest extends TestWithEnvironment {
 
     protected void generateJavaScriptFiles(@NotNull String kotlinFilename,
             @NotNull MainCallParameters mainCallParameters,
-            @NotNull EnumSet<EcmaVersion> ecmaVersions) throws Exception {
+            @NotNull Iterable<EcmaVersion> ecmaVersions) throws Exception {
         generateJavaScriptFiles(Collections.singletonList(getInputFilePath(kotlinFilename)), kotlinFilename, mainCallParameters,
                                 ecmaVersions);
     }
@@ -115,7 +114,8 @@ public abstract class BasicTest extends TestWithEnvironment {
 
     protected void runRhinoTests(@NotNull String filename, @NotNull Iterable<EcmaVersion> ecmaVersions, @NotNull RhinoResultChecker checker) throws Exception {
         for (EcmaVersion ecmaVersion : ecmaVersions) {
-            runRhinoTest(withAdditionalFiles(getOutputFilePath(filename, ecmaVersion), ecmaVersion), checker, getRhinoTestVariables());
+            runRhinoTest(withAdditionalFiles(getOutputFilePath(filename, ecmaVersion), ecmaVersion), checker, getRhinoTestVariables(),
+                         ecmaVersion);
         }
     }
 
@@ -162,7 +162,7 @@ public abstract class BasicTest extends TestWithEnvironment {
     }
 
     @NotNull
-    protected final List<String> withAdditionalFiles(@NotNull String inputFile, EcmaVersion ecmaVersion) {
+    protected List<String> withAdditionalFiles(@NotNull String inputFile, @NotNull EcmaVersion ecmaVersion) {
         List<String> allFiles = Lists.newArrayList(additionalJSFiles(ecmaVersion));
         allFiles.add(inputFile);
         return allFiles;

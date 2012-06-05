@@ -34,24 +34,14 @@ public final class JsTestUtils {
 
     private JsTestUtils() {
     }
-
+    
     @NotNull
-    public static EnumSet<EcmaVersion> failsOn(EcmaVersion... versions) {
-        EnumSet<EcmaVersion> result = EcmaVersion.all();
-        for (EcmaVersion version : versions) {
-            boolean success = result.remove(version);
-            assert success;
+        public static EnumSet<EcmaVersion> successOnEcmaV5() {
+            return EnumSet.of(EcmaVersion.v5);
         }
-        return result;
-    }
 
     @NotNull
-    public static EnumSet<EcmaVersion> successOnEcmaV5() {
-        return EnumSet.of(EcmaVersion.v5);
-    }
-
-    @NotNull
-    public static String convertFileNameToDotJsFile(@NotNull String filename, EcmaVersion ecmaVersion) {
+    public static String convertFileNameToDotJsFile(@NotNull String filename, @NotNull EcmaVersion ecmaVersion) {
         String postFix = "_" + ecmaVersion.toString() + ".js";
         int index = filename.lastIndexOf('.');
         if (index < 0) {

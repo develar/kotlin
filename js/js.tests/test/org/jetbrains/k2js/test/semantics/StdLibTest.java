@@ -43,7 +43,7 @@ public final class StdLibTest extends SingleFileTranslationTest {
     @Override
     protected void generateJavaScriptFiles(@NotNull String kotlinFilename,
             @NotNull MainCallParameters mainCallParameters,
-            @NotNull EnumSet<EcmaVersion> ecmaVersions) throws Exception {
+            @NotNull Iterable<EcmaVersion> ecmaVersions) throws Exception {
         List<String> files = Arrays.asList(getInputFilePath(kotlinFilename));
 
         generateJavaScriptFiles(files, kotlinFilename, mainCallParameters, ecmaVersions);

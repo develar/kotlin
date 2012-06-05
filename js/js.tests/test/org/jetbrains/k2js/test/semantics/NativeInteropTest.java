@@ -36,8 +36,9 @@ public final class NativeInteropTest extends SingleFileTranslationTest {
         super("native/");
     }
 
+    @NotNull
     @Override
-    protected List<String> additionalJSFiles(EcmaVersion ecmaVersion) {
+    protected List<String> additionalJSFiles(@NotNull EcmaVersion ecmaVersion) {
         List<String> result = Lists.newArrayList(super.additionalJSFiles(ecmaVersion));
         result.addAll(JsTestUtils.getAllFilesInDir(pathToTestFiles() + NATIVE));
         return result;
