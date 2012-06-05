@@ -1315,7 +1315,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
             }
         }
 
-        Callable callable = resolveToCallable(fd, superCall);
+        Callable callable = resolveToCallable((FunctionDescriptor) fd, superCall);
         if (callable instanceof CallableMethod) {
             final CallableMethod callableMethod = (CallableMethod) callable;
             invokeMethodWithArguments(callableMethod, expression, receiver);
@@ -1344,7 +1344,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
         return StackValue.none();
     }
 
-    Callable resolveToCallable(DeclarationDescriptor fd, boolean superCall) {
+    Callable resolveToCallable(@NotNull FunctionDescriptor fd, boolean superCall) {
         final IntrinsicMethod intrinsic = state.getInjector().getIntrinsics().getIntrinsic(fd);
         if (intrinsic != null) {
             return intrinsic;
@@ -1355,17 +1355,19 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
         //    assert !superCall;
         //    callableMethod = ClosureCodegen.asCallableMethod((FunctionDescriptor) fd);
         //}
-        if (fd instanceof ExpressionAsFunctionDescriptor || (fd instanceof SimpleFunctionDescriptor && (fd.getContainingDeclaration() instanceof FunctionDescriptor || fd.getContainingDeclaration() instanceof ScriptDescriptor))) {
-            SimpleFunctionDescriptor invoke = CodegenUtil.createInvoke((FunctionDescriptor) fd);
+        if (isCallAsFunctionObject(fd)) {
+            SimpleFunctionDescriptor invoke = CodegenUtil.createInvoke(fd);
             callableMethod = ClosureCodegen.asCallableMethod(invoke, typeMapper);
         }
-        else if (fd instanceof FunctionDescriptor) {
-            callableMethod = typeMapper.mapToCallableMethod((FunctionDescriptor) fd, superCall, OwnerKind.IMPLEMENTATION);
-        }
         else {
-            throw new UnsupportedOperationException("can't resolve declaration to callable: " + fd);
+            callableMethod = typeMapper.mapToCallableMethod(fd, superCall, OwnerKind.IMPLEMENTATION);
         }
         return callableMethod;
+    }
+
+    private boolean isCallAsFunctionObject(FunctionDescriptor fd) {
+        return fd instanceof ExpressionAsFunctionDescriptor
+                || (fd instanceof SimpleFunctionDescriptor && (fd.getContainingDeclaration() instanceof FunctionDescriptor || fd.getContainingDeclaration() instanceof ScriptDescriptor));
     }
 
     public void invokeMethodWithArguments(CallableMethod callableMethod, JetCallElement expression, StackValue receiver) {
@@ -1720,7 +1722,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
         }
         else {
             DeclarationDescriptor op = bindingContext.get(BindingContext.REFERENCE_TARGET, expression.getOperationReference());
-            final Callable callable = resolveToCallable(op, false);
+            final Callable callable = resolveToCallable((FunctionDescriptor) op, false);
             if (callable instanceof IntrinsicMethod) {
                 IntrinsicMethod intrinsic = (IntrinsicMethod) callable;
                 return intrinsic.generate(this, v, expressionType(expression), expression,
@@ -2011,7 +2013,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
 
     private StackValue generateAugmentedAssignment(JetBinaryExpression expression) {
         DeclarationDescriptor op = bindingContext.get(BindingContext.REFERENCE_TARGET, expression.getOperationReference());
-        final Callable callable = resolveToCallable(op, false);
+        final Callable callable = resolveToCallable((FunctionDescriptor) op, false);
         final JetExpression lhs = expression.getLeft();
 
 //        if(lhs instanceof JetArrayAccessExpression) {
@@ -2123,7 +2125,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
         }
 
         DeclarationDescriptor op = bindingContext.get(BindingContext.REFERENCE_TARGET, expression.getOperationReference());
-        final Callable callable = resolveToCallable(op, false);
+        final Callable callable = resolveToCallable((FunctionDescriptor) op, false);
         if (callable instanceof IntrinsicMethod) {
             IntrinsicMethod intrinsic = (IntrinsicMethod) callable;
             return intrinsic.generate(this, v, expressionType(expression), expression,
@@ -2202,7 +2204,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
                     ResolvedCall<? extends CallableDescriptor> resolvedCall = bindingContext.get(BindingContext.RESOLVED_CALL, expression.getOperationReference());
                     assert resolvedCall != null;
 
-                    final Callable callable = resolveToCallable(op, false);
+                    final Callable callable = resolveToCallable((FunctionDescriptor) op, false);
 
                     StackValue value = gen(expression.getBaseExpression());
                     value.dupReceiver(v);
