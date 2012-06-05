@@ -34,11 +34,11 @@ public final class JsTestUtils {
 
     private JsTestUtils() {
     }
-    
+
     @NotNull
-        public static EnumSet<EcmaVersion> successOnEcmaV5() {
-            return EnumSet.of(EcmaVersion.v5);
-        }
+    public static EnumSet<EcmaVersion> successOnEcmaV5() {
+        return EnumSet.of(EcmaVersion.v5);
+    }
 
     @NotNull
     public static String convertFileNameToDotJsFile(@NotNull String filename, @NotNull EcmaVersion ecmaVersion) {

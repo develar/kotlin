@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.test.semantics;
 
 import com.google.common.collect.Lists;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
 import org.jetbrains.k2js.test.utils.JsTestUtils;
@@ -86,13 +87,14 @@ public final class PropertyAccessTest extends SingleFileTranslationTest {
     public void testEnumerable() throws Exception {
             fooBoxTest(JsTestUtils.successOnEcmaV5());
         }
-    
+
     @Override
-        protected List<String> additionalJSFiles(EcmaVersion ecmaVersion) {
-            List<String> result = Lists.newArrayList(super.additionalJSFiles(ecmaVersion));
-            if (getName().equals("testEnumerable")) {
-                result.add(pathToTestFiles() + "enumerate.js");
-            }
-            return result;
+    @NotNull
+    protected List<String> additionalJSFiles(@NotNull EcmaVersion ecmaVersion) {
+        List<String> result = Lists.newArrayList(super.additionalJSFiles(ecmaVersion));
+        if (getName().equals("testEnumerable")) {
+            result.add(pathToTestFiles() + "enumerate.js");
         }
+        return result;
+    }
 }

@@ -21,6 +21,8 @@ import com.google.dart.compiler.backend.js.ast.*;
 import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
@@ -289,12 +291,19 @@ public final class JsAstUtils {
             @NotNull TranslationContext context) {
         return AstUtil.newInvocation(DEFINE_PROPERTY, new JsThisRef(),
                                      context.program().getStringLiteral(context.getNameForDescriptor(descriptor).getIdent()),
-                                     createPropertyDataDescriptor(descriptor.isVar(), AnnotationsUtils.isEnumerable(descriptor), value, context));
+                                     createPropertyDataDescriptor(descriptor.isVar(), descriptor, value, context));
     }
 
     @NotNull
-    public static JsObjectLiteral createPropertyDataDescriptor(boolean writable,
-            boolean enumerable,
+    public static JsObjectLiteral createPropertyDataDescriptor(@NotNull FunctionDescriptor descriptor,
+            @NotNull JsExpression value,
+            @NotNull TranslationContext context) {
+        return createPropertyDataDescriptor(descriptor.getModality().isOverridable(), descriptor, value, context);
+    }
+
+    @NotNull
+    private static JsObjectLiteral createPropertyDataDescriptor(boolean writable,
+            @NotNull DeclarationDescriptor descriptor,
             @NotNull JsExpression value,
             @NotNull TranslationContext context) {
         JsObjectLiteral jsPropertyDescriptor = new JsObjectLiteral();
@@ -303,9 +312,9 @@ public final class JsAstUtils {
         if (writable) {
             meta.add(context.namer().writablePropertyDescriptorField());
         }
-        if (enumerable) {
-                    meta.add(context.namer().enumerablePropertyDescriptorField());
-                }
+        if (AnnotationsUtils.isEnumerable(descriptor)) {
+            meta.add(context.namer().enumerablePropertyDescriptorField());
+        }
         return jsPropertyDescriptor;
     }
 

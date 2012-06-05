@@ -17,16 +17,17 @@
 package org.jetbrains.k2js.test.rhino;
 
 import com.google.common.base.Supplier;
-import com.google.common.io.CharStreams;
 import com.intellij.openapi.util.io.FileUtil;
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.config.EcmaVersion;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
+import org.jetbrains.k2js.test.BasicTest;
+import org.mozilla.javascript.*;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

@@ -121,9 +121,9 @@ public final class Namer {
 
     @NotNull
     private final JsPropertyInitializer writablePropertyDescriptorField;
-    
+
     @NotNull
-        private final JsPropertyInitializer enumerablePropertyDescriptorField;
+    private final JsPropertyInitializer enumerablePropertyDescriptorField;
 
     private Namer(@NotNull JsScope rootScope) {
         kotlinName = rootScope.declareName(KOTLIN_OBJECT_NAME);
@@ -135,9 +135,10 @@ public final class Namer {
 
         isTypeName = kotlinScope.declareName("isType");
 
+        JsProgram program = rootScope.getProgram();
         writablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("writable"), program.getTrueLiteral());
-                enumerablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("enumerable"), program.getTrueLiteral());
-        }
+        enumerablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("enumerable"), program.getTrueLiteral());
+    }
 
     @NotNull
     public JsExpression classCreationMethodReference() {
@@ -193,10 +194,11 @@ public final class Namer {
     public JsPropertyInitializer writablePropertyDescriptorField() {
         return writablePropertyDescriptorField;
     }
+
     @NotNull
-        public JsPropertyInitializer enumerablePropertyDescriptorField() {
-            return enumerablePropertyDescriptorField;
-        }
+    public JsPropertyInitializer enumerablePropertyDescriptorField() {
+        return enumerablePropertyDescriptorField;
+    }
 
     @NotNull
         /*package*/ JsScope getKotlinScope() {

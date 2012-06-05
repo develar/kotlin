@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
@@ -99,7 +98,7 @@ public final class AnnotationsUtils {
         return hasAnnotationOrInsideAnnotatedClass(descriptor, PredefinedAnnotation.NATIVE);
     }
 
-    public static boolean isEnumerable(@NotNull PropertyDescriptor descriptor) {
+    public static boolean isEnumerable(@NotNull DeclarationDescriptor descriptor) {
         if (getAnnotationByName(descriptor, ENUMERABLE) != null) {
             return true;
         }

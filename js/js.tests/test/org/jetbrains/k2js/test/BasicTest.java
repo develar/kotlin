@@ -26,7 +26,6 @@ import org.jetbrains.k2js.test.rhino.RhinoResultChecker;
 import org.jetbrains.k2js.test.utils.TranslationUtils;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +42,7 @@ public abstract class BasicTest extends TestWithEnvironment {
     private static final String TEST_FILES = "js/js.translator/testFiles/";
     private static final String CASES = "cases/";
     private static final String OUT = "out/";
+    public static final String JSLINT_LIB = pathToTestFilesRoot() + "jslint.js";
     private static final String KOTLIN_JS_LIB = pathToTestFilesRoot() + "kotlin_lib.js";
     private static final String KOTLIN_JS_LIB_ECMA_3 = pathToTestFilesRoot() + "kotlin_lib_ecma3.js";
     private static final String KOTLIN_JS_LIB_ECMA_5 = pathToTestFilesRoot() + "kotlin_lib_ecma5.js";
