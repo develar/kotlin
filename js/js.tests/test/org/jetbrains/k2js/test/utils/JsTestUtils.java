@@ -46,8 +46,8 @@ public final class JsTestUtils {
     }
 
     @NotNull
-    public static EnumSet<EcmaVersion> failsOnEcmaV5() {
-        return failsOn(EcmaVersion.v5);
+    public static EnumSet<EcmaVersion> successOnEcmaV5() {
+        return EnumSet.of(EcmaVersion.v5);
     }
 
     @NotNull

@@ -289,11 +289,13 @@ public final class JsAstUtils {
             @NotNull TranslationContext context) {
         return AstUtil.newInvocation(DEFINE_PROPERTY, new JsThisRef(),
                                      context.program().getStringLiteral(context.getNameForDescriptor(descriptor).getIdent()),
-                                     createPropertyDataDescriptor(descriptor.isVar(), value, context));
+                                     createPropertyDataDescriptor(descriptor.isVar(), AnnotationsUtils.isEnumerable(descriptor), value,
+                                                                  context));
     }
 
     @NotNull
     public static JsObjectLiteral createPropertyDataDescriptor(boolean writable,
+            boolean enumerable,
             @NotNull JsExpression value,
             @NotNull TranslationContext context) {
         JsObjectLiteral jsPropertyDescriptor = new JsObjectLiteral();
@@ -301,6 +303,9 @@ public final class JsAstUtils {
         meta.add(new JsPropertyInitializer(context.program().getStringLiteral("value"), value));
         if (writable) {
             meta.add(context.namer().writablePropertyDescriptorField());
+        }
+        if (enumerable) {
+            meta.add(context.namer().enumerablePropertyDescriptorField());
         }
         return jsPropertyDescriptor;
     }

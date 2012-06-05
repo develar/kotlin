@@ -73,7 +73,7 @@ public final class DeclarationBodyVisitor extends TranslatorVisitor<List<JsPrope
         JsPropertyInitializer o = Translation.functionTranslator(expression, context).translateAsMethod();
         if (context.isEcma5()) {
             final FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
-            o.setValueExpr(JsAstUtils.createPropertyDataDescriptor(descriptor.getModality().isOverridable(), o.getValueExpr(), context));
+            o.setValueExpr(JsAstUtils.createPropertyDataDescriptor(descriptor.getModality().isOverridable(), false, o.getValueExpr(), context));
         }
         return Collections.singletonList(o);
     }

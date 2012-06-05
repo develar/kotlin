@@ -19,7 +19,9 @@ package org.jetbrains.k2js.translate.utils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
@@ -30,6 +32,8 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getContaining
  * @author Pavel Talanov
  */
 public final class AnnotationsUtils {
+
+    private static final String ENUMERABLE = "js.enumerable";
 
     private AnnotationsUtils() {
     }
@@ -69,10 +73,14 @@ public final class AnnotationsUtils {
 
     @Nullable
     private static AnnotationDescriptor getAnnotationByName(@NotNull DeclarationDescriptor descriptor,
-                                                            @NotNull PredefinedAnnotation annotation) {
+            @NotNull PredefinedAnnotation annotation) {
+        return getAnnotationByName(descriptor, annotation.getFQName());
+    }
+
+    @Nullable
+    private static AnnotationDescriptor getAnnotationByName(@NotNull DeclarationDescriptor descriptor, @NotNull String fqn) {
         for (AnnotationDescriptor annotationDescriptor : descriptor.getAnnotations()) {
-            String annotationClassFQName = getAnnotationClassFQName(annotationDescriptor);
-            if (annotationClassFQName.equals(annotation.getFQName())) {
+            if (getAnnotationClassFQName(annotationDescriptor).equals(fqn)) {
                 return annotationDescriptor;
             }
         }
@@ -91,6 +99,16 @@ public final class AnnotationsUtils {
         return hasAnnotationOrInsideAnnotatedClass(descriptor, PredefinedAnnotation.NATIVE);
     }
 
+    public static boolean isEnumerable(@NotNull PropertyDescriptor descriptor) {
+        if (getAnnotationByName(descriptor, ENUMERABLE) != null) {
+            return true;
+        }
+        ClassDescriptor containingClass = getContainingClass(descriptor);
+        return containingClass != null &&
+               (getAnnotationByName(containingClass, ENUMERABLE) != null ||
+                (containingClass.getKind().equals(ClassKind.OBJECT) && containingClass.getName().isSpecial()));
+    }
+
     public static boolean isLibraryObject(@NotNull DeclarationDescriptor descriptor) {
         return hasAnnotationOrInsideAnnotatedClass(descriptor, PredefinedAnnotation.LIBRARY);
     }
@@ -105,14 +123,15 @@ public final class AnnotationsUtils {
     }
 
     public static boolean hasAnnotationOrInsideAnnotatedClass(@NotNull DeclarationDescriptor descriptor,
-                                                              @NotNull PredefinedAnnotation annotation) {
-        if (getAnnotationByName(descriptor, annotation) != null) {
+            @NotNull PredefinedAnnotation annotation) {
+        return hasAnnotationOrInsideAnnotatedClass(descriptor, annotation.getFQName());
+    }
+
+    private static boolean hasAnnotationOrInsideAnnotatedClass(@NotNull DeclarationDescriptor descriptor, @NotNull String fqn) {
+        if (getAnnotationByName(descriptor, fqn) != null) {
             return true;
         }
         ClassDescriptor containingClass = getContainingClass(descriptor);
-        if (containingClass == null) {
-            return false;
-        }
-        return (getAnnotationByName(containingClass, annotation) != null);
+        return containingClass != null && getAnnotationByName(containingClass, fqn) != null;
     }
 }

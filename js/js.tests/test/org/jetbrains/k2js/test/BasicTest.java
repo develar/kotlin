@@ -162,19 +162,10 @@ public abstract class BasicTest extends TestWithEnvironment {
     }
 
     @NotNull
-    protected List<String> withAdditionalFiles(@NotNull String inputFile, EcmaVersion ecmaVersion) {
+    protected final List<String> withAdditionalFiles(@NotNull String inputFile, EcmaVersion ecmaVersion) {
         List<String> allFiles = Lists.newArrayList(additionalJSFiles(ecmaVersion));
         allFiles.add(inputFile);
         return allFiles;
-    }
-
-    @NotNull
-    protected List<String> getOutputFilePaths(@NotNull String filename, @NotNull EnumSet<EcmaVersion> ecmaVersions) {
-        List<String> result = Lists.newArrayList();
-        for (EcmaVersion ecmaVersion : ecmaVersions) {
-            result.add(getOutputFilePath(filename, ecmaVersion));
-        }
-        return result;
     }
 
     @NotNull

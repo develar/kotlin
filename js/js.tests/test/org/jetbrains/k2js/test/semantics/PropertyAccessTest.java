@@ -16,10 +16,12 @@
 
 package org.jetbrains.k2js.test.semantics;
 
+import com.google.common.collect.Lists;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
+import org.jetbrains.k2js.test.utils.JsTestUtils;
 
-import java.util.EnumSet;
+import java.util.List;
 
 /**
  * @author Pavel Talanov
@@ -77,6 +79,19 @@ public final class PropertyAccessTest extends SingleFileTranslationTest {
     }
 
     public void testInitInstanceProperties() throws Exception {
-        fooBoxTest(EnumSet.of(EcmaVersion.v5));
+        fooBoxTest(JsTestUtils.successOnEcmaV5());
+    }
+
+    public void testEnumerable() throws Exception {
+        fooBoxTest(JsTestUtils.successOnEcmaV5());
+    }
+
+    @Override
+    protected List<String> additionalJSFiles(EcmaVersion ecmaVersion) {
+        List<String> result = Lists.newArrayList(super.additionalJSFiles(ecmaVersion));
+        if (getName().equals("testEnumerable")) {
+            result.add(pathToTestFiles() + "enumerate.js");
+        }
+        return result;
     }
 }
