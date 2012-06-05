@@ -27,7 +27,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
-import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.psi.JetNamedFunction;
+import org.jetbrains.jet.lang.psi.JetPsiFactory;
+import org.jetbrains.jet.lang.psi.JetPsiUtil;
+import org.jetbrains.jet.lang.psi.JetTypeReference;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.constants.*;
 import org.jetbrains.jet.lang.resolve.constants.StringValue;
@@ -1029,11 +1032,11 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         return psiClassFinder.findPsiClass(packageFQN.child(Name.identifier(JvmAbi.PACKAGE_CLASS)), PsiClassFinder.RuntimeClassesHandleMode.IGNORE);
     }
 
-    private static class ValueParameterDescriptors {
-        private final JetType receiverType;
-        private final List<ValueParameterDescriptor> descriptors;
+    static class ValueParameterDescriptors {
+        final JetType receiverType;
+        final List<ValueParameterDescriptor> descriptors;
 
-        private ValueParameterDescriptors(@Nullable JetType receiverType, List<ValueParameterDescriptor> descriptors) {
+        ValueParameterDescriptors(@Nullable JetType receiverType, List<ValueParameterDescriptor> descriptors) {
             this.receiverType = receiverType;
             this.descriptors = descriptors;
         }
@@ -1570,64 +1573,6 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         return new ValueParameterDescriptors(receiverType, result);
     }
 
-    private static JetType computeAlternativeTypeFromAnnotation(JetTypeElement alternativeTypeElement, final JetType autoType) {
-        return alternativeTypeElement.accept(new JetVisitor<JetType, Void>() {
-            @Override
-            public JetType visitNullableType(JetNullableType nullableType, Void data) {
-                return TypeUtils.makeNullable(computeAlternativeTypeFromAnnotation(nullableType.getInnerType(), autoType));
-            }
-
-            @Override
-            public JetType visitFunctionType(JetFunctionType type, Void data) {
-                return autoType;    //TODO
-            }
-
-            @Override
-            public JetType visitTupleType(JetTupleType type, Void data) {
-                return autoType;    //TODO
-            }
-
-            @Override
-            public JetType visitUserType(JetUserType type, Void data) {
-                List<TypeProjection> arguments = autoType.getArguments();
-                List<TypeProjection> altArguments = new ArrayList<TypeProjection>();
-                for (int i = 0, size = arguments.size(); i < size; i++) {
-                    JetTypeElement argumentAlternativeTypeElement = type.getTypeArgumentsAsTypes().get(i).getTypeElement();
-                    TypeProjection argument = arguments.get(i);
-                    JetType alternativeType = computeAlternativeTypeFromAnnotation(argumentAlternativeTypeElement, argument.getType());
-                    altArguments.add(new TypeProjection(argument.getProjectionKind(), alternativeType));
-                }
-                return new JetTypeImpl(autoType.getAnnotations(), autoType.getConstructor(), false,
-                                       altArguments, autoType.getMemberScope());
-            }
-
-            @Override
-            public JetType visitSelfType(JetSelfType type, Void data) {
-                throw new UnsupportedOperationException("Self-types are not supported yet");
-            }
-        }, null);
-    }
-
-    private static ValueParameterDescriptors computeAlternativeValueParameters(ValueParameterDescriptors valueParameterDescriptors,
-            JetNamedFunction altFunDeclaration) {
-        List<ValueParameterDescriptor> parameterDescriptors = valueParameterDescriptors.descriptors;
-        List<ValueParameterDescriptor> altParamDescriptors = new ArrayList<ValueParameterDescriptor>();
-        for (int i = 0, size = parameterDescriptors.size(); i < size; i++) {
-            ValueParameterDescriptor pd = parameterDescriptors.get(i);
-            JetTypeElement alternativeTypeElement = altFunDeclaration.getValueParameters().get(i).getTypeReference().getTypeElement();
-            JetType alternativeType = computeAlternativeTypeFromAnnotation(alternativeTypeElement, pd.getType());
-            // TODO vararg
-            altParamDescriptors.add(new ValueParameterDescriptorImpl(pd.getContainingDeclaration(), pd.getIndex(), pd.getAnnotations(),
-                                                                     pd.getName(), pd.isVar(), alternativeType, pd.declaresDefaultValue(),
-                                                                     pd.getVarargElementType()));
-        }
-        JetType altReceiverType = null;
-        if (valueParameterDescriptors.receiverType != null) {
-            altReceiverType = computeAlternativeTypeFromAnnotation(altFunDeclaration.getReceiverTypeRef().getTypeElement(), valueParameterDescriptors.receiverType);
-        }
-        return new ValueParameterDescriptors(altReceiverType, altParamDescriptors);
-    }
-
     @Nullable
     private FunctionDescriptorImpl resolveMethodToFunctionDescriptor(
             @NotNull final PsiClass psiClass, final PsiMethodWrapper method,
@@ -1662,7 +1607,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
 
         String context = "method " + method.getName() + " in class " + psiClass.getQualifiedName();
 
-        final List<TypeParameterDescriptor> methodTypeParameters = resolveMethodTypeParameters(method, functionDescriptorImpl);
+        List<TypeParameterDescriptor> methodTypeParameters = resolveMethodTypeParameters(method, functionDescriptorImpl);
 
         TypeVariableResolver methodTypeVariableResolver = TypeVariableResolvers.typeVariableResolverFromTypeParameters(methodTypeParameters, functionDescriptorImpl, context);
 
@@ -1674,8 +1619,13 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         String signature = method.getSignatureAnnotation().signature();
         if (!signature.isEmpty()) {
             JetNamedFunction altFunDeclaration = JetPsiFactory.createFunction(project, signature);
-            valueParameterDescriptors = computeAlternativeValueParameters(valueParameterDescriptors, altFunDeclaration);
-            returnType = computeAlternativeTypeFromAnnotation(altFunDeclaration.getReturnTypeRef().getTypeElement(), returnType);
+            valueParameterDescriptors = AlternativeSignatureParsing
+                    .computeAlternativeValueParameters(valueParameterDescriptors, altFunDeclaration);
+            JetTypeReference returnTypeRef = altFunDeclaration.getReturnTypeRef();
+            if (returnTypeRef != null) {
+                returnType = AlternativeSignatureParsing.computeAlternativeTypeFromAnnotation(returnTypeRef.getTypeElement(), returnType);
+            }
+            methodTypeParameters = AlternativeSignatureParsing.computeAlternativeTypeParameters(methodTypeParameters, altFunDeclaration);
         }
 
         functionDescriptorImpl.initialize(
