@@ -45,8 +45,6 @@ public class RhinoFunctionResultChecker implements RhinoResultChecker {
     public void runChecks(Context context, Scriptable scope) throws Exception {
         Object result = evaluateFunction(context, scope);
         assertResultValid(result);
-
-        context.evaluateString(scope, functionCallString(), "function call", 0, null);
     }
 
     protected void assertResultValid(Object result) {
