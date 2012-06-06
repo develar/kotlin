@@ -18,6 +18,8 @@ package org.jetbrains.jet.codegen;
 
 import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
 
+import java.lang.reflect.Method;
+
 /**
  * @author Stepan Koltsov
  */
@@ -37,9 +39,11 @@ public class ScriptGenTest extends CodegenTestCase {
         blackBoxFile("script/string.ktscript");
     }
 
-    public void testTopLevelFunction() {
+    public void testTopLevelFunction() throws Exception {
         blackBoxFile("script/topLevelFunction.ktscript");
-        // TODO: check function is visible as instance field (it is currently not)
+        Method method = scriptInstance.getClass().getMethod("factorial", new Class<?>[]{ int.class });
+        Object r = method.invoke(scriptInstance, 4);
+        assertEquals(24, r);
     }
 
     public void testTopLevelFunctionClosure() {
@@ -52,6 +56,14 @@ public class ScriptGenTest extends CodegenTestCase {
 
     public void testSecondLevelFunctionClosure() {
         blackBoxFile("script/secondLevelFunctionClosure.ktscript");
+    }
+
+    public void testSecondLevelVal() {
+        blackBoxFile("script/secondLevelVal.ktscript");
+    }
+
+    public void testTopLevelProperty() {
+        blackBoxFile("script/topLevelProperty.ktscript");
     }
 
     public void testScriptParameter() {

@@ -18,6 +18,7 @@ package org.jetbrains.jet.codegen;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import com.intellij.openapi.util.Pair;
 import com.intellij.testFramework.UsefulTestCase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,6 +60,8 @@ public abstract class CodegenTestCase extends UsefulTestCase {
     protected JetCoreEnvironment myEnvironment;
     private List<File> extraClasspath = Lists.newArrayList();
     protected CodegenTestFile myFile;
+
+    protected Object scriptInstance;
 
     protected void createEnvironmentWithMockJdkAndIdeaAnnotations() {
         if (myEnvironment != null) {
@@ -106,6 +109,7 @@ public abstract class CodegenTestCase extends UsefulTestCase {
     protected void tearDown() throws Exception {
         myFile = null;
         myEnvironment = null;
+        scriptInstance = null;
         super.tearDown();
     }
 
@@ -133,20 +137,7 @@ public abstract class CodegenTestCase extends UsefulTestCase {
 
     protected void blackBoxFile(String filename) {
         loadFile(filename);
-        Object actual;
-        try {
-            actual = blackBox();
-        } catch (NoClassDefFoundError e) {
-            System.out.println(generateToText());
-            throw e;
-        } catch (Throwable e) {
-            System.out.println(generateToText());
-            throw new RuntimeException(e);
-        }
-        if (!Objects.equal(myFile.getExpectedValue(), actual)) {
-            System.out.println(generateToText());
-        }
-        assertEquals(myFile.getExpectedValue(), actual);
+        blackBox();
     }
 
     @NotNull
@@ -188,37 +179,67 @@ public abstract class CodegenTestCase extends UsefulTestCase {
         }
     }
 
-    @NotNull
-    protected String blackBox() throws Exception {
+    protected void blackBox() {
         GenerationState state = generateClassesInFileGetState();
         GeneratedClassLoader loader = createClassLoader(state.getFactory());
+
+        String r;
 
         try {
             if (myFile.getPsiFile().isScript()) {
                 Class<?> scriptClass = loader.loadClass("Script");
 
                 Constructor constructor = getConstructor(scriptClass, state.getScriptConstructorMethod());
-                Object scriptInstance = constructor.newInstance(myFile.getScriptParameterValues().toArray());
-                Field field = scriptClass.getDeclaredField("rv");
-                field.setAccessible(true);
-                Object result = field.get(scriptInstance);
-                return result != null ? result.toString() : "null";
+                scriptInstance = constructor.newInstance(myFile.getScriptParameterValues().toArray());
+
+                assertFalse("expecting at least one expectation", myFile.getExpectedValues().isEmpty());
+
+                for (Pair<String, String> nameValue : myFile.getExpectedValues()) {
+                    String fieldName = nameValue.first;
+                    String expectedValue = nameValue.second;
+
+                    if (expectedValue.equals("<nofield>")) {
+                        try {
+                            scriptClass.getDeclaredField(fieldName);
+                            fail("must have no field " + fieldName);
+                        } catch (NoSuchFieldException e) {
+                            continue;
+                        }
+                    }
+
+                    Field field = scriptClass.getDeclaredField(fieldName);
+                    field.setAccessible(true);
+                    Object result = field.get(scriptInstance);
+                    String resultString = result != null ? result.toString() : "null";
+                    assertEquals("comparing field " + fieldName, expectedValue, resultString);
+                }
             }
             else {
                 String fqName = NamespaceCodegen.getJVMClassNameForKotlinNs(JetPsiUtil.getFQName(myFile.getPsiFile())).getFqName().getFqName();
                 Class<?> namespaceClass = loader.loadClass(fqName);
                 Method method = namespaceClass.getMethod("box");
-                return (String) method.invoke(null);
+                r = (String) method.invoke(null);
+                assertEquals("OK", r);
             }
+        } catch (NoClassDefFoundError e) {
+            System.out.println(generateToText());
+            throw e;
+        } catch (Throwable e) {
+            System.out.println(generateToText());
+            throw new RuntimeException(e);
         } finally {
-           loader.dispose();
+            loader.dispose();
         }
     }
 
-    protected GeneratedClassLoader createClassLoader(ClassFileFactory codegens) throws MalformedURLException {
+    protected GeneratedClassLoader createClassLoader(ClassFileFactory codegens) {
         List<URL> urls = Lists.newArrayList();
         for (File file : extraClasspath) {
-            urls.add(file.toURI().toURL());
+            try {
+                urls.add(file.toURI().toURL());
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
         }
         ClassLoader parentClassLoader = new URLClassLoader(urls.toArray(new URL[0]), CodegenTestCase.class.getClassLoader());
         return new GeneratedClassLoader(codegens, parentClassLoader);
@@ -255,8 +276,6 @@ public abstract class CodegenTestCase extends UsefulTestCase {
             return createClassLoader(state).loadClass(fqName);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         }
         return null;
     }
@@ -265,7 +284,6 @@ public abstract class CodegenTestCase extends UsefulTestCase {
         try {
             return createClassLoader(state).loadClass(fqName);
         } catch (ClassNotFoundException e) {
-        } catch (MalformedURLException e) {
         }
 
         fail("No classfile was generated for: " + fqName);
