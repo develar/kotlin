@@ -24,23 +24,24 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.di.InjectorForJvmCodegen;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
 import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
-import org.jetbrains.jet.lang.psi.JetExpression;
-import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
-import org.jetbrains.jet.lang.psi.JetObjectLiteralExpression;
+import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
 import org.jetbrains.jet.lang.resolve.java.JvmClassName;
+import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.utils.Progress;
 import org.objectweb.asm.commons.Method;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public class GenerationState {
     private final Project project;
@@ -118,35 +119,25 @@ public class GenerationState {
         return Pair.create(className, getFactory().forAnonymousSubclass(className));
     }
 
-    public NamespaceCodegen forNamespace(JetFile namespace) {
-        return getFactory().forNamespace(namespace);
+    public NamespaceCodegen forNamespace(FqName fqName, Collection<JetFile> namespace) {
+        return getFactory().forNamespace(fqName, namespace);
     }
 
     public void compileCorrectFiles(@NotNull CompilationErrorHandler errorHandler) {
+        MultiMap<FqName, JetFile> namespaceGrouping = new MultiMap<FqName, JetFile>();
         for (JetFile file : this.files) {
             if (file == null) throw new IllegalArgumentException("A null file given for compilation");
-            VirtualFile vFile = file.getVirtualFile();
-            String path = vFile != null ? vFile.getPath() : "no_virtual_file/" + file.getName();
-            progress.log("For source: " + path);
-            try {
-                generateNamespace(file);
-            }
-            catch (ProcessCanceledException e) {
-                throw e;
-            }
-            catch (Throwable e) {
-                errorHandler.reportException(e, vFile == null ? "no file" : vFile.getUrl());
-                DiagnosticUtils.throwIfRunningOnServer(e);
-                if (ApplicationManager.getApplication().isInternal()) {
-                    e.printStackTrace();
-                }
-            }
+            namespaceGrouping.putValue(JetPsiUtil.getFQName(file), file);
+        }
+
+        for (Map.Entry<FqName, Collection<JetFile>> entry : namespaceGrouping.entrySet()) {
+            generateNamespace(entry.getKey(), entry.getValue(), errorHandler, progress);
         }
     }
 
-    protected void generateNamespace(JetFile namespace) {
-        NamespaceCodegen codegen = forNamespace(namespace);
-        codegen.generate(namespace);
+    protected void generateNamespace(FqName fqName, Collection<JetFile> namespace, CompilationErrorHandler errorHandler, Progress progress) {
+        NamespaceCodegen codegen = forNamespace(fqName, namespace);
+        codegen.generate(errorHandler, progress);
     }
 
     public GeneratedAnonymousClassDescriptor generateObjectLiteral(JetObjectLiteralExpression literal, ObjectOrClosureCodegen closure) {
