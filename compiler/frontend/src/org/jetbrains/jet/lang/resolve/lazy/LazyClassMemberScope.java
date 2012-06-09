@@ -36,6 +36,7 @@ import org.jetbrains.jet.util.lazy.LazyValue;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 /**
@@ -75,7 +76,9 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
                     @Override
                     public void addToScope(@NotNull CallableMemberDescriptor fakeOverride) {
                         assert fakeOverride instanceof FunctionDescriptor : "A non-function overrides a function";
-                        result.add((FunctionDescriptor) fakeOverride);
+                        FunctionDescriptor functionDescriptor = (FunctionDescriptor) fakeOverride;
+                        result.add(functionDescriptor);
+                        allDescriptors.add(functionDescriptor);
                     }
 
                     @Override
@@ -101,6 +104,21 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
     }
 
     @Override
+    protected void addExtraDescriptors() {
+        for (JetType supertype : thisDescriptor.getTypeConstructor().getSupertypes()) {
+            for (DeclarationDescriptor descriptor : supertype.getMemberScope().getAllDescriptors()) {
+                if (descriptor instanceof FunctionDescriptor) {
+                    getFunctions(descriptor.getName());
+                }
+                else if (descriptor instanceof PropertyDescriptor) {
+                    getProperties(descriptor.getName());
+                }
+                // Nothing else is inherited
+            }
+        }
+    }
+
+    @Override
     public NamespaceDescriptor getNamespace(@NotNull Name name) {
         return null;
     }
@@ -113,25 +131,29 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
 
     @NotNull
     public Set<ConstructorDescriptor> getConstructors() {
-        return Collections.singleton(getPrimaryConstructor());
+        ConstructorDescriptor constructor = getPrimaryConstructor();
+        return constructor == null ? Collections.<ConstructorDescriptor>emptySet() : Collections.singleton(constructor);
     }
 
     @Nullable
     public ConstructorDescriptor getPrimaryConstructor() {
         if (!primaryConstructorResolved) {
-            JetClassOrObject classOrObject = declarationProvider.getOwnerClassOrObject();
-            if (classOrObject instanceof JetClass) {
-                JetClass jetClass = (JetClass) classOrObject;
-                ConstructorDescriptorImpl descriptor = resolveSession.getInjector().getDescriptorResolver()
-                        .resolvePrimaryConstructorDescriptor(thisDescriptor.getScopeForClassHeaderResolution(), thisDescriptor, jetClass,
-                                                             resolveSession.getTrace());
-                primaryConstructor = descriptor;
-                ((ConstructorDescriptorImpl) primaryConstructor).setReturnType(DeferredType.create(resolveSession.getTrace(), new LazyValue<JetType>() {
-                    @Override
-                    protected JetType compute() {
-                        return thisDescriptor.getDefaultType();
-                    }
-                }));
+            if (EnumSet.of(ClassKind.CLASS, ClassKind.ANNOTATION_CLASS).contains(thisDescriptor.getKind())) {
+                JetClassOrObject classOrObject = declarationProvider.getOwnerClassOrObject();
+                if (classOrObject instanceof JetClass) {
+                    JetClass jetClass = (JetClass) classOrObject;
+                    ConstructorDescriptorImpl descriptor = resolveSession.getInjector().getDescriptorResolver()
+                            .resolvePrimaryConstructorDescriptor(thisDescriptor.getScopeForClassHeaderResolution(), thisDescriptor,
+                                                                 jetClass,
+                                                                 resolveSession.getTrace());
+                    primaryConstructor = descriptor;
+                    descriptor.setReturnType(DeferredType.create(resolveSession.getTrace(), new LazyValue<JetType>() {
+                        @Override
+                        protected JetType compute() {
+                            return thisDescriptor.getDefaultType();
+                        }
+                    }));
+                }
             }
             primaryConstructorResolved = true;
         }

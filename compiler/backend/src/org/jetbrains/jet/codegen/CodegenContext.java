@@ -67,7 +67,7 @@ public abstract class CodegenContext {
         CodegenContext c = this;
         while(true) {
             DeclarationDescriptor contextDescriptor = c.getContextDescriptor();
-            if(!(contextDescriptor instanceof ClassDescriptor) && !(contextDescriptor instanceof NamespaceDescriptor)) {
+            if (!(contextDescriptor instanceof ClassDescriptor) && !(contextDescriptor instanceof NamespaceDescriptor)) {
                 c = c.getParentContext();
             }
             else {
@@ -106,7 +106,11 @@ public abstract class CodegenContext {
     }
 
     public CodegenContext intoNamespace(NamespaceDescriptor descriptor) {
-        return new CodegenContexts.NamespaceContext(descriptor, this);
+        return new CodegenContexts.NamespaceContext(descriptor, this, null);
+    }
+
+    public CodegenContext intoNamespacePart(String delegateTo, NamespaceDescriptor descriptor) {
+        return new CodegenContexts.NamespaceContext(descriptor, this, new OwnerKind.StaticDelegateKind(StackValue.none(), delegateTo));
     }
 
     public CodegenContext intoClass(ClassDescriptor descriptor, OwnerKind kind, JetTypeMapper typeMapper) {
@@ -122,7 +126,7 @@ public abstract class CodegenContext {
     }
 
     public CodegenContexts.ConstructorContext intoConstructor(ConstructorDescriptor descriptor, JetTypeMapper typeMapper) {
-        if(descriptor == null) {
+        if (descriptor == null) {
             descriptor = new ConstructorDescriptorImpl(getThisDescriptor(), Collections.<AnnotationDescriptor>emptyList(), true)
                     .initialize(Collections.<TypeParameterDescriptor>emptyList(), Collections.<ValueParameterDescriptor>emptyList(), Visibilities.PUBLIC);
         }
@@ -130,7 +134,7 @@ public abstract class CodegenContext {
     }
 
     public CodegenContext intoScript(@NotNull ScriptDescriptor script, @NotNull ClassDescriptor classDescriptor) {
-        return new CodegenContexts.ScriptContext(classDescriptor, OwnerKind.IMPLEMENTATION, this, closure);
+        return new CodegenContexts.ScriptContext(script, classDescriptor, OwnerKind.IMPLEMENTATION, this, closure);
     }
 
     public CodegenContexts.ClosureContext intoClosure(FunctionDescriptor funDescriptor, ClassDescriptor classDescriptor, JvmClassName internalClassName, ClosureCodegen closureCodegen, JetTypeMapper typeMapper) {
@@ -183,13 +187,13 @@ public abstract class CodegenContext {
     public int getTypeInfoConstantIndex(JetType type) {
         if (parentContext != CodegenContexts.STATIC) { return parentContext.getTypeInfoConstantIndex(type); }
         
-        if(typeInfoConstants == null) {
+        if (typeInfoConstants == null) {
             typeInfoConstants = new LinkedHashMap<JetType, Integer>();
             reverseTypeInfoConstants = new LinkedHashMap<Integer, JetType>();
         }
 
         Integer index = typeInfoConstants.get(type);
-        if(index == null) {
+        if (index == null) {
             index = typeInfoConstantsCount++;
             typeInfoConstants.put(type, index);
             reverseTypeInfoConstants.put(index, type);
@@ -198,14 +202,14 @@ public abstract class CodegenContext {
     }
     
     DeclarationDescriptor getAccessor(DeclarationDescriptor descriptor) {
-        if(accessors == null) {
+        if (accessors == null) {
             accessors = new HashMap<DeclarationDescriptor,DeclarationDescriptor>();
         }
         descriptor = descriptor.getOriginal();
         DeclarationDescriptor accessor = accessors.get(descriptor);
         if (accessor != null) { return accessor; }
 
-        if(descriptor instanceof SimpleFunctionDescriptor) {
+        if (descriptor instanceof SimpleFunctionDescriptor) {
             SimpleFunctionDescriptorImpl myAccessor = new SimpleFunctionDescriptorImpl(contextDescriptor,
                     Collections.<AnnotationDescriptor>emptyList(),
                     Name.identifier(descriptor.getName() + "$bridge$" + accessors.size()),
@@ -221,7 +225,7 @@ public abstract class CodegenContext {
                                   /*isInline = */ false);
             accessor = myAccessor;
         }
-        else if(descriptor instanceof PropertyDescriptor) {
+        else if (descriptor instanceof PropertyDescriptor) {
             PropertyDescriptor pd = (PropertyDescriptor) descriptor;
             PropertyDescriptor myAccessor = new PropertyDescriptor(contextDescriptor,
                     Collections.<AnnotationDescriptor>emptyList(),
@@ -264,8 +268,8 @@ public abstract class CodegenContext {
     public abstract boolean isStatic();
 
     public void copyAccessors(HashMap<DeclarationDescriptor, DeclarationDescriptor> accessors) {
-        if(accessors != null) {
-            if(this.accessors == null) {
+        if (accessors != null) {
+            if (this.accessors == null) {
                 this.accessors = new HashMap<DeclarationDescriptor,DeclarationDescriptor>();
             }
             this.accessors.putAll(accessors);

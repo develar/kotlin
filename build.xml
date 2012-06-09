@@ -21,6 +21,8 @@
         <pathelement path="${idea.sdk}/lib/resources_en.jar"/>
 
         <fileset dir="${basedir}/lib" includes="**/*.jar"/>
+        <fileset dir="${basedir}/dependencies" includes="jline-*.jar"/>
+        <fileset dir="${basedir}/dependencies" includes="jansi-*.jar"/>
         <fileset dir="${basedir}/js/js.translator/lib" includes="*.jar"/>
     </path>
 
@@ -30,6 +32,7 @@
         <include name="compiler/backend/src"/>
         <include name="compiler/cli/src"/>
         <include name="compiler/util/src"/>
+        <include name="j2k/src"/>
         <include name="compiler/jet.as.java.psi/src"/>
 
         <include name="runtime/src"/>
@@ -102,6 +105,7 @@
                     <fileset dir="compiler/frontend.java/src"/>
                     <fileset dir="compiler/backend/src"/>
                     <fileset dir="compiler/cli/src"/>
+                    <fileset dir="j2k/src"/>
                     <fileset dir="compiler/util/src"/>
                     <fileset dir="compiler/jet.as.java.psi/src"/>
                     <fileset dir="runtime/src"/>
@@ -196,6 +200,8 @@
             <zipgroupfileset dir="${basedir}/lib" includes="*.jar"/>
             <zipgroupfileset dir="${basedir}/ideaSDK/core" includes="*.jar"/>
             <zipgroupfileset dir="${basedir}/js/js.translator/lib" includes="*.jar"/>
+            <zipgroupfileset dir="${basedir}/dependencies" includes="jline-*.jar"/>
+            <zipgroupfileset dir="${basedir}/dependencies" includes="jansi-*.jar"/>
 
             <zap pattern="com.thoughtworks.xstream.converters.extended.ISO8601*"/>
             <zap pattern="com.thoughtworks.xstream.converters.reflection.CGLIBEnhancedConverter*"/>

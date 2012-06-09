@@ -1020,6 +1020,9 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         if (resolverNamespaceData == null) {
             return null;
         }
+        if (resolverNamespaceData == ResolverNamespaceData.NEGATIVE) {
+            throw new IllegalStateException("This means that we are trying to create a Java package, but have a package with the same FQN defined in Kotlin");
+        }
         JavaPackageScope scope = resolverNamespaceData.memberScope;
         if (scope == null) {
             throw new IllegalStateException("fqn: " + fqName);
@@ -1698,23 +1701,23 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
                 continue;
             }
             Object literalValue = ((PsiLiteralExpression) value).getValue();
-            if(literalValue instanceof String)
+            if (literalValue instanceof String)
                 valueArguments.add(new StringValue((String) literalValue));
-            else if(literalValue instanceof Byte)
+            else if (literalValue instanceof Byte)
                 valueArguments.add(new ByteValue((Byte) literalValue));
-            else if(literalValue instanceof Short)
+            else if (literalValue instanceof Short)
                 valueArguments.add(new ShortValue((Short) literalValue));
-            else if(literalValue instanceof Character)
+            else if (literalValue instanceof Character)
                 valueArguments.add(new CharValue((Character) literalValue));
-            else if(literalValue instanceof Integer)
+            else if (literalValue instanceof Integer)
                 valueArguments.add(new IntValue((Integer) literalValue));
-            else if(literalValue instanceof Long)
+            else if (literalValue instanceof Long)
                 valueArguments.add(new LongValue((Long) literalValue));
-            else if(literalValue instanceof Float)
+            else if (literalValue instanceof Float)
                 valueArguments.add(new FloatValue((Float) literalValue));
-            else if(literalValue instanceof Double)
+            else if (literalValue instanceof Double)
                 valueArguments.add(new DoubleValue((Double) literalValue));
-            else if(literalValue == null)
+            else if (literalValue == null)
                 valueArguments.add(NullValue.NULL);
         }
 

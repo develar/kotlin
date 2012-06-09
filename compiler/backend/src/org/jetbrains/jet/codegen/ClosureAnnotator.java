@@ -42,6 +42,8 @@ public class ClosureAnnotator {
     private final Map<JetElement, JvmClassName> classNamesForAnonymousClasses = new HashMap<JetElement, JvmClassName>();
     private final Map<ClassDescriptor, JvmClassName> classNamesForClassDescriptor = new HashMap<ClassDescriptor, JvmClassName>();
     private final Map<String, Integer> anonymousSubclassesCount = new HashMap<String, Integer>();
+    private final Map<ScriptDescriptor, JvmClassName> classNameForScript = new HashMap<ScriptDescriptor, JvmClassName>();
+    private final Set<JvmClassName> scriptClassNames = new HashSet<JvmClassName>();
     private final Map<DeclarationDescriptor, ClassDescriptorImpl> classesForFunctions = new HashMap<DeclarationDescriptor, ClassDescriptorImpl>();
     private final Map<DeclarationDescriptor,ClassDescriptor> enclosing = new HashMap<DeclarationDescriptor, ClassDescriptor>();
 
@@ -69,7 +71,7 @@ public class ClosureAnnotator {
 
     public ClassDescriptor classDescriptorForFunctionDescriptor(FunctionDescriptor funDescriptor, JvmClassName name) {
         ClassDescriptorImpl classDescriptor = classesForFunctions.get(funDescriptor);
-        if(classDescriptor == null) {
+        if (classDescriptor == null) {
             int arity = funDescriptor.getValueParameters().size();
 
             classDescriptor = new ClassDescriptorImpl(
@@ -86,25 +88,64 @@ public class ClosureAnnotator {
         return classDescriptor;
     }
 
+    public void registerClassNameForScript(@NotNull ScriptDescriptor scriptDescriptor, @NotNull JvmClassName className) {
+        JvmClassName oldName = classNameForScript.put(scriptDescriptor, className);
+        if (oldName != null) {
+            throw new IllegalStateException("Rewrite at key " + scriptDescriptor + " for name");
+        }
+
+        if (!scriptClassNames.add(className)) {
+            throw new IllegalStateException("More than one script has class name " + className);
+        }
+
+        ClassDescriptorImpl classDescriptor = new ClassDescriptorImpl(
+                scriptDescriptor,
+                Collections.<AnnotationDescriptor>emptyList(),
+                Name.special("<script-" + className + ">"));
+        recordName(classDescriptor, className);
+        classDescriptor.initialize(
+                false,
+                Collections.<TypeParameterDescriptor>emptyList(),
+                Collections.singletonList(JetStandardClasses.getAnyType()),
+                JetScope.EMPTY,
+                Collections.<ConstructorDescriptor>emptySet(),
+                null);
+
+        ClassDescriptorImpl oldDescriptor = classesForFunctions.put(scriptDescriptor, classDescriptor);
+        if (oldDescriptor != null) {
+            throw new IllegalStateException("Rewrite at key " + scriptDescriptor + " for class");
+        }
+    }
+
+    public void registerClassNameForScript(@NotNull JetScript jetScript, @NotNull JvmClassName className) {
+        ScriptDescriptor descriptor = bindingContext.get(BindingContext.SCRIPT, jetScript);
+        if (descriptor == null) {
+            throw new IllegalStateException("Descriptor is not found for PSI " + jetScript);
+        }
+        registerClassNameForScript(descriptor, className);
+    }
+
     @NotNull
     public ClassDescriptor classDescriptorForScrpitDescriptor(@NotNull ScriptDescriptor scriptDescriptor) {
         ClassDescriptorImpl classDescriptor = classesForFunctions.get(scriptDescriptor);
         if (classDescriptor == null) {
-            classDescriptor = new ClassDescriptorImpl(
-                    scriptDescriptor,
-                    Collections.<AnnotationDescriptor>emptyList(),
-                    Name.special("<script>"));
-            recordName(classDescriptor, JvmClassName.byInternalName("Script"));
-            classDescriptor.initialize(
-                    false,
-                    Collections.<TypeParameterDescriptor>emptyList(),
-                    Collections.singletonList(JetStandardClasses.getAnyType()),
-                    JetScope.EMPTY,
-                    Collections.<ConstructorDescriptor>emptySet(),
-                    null);
-            classesForFunctions.put(scriptDescriptor, classDescriptor);
+            throw new IllegalStateException("Class for script is not registered: " + scriptDescriptor);
         }
         return classDescriptor;
+    }
+
+    @NotNull
+    public JvmClassName classNameForScriptPsi(@NotNull JetScript script) {
+        ScriptDescriptor scriptDescriptor = bindingContext.get(BindingContext.SCRIPT, script);
+        if (scriptDescriptor == null) {
+            throw new IllegalStateException("Script descriptor not found by PSI " + script);
+        }
+        return classNameForScriptDescriptor(scriptDescriptor);
+    }
+
+    @NotNull
+    public JvmClassName classNameForScriptDescriptor(@NotNull ScriptDescriptor scriptDescriptor) {
+        return classNameForClassDescriptor(classDescriptorForScrpitDescriptor(scriptDescriptor));
     }
 
     private void mapFilesToNamespaces(Collection<JetFile> files) {
@@ -129,12 +170,12 @@ public class ClosureAnnotator {
     }
 
     public JvmClassName classNameForAnonymousClass(JetElement expression) {
-        if(expression instanceof JetObjectLiteralExpression) {
+        if (expression instanceof JetObjectLiteralExpression) {
             JetObjectLiteralExpression jetObjectLiteralExpression = (JetObjectLiteralExpression) expression;
             expression = jetObjectLiteralExpression.getObjectDeclaration();
         }
 
-        if(expression instanceof JetFunctionLiteralExpression) {
+        if (expression instanceof JetFunctionLiteralExpression) {
             JetFunctionLiteralExpression jetFunctionLiteralExpression = (JetFunctionLiteralExpression) expression;
             expression = jetFunctionLiteralExpression.getFunctionLiteral();
         }
@@ -160,7 +201,7 @@ public class ClosureAnnotator {
         private LinkedList<String> nameStack = new LinkedList<String>();
 
         private void recordEnclosing(ClassDescriptor classDescriptor) {
-            if(classStack.size() > 0) {
+            if (classStack.size() > 0) {
                 ClassDescriptor put = enclosing.put(classDescriptor, classStack.peek());
                 assert put == null;
             }
@@ -172,7 +213,7 @@ public class ClosureAnnotator {
 
             String top = nameStack.peek();
             Integer cnt = anonymousSubclassesCount.get(top);
-            if(cnt == null) {
+            if (cnt == null) {
                 cnt = 0;
             }
             name = JvmClassName.byInternalName(top + "$" + (cnt + 1));
@@ -220,7 +261,7 @@ public class ClosureAnnotator {
 
         @Override
         public void visitObjectDeclaration(JetObjectDeclaration declaration) {
-            if(declaration.getParent() instanceof JetObjectLiteralExpression || declaration.getParent() instanceof JetClassObject) {
+            if (declaration.getParent() instanceof JetObjectLiteralExpression || declaration.getParent() instanceof JetClassObject) {
                 super.visitObjectDeclaration(declaration);
             }
             else {

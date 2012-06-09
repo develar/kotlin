@@ -17,13 +17,13 @@
 package org.jetbrains.jet.lang.resolve.lazy;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.di.InjectorForLazyResolve;
+import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
@@ -36,7 +36,6 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -49,16 +48,18 @@ public class ResolveSession {
     private final BindingTrace trace = new BindingTraceContext();
     private final DeclarationProviderFactory declarationProviderFactory;
 
-    private final Map<Name, NamespaceDescriptor> packageDescriptors = Maps.newHashMap();
     private final InjectorForLazyResolve injector;
+    private final ModuleConfiguration moduleConfiguration;
 
     public ResolveSession(
             @NotNull Project project,
             @NotNull ModuleDescriptor rootDescriptor,
+            @NotNull ModuleConfiguration moduleConfiguration,
             @NotNull DeclarationProviderFactory declarationProviderFactory
     ) {
         this.injector = new InjectorForLazyResolve(project, this, trace);
         this.module = rootDescriptor;
+        this.moduleConfiguration = moduleConfiguration;
         PackageMemberDeclarationProvider provider = declarationProviderFactory.getPackageMemberDeclarationProvider(FqName.ROOT);
         assert provider != null : "No declaration provider for root package in " + rootDescriptor;
         this.rootPackage = new LazyPackageDescriptor(rootDescriptor, FqNameUnsafe.ROOT_NAME, this, provider);
@@ -70,6 +71,11 @@ public class ResolveSession {
     @NotNull
     public InjectorForLazyResolve getInjector() {
         return injector;
+    }
+
+    @NotNull
+    public ModuleConfiguration getModuleConfiguration() {
+        return moduleConfiguration;
     }
 
     @Nullable
@@ -93,8 +99,10 @@ public class ResolveSession {
     }
 
     @NotNull
-    public ClassDescriptor getClassDescriptor(JetClassOrObject classOrObject) {
-        throw new UnsupportedOperationException(); // TODO
+    public ClassDescriptor getClassDescriptor(@NotNull JetClassOrObject classOrObject) {
+        JetScope resolutionScope = getInjector().getScopeProvider().getResolutionScopeForDeclaration((JetDeclaration) classOrObject);
+        ClassifierDescriptor classifier = resolutionScope.getClassifier(classOrObject.getNameAsName());
+        return (ClassDescriptor) classifier;
     }
 
     public Collection<DeclarationDescriptor> getDescriptorsForDeclarations(Collection<PsiElement> declarationsOrFiles) {

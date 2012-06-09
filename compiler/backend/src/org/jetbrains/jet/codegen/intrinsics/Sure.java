@@ -37,11 +37,11 @@ import java.util.List;
  */
 public class Sure implements IntrinsicMethod {
     @Override
-    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
+    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, @NotNull Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
         JetCallExpression call = (JetCallExpression) element;
         ResolvedCall<? extends CallableDescriptor> resolvedCall = codegen.getBindingContext().get(BindingContext.RESOLVED_CALL, call.getCalleeExpression());
         assert resolvedCall != null;
-        if(resolvedCall.getReceiverArgument().getType().isNullable())  {
+        if (resolvedCall.getReceiverArgument().getType().isNullable())  {
             receiver.put(receiver.type, v);
             v.dup();
             Label ok = new Label();

@@ -34,13 +34,13 @@ import java.util.List;
  */
 public class Inv implements IntrinsicMethod {
     @Override
-    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
+    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, @NotNull Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
         boolean nullable = expectedType.getSort() == Type.OBJECT;
-        if(nullable) {
+        if (nullable) {
             expectedType = JetTypeMapper.unboxType(expectedType);
         }
         receiver.put(expectedType, v);
-        if(expectedType == Type.LONG_TYPE) {
+        if (expectedType == Type.LONG_TYPE) {
             v.lconst(-1L);
         }
         else {

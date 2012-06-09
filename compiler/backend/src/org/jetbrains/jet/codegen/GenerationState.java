@@ -19,18 +19,15 @@
  */
 package org.jetbrains.jet.codegen;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.di.InjectorForJvmCodegen;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
-import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
+import org.jetbrains.jet.lang.descriptors.ScriptDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
@@ -40,6 +37,7 @@ import org.jetbrains.jet.utils.Progress;
 import org.objectweb.asm.commons.Method;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +53,8 @@ public class GenerationState {
     @NotNull
     private final ClassBuilderMode classBuilderMode;
 
+
+    private boolean used = false;
 
     // out parameter
     private Method scriptConstructorMethod;
@@ -74,6 +74,14 @@ public class GenerationState {
         this.injector = new InjectorForJvmCodegen(
                 analyzeExhaust.getStandardLibrary(), analyzeExhaust.getBindingContext(),
                 this.files, project, compilerSpecialMode, builderFactory.getClassBuilderMode(), this, builderFactory);
+    }
+
+    private void markUsed() {
+        if (used) {
+            throw new IllegalStateException(
+                    GenerationState.class + " cannot be used more than once");
+        }
+        used = true;
     }
 
     @NotNull
@@ -110,6 +118,10 @@ public class GenerationState {
         return getFactory().newVisitor(getInjector().getJetTypeMapper().mapType(aClass.getDefaultType(), MapTypeMode.IMPL).getInternalName() + ".class");
     }
 
+    public ClassBuilder forNamespacepart(String name, JetFile file) {
+        return getFactory().newVisitor(name + ".class");
+    }
+
     public ClassBuilder forTraitImplementation(ClassDescriptor aClass) {
         return getFactory().newVisitor(getInjector().getJetTypeMapper().mapType(aClass.getDefaultType(), MapTypeMode.TRAIT_IMPL).getInternalName() + ".class");
     }
@@ -124,6 +136,16 @@ public class GenerationState {
     }
 
     public void compileCorrectFiles(@NotNull CompilationErrorHandler errorHandler) {
+        markUsed();
+
+        for (JetFile file : this.files) {
+            if (file.isScript()) {
+                injector.getClosureAnnotator().registerClassNameForScript(file.getScript(), ScriptCodegen.SCRIPT_DEFAULT_CLASS_NAME);
+            }
+        }
+
+        injector.getScriptCodegen().registerEarlierScripts(Collections.<Pair<ScriptDescriptor, JvmClassName>>emptyList());
+
         MultiMap<FqName, JetFile> namespaceGrouping = new MultiMap<FqName, JetFile>();
         for (JetFile file : this.files) {
             if (file == null) throw new IllegalArgumentException("A null file given for compilation");
@@ -133,6 +155,24 @@ public class GenerationState {
         for (Map.Entry<FqName, Collection<JetFile>> entry : namespaceGrouping.entrySet()) {
             generateNamespace(entry.getKey(), entry.getValue(), errorHandler, progress);
         }
+    }
+
+    public void compileScript(
+            @NotNull JetScript script,
+            @NotNull JvmClassName className,
+            @NotNull List<Pair<ScriptDescriptor, JvmClassName>> earlierScripts,
+            @NotNull CompilationErrorHandler errorHandler) {
+        markUsed();
+
+        injector.getScriptCodegen().registerEarlierScripts(earlierScripts);
+
+        injector.getClosureAnnotator().registerClassNameForScript(script, className);
+
+        generateNamespace(
+                JetPsiUtil.getFQName((JetFile) script.getContainingFile()),
+                Collections.singleton((JetFile) script.getContainingFile()),
+                errorHandler,
+                progress);
     }
 
     protected void generateNamespace(FqName fqName, Collection<JetFile> namespace, CompilationErrorHandler errorHandler, Progress progress) {

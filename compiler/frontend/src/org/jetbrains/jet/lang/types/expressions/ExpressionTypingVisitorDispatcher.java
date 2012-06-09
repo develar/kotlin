@@ -115,7 +115,7 @@ public class ExpressionTypingVisitorDispatcher extends JetVisitor<JetType, Expre
     }
     
     private ExpressionTypingVisitorForStatements createStatementVisitor(ExpressionTypingContext context) {
-        return new ExpressionTypingVisitorForStatements(this, ExpressionTypingUtils.newWritableScopeImpl(context).setDebugName("statement scope"), basic, controlStructures, patterns);
+        return new ExpressionTypingVisitorForStatements(this, ExpressionTypingUtils.newWritableScopeImpl(context, "statement scope"), basic, controlStructures, patterns);
     }
 
     @Override
@@ -149,7 +149,7 @@ public class ExpressionTypingVisitorDispatcher extends JetVisitor<JetType, Expre
             result = null;
         }
 
-        if (!context.trace.get(BindingContext.PROCESSED, expression)) {
+        if (!context.trace.get(BindingContext.PROCESSED, expression) && !(expression instanceof JetReferenceExpression)) {
             context.trace.record(BindingContext.RESOLUTION_SCOPE, expression, context.scope);
         }
         context.trace.record(BindingContext.PROCESSED, expression);

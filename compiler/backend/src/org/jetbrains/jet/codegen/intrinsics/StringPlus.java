@@ -33,8 +33,8 @@ import java.util.List;
  */
 public class StringPlus implements IntrinsicMethod {
     @Override
-    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
-        if(receiver == null || receiver == StackValue.none()) {
+    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, @NotNull Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
+        if (receiver == null || receiver == StackValue.none()) {
             codegen.gen(arguments.get(0)).put(JetTypeMapper.JL_STRING_TYPE, v);
             codegen.gen(arguments.get(1)).put(JetTypeMapper.TYPE_OBJECT, v);
         }

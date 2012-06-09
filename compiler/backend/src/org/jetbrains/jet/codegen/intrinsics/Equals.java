@@ -37,17 +37,17 @@ import java.util.List;
  */
 public class Equals implements IntrinsicMethod {
     @Override
-    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
+    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, @NotNull Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
 
         boolean leftNullable = true;
         JetExpression rightExpr;
-        if(element instanceof JetCallExpression) {
+        if (element instanceof JetCallExpression) {
             receiver.put(JetTypeMapper.TYPE_OBJECT, v);
             JetCallExpression jetCallExpression = (JetCallExpression) element;
             JetExpression calleeExpression = jetCallExpression.getCalleeExpression();
-            if(calleeExpression != null) {
+            if (calleeExpression != null) {
                 JetType leftType = codegen.getBindingContext().get(BindingContext.EXPRESSION_TYPE, calleeExpression);
-                if(leftType != null)
+                if (leftType != null)
                     leftNullable = leftType.isNullable();
             }
             rightExpr = arguments.get(0);

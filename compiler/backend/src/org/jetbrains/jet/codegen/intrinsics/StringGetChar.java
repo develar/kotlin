@@ -33,10 +33,10 @@ import java.util.List;
  */
 public class StringGetChar implements IntrinsicMethod {
     @Override
-    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
-        if(receiver != null)
+    public StackValue generate(ExpressionCodegen codegen, InstructionAdapter v, @NotNull Type expectedType, PsiElement element, List<JetExpression> arguments, StackValue receiver, @NotNull GenerationState state) {
+        if (receiver != null)
             receiver.put(JetTypeMapper.TYPE_OBJECT, v);
-        if(arguments != null)
+        if (arguments != null)
             codegen.gen(arguments.get(0)).put(Type.INT_TYPE, v);
         v.invokeinterface("java/lang/CharSequence", "charAt", "(I)C");
         return StackValue.onStack(Type.CHAR_TYPE);

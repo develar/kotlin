@@ -28,6 +28,7 @@ import org.jetbrains.jet.lang.resolve.scopes.receivers.ExtensionReceiver;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeProjection;
 import org.jetbrains.jet.lang.types.Variance;
+import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
 import org.junit.Assert;
 
 import java.io.BufferedReader;
@@ -56,7 +57,7 @@ public class NamespaceComparator {
                 FileUtil.writeToFile(txtFile, serialized);
                 Assert.fail("Expected data file did not exist. Generating: " + txtFile);
             }
-            String expected = FileUtil.loadFile(txtFile);
+            String expected = FileUtil.loadFile(txtFile, true);
 
             // compare with hardcopy: make sure nothing is lost in output
             Assert.assertEquals(expected, serialized);
@@ -93,6 +94,19 @@ public class NamespaceComparator {
             }
             else if (ad instanceof FunctionDescriptor) {
                 functionNames.add(ad.getName());
+            }
+            else if (ad instanceof NamespaceDescriptor) {
+                NamespaceDescriptor namespaceDescriptorA = (NamespaceDescriptor) ad;
+                NamespaceDescriptor namespaceDescriptorB = nsb.getMemberScope().getNamespace(namespaceDescriptorA.getName());
+                //Assert.assertNotNull("Namespace not found: " + namespaceDescriptorA.getQualifiedName(), namespaceDescriptorB);
+                if (namespaceDescriptorB == null) {
+                    System.err.println("Namespace not found: " + namespaceDescriptorA.getQualifiedName());
+                }
+                else {
+                    sb.append("// <namespace name=\"" + namespaceDescriptorA.getName() + "\">\n");
+                    sb.append(doCompareNamespaces(namespaceDescriptorA, namespaceDescriptorB));
+                    sb.append("// </namespace name=\"" + namespaceDescriptorA.getName() + "\">\n");
+                }
             }
             else {
                 throw new AssertionError("unknown member: " + ad);
@@ -500,7 +514,7 @@ public class NamespaceComparator {
                 sb.append(">");
             }
 
-            if (!klass.getTypeConstructor().getSupertypes().isEmpty()) {
+            if (JetStandardClasses.getNothing() != klass && !klass.getTypeConstructor().getSupertypes().isEmpty()) {
                 sb.append(" : ");
                 new TypeSerializer(sb).serializeCommaSeparated(new ArrayList<JetType>(klass.getTypeConstructor().getSupertypes()));
             }

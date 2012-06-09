@@ -16,6 +16,8 @@
 
 package org.jetbrains.jet.codegen;
 
+import com.google.common.collect.Lists;
+import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.codegen.signature.JvmMethodSignature;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
@@ -26,17 +28,22 @@ import org.jetbrains.jet.lang.psi.JetScript;
 import org.jetbrains.jet.lang.psi.JetTypeParameterListOwner;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.java.JdkNames;
+import org.jetbrains.jet.lang.resolve.java.JvmClassName;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.InstructionAdapter;
 
 import javax.inject.Inject;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Stepan Koltsov
  */
 public class ScriptCodegen {
+
+    public static final JvmClassName SCRIPT_DEFAULT_CLASS_NAME = JvmClassName.byInternalName("Script");
 
     public static final String LAST_EXPRESSION_VALUE_FIELD_NAME = "rv";
 
@@ -52,6 +59,8 @@ public class ScriptCodegen {
     private ClosureAnnotator closureAnnotator;
     @NotNull
     private BindingContext bindingContext;
+
+    private List<ScriptDescriptor> earlierScripts;
 
 
     @Inject
@@ -94,17 +103,21 @@ public class ScriptCodegen {
 
         CodegenContexts.ScriptContext context = (CodegenContexts.ScriptContext) CodegenContexts.STATIC.intoScript(scriptDescriptor, classDescriptorForScript);
 
-        ClassBuilder classBuilder = classFileFactory.newVisitor("Script.class");
+        JvmClassName className = closureAnnotator.classNameForClassDescriptor(classDescriptorForScript);
+
+        ClassBuilder classBuilder = classFileFactory.newVisitor(className.getInternalName() + ".class");
         classBuilder.defineClass(scriptDeclaration,
                 Opcodes.V1_6,
                 Opcodes.ACC_PUBLIC,
-                "Script",
+                className.getInternalName(),
                 null,
                 JdkNames.JL_OBJECT.getInternalName(),
                 new String[0]);
 
         genMembers(scriptDeclaration, context, classBuilder);
-        genConstructor(scriptDeclaration, scriptDescriptor, classDescriptorForScript, classBuilder, context.intoFunction(scriptDescriptor.getScriptCodeDescriptor()));
+        genFieldsForParameters(scriptDescriptor, classBuilder);
+        genConstructor(scriptDeclaration, scriptDescriptor, classDescriptorForScript, classBuilder,
+                context.intoFunction(scriptDescriptor.getScriptCodeDescriptor()), earlierScripts);
 
         classBuilder.done();
     }
@@ -113,13 +126,15 @@ public class ScriptCodegen {
             @NotNull JetScript scriptDeclaration,
             @NotNull ScriptDescriptor scriptDescriptor,
             @NotNull ClassDescriptor classDescriptorForScript,
-            @NotNull ClassBuilder classBuilder, @NotNull CodegenContext context) {
+            @NotNull ClassBuilder classBuilder,
+            @NotNull CodegenContext context,
+            @NotNull List<ScriptDescriptor> importedScripts) {
 
         Type blockType = jetTypeMapper.mapType(scriptDescriptor.getReturnType(), MapTypeMode.VALUE);
 
         classBuilder.newField(null, Opcodes.ACC_PUBLIC, LAST_EXPRESSION_VALUE_FIELD_NAME, blockType.getDescriptor(), null, null);
 
-        JvmMethodSignature jvmSignature = jetTypeMapper.mapScriptSignature(scriptDescriptor);
+        JvmMethodSignature jvmSignature = jetTypeMapper.mapScriptSignature(scriptDescriptor, importedScripts);
 
         state.setScriptConstructorMethod(jvmSignature.getAsmMethod());
 
@@ -130,12 +145,18 @@ public class ScriptCodegen {
 
         InstructionAdapter instructionAdapter = new InstructionAdapter(mv);
 
-        instructionAdapter.load(0, Type.getObjectType("Script"));
+        JvmClassName className = closureAnnotator.classNameForClassDescriptor(classDescriptorForScript);
+
+        instructionAdapter.load(0, className.getAsmType());
         instructionAdapter.invokespecial(JdkNames.JL_OBJECT.getInternalName(), "<init>", "()V");
 
-        instructionAdapter.load(0, Type.getObjectType("Script"));
+        instructionAdapter.load(0, className.getAsmType());
 
         FrameMap frameMap = context.prepareFrame(jetTypeMapper);
+
+        for (ScriptDescriptor importedScript : importedScripts) {
+            frameMap.enter(importedScript, 1);
+        }
 
         Type[] argTypes = jvmSignature.getAsmMethod().getArgumentTypes();
         int add = 0;
@@ -152,10 +173,28 @@ public class ScriptCodegen {
                 bindingContext,
                 jetTypeMapper);
 
+        int offset = 1;
+
+        for (ScriptDescriptor earlierScript : importedScripts) {
+            JvmClassName earlierClassName = closureAnnotator.classNameForScriptDescriptor(earlierScript);
+            instructionAdapter.load(0, className.getAsmType());
+            instructionAdapter.load(offset, earlierClassName.getAsmType());
+            offset += earlierClassName.getAsmType().getSize();
+            instructionAdapter.putfield(className.getInternalName(), getScriptFieldName(earlierScript), earlierClassName.getAsmType().getDescriptor());
+        }
+
+        for (ValueParameterDescriptor parameter : scriptDescriptor.getValueParameters()) {
+            Type parameterType = jetTypeMapper.mapType(parameter.getType(), MapTypeMode.VALUE);
+            instructionAdapter.load(0, className.getAsmType());
+            instructionAdapter.load(offset, parameterType);
+            offset += parameterType.getSize();
+            instructionAdapter.putfield(className.getInternalName(), parameter.getName().getIdentifier(), parameterType.getDescriptor());
+        }
+
         StackValue stackValue = new ExpressionCodegen(mv, frameMap, Type.VOID_TYPE, context, state).gen(scriptDeclaration.getBlockExpression());
         if (stackValue.type != Type.VOID_TYPE) {
             stackValue.put(stackValue.type, instructionAdapter);
-            instructionAdapter.putfield("Script", LAST_EXPRESSION_VALUE_FIELD_NAME, blockType.getDescriptor());
+            instructionAdapter.putfield(className.getInternalName(), LAST_EXPRESSION_VALUE_FIELD_NAME, blockType.getDescriptor());
         }
 
         instructionAdapter.areturn(Type.VOID_TYPE);
@@ -163,9 +202,52 @@ public class ScriptCodegen {
         mv.visitEnd();
     }
 
+    private void genFieldsForParameters(@NotNull ScriptDescriptor script, @NotNull ClassBuilder classBuilder) {
+        for (ScriptDescriptor earlierScript : earlierScripts) {
+            JvmClassName earlierClassName = closureAnnotator.classNameForScriptDescriptor(earlierScript);
+            int access = Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL;
+            classBuilder.newField(null, access, getScriptFieldName(earlierScript), earlierClassName.getDescriptor(), null, null);
+        }
+
+        for (ValueParameterDescriptor parameter : script.getValueParameters()) {
+            Type parameterType = jetTypeMapper.mapType(parameter.getType(), MapTypeMode.VALUE);
+            int access = Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL;
+            classBuilder.newField(null, access, parameter.getName().getIdentifier(), parameterType.getDescriptor(), null, null);
+        }
+    }
+
     private void genMembers(@NotNull JetScript scriptDeclaration, @NotNull CodegenContext context, @NotNull ClassBuilder classBuilder) {
         for (JetDeclaration decl : scriptDeclaration.getDeclarations()) {
             memberCodegen.generateFunctionOrProperty((JetTypeParameterListOwner) decl, context, classBuilder);
         }
+    }
+
+    public void registerEarlierScripts(List<Pair<ScriptDescriptor, JvmClassName>> earlierScripts) {
+        for (Pair<ScriptDescriptor, JvmClassName> t : earlierScripts) {
+            ScriptDescriptor earlierDescriptor = t.first;
+            JvmClassName earlierClassName = t.second;
+
+            closureAnnotator.registerClassNameForScript(earlierDescriptor, earlierClassName);
+        }
+
+        List<ScriptDescriptor> earlierScriptDescriptors = Lists.newArrayList();
+        for (Pair<ScriptDescriptor, JvmClassName> t : earlierScripts) {
+            ScriptDescriptor earlierDescriptor = t.first;
+            JvmClassName earlierClassName = t.second;
+            earlierScriptDescriptors.add(earlierDescriptor);
+        }
+        this.earlierScripts = earlierScriptDescriptors;
+    }
+
+    public int getScriptIndex(@NotNull ScriptDescriptor scriptDescriptor) {
+        int index = earlierScripts.indexOf(scriptDescriptor);
+        if (index < 0) {
+            throw new IllegalStateException("Unregistered script: " + scriptDescriptor);
+        }
+        return index + 1;
+    }
+
+    public String getScriptFieldName(@NotNull ScriptDescriptor scriptDescriptor) {
+        return "script$" + getScriptIndex(scriptDescriptor);
     }
 }

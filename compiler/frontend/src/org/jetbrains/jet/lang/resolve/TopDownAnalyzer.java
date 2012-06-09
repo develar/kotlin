@@ -156,7 +156,7 @@ public class TopDownAnalyzer {
         context.debug("Enter");
 
         typeHierarchyResolver.process(outerScope, owner, declarations);
-        declarationResolver.process();
+        declarationResolver.process(outerScope);
         delegationResolver.process();
         overrideResolver.process();
 
@@ -276,7 +276,7 @@ public class TopDownAnalyzer {
             @NotNull List<AnalyzerScriptParameter> scriptParameters) {
         final WritableScope scope = new WritableScopeImpl(
                 JetScope.EMPTY, moduleDescriptor,
-                new TraceBasedRedeclarationHandler(trace)).setDebugName("Root scope in analyzeNamespace");
+                new TraceBasedRedeclarationHandler(trace), "Root scope in analyzeNamespace");
 
         scope.changeLockLevel(WritableScope.LockLevel.BOTH);
 
@@ -295,6 +295,12 @@ public class TopDownAnalyzer {
         // dummy builder is used because "root" is module descriptor,
         // namespaces added to module explicitly in
         doProcess(scope, new NamespaceLikeBuilderDummy(), files);
+    }
+
+
+    public void prepareForTheNextReplLine() {
+        context.getScriptScopes().clear();
+        context.getScripts().clear();
     }
 
 
