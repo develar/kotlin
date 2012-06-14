@@ -24,7 +24,6 @@ import org.jetbrains.jet.cli.js.K2JSCompiler;
 import org.jetbrains.jet.cli.js.K2JSCompilerArguments;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
-import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
 
 import java.io.File;
@@ -34,58 +33,14 @@ import java.util.Set;
 
 /**
  */
-public final class StdLibToJSTest extends SingleFileTranslationTest {
+public class StdLibToJSTest extends StdLibTestSupport {
 
-    public StdLibToJSTest() {
-        super("stdlib/");
-    }
+    public void testCompileJavaScriptFiles() throws Exception {
 
-    public void testCompileStandardLibraryFiles() throws Exception {
-
-        generateJavaScriptFiles(MainCallParameters.noCall(), EcmaVersion.all(),
+        generateJavaScriptFiles(EcmaVersion.all(),
+                                "libraries/stdlib/src",
                                 "kotlin/Preconditions.kt",
                                 "kotlin/dom/Dom.kt",
-                                "kotlin/support/AbstractIterator.kt"
-        );
-    }
-
-    protected void generateJavaScriptFiles(@NotNull MainCallParameters mainCallParameters,
-            @NotNull EnumSet<EcmaVersion> ecmaVersions,
-            String... stdLibFiles) throws Exception {
-        List<String> files = Lists.newArrayList();
-
-        File stdlibDir = new File("libraries/stdlib/src");
-        assertTrue("Cannot find stdlib source: " + stdlibDir, stdlibDir.exists());
-        for (String file : stdLibFiles) {
-            files.add(new File(stdlibDir, file).getPath());
-        }
-
-        Set<String> ignoreFiles = Sets.newHashSet(
-                "/jquery/common.kt",
-                "/jquery/ui.kt",
-                "/dom/domcore.kt",
-                "/dom/html/htmlcore.kt",
-                "/dom/html5/canvas.kt",
-                "/dom/html/window.kt");
-
-        // lets add the standard JS library files
-        for (String libFileName : Config.LIB_FILE_NAMES) {
-            if (!ignoreFiles.contains(libFileName)) {
-                System.out.println("Compiling " + libFileName);
-                files.add(Config.LIBRARIES_LOCATION + libFileName);
-            }
-        }
-
-        // now lets try invoke the compiler
-        for (EcmaVersion version : ecmaVersions) {
-            System.out.println("Compiling with version: " + version);
-            K2JSCompiler compiler = new K2JSCompiler();
-            K2JSCompilerArguments arguments = new K2JSCompilerArguments();
-            arguments.outputFile = getOutputFilePath(getTestName(false) + ".compiler.kt", version);
-            arguments.sourceFiles = files;
-            arguments.verbose = true;
-            ExitCode answer = compiler.exec(System.out, arguments);
-            assertEquals("Compile failed", ExitCode.OK, answer);
-        }
+                                "kotlin/support/AbstractIterator.kt");
     }
 }

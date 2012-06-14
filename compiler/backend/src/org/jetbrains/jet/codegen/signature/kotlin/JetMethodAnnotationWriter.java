@@ -21,6 +21,8 @@ import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.BitSet;
+
 /**
  * @author Stepan Koltsov
  */
@@ -30,13 +32,28 @@ public class JetMethodAnnotationWriter {
     private JetMethodAnnotationWriter(AnnotationVisitor av) {
         this.av = av;
     }
-    
-    public void writeKind(int kind) {
-        if (kind != JvmStdlibNames.JET_METHOD_KIND_DEFAULT) {
-            av.visit(JvmStdlibNames.JET_METHOD_KIND_FIELD, kind);
+
+    public void writeFlags(int... flagBits) {
+        BitSet bitSet = new BitSet();
+        for (int bit : flagBits) {
+            bitSet.set(bit);
+        }
+        writeFlags(bitSet);
+    }
+
+    private void writeFlags(BitSet flags) {
+        int flagsValue = 0;
+        for (int bit = 0; bit < flags.length(); bit++) {
+            if (flags.get(bit)) {
+                flagsValue |= (1 << bit);
+            }
+        }
+
+        if (flagsValue != JvmStdlibNames.JET_METHOD_FLAGS_DEFAULT_VALUE) {
+            av.visit(JvmStdlibNames.JET_METHOD_FLAGS_FIELD, flagsValue);
         }
     }
-    
+
     public void writeTypeParameters(@NotNull String typeParameters) {
         if (typeParameters.length() > 0) {
             av.visit(JvmStdlibNames.JET_METHOD_TYPE_PARAMETERS_FIELD, typeParameters);

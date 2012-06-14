@@ -40,15 +40,19 @@ public class JvmStdlibNames {
 
     public static final JvmClassName JET_METHOD = JvmClassName.byFqNameWithoutInnerClasses("jet.runtime.typeinfo.JetMethod");
 
+    @Deprecated
     public static final String JET_METHOD_KIND_FIELD = "kind";
+    public static final String JET_METHOD_FLAGS_FIELD = "flags";
     public static final String JET_METHOD_NULLABLE_RETURN_TYPE_FIELD = "nullableReturnType";
     public static final String JET_METHOD_RETURN_TYPE_FIELD = "returnType";
     public static final String JET_METHOD_TYPE_PARAMETERS_FIELD = "typeParameters";
     public static final String JET_METHOD_PROPERTY_TYPE_FIELD = "propertyType";
-    
-    public static final int JET_METHOD_KIND_REGULAR = 0;
-    public static final int JET_METHOD_KIND_PROPERTY = 1;
-    public static final int JET_METHOD_KIND_DEFAULT = JET_METHOD_KIND_REGULAR;
+
+    public static final int JET_METHOD_FLAGS_DEFAULT_VALUE = 0;
+    public static final int JET_METHOD_FLAGS_BITS = 3;
+    public static final int JET_METHOD_FLAG_PROPERTY_BIT = 0;
+    public static final int JET_METHOD_FLAG_FORCE_OPEN_BIT = 1;
+    public static final int JET_METHOD_FLAG_FORCE_FINAL_BIT = 2;
 
     public static final JvmClassName JET_CONSTRUCTOR = JvmClassName.byFqNameWithoutInnerClasses("jet.runtime.typeinfo.JetConstructor");
 

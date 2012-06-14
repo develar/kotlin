@@ -46,6 +46,7 @@ import javax.inject.Inject;
 import java.util.*;
 
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
+import static org.jetbrains.jet.lang.resolve.BindingContext.CONSTRUCTOR;
 
 /**
  * @author abreslav
@@ -346,6 +347,25 @@ public class DescriptorResolver {
         return typeParameterDescriptor;
     }
 
+    public static ConstructorDescriptorImpl createPrimaryConstructorForObject(
+            @Nullable PsiElement object,
+            @NotNull ClassDescriptor classDescriptor,
+            @NotNull BindingTrace trace
+    ) {
+        ConstructorDescriptorImpl constructorDescriptor = new ConstructorDescriptorImpl(classDescriptor, Collections
+                .<AnnotationDescriptor>emptyList(), true);
+
+        // TODO : make the constructor private?
+        // TODO check set classDescriptor.getVisibility()
+        constructorDescriptor.initialize(Collections.<TypeParameterDescriptor>emptyList(),
+                                         Collections.<ValueParameterDescriptor>emptyList(), Visibilities.INTERNAL);
+
+        if (object != null) {
+            trace.record(CONSTRUCTOR, object, constructorDescriptor);
+        }
+        return constructorDescriptor;
+    }
+
     final class UpperBoundCheckerTask {
         JetTypeReference upperBound;
         JetType upperBoundType;
@@ -376,7 +396,7 @@ public class DescriptorResolver {
                 deferredUpperBoundCheckerTasks.add(new UpperBoundCheckerTask(extendsBound, type, false));
             }
         }
-        for (JetTypeConstraint constraint : declaration.getTypeConstaints()) {
+        for (JetTypeConstraint constraint : declaration.getTypeConstraints()) {
             JetSimpleNameExpression subjectTypeParameterName = constraint.getSubjectTypeParameterName();
             if (subjectTypeParameterName == null) {
                 continue;
@@ -743,15 +763,8 @@ public class DescriptorResolver {
         if (modifierList == null) return defaultVisibility;
         if (modifierList.hasModifier(JetTokens.PRIVATE_KEYWORD)) return Visibilities.PRIVATE;
         if (modifierList.hasModifier(JetTokens.PUBLIC_KEYWORD)) return Visibilities.PUBLIC;
-        if (modifierList.hasModifier(JetTokens.PROTECTED_KEYWORD)) {
-            if (modifierList.hasModifier(JetTokens.INTERNAL_KEYWORD)) {
-                return Visibilities.INTERNAL_PROTECTED;
-            }
-            return Visibilities.PROTECTED;
-        }
-        if (modifierList.hasModifier(JetTokens.INTERNAL_KEYWORD)) {
-            return Visibilities.INTERNAL;
-        }
+        if (modifierList.hasModifier(JetTokens.PROTECTED_KEYWORD)) return Visibilities.PROTECTED;
+        if (modifierList.hasModifier(JetTokens.INTERNAL_KEYWORD)) return Visibilities.INTERNAL;
         return defaultVisibility;
     }
 
@@ -885,7 +898,7 @@ public class DescriptorResolver {
         );
         trace.record(BindingContext.CONSTRUCTOR, declarationToTrace, constructorDescriptor);
         WritableScopeImpl parameterScope = new WritableScopeImpl(
-                scope, classDescriptor, new TraceBasedRedeclarationHandler(trace), "Scope with value parameters of a constructor");
+                scope, constructorDescriptor, new TraceBasedRedeclarationHandler(trace), "Scope with value parameters of a constructor");
         parameterScope.changeLockLevel(WritableScope.LockLevel.BOTH);
         return constructorDescriptor.initialize(
                 typeParameters,

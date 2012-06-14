@@ -247,6 +247,7 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
     public String render(@NotNull DeclarationDescriptor declarationDescriptor) {
         StringBuilder stringBuilder = new StringBuilder();
         declarationDescriptor.accept(rootVisitor, stringBuilder);
+
         if (shouldRenderDefinedIn()) {
             appendDefinedIn(declarationDescriptor, stringBuilder);
         }
@@ -290,17 +291,22 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
         return s;
     }
 
-    private class RenderDeclarationDescriptorVisitor extends DeclarationDescriptorVisitor<Void, StringBuilder> {
+    private class RenderDeclarationDescriptorVisitor implements DeclarationDescriptorVisitor<Void, StringBuilder> {
 
         @Override
         public Void visitValueParameterDescriptor(ValueParameterDescriptor descriptor, StringBuilder builder) {
             builder.append(renderKeyword("value-parameter")).append(" ");
-            return super.visitValueParameterDescriptor(descriptor, builder);
+            return visitVariableDescriptor(descriptor, builder);
         }
 
         @Override
         public Void visitVariableDescriptor(VariableDescriptor descriptor, StringBuilder builder) {
             return visitVariableDescriptor(descriptor, builder, false);
+        }
+
+        @Override
+        public Void visitLocalVariableDescriptor(LocalVariableDescriptor descriptor, StringBuilder builder) {
+            return visitVariableDescriptor(descriptor, builder);
         }
 
         protected Void visitVariableDescriptor(VariableDescriptor descriptor, StringBuilder builder, boolean skipValVar) {
@@ -406,6 +412,16 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
             return null;
         }
 
+        @Override
+        public Void visitPropertyGetterDescriptor(PropertyGetterDescriptor descriptor, StringBuilder data) {
+            return visitFunctionDescriptor(descriptor, data);
+        }
+
+        @Override
+        public Void visitPropertySetterDescriptor(PropertySetterDescriptor descriptor, StringBuilder data) {
+            return visitFunctionDescriptor(descriptor, data);
+        }
+
         private void renderValueParameters(FunctionDescriptor descriptor, StringBuilder builder) {
             builder.append("(");
             for (Iterator<ValueParameterDescriptor> iterator = descriptor.getValueParameters().iterator(); iterator.hasNext(); ) {
@@ -486,6 +502,12 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
         @Override
         public Void visitModuleDeclaration(ModuleDescriptor descriptor, StringBuilder builder) {
             renderName(descriptor, builder);
+            return null;
+        }
+
+        @Override
+        public Void visitScriptDescriptor(ScriptDescriptor scriptDescriptor, StringBuilder data) {
+            renderName(scriptDescriptor, data);
             return null;
         }
 

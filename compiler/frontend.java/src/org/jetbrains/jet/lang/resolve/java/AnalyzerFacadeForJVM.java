@@ -23,6 +23,7 @@ import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.analyzer.AnalyzerFacade;
+import org.jetbrains.jet.analyzer.AnalyzerFacadeForEverything;
 import org.jetbrains.jet.di.InjectorForTopDownAnalyzerForJvm;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
@@ -69,9 +70,8 @@ public enum AnalyzerFacadeForJVM implements AnalyzerFacade {
                                                @NotNull BindingTrace headersTraceContext,
                                                @NotNull BodiesResolveContext bodiesResolveContext
     ) {
-        return analyzeBodiesInFilesWithJavaIntegration(
+        return AnalyzerFacadeForEverything.analyzeBodiesInFilesWithJavaIntegration(
                 project, scriptParameters, filesForBodiesResolve,
-                compilerDependenciesForProduction(CompilerSpecialMode.REGULAR),
                 headersTraceContext, bodiesResolveContext);
     }
 
@@ -130,30 +130,6 @@ public enum AnalyzerFacadeForJVM implements AnalyzerFacade {
                                                         new CachedBodiesResolveContext(injector.getTopDownAnalysisContext()) :
                                                         null;
             return AnalyzeExhaust.success(bindingTraceContext.getBindingContext(), JetStandardLibrary.getInstance(), bodiesResolveContext);
-        } finally {
-            injector.destroy();
-        }
-    }
-
-    public static AnalyzeExhaust analyzeBodiesInFilesWithJavaIntegration(
-            Project project, List<AnalyzerScriptParameter> scriptParameters, Predicate<PsiFile> filesToAnalyzeCompletely,
-            @NotNull CompilerDependencies compilerDependencies,
-            @NotNull BindingTrace traceContext,
-            @NotNull BodiesResolveContext bodiesResolveContext) {
-        final ModuleDescriptor owner = new ModuleDescriptor(Name.special("<module>"));
-
-        TopDownAnalysisParameters topDownAnalysisParameters = new TopDownAnalysisParameters(
-                filesToAnalyzeCompletely, false, false, scriptParameters);
-
-        bodiesResolveContext.setTopDownAnalysisParameters(topDownAnalysisParameters);
-
-        InjectorForTopDownAnalyzerForJvm injector = new InjectorForTopDownAnalyzerForJvm(
-                project, topDownAnalysisParameters,
-                new ObservableBindingTrace(traceContext), owner, compilerDependencies);
-
-        try {
-            injector.getTopDownAnalyzer().doProcessForBodies(bodiesResolveContext);
-            return AnalyzeExhaust.success(traceContext.getBindingContext(), JetStandardLibrary.getInstance());
         } finally {
             injector.destroy();
         }

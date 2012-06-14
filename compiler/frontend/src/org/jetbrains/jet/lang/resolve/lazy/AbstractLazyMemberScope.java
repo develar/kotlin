@@ -141,6 +141,16 @@ public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, D
                                                                                                       resolveSession.getTrace()));
         }
 
+        // Objects are also properties
+        JetClassOrObject classOrObjectDeclaration = declarationProvider.getClassOrObjectDeclaration(name);
+        if (classOrObjectDeclaration instanceof JetObjectDeclaration) {
+            JetObjectDeclaration objectDeclaration = (JetObjectDeclaration) classOrObjectDeclaration;
+            ClassDescriptor classifier = (ClassDescriptor) getClassifier(name);
+            VariableDescriptor propertyDescriptor = resolveSession.getInjector().getDescriptorResolver()
+                    .resolveObjectDeclaration(thisDescriptor, objectDeclaration, classifier, resolveSession.getTrace());
+            result.add(propertyDescriptor);
+        }
+
         getNonDeclaredProperties(name, result);
 
         if (!result.isEmpty()) {
@@ -186,7 +196,10 @@ public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, D
         for (JetDeclaration declaration : declarationProvider.getAllDeclarations()) {
             if (declaration instanceof JetClassOrObject) {
                 JetClassOrObject classOrObject = (JetClassOrObject) declaration;
-                getClassifier(classOrObject.getNameAsName());
+                Name name = classOrObject.getNameAsName();
+                if (name != null) {
+                    getClassifier(name);
+                }
             }
             else if (declaration instanceof JetFunction) {
                 JetFunction function = (JetFunction) declaration;
@@ -195,6 +208,13 @@ public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, D
             else if (declaration instanceof JetProperty) {
                 JetProperty property = (JetProperty) declaration;
                 getProperties(property.getNameAsSafeName());
+            }
+            else if (declaration instanceof JetParameter) {
+                JetParameter parameter = (JetParameter) declaration;
+                Name name = parameter.getNameAsName();
+                if (name != null) {
+                    getProperties(name);
+                }
             }
             else {
                 throw new IllegalArgumentException("Unsupported declaration kind: " + declaration);

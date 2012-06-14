@@ -112,8 +112,7 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
     public JetScope getScopeForClassHeaderResolution() {
         if (scopeForClassHeaderResolution == null) {
             WritableScopeImpl scope = new WritableScopeImpl(
-                    JetScope.EMPTY, this, RedeclarationHandler.DO_NOTHING, "Class Header Resolution");
-            scope.importScope(resolveSession.getResolutionScope(declarationProvider.getOwnerClassOrObject()));
+                    resolveSession.getResolutionScope(declarationProvider.getOwnerClassOrObject()), this, RedeclarationHandler.DO_NOTHING, "Class Header Resolution");
             for (TypeParameterDescriptor typeParameterDescriptor : getTypeConstructor().getParameters()) {
                 scope.addClassifierDescriptor(typeParameterDescriptor);
             }
@@ -126,11 +125,8 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
     public JetScope getScopeForMemberDeclarationResolution() {
         if (scopeForMemberDeclarationResolution == null) {
             WritableScopeImpl scope = new WritableScopeImpl(
-                    JetScope.EMPTY, this, RedeclarationHandler.DO_NOTHING, "Member Declaration Resolution");
-            scope.importScope(getScopeForClassHeaderResolution());
+                    getScopeForClassHeaderResolution(), this, RedeclarationHandler.DO_NOTHING, "Member Declaration Resolution");
             scope.importScope(getScopeForMemberLookup());
-
-            // TODO : supertypes etc
 
             scope.changeLockLevel(WritableScope.LockLevel.READING);
             scopeForMemberDeclarationResolution = scope;
@@ -187,7 +183,7 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
                 if (objectDeclaration != null) {
                     ClassMemberDeclarationProvider classMemberDeclarationProvider = resolveSession.getDeclarationProviderFactory()
                             .getClassMemberDeclarationProvider(objectDeclaration);
-                    classObjectDescriptor = new LazyClassDescriptor(resolveSession, this, Name.special("<class object>"),
+                    classObjectDescriptor = new LazyClassDescriptor(resolveSession, this, JetPsiUtil.NO_NAME_PROVIDED,
                                                                     classMemberDeclarationProvider);
                 }
             }

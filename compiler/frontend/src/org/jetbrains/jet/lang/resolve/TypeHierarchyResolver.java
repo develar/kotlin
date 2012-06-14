@@ -24,7 +24,6 @@ import com.intellij.psi.PsiNameIdentifierOwner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
-import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
@@ -55,7 +54,7 @@ public class TypeHierarchyResolver {
     @NotNull
     private DescriptorResolver descriptorResolver;
     @NotNull
-    private ScriptResolver scriptResolver;
+    private ScriptHeaderResolver scriptHeaderResolver;
     @NotNull
     private NamespaceFactoryImpl namespaceFactory;
     @NotNull
@@ -80,8 +79,8 @@ public class TypeHierarchyResolver {
     }
 
     @Inject
-    public void setScriptResolver(@NotNull ScriptResolver scriptResolver) {
-        this.scriptResolver = scriptResolver;
+    public void setScriptHeaderResolver(@NotNull ScriptHeaderResolver scriptHeaderResolver) {
+        this.scriptHeaderResolver = scriptHeaderResolver;
     }
 
     @Inject
@@ -196,7 +195,7 @@ public class TypeHierarchyResolver {
                 public void visitJetFile(JetFile file) {
                     if (file.isScript()) {
                         JetScript script = file.getScript();
-                        scriptResolver.processScriptHierarchy(script, outerScope);
+                        scriptHeaderResolver.processScriptHierarchy(script, outerScope);
                         return;
                     }
 
@@ -329,17 +328,9 @@ public class TypeHierarchyResolver {
                 }
 
                 private void createPrimaryConstructorForObject(@Nullable PsiElement object, MutableClassDescriptor mutableClassDescriptor) {
-                    ConstructorDescriptorImpl constructorDescriptor = new ConstructorDescriptorImpl(mutableClassDescriptor, Collections.<AnnotationDescriptor>emptyList(), true);
-
-                    // TODO check set mutableClassDescriptor.getVisibility()
-                    constructorDescriptor.initialize(Collections.<TypeParameterDescriptor>emptyList(),
-                                                     Collections.<ValueParameterDescriptor>emptyList(), Visibilities.INTERNAL);
-
-                    // TODO : make the constructor private?
+                    ConstructorDescriptor constructorDescriptor = DescriptorResolver
+                            .createPrimaryConstructorForObject(object, mutableClassDescriptor, trace);
                     mutableClassDescriptor.setPrimaryConstructor(constructorDescriptor, trace);
-                    if (object != null) {
-                        trace.record(CONSTRUCTOR, object, constructorDescriptor);
-                    }
                 }
 
                 private void prepareForDeferredCall(@NotNull JetScope outerScope,
@@ -354,7 +345,6 @@ public class TypeHierarchyResolver {
 
         return forDeferredResolve;
     }
-
 
 
     @NotNull
@@ -613,7 +603,7 @@ public class TypeHierarchyResolver {
                 }
             }
 
-            for (JetTypeConstraint constraint : jetClass.getTypeConstaints()) {
+            for (JetTypeConstraint constraint : jetClass.getTypeConstraints()) {
                 JetTypeReference extendsBound = constraint.getBoundTypeReference();
                 if (extendsBound != null) {
                     JetType type = trace.getBindingContext().get(TYPE, extendsBound);

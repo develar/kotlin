@@ -20,7 +20,10 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
 import com.sampullara.cli.Args;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.cli.common.messages.*;
+import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
+import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
+import org.jetbrains.jet.cli.common.messages.MessageRenderer;
+import org.jetbrains.jet.cli.common.messages.PrintingMessageCollector;
 import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentException;
 import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentUtil;
 

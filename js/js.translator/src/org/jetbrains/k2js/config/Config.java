@@ -68,10 +68,33 @@ public abstract class Config {
             "/dom/domcore.kt",
             "/dom/html/htmlcore.kt",
             "/dom/html5/canvas.kt",
-            "/dom/html/window.kt"
+            "/dom/html/window.kt",
+            "/junit/core.kt",
+            "/qunit/core.kt"
+    );
+
+    /**
+     * the library files which depend on the STDLIB files to be able to compile
+     */
+    @NotNull
+    public static final List<String> LIB_FILE_NAMES_DEPENDENT_ON_STDLIB = Arrays.asList(
+            "/stdlib/test.kt"
     );
 
     public static final String LIBRARIES_LOCATION = "js/js.libraries/src";
+
+    /**
+     * The file names in the standard library to compile
+     */
+    @NotNull
+    public static final List<String> STDLIB_FILE_NAMES = Arrays.asList(
+            "/kotlin/test/Test.kt"
+    );
+
+    /**
+     * The location of the stdlib sources
+     */
+    public static final String STDLIB_LOCATION = "libraries/stdlib/src";
 
     @NotNull
     private final Project project;

@@ -61,6 +61,7 @@ import org.jetbrains.jet.lang.resolve.calls.CallResolver;
 import org.jetbrains.jet.lang.resolve.calls.OverloadResolutionResults;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
+import org.jetbrains.jet.lang.resolve.scopes.RedeclarationHandler;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScopeImpl;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
@@ -115,13 +116,17 @@ public class BodyResolver {
     @NotNull
     private DescriptorResolver descriptorResolver;
     @NotNull
-    private ScriptResolver scriptResolver;
+    private ScriptBodyResolver scriptBodyResolverResolver;
     @NotNull
     private ExpressionTypingServices expressionTypingServices;
     @NotNull
     private CallResolver callResolver;
     @NotNull
     private ObservableBindingTrace trace;
+    @NotNull
+    private ControlFlowAnalyzer controlFlowAnalyzer;
+    @NotNull
+    private DeclarationsChecker declarationsChecker;
 
     @Inject
     public void setTopDownAnalysisParameters(@NotNull TopDownAnalysisParameters topDownAnalysisParameters) {
@@ -134,8 +139,8 @@ public class BodyResolver {
     }
 
     @Inject
-    public void setScriptResolver(@NotNull ScriptResolver scriptResolver) {
-        this.scriptResolver = scriptResolver;
+    public void setScriptBodyResolverResolver(@NotNull ScriptBodyResolver scriptBodyResolverResolver) {
+        this.scriptBodyResolverResolver = scriptBodyResolverResolver;
     }
 
     @Inject
@@ -153,7 +158,18 @@ public class BodyResolver {
         this.trace = new ObservableBindingTrace(trace);
     }
 
-    public void resolveBehaviorDeclarationBodies(@NotNull BodiesResolveContext bodiesResolveContext) {
+    @Inject
+    public void setControlFlowAnalyzer(@NotNull ControlFlowAnalyzer controlFlowAnalyzer) {
+        this.controlFlowAnalyzer = controlFlowAnalyzer;
+    }
+
+    @Inject
+    public void setDeclarationsChecker(@NotNull DeclarationsChecker declarationsChecker) {
+        this.declarationsChecker = declarationsChecker;
+    }
+
+
+    private void resolveBehaviorDeclarationBodies(@NotNull BodiesResolveContext bodiesResolveContext) {
         // Initialize context
         context = bodiesResolveContext;
 
@@ -167,11 +183,18 @@ public class BodyResolver {
         resolveSecondaryConstructorBodies();
         resolveFunctionBodies();
 
-        scriptResolver.resolveScripts();
+        scriptBodyResolverResolver.resolveScriptBodies();
 
         if (!topDownAnalysisParameters.isDeclaredLocally()) {
             computeDeferredTypes();
         }
+    }
+
+    public void resolveBodies(@NotNull BodiesResolveContext bodiesResolveContext) {
+        resolveBehaviorDeclarationBodies(bodiesResolveContext);
+        controlFlowAnalyzer.process(bodiesResolveContext);
+        declarationsChecker.process(bodiesResolveContext);
+
     }
 
     private void resolveDelegationSpecifierLists() {
@@ -377,7 +400,13 @@ public class BodyResolver {
             MutableClassDescriptor classDescriptor = entry.getValue();
             ConstructorDescriptor unsubstitutedPrimaryConstructor = classDescriptor.getUnsubstitutedPrimaryConstructor();
             if (unsubstitutedPrimaryConstructor != null) {
-                checkDefaultParameterValues(klass.getPrimaryConstructorParameters(), unsubstitutedPrimaryConstructor.getValueParameters(), classDescriptor.getScopeForInitializers());
+                WritableScope parameterScope = new WritableScopeImpl(classDescriptor.getScopeForSupertypeResolution(), unsubstitutedPrimaryConstructor,
+                                                                     RedeclarationHandler.DO_NOTHING, "Scope with value parameters of a constructor");
+                for (ValueParameterDescriptor valueParameterDescriptor : unsubstitutedPrimaryConstructor.getValueParameters()) {
+                    parameterScope.addVariableDescriptor(valueParameterDescriptor);
+                }
+                parameterScope.changeLockLevel(WritableScope.LockLevel.READING);
+                checkDefaultParameterValues(klass.getPrimaryConstructorParameters(), unsubstitutedPrimaryConstructor.getValueParameters(), parameterScope);
             }
         }
     }

@@ -41,11 +41,12 @@ import org.jetbrains.jet.lang.resolve.TypeResolver;
 import org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver;
 import org.jetbrains.jet.lang.resolve.calls.OverloadingConflictResolver;
 import org.jetbrains.jet.lang.resolve.ImportsResolver;
+import org.jetbrains.jet.lang.resolve.ScriptHeaderResolver;
 import org.jetbrains.jet.lang.resolve.DelegationResolver;
 import org.jetbrains.jet.lang.resolve.OverloadResolver;
 import org.jetbrains.jet.lang.resolve.OverrideResolver;
 import org.jetbrains.jet.lang.resolve.TypeHierarchyResolver;
-import org.jetbrains.jet.lang.resolve.ScriptResolver;
+import org.jetbrains.jet.lang.resolve.ScriptBodyResolver;
 import org.jetbrains.jet.lang.resolve.java.JavaSemanticServices;
 import org.jetbrains.jet.lang.resolve.java.JavaTypeTransformer;
 import com.intellij.openapi.project.Project;
@@ -83,11 +84,12 @@ public class InjectorForTopDownAnalyzerForJvm {
     private QualifiedExpressionResolver qualifiedExpressionResolver;
     private OverloadingConflictResolver overloadingConflictResolver;
     private ImportsResolver importsResolver;
+    private ScriptHeaderResolver scriptHeaderResolver;
     private DelegationResolver delegationResolver;
     private OverloadResolver overloadResolver;
     private OverrideResolver overrideResolver;
     private TypeHierarchyResolver typeHierarchyResolver;
-    private ScriptResolver scriptResolver;
+    private ScriptBodyResolver scriptBodyResolver;
     private JavaSemanticServices javaSemanticServices;
     private JavaTypeTransformer javaTypeTransformer;
 
@@ -122,21 +124,19 @@ public class InjectorForTopDownAnalyzerForJvm {
         this.qualifiedExpressionResolver = new QualifiedExpressionResolver();
         this.overloadingConflictResolver = new OverloadingConflictResolver();
         this.importsResolver = new ImportsResolver();
+        this.scriptHeaderResolver = new ScriptHeaderResolver();
         this.delegationResolver = new DelegationResolver();
         this.overloadResolver = new OverloadResolver();
         this.overrideResolver = new OverrideResolver();
         this.typeHierarchyResolver = new TypeHierarchyResolver();
-        this.scriptResolver = new ScriptResolver();
+        this.scriptBodyResolver = new ScriptBodyResolver();
         this.javaSemanticServices = new JavaSemanticServices();
         this.javaTypeTransformer = new JavaTypeTransformer();
 
         this.topDownAnalyzer.setBodyResolver(bodyResolver);
         this.topDownAnalyzer.setContext(topDownAnalysisContext);
-        this.topDownAnalyzer.setControlFlowAnalyzer(controlFlowAnalyzer);
         this.topDownAnalyzer.setDeclarationResolver(declarationResolver);
-        this.topDownAnalyzer.setDeclarationsChecker(declarationsChecker);
         this.topDownAnalyzer.setDelegationResolver(delegationResolver);
-        this.topDownAnalyzer.setDependencyClassByQualifiedNameResolver(javaDescriptorResolver);
         this.topDownAnalyzer.setModuleDescriptor(moduleDescriptor);
         this.topDownAnalyzer.setNamespaceFactory(namespaceFactory);
         this.topDownAnalyzer.setOverloadResolver(overloadResolver);
@@ -148,9 +148,11 @@ public class InjectorForTopDownAnalyzerForJvm {
         this.topDownAnalysisContext.setTopDownAnalysisParameters(topDownAnalysisParameters);
 
         this.bodyResolver.setCallResolver(callResolver);
+        this.bodyResolver.setControlFlowAnalyzer(controlFlowAnalyzer);
+        this.bodyResolver.setDeclarationsChecker(declarationsChecker);
         this.bodyResolver.setDescriptorResolver(descriptorResolver);
         this.bodyResolver.setExpressionTypingServices(expressionTypingServices);
-        this.bodyResolver.setScriptResolver(scriptResolver);
+        this.bodyResolver.setScriptBodyResolverResolver(scriptBodyResolver);
         this.bodyResolver.setTopDownAnalysisParameters(topDownAnalysisParameters);
         this.bodyResolver.setTrace(bindingTrace);
 
@@ -184,6 +186,7 @@ public class InjectorForTopDownAnalyzerForJvm {
         declarationResolver.setContext(topDownAnalysisContext);
         declarationResolver.setDescriptorResolver(descriptorResolver);
         declarationResolver.setImportsResolver(importsResolver);
+        declarationResolver.setScriptHeaderResolver(scriptHeaderResolver);
         declarationResolver.setTrace(bindingTrace);
 
         annotationResolver.setCallResolver(callResolver);
@@ -208,6 +211,12 @@ public class InjectorForTopDownAnalyzerForJvm {
         importsResolver.setQualifiedExpressionResolver(qualifiedExpressionResolver);
         importsResolver.setTrace(bindingTrace);
 
+        scriptHeaderResolver.setContext(topDownAnalysisContext);
+        scriptHeaderResolver.setDependencyClassByQualifiedNameResolver(javaDescriptorResolver);
+        scriptHeaderResolver.setNamespaceFactory(namespaceFactory);
+        scriptHeaderResolver.setTopDownAnalysisParameters(topDownAnalysisParameters);
+        scriptHeaderResolver.setTrace(bindingTrace);
+
         delegationResolver.setContext(topDownAnalysisContext);
         delegationResolver.setTrace(bindingTrace);
 
@@ -222,16 +231,12 @@ public class InjectorForTopDownAnalyzerForJvm {
         typeHierarchyResolver.setDescriptorResolver(descriptorResolver);
         typeHierarchyResolver.setImportsResolver(importsResolver);
         typeHierarchyResolver.setNamespaceFactory(namespaceFactory);
-        typeHierarchyResolver.setScriptResolver(scriptResolver);
+        typeHierarchyResolver.setScriptHeaderResolver(scriptHeaderResolver);
         typeHierarchyResolver.setTrace(bindingTrace);
 
-        scriptResolver.setContext(topDownAnalysisContext);
-        scriptResolver.setDependencyClassByQualifiedNameResolver(javaDescriptorResolver);
-        scriptResolver.setExpressionTypingServices(expressionTypingServices);
-        scriptResolver.setModuleDescriptor(moduleDescriptor);
-        scriptResolver.setNamespaceFactory(namespaceFactory);
-        scriptResolver.setTopDownAnalysisParameters(topDownAnalysisParameters);
-        scriptResolver.setTrace(bindingTrace);
+        scriptBodyResolver.setContext(topDownAnalysisContext);
+        scriptBodyResolver.setExpressionTypingServices(expressionTypingServices);
+        scriptBodyResolver.setTrace(bindingTrace);
 
         javaSemanticServices.setDescriptorResolver(javaDescriptorResolver);
         javaSemanticServices.setPsiClassFinder(psiClassFinderForJvm);

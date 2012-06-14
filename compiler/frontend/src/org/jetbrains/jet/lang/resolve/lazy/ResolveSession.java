@@ -16,7 +16,6 @@
 
 package org.jetbrains.jet.lang.resolve.lazy;
 
-import com.google.common.collect.Lists;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -32,11 +31,10 @@ import org.jetbrains.jet.lang.resolve.BindingTraceContext;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.InnerClassesScopeWrapper;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author abreslav
@@ -69,7 +67,7 @@ public class ResolveSession {
     }
 
     @NotNull
-    public InjectorForLazyResolve getInjector() {
+    /*package*/ InjectorForLazyResolve getInjector() {
         return injector;
     }
 
@@ -100,61 +98,21 @@ public class ResolveSession {
 
     @NotNull
     public ClassDescriptor getClassDescriptor(@NotNull JetClassOrObject classOrObject) {
+        if (classOrObject.getParent() instanceof JetClassObject) {
+            return getClassObjectDescriptor((JetClassObject) classOrObject.getParent());
+        }
         JetScope resolutionScope = getInjector().getScopeProvider().getResolutionScopeForDeclaration((JetDeclaration) classOrObject);
-        ClassifierDescriptor classifier = resolutionScope.getClassifier(classOrObject.getNameAsName());
+        Name name = classOrObject.getNameAsName();
+        assert name != null : "Name is null for " + classOrObject + " " + classOrObject.getText();
+        ClassifierDescriptor classifier = resolutionScope.getClassifier(name);
         return (ClassDescriptor) classifier;
     }
 
-    public Collection<DeclarationDescriptor> getDescriptorsForDeclarations(Collection<PsiElement> declarationsOrFiles) {
-        final List<DeclarationDescriptor> descriptors = Lists.newArrayList();
-        for (PsiElement declarationOrFile : declarationsOrFiles) {
-            declarationOrFile.accept(new JetVisitorVoid() {
-                @Override
-                public void visitJetFile(JetFile file) {
-                    JetNamespaceHeader header = file.getNamespaceHeader();
-                    if (header == null) {
-                        throw new UnsupportedOperationException("Lazy resolve is not supported for scripts");
-                    }
-                    NamespaceDescriptor packageDescriptor = getPackageDescriptorByFqName(new FqName(header.getQualifiedName()));
-                    if (packageDescriptor == null) {
-                        throw new IllegalStateException("Package descriptor not found for: " + header.getQualifiedName());
-                    }
-                    JetScope packageMemberScope = packageDescriptor.getMemberScope();
-                    for (JetDeclaration declaration : file.getDeclarations()) {
-                        collectDescriptors(packageMemberScope, declaration);
-                    }
-                }
-
-                @Override
-                public void visitDeclaration(JetDeclaration dcl) {
-                    JetScope scope = injector.getScopeProvider().getResolutionScopeForDeclaration(dcl);
-                    collectDescriptors(scope, dcl);
-                }
-
-                private void collectDescriptors(JetScope outerScope, JetDeclaration declaration) {
-                    if (declaration instanceof JetClass) {
-                        JetClass jetClass = (JetClass) declaration;
-                        descriptors.add(outerScope.getClassifier(jetClass.getNameAsSafeName()));
-                    }
-                    else if (declaration instanceof JetFunction) {
-                        JetFunction jetFunction = (JetFunction) declaration;
-                        Set<FunctionDescriptor> functionDescriptors = outerScope.getFunctions(jetFunction.getNameAsSafeName());
-                        descriptors.addAll(functionDescriptors);
-                    }
-                    else if (declaration instanceof JetProperty) {
-                        JetProperty jetProperty = (JetProperty) declaration;
-                        Set<VariableDescriptor> functionDescriptors = outerScope.getProperties(jetProperty.getNameAsSafeName());
-                        descriptors.addAll(functionDescriptors);
-                    }
-                    else if (declaration instanceof JetObjectDeclaration) {
-                        JetObjectDeclaration jetObjectDeclaration = (JetObjectDeclaration) declaration;
-                        descriptors.addAll(outerScope.getProperties(jetObjectDeclaration.getNameAsSafeName()));
-                        descriptors.add(outerScope.getObjectDescriptor(jetObjectDeclaration.getNameAsSafeName()));
-                    }
-                }
-            });
-        }
-        return descriptors;
+    /*package*/ LazyClassDescriptor getClassObjectDescriptor(JetClassObject classObject) {
+        LazyClassDescriptor classDescriptor = (LazyClassDescriptor) getClassDescriptor(PsiTreeUtil.getParentOfType(classObject, JetClass.class));
+        LazyClassDescriptor classObjectDescriptor = (LazyClassDescriptor) classDescriptor.getClassObjectDescriptor();
+        assert classObjectDescriptor != null : "Class object is declared, but is null for " + classDescriptor;
+        return classObjectDescriptor;
     }
 
     @NotNull
@@ -181,13 +139,121 @@ public class ResolveSession {
         }
 
         if (parent instanceof JetClassBody) {
-            JetClassBody classBody = (JetClassBody) parent;
-            JetClassOrObject classOrObject = PsiTreeUtil.getParentOfType(classBody, JetClassOrObject.class);
-            ClassDescriptor classDescriptor = getClassDescriptor(classOrObject);
-            assert classDescriptor instanceof LazyClassDescriptor : "Trying to resolve a member of a non-lazily loaded class: " + element;
-            return ((LazyClassDescriptor) classDescriptor).getScopeForMemberDeclarationResolution();
+            return getEnclosingLazyClass(element).getScopeForMemberDeclarationResolution();
+        }
+
+        if (parent instanceof JetClassObject) {
+            return new InnerClassesScopeWrapper(getEnclosingLazyClass(element).getScopeForMemberDeclarationResolution());
         }
 
         throw new IllegalArgumentException("Unsupported PSI element: " + element);
+    }
+
+    private LazyClassDescriptor getEnclosingLazyClass(PsiElement element) {
+        JetClassOrObject classOrObject = PsiTreeUtil.getParentOfType(element.getParent(), JetClassOrObject.class);
+        assert classOrObject != null : "Called for an element that is not a class member: " + element;
+        ClassDescriptor classDescriptor = getClassDescriptor(classOrObject);
+        assert classDescriptor instanceof LazyClassDescriptor : "Trying to resolve a member of a non-lazily loaded class: " + element;
+        return (LazyClassDescriptor) classDescriptor;
+    }
+
+    @NotNull
+    public DeclarationDescriptor resolveToDescriptor(JetDeclaration declaration) {
+        DeclarationDescriptor result = declaration.accept(new JetVisitor<DeclarationDescriptor, Void>() {
+            @Override
+            public DeclarationDescriptor visitClass(JetClass klass, Void data) {
+                return getClassDescriptor(klass);
+            }
+
+            @Override
+            public DeclarationDescriptor visitObjectDeclaration(JetObjectDeclaration declaration, Void data) {
+                PsiElement parent = declaration.getParent();
+                if (parent instanceof JetClassObject) {
+                    JetClassObject jetClassObject = (JetClassObject) parent;
+                    return resolveToDescriptor(jetClassObject);
+                }
+                return getClassDescriptor(declaration);
+            }
+
+            @Override
+            public DeclarationDescriptor visitClassObject(JetClassObject classObject, Void data) {
+                DeclarationDescriptor containingDeclaration =
+                        getInjector().getScopeProvider().getResolutionScopeForDeclaration(classObject).getContainingDeclaration();
+                return ((ClassDescriptor) containingDeclaration).getClassObjectDescriptor();
+            }
+
+            @Override
+            public DeclarationDescriptor visitTypeParameter(JetTypeParameter parameter, Void data) {
+                JetTypeParameterListOwner ownerElement = PsiTreeUtil.getParentOfType(parameter, JetTypeParameterListOwner.class);
+                DeclarationDescriptor ownerDescriptor = resolveToDescriptor(ownerElement);
+
+                List<TypeParameterDescriptor> typeParameters;
+                Name name = parameter.getNameAsName();
+                if (ownerDescriptor instanceof CallableDescriptor) {
+                    CallableDescriptor callableDescriptor = (CallableDescriptor) ownerDescriptor;
+                    typeParameters = callableDescriptor.getTypeParameters();
+                }
+                else if (ownerDescriptor instanceof ClassDescriptor) {
+                    ClassDescriptor classDescriptor = (ClassDescriptor) ownerDescriptor;
+                    typeParameters = classDescriptor.getTypeConstructor().getParameters();
+                }
+                else {
+                    throw new IllegalStateException("Unknown owner kind for a type parameter: " + ownerDescriptor);
+                }
+
+                for (TypeParameterDescriptor typeParameterDescriptor : typeParameters) {
+                    if (typeParameterDescriptor.getName().equals(name)) {
+                        return typeParameterDescriptor;
+                    }
+                }
+
+                throw new IllegalStateException("Type parameter " + name + " not found for " + ownerDescriptor);
+            }
+
+            @Override
+            public DeclarationDescriptor visitNamedFunction(JetNamedFunction function, Void data) {
+                JetScope scopeForDeclaration = getInjector().getScopeProvider().getResolutionScopeForDeclaration(function);
+                scopeForDeclaration.getFunctions(function.getNameAsName());
+                return getBindingContext().get(BindingContext.DECLARATION_TO_DESCRIPTOR, function);
+            }
+
+            @Override
+            public DeclarationDescriptor visitParameter(JetParameter parameter, Void data) {
+                PsiElement grandFather = parameter.getParent().getParent();
+                if (grandFather instanceof JetClass) {
+                    JetClass jetClass = (JetClass) grandFather;
+                    // This is a primary constructor parameter
+                    if (parameter.getValOrVarNode() != null) {
+                        getClassDescriptor(jetClass).getDefaultType().getMemberScope().getProperties(parameter.getNameAsName());
+                        return getBindingContext().get(BindingContext.PRIMARY_CONSTRUCTOR_PARAMETER, parameter);
+                    }
+                }
+                return super.visitParameter(parameter, data);
+            }
+
+            @Override
+            public DeclarationDescriptor visitProperty(JetProperty property, Void data) {
+                JetScope scopeForDeclaration = getInjector().getScopeProvider().getResolutionScopeForDeclaration(property);
+                scopeForDeclaration.getProperties(property.getNameAsName());
+                return getBindingContext().get(BindingContext.DECLARATION_TO_DESCRIPTOR, property);
+            }
+
+            @Override
+            public DeclarationDescriptor visitObjectDeclarationName(JetObjectDeclarationName declarationName, Void data) {
+                JetScope scopeForDeclaration = getInjector().getScopeProvider().getResolutionScopeForDeclaration(
+                        (JetDeclaration) declarationName.getParent());
+                scopeForDeclaration.getProperties(declarationName.getNameAsName());
+                return getBindingContext().get(BindingContext.DECLARATION_TO_DESCRIPTOR, declarationName);
+            }
+
+            @Override
+            public DeclarationDescriptor visitJetElement(JetElement element, Void data) {
+                throw new IllegalArgumentException("Unsupported declaration type: " + element + " " + element.getText());
+            }
+        }, null);
+        if (result == null) {
+            throw new IllegalStateException("No descriptor resolevd for " + declaration + " " + declaration.getText());
+        }
+        return result;
     }
 }

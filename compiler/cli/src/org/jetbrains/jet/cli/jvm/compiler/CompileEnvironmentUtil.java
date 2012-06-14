@@ -45,7 +45,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.jar.*;
 
@@ -144,7 +143,7 @@ public class CompileEnvironmentUtil {
         scriptEnvironment.addSources(moduleScriptFile);
 
         GenerationState generationState = KotlinToJVMBytecodeCompiler
-                .analyzeAndGenerate(new K2JVMCompileEnvironmentConfiguration(scriptEnvironment, messageCollector, false, Collections.<String>emptyList()), false);
+                .analyzeAndGenerate(new K2JVMCompileEnvironmentConfiguration(scriptEnvironment, messageCollector, false), false);
         if (generationState == null) {
             return null;
         }
@@ -200,6 +199,7 @@ public class CompileEnvironmentUtil {
         }
     }
 
+    // TODO: includeRuntime should be not a flag but a path to runtime
     public static void writeToJar(ClassFileFactory factory, final OutputStream fos, @Nullable FqName mainClass, boolean includeRuntime) {
         try {
             Manifest manifest = new Manifest();
@@ -210,19 +210,14 @@ public class CompileEnvironmentUtil {
                 mainAttributes.putValue("Main-Class", mainClass.getFqName());
             }
             JarOutputStream stream = new JarOutputStream(fos, manifest);
-            try {
-                for (String file : factory.files()) {
-                    stream.putNextEntry(new JarEntry(file));
-                    stream.write(factory.asBytes(file));
-                }
-                if (includeRuntime) {
-                    writeRuntimeToJar(stream);
-                }
+            for (String file : factory.files()) {
+                stream.putNextEntry(new JarEntry(file));
+                stream.write(factory.asBytes(file));
             }
-            finally {
-                stream.close();
-                fos.close();
+            if (includeRuntime) {
+                writeRuntimeToJar(stream);
             }
+            stream.finish();
         }
         catch (IOException e) {
             throw new CompileEnvironmentException("Failed to generate jar file", e);
@@ -280,7 +275,7 @@ public class CompileEnvironmentUtil {
         }
     }
 
-    public static void writeToOutputDirectory(ClassFileFactory factory, final String outputDir) {
+    public static void writeToOutputDirectory(ClassFileFactory factory, @NotNull File outputDir) {
         List<String> files = factory.files();
         for (String file : files) {
             File target = new File(outputDir, file);

@@ -25,9 +25,9 @@ import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.lang.resolve.TypeResolver;
 import org.jetbrains.jet.lang.resolve.lazy.ScopeProvider;
 import org.jetbrains.jet.lang.resolve.AnnotationResolver;
+import org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver;
 import org.jetbrains.jet.lang.resolve.calls.CallResolver;
 import org.jetbrains.jet.lang.resolve.calls.OverloadingConflictResolver;
-import org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
@@ -45,9 +45,9 @@ public class InjectorForLazyResolve {
     private TypeResolver typeResolver;
     private ScopeProvider scopeProvider;
     private AnnotationResolver annotationResolver;
+    private QualifiedExpressionResolver qualifiedExpressionResolver;
     private CallResolver callResolver;
     private OverloadingConflictResolver overloadingConflictResolver;
-    private QualifiedExpressionResolver qualifiedExpressionResolver;
 
     public InjectorForLazyResolve(
         @NotNull Project project,
@@ -62,9 +62,9 @@ public class InjectorForLazyResolve {
         this.typeResolver = new TypeResolver();
         this.scopeProvider = new ScopeProvider(resolveSession);
         this.annotationResolver = new AnnotationResolver();
+        this.qualifiedExpressionResolver = new QualifiedExpressionResolver();
         this.callResolver = new CallResolver();
         this.overloadingConflictResolver = new OverloadingConflictResolver();
-        this.qualifiedExpressionResolver = new QualifiedExpressionResolver();
 
         this.descriptorResolver.setAnnotationResolver(annotationResolver);
         this.descriptorResolver.setExpressionTypingServices(expressionTypingServices);
@@ -111,6 +111,10 @@ public class InjectorForLazyResolve {
 
     public AnnotationResolver getAnnotationResolver() {
         return this.annotationResolver;
+    }
+
+    public QualifiedExpressionResolver getQualifiedExpressionResolver() {
+        return this.qualifiedExpressionResolver;
     }
 
 }

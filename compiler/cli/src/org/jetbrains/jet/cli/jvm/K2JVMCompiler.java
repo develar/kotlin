@@ -18,16 +18,15 @@ package org.jetbrains.jet.cli.jvm;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.intellij.openapi.Disposable;
 import jet.modules.Module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.CLICompiler;
 import org.jetbrains.jet.cli.common.ExitCode;
 import org.jetbrains.jet.cli.common.messages.*;
-import org.jetbrains.jet.cli.jvm.compiler.K2JVMCompileEnvironmentConfiguration;
 import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentUtil;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
+import org.jetbrains.jet.cli.jvm.compiler.K2JVMCompileEnvironmentConfiguration;
 import org.jetbrains.jet.cli.jvm.compiler.KotlinToJVMBytecodeCompiler;
 import org.jetbrains.jet.cli.jvm.repl.ReplFromTerminal;
 import org.jetbrains.jet.codegen.CompilationException;
@@ -86,19 +85,27 @@ public class K2JVMCompiler extends CLICompiler<K2JVMCompilerArguments, K2JVMComp
 
         CompilerDependencies dependencies = new CompilerDependencies(mode, CompilerDependencies.findRtJar(), jdkHeadersJar, runtimeJar);
 
-        if (!arguments.script && arguments.module == null && arguments.src == null && arguments.freeArgs.isEmpty()) {
+        final List<String> argumentsSourceDirs = arguments.getSourceDirs();
+        if (!arguments.script &&
+            arguments.module == null &&
+            arguments.src == null &&
+            arguments.freeArgs.isEmpty() &&
+            (argumentsSourceDirs == null || argumentsSourceDirs.size() == 0)) {
+
             ReplFromTerminal.run(rootDisposable, dependencies);
             return ExitCode.OK;
         }
 
         JetCoreEnvironment environment = JetCoreEnvironment.getCoreEnvironmentForJVM(rootDisposable, dependencies);
-        List<String> scriptArgs = arguments.script ? arguments.freeArgs.subList(1, arguments.freeArgs.size()) : Collections.<String>emptyList();
-        K2JVMCompileEnvironmentConfiguration configuration = new K2JVMCompileEnvironmentConfiguration(environment, messageCollector, arguments.script, scriptArgs);
+        K2JVMCompileEnvironmentConfiguration configuration = new K2JVMCompileEnvironmentConfiguration(environment, messageCollector, arguments.script);
 
         messageCollector.report(CompilerMessageSeverity.LOGGING, "Configuring the compilation environment",
                                 CompilerMessageLocation.NO_LOCATION);
         try {
             configureEnvironment(configuration, arguments);
+
+            File jar = arguments.jar != null ? new File(arguments.jar) : null;
+            File outputDir = arguments.outputDir != null ? new File(arguments.outputDir) : null;
 
             boolean noErrors;
             if (arguments.module != null) {
@@ -109,28 +116,30 @@ public class K2JVMCompiler extends CLICompiler<K2JVMCompilerArguments, K2JVMComp
                 messageCollector.setVerbose(oldVerbose);
                 File directory = new File(arguments.module).getParentFile();
                 noErrors = KotlinToJVMBytecodeCompiler.compileModules(configuration, modules,
-                                                                      directory, arguments.jar, arguments.outputDir,
+                                                                      directory, jar, outputDir,
                                                                       arguments.includeRuntime);
+            }
+            else if (arguments.script) {
+                configuration.getEnvironment().addSources(arguments.freeArgs.get(0));
+                List<String> scriptArgs = arguments.freeArgs.subList(1, arguments.freeArgs.size());
+                noErrors = KotlinToJVMBytecodeCompiler.compileAndExecuteScript(configuration, scriptArgs);
             }
             else {
                 // TODO ideally we'd unify to just having a single field that supports multiple files/dirs
                 if (arguments.getSourceDirs() != null) {
                     noErrors = KotlinToJVMBytecodeCompiler.compileBunchOfSourceDirectories(configuration,
-                            arguments.getSourceDirs(), arguments.jar, arguments.outputDir, arguments.script, arguments.includeRuntime);
+                            arguments.getSourceDirs(), jar, outputDir, arguments.script, arguments.includeRuntime);
                 }
                 else {
-                    List<String> sources = Lists.newArrayList();
                     if (arguments.src != null) {
-                        sources.add(arguments.src);
+                        configuration.getEnvironment().addSources(arguments.src);
                     }
-                    if (arguments.script) {
-                        sources.add(arguments.freeArgs.get(0));
+                    for (String freeArg : arguments.freeArgs) {
+                        configuration.getEnvironment().addSources(freeArg);
                     }
-                    else {
-                        sources.addAll(arguments.freeArgs);
-                    }
-                    noErrors = KotlinToJVMBytecodeCompiler.compileBunchOfSources(configuration,
-                            sources, arguments.jar, arguments.outputDir, arguments.script, arguments.includeRuntime);
+
+                    noErrors = KotlinToJVMBytecodeCompiler.compileBunchOfSources(
+                            configuration, jar, outputDir, arguments.includeRuntime);
                 }
             }
             return noErrors ? OK : COMPILATION_ERROR;

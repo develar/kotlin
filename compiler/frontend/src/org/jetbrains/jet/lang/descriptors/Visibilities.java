@@ -63,7 +63,7 @@ public class Visibilities {
             if (DescriptorUtils.isSubclass(fromClass, classDescriptor)) {
                 return true;
             }
-            return false;
+            return isVisible(what, fromClass.getContainingDeclaration());
         }
     };
 
@@ -81,13 +81,6 @@ public class Visibilities {
         @Override
         protected boolean isVisible(@NotNull DeclarationDescriptorWithVisibility what, @NotNull DeclarationDescriptor from) {
             return true;
-        }
-    };
-
-    public static final Visibility INTERNAL_PROTECTED = new Visibility("internal protected", false) {
-        @Override
-        protected boolean isVisible(@NotNull DeclarationDescriptorWithVisibility what, @NotNull DeclarationDescriptor from) {
-            return PROTECTED.isVisible(what, from) && INTERNAL.isVisible(what, from);
         }
     };
 
@@ -113,7 +106,7 @@ public class Visibilities {
         }
     };
 
-    public static final Set<Visibility> INTERNAL_VISIBILITIES = Sets.newHashSet(PRIVATE, INTERNAL, INTERNAL_PROTECTED, LOCAL);
+    public static final Set<Visibility> INTERNAL_VISIBILITIES = Sets.newHashSet(PRIVATE, INTERNAL, LOCAL);
 
     private Visibilities() {
     }
@@ -136,10 +129,9 @@ public class Visibilities {
 
     static {
         ORDERED_VISIBILITIES.put(PRIVATE, 0);
-        ORDERED_VISIBILITIES.put(INTERNAL_PROTECTED, 1);
-        ORDERED_VISIBILITIES.put(INTERNAL, 2);
-        ORDERED_VISIBILITIES.put(PROTECTED, 2);
-        ORDERED_VISIBILITIES.put(PUBLIC, 3);
+        ORDERED_VISIBILITIES.put(INTERNAL, 1);
+        ORDERED_VISIBILITIES.put(PROTECTED, 1);
+        ORDERED_VISIBILITIES.put(PUBLIC, 2);
     }
 
     /*package*/

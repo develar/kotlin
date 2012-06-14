@@ -1,12 +1,15 @@
 package java.lang
 
-import java.util.Iterator;
+import java.util.Iterator
 import js.library
 
 library
 trait Iterable<T> {
     fun iterator() : java.util.Iterator<T> = js.noImpl
 }
+
+library
+open class Exception() : Throwable() {}
 
 library("splitString")
 public fun String.split(regex : String) : Array<String> = js.noImpl
@@ -22,3 +25,6 @@ class IndexOutOfBoundsException(message: String = "") : Exception() {}
 
 library
 class UnsupportedOperationException(message: String = "") : Exception() {}
+
+library
+class NumberFormatException(message: String = "") : Exception() {}

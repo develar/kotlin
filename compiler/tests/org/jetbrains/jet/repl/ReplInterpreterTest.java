@@ -60,7 +60,7 @@ public class ReplInterpreterTest {
             String code = t.first;
             String expected = t.second;
 
-            Object actual = repl.eval(code);
+            Object actual = repl.eval(code).getValue();
             String actualString = actual != null ? actual.toString() : "null";
 
             Assert.assertEquals("after evaluation of: " + code, actualString, expected);
@@ -85,6 +85,21 @@ public class ReplInterpreterTest {
     @Test
     public void functionReferencesPrev() {
         testFile("functionReferencesPrev.repl");
+    }
+
+    @Test
+    public void twoClosures() {
+        testFile("twoClosures.repl");
+    }
+
+    @Test
+    public void empty() {
+        testFile("empty.repl");
+    }
+
+    @Test
+    public void imports() {
+        testFile("imports.repl");
     }
 
 

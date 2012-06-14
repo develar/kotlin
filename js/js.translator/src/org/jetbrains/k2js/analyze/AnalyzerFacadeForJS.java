@@ -24,6 +24,8 @@ import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
+import org.jetbrains.jet.analyzer.AnalyzerFacadeForEverything;
+import org.jetbrains.jet.di.InjectorForBodyResolve;
 import org.jetbrains.jet.di.InjectorForTopDownAnalyzerForJs;
 import org.jetbrains.jet.lang.DefaultModuleConfiguration;
 import org.jetbrains.jet.lang.ModuleConfiguration;
@@ -109,27 +111,11 @@ public final class AnalyzerFacadeForJS {
             @NotNull Predicate<PsiFile> filesToAnalyzeCompletely,
             @NotNull Config config,
             @NotNull BindingTrace traceContext,
-            @NotNull BodiesResolveContext bodiesResolveContext
-    ) {
-        Project project = config.getProject();
-        final ModuleDescriptor owner = new ModuleDescriptor(Name.special("<module>"));
+            @NotNull BodiesResolveContext bodiesResolveContext) {
         Predicate<PsiFile> completely = Predicates.and(notLibFiles(config.getLibFiles()), filesToAnalyzeCompletely);
 
-        TopDownAnalysisParameters topDownAnalysisParameters =
-                new TopDownAnalysisParameters(completely, false, false, Collections.<AnalyzerScriptParameter>emptyList());
-
-        InjectorForTopDownAnalyzerForJs injector = new InjectorForTopDownAnalyzerForJs(
-                project, topDownAnalysisParameters, new ObservableBindingTrace(traceContext), owner,
-                JsConfiguration.jsLibConfiguration(project));
-
-        try {
-            bodiesResolveContext.setTopDownAnalysisParameters(topDownAnalysisParameters);
-            injector.getTopDownAnalyzer().doProcessForBodies(bodiesResolveContext);
-            return AnalyzeExhaust.success(traceContext.getBindingContext(), JetStandardLibrary.getInstance());
-        }
-        finally {
-            injector.destroy();
-        }
+        return AnalyzerFacadeForEverything.analyzeBodiesInFilesWithJavaIntegration(
+                config.getProject(), Collections.<AnalyzerScriptParameter>emptyList(), completely, traceContext, bodiesResolveContext);
     }
 
     private static void checkForErrors(@NotNull Collection<JetFile> allFiles, @NotNull BindingContext bindingContext) {
@@ -174,8 +160,9 @@ public final class AnalyzerFacadeForJS {
 
         @Override
         public void addDefaultImports(@NotNull Collection<JetImportDirective> directives) {
-            //TODO: these thing should not be hard-coded like that
+            //TODO: these things should not be hard-coded like that
             directives.add(JetPsiFactory.createImportDirective(project, new ImportPath("js.*")));
+            directives.add(JetPsiFactory.createImportDirective(project, new ImportPath("java.lang.*")));
             directives.add(JetPsiFactory.createImportDirective(project, new ImportPath(JetStandardClasses.STANDARD_CLASSES_FQNAME, true)));
             directives.add(JetPsiFactory.createImportDirective(project, new ImportPath("kotlin.*")));
         }

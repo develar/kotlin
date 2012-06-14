@@ -43,11 +43,13 @@ import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.plugin.JetLanguage;
 import org.jetbrains.jet.plugin.JetMainDetector;
+import org.jetbrains.jet.utils.ExceptionUtils;
 import org.jetbrains.jet.utils.Progress;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
@@ -88,8 +90,8 @@ public class KotlinToJVMBytecodeCompiler {
             K2JVMCompileEnvironmentConfiguration configuration,
             @NotNull List<Module> modules,
             @NotNull File directory,
-            @Nullable String jarPath,
-            @Nullable String outputDir,
+            @Nullable File jarPath,
+            @Nullable File outputDir,
             boolean jarRuntime) {
 
         for (Module moduleBuilder : modules) {
@@ -106,33 +108,51 @@ public class KotlinToJVMBytecodeCompiler {
                 CompileEnvironmentUtil.writeToOutputDirectory(moduleFactory, outputDir);
             }
             else {
-                String path = jarPath != null ? jarPath : new File(directory, moduleBuilder.getModuleName() + ".jar").getPath();
+                File path = jarPath != null ? jarPath : new File(directory, moduleBuilder.getModuleName() + ".jar");
+                FileOutputStream outputStream = null;
                 try {
-                    CompileEnvironmentUtil.writeToJar(moduleFactory, new FileOutputStream(path), null, jarRuntime);
+                    outputStream = new FileOutputStream(path);
+                    CompileEnvironmentUtil.writeToJar(moduleFactory, outputStream, null, jarRuntime);
+                    outputStream.close();
                 }
                 catch (FileNotFoundException e) {
                     throw new CompileEnvironmentException("Invalid jar path " + path, e);
+                }
+                catch (IOException e) {
+                    throw ExceptionUtils.rethrow(e);
+                }
+                finally {
+                    ExceptionUtils.closeQuietly(outputStream);
                 }
             }
         }
         return true;
     }
 
-    private static boolean compileBunchOfSources(
-            K2JVMCompileEnvironmentConfiguration configuration,
-            String jar,
-            String outputDir,
-            boolean script,
-            boolean includeRuntime
-    ) {
+    @Nullable
+    private static FqName findMainClass(@NotNull List<JetFile> files) {
         FqName mainClass = null;
-        for (JetFile file : configuration.getEnvironment().getSourceFiles()) {
+        for (JetFile file : files) {
             if (JetMainDetector.hasMain(file.getDeclarations())) {
+                if (mainClass != null) {
+                    // more than one main
+                    return null;
+                }
                 FqName fqName = JetPsiUtil.getFQName(file);
                 mainClass = fqName.child(Name.identifier(JvmAbi.PACKAGE_CLASS));
-                break;
             }
         }
+        return mainClass;
+    }
+
+    public static boolean compileBunchOfSources(
+            K2JVMCompileEnvironmentConfiguration configuration,
+            @Nullable File jar,
+            @Nullable File outputDir,
+            boolean includeRuntime
+    ) {
+
+        FqName mainClass = findMainClass(configuration.getEnvironment().getSourceFiles());
 
         GenerationState generationState = analyzeAndGenerate(configuration);
         if (generationState == null) {
@@ -142,29 +162,24 @@ public class KotlinToJVMBytecodeCompiler {
         try {
             ClassFileFactory factory = generationState.getFactory();
             if (jar != null) {
+                FileOutputStream os = null;
                 try {
+                    os = new FileOutputStream(jar);
                     CompileEnvironmentUtil.writeToJar(factory, new FileOutputStream(jar), mainClass, includeRuntime);
+                    os.close();
                 }
                 catch (FileNotFoundException e) {
                     throw new CompileEnvironmentException("Invalid jar path " + jar, e);
                 }
+                catch (IOException e) {
+                    throw ExceptionUtils.rethrow(e);
+                }
+                finally {
+                    ExceptionUtils.closeQuietly(os);
+                }
             }
             else if (outputDir != null) {
                 CompileEnvironmentUtil.writeToOutputDirectory(factory, outputDir);
-            }
-            else if (script) {
-                try {
-
-                    GeneratedClassLoader classLoader = new GeneratedClassLoader(factory, new URLClassLoader(new URL[]{
-                                // TODO: add all classpath
-                                configuration.getEnvironment().getCompilerDependencies().getRuntimeJar().toURI().toURL()
-                            },
-                            AllModules.class.getClassLoader()));
-                    Class<?> scriptClass = classLoader.loadClass(ScriptCodegen.SCRIPT_DEFAULT_CLASS_NAME.getFqName().getFqName());
-                    scriptClass.getConstructor(String[].class).newInstance(new Object[]{ configuration.getScriptArgs().toArray(new String[0]) });
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to evaluate script: " + e, e);
-                }
             }
             else {
                 throw new CompileEnvironmentException("Output directory or jar file is not specified - no files will be saved to the disk");
@@ -176,25 +191,55 @@ public class KotlinToJVMBytecodeCompiler {
         }
     }
 
+    public static boolean compileAndExecuteScript(
+            @NotNull K2JVMCompileEnvironmentConfiguration configuration,
+            @NotNull List<String> scriptArgs) {
+
+        GenerationState generationState = analyzeAndGenerate(configuration);
+        if (generationState == null) {
+            return false;
+        }
+
+        try {
+            ClassFileFactory factory = generationState.getFactory();
+            try {
+                GeneratedClassLoader classLoader = new GeneratedClassLoader(factory, new URLClassLoader(new URL[]{
+                        // TODO: add all classpath
+                        configuration.getEnvironment().getCompilerDependencies().getRuntimeJar().toURI().toURL()
+                },
+                        AllModules.class.getClassLoader()));
+                Class<?> scriptClass = classLoader.loadClass(ScriptCodegen.SCRIPT_DEFAULT_CLASS_NAME.getFqName().getFqName());
+                scriptClass.getConstructor(String[].class).newInstance(new Object[]{scriptArgs.toArray(new String[0])});
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Failed to evaluate script: " + e, e);
+            }
+            return true;
+        }
+        finally {
+            generationState.destroy();
+        }
+    }
+
     public static boolean compileBunchOfSources(
             K2JVMCompileEnvironmentConfiguration configuration,
-            List<String> sourceFilesOrDirs, String jar, String outputDir, boolean script,  boolean includeRuntime) {
+            List<String> sourceFilesOrDirs, File jar, File outputDir, boolean script,  boolean includeRuntime) {
         for (String sourceFileOrDir : sourceFilesOrDirs) {
             configuration.getEnvironment().addSources(sourceFileOrDir);
         }
 
-        return compileBunchOfSources(configuration, jar, outputDir, script, includeRuntime);
+        return compileBunchOfSources(configuration, jar, outputDir, includeRuntime);
     }
 
     public static boolean compileBunchOfSourceDirectories(
             K2JVMCompileEnvironmentConfiguration configuration,
 
-            List<String> sources, String jar, String outputDir, boolean script, boolean includeRuntime) {
+            List<String> sources, File jar, File outputDir, boolean script, boolean includeRuntime) {
         for (String source : sources) {
             configuration.getEnvironment().addSources(source);
         }
 
-        return compileBunchOfSources(configuration, jar, outputDir, script, includeRuntime);
+        return compileBunchOfSources(configuration, jar, outputDir, includeRuntime);
     }
 
     @Nullable

@@ -23,6 +23,7 @@ import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.codegen.signature.*;
+import org.jetbrains.jet.codegen.signature.kotlin.JetMethodAnnotationWriter;
 import org.jetbrains.jet.codegen.signature.kotlin.JetValueParameterAnnotationWriter;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
@@ -334,7 +335,9 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 JvmPropertyAccessorSignature originalSignature = typeMapper.mapGetterSignature(original, OwnerKind.IMPLEMENTATION);
                 Method originalMethod = originalSignature.getJvmMethodSignature().getAsmMethod();
                 MethodVisitor mv = v.newMethod(null, ACC_PUBLIC | ACC_BRIDGE | ACC_FINAL, method.getName(), method.getDescriptor(), null, null);
-                PropertyCodegen.generateJetPropertyAnnotation(mv, originalSignature.getPropertyTypeKotlinSignature(), originalSignature.getJvmMethodSignature().getKotlinTypeParameter());
+                PropertyCodegen.generateJetPropertyAnnotation(mv, originalSignature.getPropertyTypeKotlinSignature(),
+                                                              originalSignature.getJvmMethodSignature().getKotlinTypeParameter(),
+                                                              original);
                 if (state.getClassBuilderMode() == ClassBuilderMode.STUBS) {
                     StubCodegen.generateStubCode(mv);
                 }
@@ -360,7 +363,9 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 JvmPropertyAccessorSignature originalSignature2 = typeMapper.mapSetterSignature(original, OwnerKind.IMPLEMENTATION);
                 Method originalMethod = originalSignature2.getJvmMethodSignature().getAsmMethod();
                 MethodVisitor mv = v.newMethod(null, ACC_PUBLIC | ACC_BRIDGE | ACC_FINAL, method.getName(), method.getDescriptor(), null, null);
-                PropertyCodegen.generateJetPropertyAnnotation(mv, originalSignature2.getPropertyTypeKotlinSignature(), originalSignature2.getJvmMethodSignature().getKotlinTypeParameter());
+                PropertyCodegen.generateJetPropertyAnnotation(mv, originalSignature2.getPropertyTypeKotlinSignature(),
+                                                              originalSignature2.getJvmMethodSignature().getKotlinTypeParameter(),
+                                                              original);
                 if (state.getClassBuilderMode() == ClassBuilderMode.STUBS) {
                     StubCodegen.generateStubCode(mv);
                 }
@@ -651,7 +656,8 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         }
 
         final ClassDescriptor outerDescriptor = typeMapper.getClosureAnnotator().getEclosingClassDescriptor(descriptor);
-        if (typeMapper.hasThis0(descriptor) && outerDescriptor != null) {
+        final boolean hasOuterThis = typeMapper.hasThis0(descriptor) && outerDescriptor != null;
+        if (hasOuterThis) {
             final Type type = typeMapper.mapType(outerDescriptor.getDefaultType(), MapTypeMode.VALUE);
             String interfaceDesc = type.getDescriptor();
             final String fieldName = "this$0";
@@ -662,7 +668,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         }
 
         if (closure != null) {
-            int k = outerDescriptor != null && outerDescriptor.getKind() != ClassKind.OBJECT ? 2 : 1;
+            int k = hasOuterThis ? 2 : 1;
             if (closure.captureReceiver != null) {
                 iv.load(0, JetTypeMapper.TYPE_OBJECT);
                 iv.load(1, closure.captureReceiver);
@@ -716,18 +722,24 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         for (Pair<CallableMemberDescriptor, CallableMemberDescriptor> needDelegates : getTraitImplementations(descriptor)) {
             CallableMemberDescriptor callableDescriptor = needDelegates.first;
             if (needDelegates.second instanceof SimpleFunctionDescriptor) {
-                generateDelegationToTraitImpl(codegen, (FunctionDescriptor) needDelegates.second);
+                generateDelegationToTraitImpl(codegen, (FunctionDescriptor) needDelegates.second, (FunctionDescriptor) needDelegates.first);
             }
             else if (needDelegates.second instanceof PropertyDescriptor) {
                 PropertyDescriptor property = (PropertyDescriptor) needDelegates.second;
+                List<PropertyAccessorDescriptor> inheritedAccessors = ((PropertyDescriptor) needDelegates.first).getAccessors();
                 for (PropertyAccessorDescriptor accessor : property.getAccessors()) {
-                    generateDelegationToTraitImpl(codegen, accessor);
+                    for (PropertyAccessorDescriptor inheritedAccessor : inheritedAccessors) {
+                        if (inheritedAccessor.getClass() == accessor.getClass()) { // same accessor kind
+                            generateDelegationToTraitImpl(codegen, accessor, inheritedAccessor);
+                        }
+                    }
                 }
             }
         }
     }
 
-    private void generateDelegationToTraitImpl(ExpressionCodegen codegen, FunctionDescriptor fun) {
+
+    private void generateDelegationToTraitImpl(ExpressionCodegen codegen, FunctionDescriptor fun, @NotNull FunctionDescriptor inheritedFun) {
         DeclarationDescriptor containingDeclaration = fun.getContainingDeclaration();
         if (containingDeclaration instanceof ClassDescriptor) {
             ClassDescriptor declaration = (ClassDescriptor) containingDeclaration;
@@ -737,10 +749,44 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 if (jetClass.isTrait()) {
                     int flags = ACC_PUBLIC; // TODO.
 
-                    Method function = typeMapper.mapSignature(fun.getName(), fun).getAsmMethod();
-                    Method functionOriginal = typeMapper.mapSignature(fun.getName(), fun.getOriginal()).getAsmMethod();
+                    Method function;
+                    Method functionOriginal;
+                    if (fun instanceof PropertyAccessorDescriptor) {
+                        PropertyDescriptor property = ((PropertyAccessorDescriptor) fun).getCorrespondingProperty();
+                        if (fun instanceof PropertyGetterDescriptor) {
+                            function = typeMapper.mapGetterSignature(property, OwnerKind.IMPLEMENTATION).getJvmMethodSignature().getAsmMethod();
+                            functionOriginal = typeMapper.mapGetterSignature(property.getOriginal(), OwnerKind.IMPLEMENTATION).getJvmMethodSignature().getAsmMethod();
+                        }
+                        else if (fun instanceof PropertySetterDescriptor) {
+                            function = typeMapper.mapSetterSignature(property, OwnerKind.IMPLEMENTATION).getJvmMethodSignature().getAsmMethod();
+                            functionOriginal = typeMapper.mapSetterSignature(property.getOriginal(), OwnerKind.IMPLEMENTATION).getJvmMethodSignature().getAsmMethod();
+                        }
+                        else {
+                            throw new IllegalStateException("Accessor is neither getter, nor setter, what is it?");
+                        }
+                    }
+                    else {
+                        function = typeMapper.mapSignature(fun.getName(), fun).getAsmMethod();
+                        functionOriginal = typeMapper.mapSignature(fun.getName(), fun.getOriginal()).getAsmMethod();
+                    }
 
                     final MethodVisitor mv = v.newMethod(myClass, flags, function.getName(), function.getDescriptor(), null, null);
+                    AnnotationCodegen.forMethod(mv, state.getInjector().getJetTypeMapper()).genAnnotations(fun);
+
+                    JvmMethodSignature jvmSignature = typeMapper.mapToCallableMethod(inheritedFun, false, OwnerKind.IMPLEMENTATION).getSignature();
+                    JetMethodAnnotationWriter aw = JetMethodAnnotationWriter.visitAnnotation(mv);
+                    if (fun instanceof PropertyAccessorDescriptor) {
+                        aw.writeFlags(JvmStdlibNames.JET_METHOD_FLAG_PROPERTY_BIT);
+                        aw.writeTypeParameters(jvmSignature.getKotlinTypeParameter());
+                        aw.writePropertyType(jvmSignature.getKotlinReturnType());
+                    } else {
+                        aw.writeFlags();
+                        aw.writeNullableReturnType(fun.getReturnType().isNullable());
+                        aw.writeTypeParameters(jvmSignature.getKotlinTypeParameter());
+                        aw.writeReturnType(jvmSignature.getKotlinReturnType());
+                    }
+                    aw.visitEnd();
+
                     if (state.getClassBuilderMode() == ClassBuilderMode.STUBS) {
                         StubCodegen.generateStubCode(mv);
                     }

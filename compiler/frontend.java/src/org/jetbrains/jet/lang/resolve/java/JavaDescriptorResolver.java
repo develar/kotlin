@@ -58,32 +58,6 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
 
     public static final ModuleDescriptor FAKE_ROOT_MODULE = new ModuleDescriptor(JAVA_ROOT);
 
-    /*package*/ static final DeclarationDescriptor JAVA_METHOD_TYPE_PARAMETER_PARENT = new DeclarationDescriptorImpl(null, Collections.<AnnotationDescriptor>emptyList(), Name.special("<java_generic_method>")) {
-
-        @Override
-        public DeclarationDescriptor substitute(TypeSubstitutor substitutor) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public <R, D> R accept(DeclarationDescriptorVisitor<R, D> visitor, D data) {
-            return visitor.visitDeclarationDescriptor(this, data);
-        }
-    };
-
-    /*package*/ static final DeclarationDescriptor JAVA_CLASS_OBJECT = new DeclarationDescriptorImpl(null, Collections.<AnnotationDescriptor>emptyList(), Name.special("<java_class_object_emulation>")) {
-        @NotNull
-        @Override
-        public DeclarationDescriptor substitute(TypeSubstitutor substitutor) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public <R, D> R accept(DeclarationDescriptorVisitor<R, D> visitor, D data) {
-            return visitor.visitDeclarationDescriptor(this, data);
-        }
-    };
-
     private static Visibility PACKAGE_VISIBILITY = new Visibility("package", false) {
         @Override
         protected boolean isVisible(@NotNull DeclarationDescriptorWithVisibility what, @NotNull DeclarationDescriptor from) {
@@ -145,6 +119,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         final boolean staticMembers;
         final boolean kotlin;
         final ClassOrNamespaceDescriptor classOrNamespaceDescriptor;
+        private List<String> alternativeSignatureErrors;
 
         protected ResolverScopeData(@Nullable PsiClass psiClass, @Nullable PsiPackage psiPackage, @NotNull FqName fqName, boolean staticMembers, @NotNull ClassOrNamespaceDescriptor descriptor) {
             checkPsiClassIsNotJet(psiClass);
@@ -194,6 +169,13 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         }
 
         private Map<Name, NamedMembers> namedMembersMap;
+
+        public void addAlternativeSignatureError(@NotNull String errorMessage) {
+            if (alternativeSignatureErrors == null) {
+                alternativeSignatureErrors = new ArrayList<String>();
+            }
+            alternativeSignatureErrors.add(errorMessage);
+        }
         
         @NotNull
         public abstract List<TypeParameterDescriptor> getTypeParameters();
@@ -1021,7 +1003,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
             return null;
         }
         if (resolverNamespaceData == ResolverNamespaceData.NEGATIVE) {
-            throw new IllegalStateException("This means that we are trying to create a Java package, but have a package with the same FQN defined in Kotlin");
+            throw new IllegalStateException("This means that we are trying to create a Java package, but have a package with the same FQN defined in Kotlin: " + fqName);
         }
         JavaPackageScope scope = resolverNamespaceData.memberScope;
         if (scope == null) {
@@ -1332,19 +1314,10 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
                 isVar = members.setter != null;
             }
 
-            Modality modality;
-            if (isFinal) {
-                modality = Modality.FINAL;
-            }
-            else {
-                modality = anyMember.getMember().isAbstract() ? Modality.ABSTRACT : Modality.OPEN;
-            }
-
-
             PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
                     owner,
                     resolveAnnotations(anyMember.getMember().psiMember),
-                    modality,
+                    resolveModality(anyMember.getMember(), isFinal),
                     resolveVisibilityFromPsiModifiers(anyMember.getMember().psiMember),
                     isVar,
                     false,
@@ -1567,7 +1540,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
             }
             else if (meaning.kind == JvmMethodParameterKind.RECEIVER) {
                 if (receiverType != null) {
-                    throw new IllegalStateException("more then one receiver");
+                    throw new IllegalStateException("more than one receiver");
                 }
                 --indexDelta;
                 receiverType = meaning.receiverType;
@@ -1589,7 +1562,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         }
 
         // TODO: ugly
-        if (method.getJetMethod().kind() == JvmStdlibNames.JET_METHOD_KIND_PROPERTY) {
+        if (method.getJetMethod().flags().get(JvmStdlibNames.JET_METHOD_FLAG_PROPERTY_BIT)) {
             return null;
         }
 
@@ -1621,14 +1594,27 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         // TODO consider better place for this check
         String signature = method.getSignatureAnnotation().signature();
         if (!signature.isEmpty()) {
-            JetNamedFunction altFunDeclaration = JetPsiFactory.createFunction(project, signature);
-            valueParameterDescriptors = AlternativeSignatureParsing
-                    .computeAlternativeValueParameters(valueParameterDescriptors, altFunDeclaration);
-            JetTypeReference returnTypeRef = altFunDeclaration.getReturnTypeRef();
-            if (returnTypeRef != null) {
-                returnType = AlternativeSignatureParsing.computeAlternativeTypeFromAnnotation(returnTypeRef.getTypeElement(), returnType);
+            try {
+                JetNamedFunction altFunDeclaration = JetPsiFactory.createFunction(project, signature);
+                AlternativeSignatureParsing.checkForSyntaxErrors(method, altFunDeclaration);
+
+                ValueParameterDescriptors altValueParameters = AlternativeSignatureParsing
+                        .computeAlternativeValueParameters(valueParameterDescriptors, altFunDeclaration);
+                JetTypeReference returnTypeRef = altFunDeclaration.getReturnTypeRef();
+                JetType altReturnType = returnTypeRef != null
+                                        ? AlternativeSignatureParsing.computeAlternativeTypeFromAnnotation(returnTypeRef.getTypeElement(),
+                                                                                                           returnType)
+                                        : returnType;
+                List<TypeParameterDescriptor> altTypeParameters = AlternativeSignatureParsing
+                        .computeAlternativeTypeParameters(methodTypeParameters, altFunDeclaration);
+                // if no exceptions were thrown, save alternative data
+                valueParameterDescriptors = altValueParameters;
+                returnType = altReturnType;
+                methodTypeParameters = altTypeParameters;
             }
-            methodTypeParameters = AlternativeSignatureParsing.computeAlternativeTypeParameters(methodTypeParameters, altFunDeclaration);
+            catch (AlternativeSignatureMismatchException e) {
+                scopeData.addAlternativeSignatureError(e.getMessage());
+            }
         }
 
         functionDescriptorImpl.initialize(
@@ -1637,7 +1623,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
                 methodTypeParameters,
                 valueParameterDescriptors.descriptors,
                 returnType,
-                Modality.convertFromFlags(method.getPsiMethod().hasModifierProperty(PsiModifier.ABSTRACT), !method.isFinal()),
+                resolveModality(method, method.isFinal()),
                 resolveVisibilityFromPsiModifiers(method.getPsiMethod()),
                 /*isInline = */ false
         );
@@ -1822,6 +1808,20 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         else {
             return transformedType;
         }
+    }
+
+    private static Modality resolveModality(PsiMemberWrapper memberWrapper, boolean isFinal) {
+        if (memberWrapper instanceof PsiMethodWrapper) {
+            PsiMethodWrapper method = (PsiMethodWrapper) memberWrapper;
+            if (method.getJetMethod().flags().get(JvmStdlibNames.JET_METHOD_FLAG_FORCE_OPEN_BIT)) {
+                return Modality.OPEN;
+            }
+            if (method.getJetMethod().flags().get(JvmStdlibNames.JET_METHOD_FLAG_FORCE_FINAL_BIT)) {
+                return Modality.FINAL;
+            }
+        }
+
+        return Modality.convertFromFlags(memberWrapper.isAbstract(), !isFinal);
     }
 
     private static Visibility resolveVisibilityFromPsiModifiers(PsiModifierListOwner modifierListOwner) {
