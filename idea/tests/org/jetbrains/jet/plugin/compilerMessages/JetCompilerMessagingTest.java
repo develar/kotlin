@@ -18,6 +18,7 @@ package org.jetbrains.jet.plugin.compilerMessages;
 
 import jet.Function1;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.plugin.PluginTestCaseBase;
 import org.jetbrains.jet.plugin.compiler.JetCompiler;
 
 import static org.jetbrains.jet.plugin.compilerMessages.Message.error;
@@ -28,42 +29,49 @@ import static org.jetbrains.jet.plugin.compilerMessages.Message.warning;
  */
 public final class JetCompilerMessagingTest extends IDECompilerMessagingTest {
 
+    private static final String TEST_DATA_PATH = PluginTestCaseBase.getTestDataPathBase() + "/compilerMessages/k2jvm";
 
     public void testHelloWorld() {
-        //doTest(new Function1<MessageChecker, Void>() {
-        //    @Override
-        //    public Void invoke(MessageChecker checker) {
-        //        //nothing apart from header
-        //        return null;
-        //    }
-        //});
+        doTest(new Function1<MessageChecker, Void>() {
+            @Override
+            public Void invoke(MessageChecker checker) {
+                //nothing apart from header
+                return null;
+            }
+        });
     }
 
 
     public void testSimpleWarning() {
-        //doTest(new Function1<MessageChecker, Void>() {
-        //    @Override
-        //    public Void invoke(MessageChecker checker) {
-        //        checker.expect(warning().text("Unnecessary non-null assertion (!!) on a non-null receiver of type jet.String")
-        //                               .at("test.kt", 4, 4));
-        //        return null;
-        //    }
-        //});
+        doTest(new Function1<MessageChecker, Void>() {
+            @Override
+            public Void invoke(MessageChecker checker) {
+                checker.expect(warning().text("Unnecessary non-null assertion (!!) on a non-null receiver of type jet.String")
+                                       .at("test.kt", 4, 4));
+                return null;
+            }
+        });
     }
 
     public void testSimpleError() {
-        //doTest(new Function1<MessageChecker, Void>() {
-        //    @Override
-        //    public Void invoke(MessageChecker checker) {
-        //        checker.expect(
-        //                error().text("A 'return' expression required in a function with a block body ('{...}')").at("test.kt", 5, 1));
-        //        return null;
-        //    }
-        //});
+        doTest(new Function1<MessageChecker, Void>() {
+            @Override
+            public Void invoke(MessageChecker checker) {
+                checker.expect(
+                        error().text("A 'return' expression required in a function with a block body ('{...}')").at("test.kt", 5, 1));
+                return null;
+            }
+        });
     }
 
     private void doTest(@NotNull Function1<MessageChecker, Void> whatToExpect) {
-        JetCompiler compiler = new JetCompiler();
-        performTest(whatToExpect, compiler);
+        performTest(whatToExpect, getCompiler(JetCompiler.class), TEST_DATA_PATH);
+    }
+
+    @Override
+    protected void checkHeader(@NotNull MessageChecker checker) {
+        checker.expect(Message.info().textStartsWith("Using kotlinHome="));
+        checker.expect(Message.info().textStartsWith("Invoking in-process compiler"));
+        checker.expect(Message.info().textStartsWith("Kotlin Compiler version"));
     }
 }

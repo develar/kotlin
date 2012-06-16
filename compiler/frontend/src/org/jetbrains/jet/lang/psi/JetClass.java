@@ -17,10 +17,11 @@
 package org.jetbrains.jet.lang.psi;
 
 import com.intellij.lang.ASTNode;
+import com.intellij.navigation.ItemPresentation;
+import com.intellij.navigation.ItemPresentationProviders;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.StubBasedPsiElement;
 import com.intellij.psi.stubs.IStubElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
@@ -38,19 +39,17 @@ import java.util.List;
 /**
  * @author max
  */
-public class JetClass extends JetTypeParameterListOwner
-        implements JetClassOrObject, JetModifierListOwner, StubBasedPsiElement<PsiJetClassStub> {
-
-    private PsiJetClassStub stub;
+public class JetClass extends JetTypeParameterListOwnerStub<PsiJetClassStub> implements JetClassOrObject {
 
     public JetClass(@NotNull ASTNode node) {
         super(node);
     }
-    // TODO (stubs)
-    //    public JetClass(final PsiJetClassStub stub) {
-    //        this.stub = stub;
-    //    }
 
+    public JetClass(@NotNull final PsiJetClassStub stub) {
+        super(stub, JetStubElementTypes.CLASS);
+    }
+
+    @NotNull
     @Override
     public List<JetDeclaration> getDeclarations() {
         JetClassBody body = (JetClassBody) findChildByType(JetNodeTypes.CLASS_BODY);
@@ -107,6 +106,7 @@ public class JetClass extends JetTypeParameterListOwner
         return (JetModifierList) findChildByType(JetNodeTypes.PRIMARY_CONSTRUCTOR_MODIFIER_LIST);
     }
 
+    @Override
     @NotNull
     public List<JetClassInitializer> getAnonymousInitializers() {
         JetClassBody body = getBody();
@@ -115,6 +115,7 @@ public class JetClass extends JetTypeParameterListOwner
         return body.getAnonymousInitializers();
     }
 
+    @Override
     public boolean hasPrimaryConstructor() {
         return getPrimaryConstructorParameterList() != null;
     }
@@ -151,16 +152,10 @@ public class JetClass extends JetTypeParameterListOwner
         return hasModifier(JetTokens.ANNOTATION_KEYWORD);
     }
 
+    @NotNull
     @Override
     public IStubElementType getElementType() {
-        // TODO (stubs)
         return JetStubElementTypes.CLASS;
-    }
-
-    @Override
-    public PsiJetClassStub getStub() {
-        // TODO (stubs)
-        return null;
     }
 
     @Override
@@ -183,6 +178,11 @@ public class JetClass extends JetTypeParameterListOwner
 
     @Nullable
     private String getQualifiedName() {
+        PsiJetClassStub stub = getStub();
+        if (stub != null) {
+            return stub.getQualifiedName();
+        }
+
         List<String> parts = new ArrayList<String>();
         JetClassOrObject current = this;
         while (current != null) {
@@ -207,6 +207,11 @@ public class JetClass extends JetTypeParameterListOwner
      */
     @NotNull
     public List<String> getSuperNames() {
+        PsiJetClassStub stub = getStub();
+        if (stub != null) {
+            return stub.getSuperNames();
+        }
+
         final List<JetDelegationSpecifier> specifiers = getDelegationSpecifiers();
         if (specifiers.size() == 0) return Collections.emptyList();
         List<String> result = new ArrayList<String>();
@@ -236,5 +241,20 @@ public class JetClass extends JetTypeParameterListOwner
                 }
             }
         }
+    }
+
+    @Override
+    public String getName() {
+        PsiJetClassStub stub = getStub();
+        if (stub != null) {
+            return stub.getName();
+        }
+
+        return super.getName();
+    }
+
+    @Override
+    public ItemPresentation getPresentation() {
+        return ItemPresentationProviders.getItemPresentation(this);
     }
 }

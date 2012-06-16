@@ -36,10 +36,8 @@ import java.util.*;
 /**
  * @author Stepan Koltsov
  */
-public class MutableClassDescriptorLite extends ClassDescriptorBase
+public abstract class MutableClassDescriptorLite extends ClassDescriptorBase
         implements WithDeferredResolve {
-    private ConstructorDescriptor primaryConstructor;
-    private final Set<ConstructorDescriptor> constructors = Sets.newLinkedHashSet();
 
     private List<AnnotationDescriptor> annotations = Lists.newArrayList();
 
@@ -135,9 +133,6 @@ public class MutableClassDescriptorLite extends ClassDescriptorBase
                 getName().getName(),
                 typeParameters,
                 supertypes);
-        for (FunctionDescriptor functionDescriptor : constructors) {
-            ((ConstructorDescriptorImpl) functionDescriptor).setReturnType(getDefaultType());
-        }
     }
 
     private WritableScope getScopeForMemberLookupAsWritableScope() {
@@ -145,12 +140,6 @@ public class MutableClassDescriptorLite extends ClassDescriptorBase
         return (WritableScope) scopeForMemberLookup;
     }
 
-
-    @NotNull
-    @Override
-    public Set<ConstructorDescriptor> getConstructors() {
-        return constructors;
-    }
 
     @NotNull
     public JetScope getScopeForMemberLookup() {
@@ -205,26 +194,6 @@ public class MutableClassDescriptorLite extends ClassDescriptorBase
         this.supertypes = supertypes;
     }
 
-
-    public void setPrimaryConstructor(@NotNull ConstructorDescriptor constructorDescriptor, BindingTrace trace) {
-        assert this.primaryConstructor == null : "Primary constructor assigned twice " + this;
-        this.primaryConstructor = constructorDescriptor;
-        addConstructor(constructorDescriptor, trace);
-    }
-
-    @Override
-    @Nullable
-    public ConstructorDescriptor getUnsubstitutedPrimaryConstructor() {
-        return primaryConstructor;
-    }
-
-    public void addConstructor(@NotNull ConstructorDescriptor constructorDescriptor, @Nullable BindingTrace trace) {
-        assert constructorDescriptor.getContainingDeclaration() == this;
-        constructors.add(constructorDescriptor);
-        if (defaultType != null) {
-            ((ConstructorDescriptorImpl) constructorDescriptor).setReturnType(getDefaultType());
-        }
-    }
 
     @Override
     @Nullable

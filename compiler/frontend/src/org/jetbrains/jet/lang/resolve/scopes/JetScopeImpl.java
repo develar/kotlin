@@ -49,7 +49,7 @@ public abstract class JetScopeImpl implements JetScope {
 
     @NotNull
     @Override
-    public Set<VariableDescriptor> getProperties(@NotNull Name name) {
+    public Collection<VariableDescriptor> getProperties(@NotNull Name name) {
         return Collections.emptySet();
     }
 
@@ -71,7 +71,7 @@ public abstract class JetScopeImpl implements JetScope {
 
     @NotNull
     @Override
-    public Set<FunctionDescriptor> getFunctions(@NotNull Name name) {
+    public Collection<FunctionDescriptor> getFunctions(@NotNull Name name) {
         return Collections.emptySet();
     }
 
@@ -88,8 +88,13 @@ public abstract class JetScopeImpl implements JetScope {
 
     @NotNull
     @Override
-    public Collection<DeclarationDescriptor> getAllDescriptors() {
+    public Collection<DeclarationDescriptor> getAllDescriptors(@NotNull DescriptorPredicate predicate) {
         return Collections.emptyList();
+    }
+
+    @Override
+    public Collection<DeclarationDescriptor> getAllDescriptors() {
+        return getAllDescriptors(DescriptorPredicate.all());
     }
 
     @Override

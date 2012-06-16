@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.JetTestCaseBuilder;
 import org.jetbrains.jet.lang.parsing.JetParserDefinition;
+import org.jetbrains.jet.lang.psi.IfNotParsed;
 import org.jetbrains.jet.lang.psi.JetElement;
 import org.jetbrains.jet.lang.psi.JetVisitorVoid;
 
@@ -102,7 +103,7 @@ public class JetParsingTest extends ParsingTestCase {
             Object result = method.invoke(elem);
             if (result == null) {
                 for (Annotation annotation : method.getDeclaredAnnotations()) {
-                    if (annotation instanceof JetElement.IfNotParsed) {
+                    if (annotation instanceof IfNotParsed) {
                         assertNotNull(
                                 "Incomplete operation in parsed OK test, method " + methodName +
                                 " in " + declaringClass.getSimpleName() + " returns null. Element text: \n" + elem.getText(),

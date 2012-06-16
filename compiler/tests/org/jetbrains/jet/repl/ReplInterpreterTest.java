@@ -18,7 +18,7 @@ package org.jetbrains.jet.repl;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.CompileCompilerDependenciesTest;
 import org.jetbrains.jet.cli.jvm.repl.ReplInterpreter;
@@ -56,14 +56,29 @@ public class ReplInterpreterTest {
         ReplInterpreter repl = new ReplInterpreter(disposable, compilerDependencies, Collections.singletonList(new File("out/production/runtime")));
 
         ReplSessionTestFile file = ReplSessionTestFile.load(new File("compiler/testData/repl/" + relativePath));
-        for (Pair<String, String> t : file.getLines()) {
-            String code = t.first;
-            String expected = t.second;
+        for (ReplSessionTestFile.OneLine t : file.getLines()) {
+            String code = t.getCode();
 
-            Object actual = repl.eval(code).getValue();
-            String actualString = actual != null ? actual.toString() : "null";
+            String expected = StringUtil.convertLineSeparators(t.getExpected()).replaceFirst("\n$", "");
+            ReplSessionTestFile.MatchType matchType = t.getMatchType();
 
-            Assert.assertEquals("after evaluation of: " + code, actualString, expected);
+            ReplInterpreter.LineResult lineResult = repl.eval(code);
+            Object actual;
+            if (lineResult.isSuccessful()) {
+                actual = lineResult.getValue();
+            }
+            else {
+                actual = lineResult.getErrorText();
+            }
+            String actualString = StringUtil.convertLineSeparators(actual != null ? actual.toString() : "null").replaceFirst("\n$", "");
+
+            if (matchType == ReplSessionTestFile.MatchType.EQUALS) {
+                Assert.assertEquals("after evaluation of: " + code, expected, actualString);
+            }
+            else if (matchType == ReplSessionTestFile.MatchType.SUBSTRING) {
+                Assert.assertTrue("must contain substring: " + expected + ", actual: " + actualString, actualString.contains(expected));
+            }
+
         }
     }
 
@@ -93,6 +108,16 @@ public class ReplInterpreterTest {
     }
 
     @Test
+    public void functionOverloadResolutionAnyBeatsString() {
+        testFile("functionOverloadResolutionAnyBeatsString.repl");
+    }
+
+    @Test
+    public void functionOverloadResolution() {
+        testFile("functionOverloadResolution.repl");
+    }
+
+    @Test
     public void empty() {
         testFile("empty.repl");
     }
@@ -100,6 +125,22 @@ public class ReplInterpreterTest {
     @Test
     public void imports() {
         testFile("imports.repl");
+    }
+
+
+    @Test
+    public void syntaxErrors() {
+        testFile("syntaxErrors.repl");
+    }
+
+    @Test
+    public void analyzeErrors() {
+        testFile("analyzeErrors.repl");
+    }
+
+    @Test
+    public void evaluationErrors() {
+        testFile("evaluationErrors.repl");
     }
 
 

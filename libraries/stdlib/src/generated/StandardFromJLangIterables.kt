@@ -90,7 +90,7 @@ public inline fun <T, C: Collection<in T>> Iterable<T>.filterTo(result: C, predi
  *
  * @includeFunctionBody ../../test/CollectionTest.kt filterNotIntoLinkedList
  */
-public inline fun <T, L: List<in T>> Iterable<T>.filterNotTo(result: L, predicate: (T) -> Boolean) : L {
+public inline fun <T, C: Collection<in T>> Iterable<T>.filterNotTo(result: C, predicate: (T) -> Boolean) : C {
     for (element in this) if (!predicate(element)) result.add(element)
     return result
 }
@@ -100,7 +100,7 @@ public inline fun <T, L: List<in T>> Iterable<T>.filterNotTo(result: L, predicat
  *
  * @includeFunctionBody ../../test/CollectionTest.kt filterNotNullIntoLinkedList
  */
-public inline fun <T, L: List<in T>> Iterable<T?>?.filterNotNullTo(result: L) : L {
+public inline fun <T, C: Collection<in T>> Iterable<T?>?.filterNotNullTo(result: C) : C {
     if (this != null) {
         for (element in this) if (element != null) result.add(element)
     }
@@ -145,7 +145,37 @@ public inline fun <T> Iterable<T>.fold(initial: T, operation: (T, T) -> T): T {
  *
  * @includeFunctionBody ../../test/CollectionTest.kt foldRight
  */
-public inline fun <T> Iterable<T>.foldRight(initial: T, operation: (T, T) -> T): T = reverse().fold(initial, operation)
+public inline fun <T> Iterable<T>.foldRight(initial: T, operation: (T, T) -> T): T = reverse().fold(initial, {x, y -> operation(y, x)})
+
+
+/**
+ * Applies binary operation to all elements of iterable, going from left to right.
+ * Similar to fold function, but uses the first element as initial value
+ *
+ * @includeFunctionBody ../../test/CollectionTest.kt reduce
+ */
+public inline fun <T> Iterable<T>.reduce(operation: (T, T) -> T): T {
+    val iterator = this.iterator().sure()
+    if (!iterator.hasNext) {
+        throw UnsupportedOperationException("Empty iterable can't be reduced")
+    }
+
+    var result: T = iterator.next() //compiler doesn't understand that result will initialized anyway
+    while (iterator.hasNext) {
+        result = operation(result, iterator.next())
+    }
+
+    return result
+}
+
+/**
+ * Applies binary operation to all elements of iterable, going from right to left.
+ * Similar to foldRight function, but uses the last element as initial value
+ *
+ * @includeFunctionBody ../../test/CollectionTest.kt reduceRight
+ */
+public inline fun <T> Iterable<T>.reduceRight(operation: (T, T) -> T): T = reverse().reduce { x, y -> operation(y, x) }
+
 
 /**
  * Groups the elements in the collection into a new [[Map]] using the supplied *toKey* function to calculate the key to group the elements by
@@ -197,7 +227,7 @@ public inline fun <T, L: List<in T>> Iterable<T>.dropWhileTo(result: L, predicat
 }
 
 /** Returns a list containing the first elements that satisfy the given *predicate* */
-public inline fun <T, L: List<in T>> Iterable<T>.takeWhileTo(result: L, predicate: (T) -> Boolean) : L {
+public inline fun <T, C: Collection<in T>> Iterable<T>.takeWhileTo(result: C, predicate: (T) -> Boolean) : C {
     for (element in this) if (predicate(element)) result.add(element) else break
     return result
 }

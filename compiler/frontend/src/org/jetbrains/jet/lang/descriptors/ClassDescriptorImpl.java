@@ -32,7 +32,7 @@ import java.util.*;
 /**
  * @author abreslav
  */
-public class ClassDescriptorImpl extends DeclarationDescriptorImpl implements ClassDescriptor {
+public class ClassDescriptorImpl extends DeclarationDescriptorImpl implements ClassDescriptorFromSource {
     private TypeConstructor typeConstructor;
 
     private JetScope memberDeclarations;
@@ -111,7 +111,7 @@ public class ClassDescriptorImpl extends DeclarationDescriptorImpl implements Cl
 
     @NotNull
     @Override
-    public Set<ConstructorDescriptor> getConstructors() {
+    public Collection<ConstructorDescriptor> getConstructors() {
         return constructors;
     }
 

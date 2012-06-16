@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.JetType;
@@ -32,6 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isClassObject;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isNotAny;
 
 /**
@@ -65,7 +67,7 @@ public final class JsDescriptorUtils {
     @NotNull
     public static FunctionDescriptor getFunctionByName(@NotNull JetScope scope,
                                                        @NotNull Name name) {
-        Set<FunctionDescriptor> functionDescriptors = scope.getFunctions(name);
+        Collection<FunctionDescriptor> functionDescriptors = scope.getFunctions(name);
         assert functionDescriptors.size() == 1 :
             "In scope " + scope + " supposed to be exactly one " + name + " function.\n" +
             "Found: " + functionDescriptors.size();
@@ -82,7 +84,7 @@ public final class JsDescriptorUtils {
     @NotNull
     public static PropertyDescriptor getPropertyByName(@NotNull JetScope scope,
                                                        @NotNull Name name) {
-        Set<VariableDescriptor> variables = scope.getProperties(name);
+        Collection<VariableDescriptor> variables = scope.getProperties(name);
         assert variables.size() == 1 : "Actual size: " + variables.size();
         VariableDescriptor variable = variables.iterator().next();
         PropertyDescriptor descriptor = (PropertyDescriptor)variable;
@@ -183,7 +185,7 @@ public final class JsDescriptorUtils {
     public static ClassDescriptor getContainingClass(@NotNull DeclarationDescriptor descriptor) {
         DeclarationDescriptor containing = descriptor.getContainingDeclaration();
         while (containing != null) {
-            if (containing instanceof ClassDescriptor) {
+            if (containing instanceof ClassDescriptor && !isClassObject(containing)) {
                 return (ClassDescriptor)containing;
             }
             containing = containing.getContainingDeclaration();
@@ -228,7 +230,7 @@ public final class JsDescriptorUtils {
     @NotNull
     public static List<DeclarationDescriptor> getContainedDescriptorsWhichAreNotPredefined(@NotNull NamespaceDescriptor namespace) {
         List<DeclarationDescriptor> result = Lists.newArrayList();
-        for (DeclarationDescriptor descriptor : namespace.getMemberScope().getAllDescriptors()) {
+        for (DeclarationDescriptor descriptor : namespace.getMemberScope().getAllDescriptors(DescriptorPredicate.all())) {
             if (!AnnotationsUtils.isPredefinedObject(descriptor)) {
                 result.add(descriptor);
             }

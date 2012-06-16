@@ -28,6 +28,7 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.java.JvmPrimitiveType;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
 import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
@@ -187,7 +188,7 @@ public class IntrinsicMethods {
 
     private void declareIntrinsicStringMethods() {
         final ClassDescriptor stringClass = myStdLib.getString();
-        final Collection<DeclarationDescriptor> stringMembers = stringClass.getMemberScope(Collections.<TypeProjection>emptyList()).getAllDescriptors();
+        final Collection<DeclarationDescriptor> stringMembers = stringClass.getMemberScope(Collections.<TypeProjection>emptyList()).getAllDescriptors(DescriptorPredicate.all());
         final PsiClass stringPsiClass = JavaPsiFacade.getInstance(myProject).findClass(
                 "java.lang.String",
                 new DelegatingGlobalSearchScope(ProjectScope.getLibrariesScope(myProject)) {
@@ -220,7 +221,7 @@ public class IntrinsicMethods {
 
     private void declareIntrinsicProperty(Name className, Name methodName, IntrinsicMethod implementation) {
         final JetScope numberScope = getClassMemberScope(className);
-        Set<VariableDescriptor> properties = numberScope.getProperties(methodName);
+        Collection<VariableDescriptor> properties = numberScope.getProperties(methodName);
         assert properties.size() == 1;
         final VariableDescriptor property = properties.iterator().next();
         myMethods.put(property.getOriginal(), implementation);
@@ -228,7 +229,7 @@ public class IntrinsicMethods {
 
     private void declareIntrinsicFunction(Name className, Name functionName, int arity, IntrinsicMethod implementation, boolean original) {
         JetScope memberScope = getClassMemberScope(className);
-        final Set<FunctionDescriptor> group = memberScope.getFunctions(functionName);
+        final Collection<FunctionDescriptor> group = memberScope.getFunctions(functionName);
         for (FunctionDescriptor descriptor : group) {
             if (className.equals(descriptor.getContainingDeclaration().getName()) && descriptor.getValueParameters().size() == arity) {
                 myMethods.put(original ? descriptor.getOriginal() : descriptor, implementation);
@@ -236,7 +237,7 @@ public class IntrinsicMethods {
         }
     }
 
-    private void declareOverload(Set<FunctionDescriptor> group, int arity, IntrinsicMethod implementation) {
+    private void declareOverload(Collection<FunctionDescriptor> group, int arity, IntrinsicMethod implementation) {
         for (FunctionDescriptor descriptor : group) {
             if (descriptor.getValueParameters().size() == arity) {
                 myMethods.put(descriptor.getOriginal(), implementation);

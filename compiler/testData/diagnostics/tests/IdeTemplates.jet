@@ -27,16 +27,15 @@ fun main(args : Array<String>) {
     class <#<name>#> {
         var <#<name>#> : <#<varType>#>
         get() {
-            <#<body>#>
+            <!UNRESOLVED_IDE_TEMPLATE!><#<body>#><!>
         }
         set(value) {
-            <#<body>#>
+            <!UNRESOLVED_IDE_TEMPLATE!><#<body>#><!>
         }
 
         val <#<name>#> : <#<valType>#>
         get() {
-            <#<body>#>
+            <!UNRESOLVED_IDE_TEMPLATE!><#<body>#><!>
         }
     }
 }
-

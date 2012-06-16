@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 
@@ -49,7 +50,7 @@ public abstract class AbstractScopeAdapter implements JetScope {
 
     @NotNull
     @Override
-    public Set<FunctionDescriptor> getFunctions(@NotNull Name name) {
+    public Collection<FunctionDescriptor> getFunctions(@NotNull Name name) {
         return getWorkerScope().getFunctions(name);
     }
 
@@ -70,13 +71,13 @@ public abstract class AbstractScopeAdapter implements JetScope {
 
     @NotNull
     @Override
-    public Set<ClassDescriptor> getObjectDescriptors() {
+    public Collection<ClassDescriptor> getObjectDescriptors() {
         return getWorkerScope().getObjectDescriptors();
     }
 
     @NotNull
     @Override
-    public Set<VariableDescriptor> getProperties(@NotNull Name name) {
+    public Collection<VariableDescriptor> getProperties(@NotNull Name name) {
         return getWorkerScope().getProperties(name);
     }
 
@@ -104,7 +105,12 @@ public abstract class AbstractScopeAdapter implements JetScope {
 
     @NotNull
     @Override
+    public Collection<DeclarationDescriptor> getAllDescriptors(@NotNull DescriptorPredicate predicate) {
+        return getWorkerScope().getAllDescriptors(predicate);
+    }
+
+    @Override
     public Collection<DeclarationDescriptor> getAllDescriptors() {
-        return getWorkerScope().getAllDescriptors();
+        return getAllDescriptors(DescriptorPredicate.all());
     }
 }

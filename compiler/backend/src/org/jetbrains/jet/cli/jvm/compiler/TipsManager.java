@@ -32,8 +32,9 @@ import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.AutoCastServiceImpl;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
+import org.jetbrains.jet.lang.resolve.name.NamePredicate;
+import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.JetType;
@@ -51,7 +52,8 @@ public final class TipsManager {
     }
 
     @NotNull
-    public static Collection<DeclarationDescriptor> getReferenceVariants(JetSimpleNameExpression expression, BindingContext context) {
+    public static Collection<DeclarationDescriptor> getReferenceVariants(
+            JetSimpleNameExpression expression, BindingContext context, @NotNull NamePredicate name) {
         JetExpression receiverExpression = expression.getReceiverExpression();
         if (receiverExpression != null) {
             // Process as call expression
@@ -73,29 +75,30 @@ public final class TipsManager {
 
                     for (ReceiverDescriptor descriptor : variantsForExplicitReceiver) {
                         descriptors.addAll(includeExternalCallableExtensions(
-                                excludePrivateDescriptors(descriptor.getType().getMemberScope().getAllDescriptors()),
-                                resolutionScope, descriptor));
+                                excludePrivateDescriptors(descriptor.getType().getMemberScope().getAllDescriptors(DescriptorPredicate.hasName(name))),
+                                resolutionScope, descriptor, name));
                     }
 
                     return descriptors;
                 }
 
                 return includeExternalCallableExtensions(
-                        excludePrivateDescriptors(expressionType.getMemberScope().getAllDescriptors()),
-                        resolutionScope, new ExpressionReceiver(receiverExpression, expressionType));
+                        excludePrivateDescriptors(expressionType.getMemberScope().getAllDescriptors(DescriptorPredicate.hasName(name))),
+                        resolutionScope, new ExpressionReceiver(receiverExpression, expressionType), name);
             }
             return Collections.emptyList();
         }
         else {
-            return getVariantsNoReceiver(expression, context);
+            return getVariantsNoReceiver(expression, context, name);
         }
     }
 
-    public static Collection<DeclarationDescriptor> getVariantsNoReceiver(JetExpression expression, BindingContext context) {
+    public static Collection<DeclarationDescriptor> getVariantsNoReceiver(
+            JetExpression expression, BindingContext context, @NotNull NamePredicate name) {
         JetScope resolutionScope = context.get(BindingContext.RESOLUTION_SCOPE, expression);
         if (resolutionScope != null) {
             if (expression.getParent() instanceof JetImportDirective || expression.getParent() instanceof JetNamespaceHeader) {
-                return excludeNonPackageDescriptors(resolutionScope.getAllDescriptors());
+                return resolutionScope.getAllDescriptors(DescriptorPredicate.namespaces(name));
             }
             else {
                 Collection<DeclarationDescriptor> descriptorsSet = Sets.newHashSet();
@@ -105,11 +108,11 @@ public final class TipsManager {
 
                 for (ReceiverDescriptor receiverDescriptor : result) {
                     JetType receiverType = receiverDescriptor.getType();
-                    descriptorsSet.addAll(receiverType.getMemberScope().getAllDescriptors());
+                    descriptorsSet.addAll(receiverType.getMemberScope().getAllDescriptors(DescriptorPredicate.hasName(name)));
                 }
 
-                descriptorsSet.addAll(resolutionScope.getAllDescriptors());
-                return excludeNotCallableExtensions(excludePrivateDescriptors(descriptorsSet), resolutionScope);
+                descriptorsSet.addAll(resolutionScope.getAllDescriptors(DescriptorPredicate.hasName(name)));
+                return excludeNotCallableExtensions(excludePrivateDescriptors(descriptorsSet), resolutionScope, name);
             }
         }
         return Collections.emptyList();
@@ -119,7 +122,8 @@ public final class TipsManager {
     public static Collection<DeclarationDescriptor> getReferenceVariants(JetNamespaceHeader expression, BindingContext context) {
         JetScope resolutionScope = context.get(BindingContext.RESOLUTION_SCOPE, expression);
         if (resolutionScope != null) {
-            return excludeNonPackageDescriptors(resolutionScope.getAllDescriptors());
+            // TODO: better predicate
+            return excludeNonPackageDescriptors(resolutionScope.getAllDescriptors(DescriptorPredicate.all()));
         }
 
         return Collections.emptyList();
@@ -141,7 +145,9 @@ public final class TipsManager {
     }
 
     public static Collection<DeclarationDescriptor> excludeNotCallableExtensions(
-            @NotNull Collection<? extends DeclarationDescriptor> descriptors, @NotNull final JetScope scope
+            @NotNull Collection<? extends DeclarationDescriptor> descriptors,
+            @NotNull final JetScope scope,
+            @NotNull NamePredicate name
     ) {
         final Set<DeclarationDescriptor> descriptorsSet = Sets.newHashSet(descriptors);
 
@@ -149,9 +155,10 @@ public final class TipsManager {
         scope.getImplicitReceiversHierarchy(result);
 
         descriptorsSet.removeAll(
-                Collections2.filter(JetScopeUtils.getAllExtensions(scope), new Predicate<CallableDescriptor>() {
+                Collections2.filter(scope.getAllDescriptors(DescriptorPredicate.extension(name)), new Predicate<DeclarationDescriptor>() {
                     @Override
-                    public boolean apply(CallableDescriptor callableDescriptor) {
+                    public boolean apply(DeclarationDescriptor declarationDescriptor) {
+                        CallableDescriptor callableDescriptor = (CallableDescriptor) declarationDescriptor;
                         if (!callableDescriptor.getReceiverParameter().exists()) {
                             return false;
                         }
@@ -180,7 +187,8 @@ public final class TipsManager {
     private static Set<DeclarationDescriptor> includeExternalCallableExtensions(
             @NotNull Collection<DeclarationDescriptor> descriptors,
             @NotNull final JetScope externalScope,
-            @NotNull final ReceiverDescriptor receiverDescriptor
+            @NotNull final ReceiverDescriptor receiverDescriptor,
+            @NotNull NamePredicate name
     ) {
         // It's impossible to add extension function for namespace
         JetType receiverType = receiverDescriptor.getType();
@@ -191,13 +199,13 @@ public final class TipsManager {
         Set<DeclarationDescriptor> descriptorsSet = Sets.newHashSet(descriptors);
 
         descriptorsSet.addAll(
-                Collections2.filter(JetScopeUtils.getAllExtensions(externalScope),
-                                                  new Predicate<CallableDescriptor>() {
-                                                      @Override
-                                                      public boolean apply(CallableDescriptor callableDescriptor) {
-                                                          return ExpressionTypingUtils.checkIsExtensionCallable(receiverDescriptor, callableDescriptor);
-                                                      }
-                                                  }));
+                Collections2.filter(externalScope.getAllDescriptors(DescriptorPredicate.extension(name)),
+                                  new Predicate<DeclarationDescriptor>() {
+                                      @Override
+                                      public boolean apply(DeclarationDescriptor callableDescriptor) {
+                                          return ExpressionTypingUtils.checkIsExtensionCallable(receiverDescriptor, (CallableDescriptor) callableDescriptor);
+                                      }
+                                  }));
 
         return descriptorsSet;
     }

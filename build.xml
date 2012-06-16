@@ -143,7 +143,12 @@
 
     <target name="jslib">
       <jar jarfile="${kotlin-home}/lib/kotlin-jslib.jar">
-        <fileset dir="${basedir}/js/js.libraries/src"/>
+        <fileset dir="${basedir}/js/js.libraries/src">
+          <include name="core/**"/>
+          <include name="jquery/**"/>
+          <include name="dom/**"/>
+          <include name="html5/**"/>
+        </fileset>
       </jar>
       <java classname="com.google.javascript.jscomp.CommandLineRunner" failonerror="true">
         <classpath>
@@ -474,3 +479,5 @@
         </zip>
     </target>
 </project>
+
+<!-- vim: set ts=4 sw=4 et nowrap: -->

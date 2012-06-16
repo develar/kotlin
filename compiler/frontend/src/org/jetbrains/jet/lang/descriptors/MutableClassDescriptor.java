@@ -18,6 +18,7 @@ package org.jetbrains.jet.lang.descriptors;
 
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetParameter;
 import org.jetbrains.jet.lang.resolve.AbstractScopeAdapter;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
@@ -36,7 +37,10 @@ import java.util.Set;
 /**
  * @author abreslav
  */
-public class MutableClassDescriptor extends MutableClassDescriptorLite {
+public class MutableClassDescriptor extends MutableClassDescriptorLite implements ClassDescriptorFromSource {
+    private final Set<ConstructorDescriptor> constructors = Sets.newLinkedHashSet();
+    private ConstructorDescriptor primaryConstructor;
+
     private final Set<CallableMemberDescriptor> declaredCallableMembers = Sets.newHashSet();
     private final Set<CallableMemberDescriptor> allCallableMembers = Sets.newHashSet(); // includes fake overrides
     private final Set<PropertyDescriptor> properties = Sets.newHashSet();
@@ -69,9 +73,15 @@ public class MutableClassDescriptor extends MutableClassDescriptorLite {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    @Override
     public void addConstructor(@NotNull ConstructorDescriptor constructorDescriptor, @NotNull BindingTrace trace) {
-        super.addConstructor(constructorDescriptor, trace);
+        if (constructorDescriptor.getContainingDeclaration() != this) {
+            throw new IllegalStateException("invalid containing declaration of constructor");
+        }
+        constructors.add(constructorDescriptor);
+        if (defaultType != null) {
+            ((ConstructorDescriptorImpl) constructorDescriptor).setReturnType(getDefaultType());
+        }
+
         if (constructorDescriptor.isPrimary()) {
             setUpScopeForInitializers(constructorDescriptor);
             for (ValueParameterDescriptor valueParameterDescriptor : constructorDescriptor.getValueParameters()) {
@@ -83,6 +93,26 @@ public class MutableClassDescriptor extends MutableClassDescriptorLite {
             }
         }
     }
+
+    public void setPrimaryConstructor(@NotNull ConstructorDescriptor constructorDescriptor, BindingTrace trace) {
+        assert this.primaryConstructor == null : "Primary constructor assigned twice " + this;
+        this.primaryConstructor = constructorDescriptor;
+        addConstructor(constructorDescriptor, trace);
+    }
+
+    @NotNull
+    @Override
+    public Set<ConstructorDescriptor> getConstructors() {
+        return constructors;
+    }
+
+    @Override
+    @Nullable
+    public ConstructorDescriptor getUnsubstitutedPrimaryConstructor() {
+        return primaryConstructor;
+    }
+
+
 
     @NotNull
     public Set<SimpleFunctionDescriptor> getFunctions() {
@@ -124,6 +154,9 @@ public class MutableClassDescriptor extends MutableClassDescriptorLite {
     @Override
     public void createTypeConstructor() {
         super.createTypeConstructor();
+        for (FunctionDescriptor functionDescriptor : getConstructors()) {
+            ((ConstructorDescriptorImpl) functionDescriptor).setReturnType(getDefaultType());
+        }
         scopeForMemberResolution.setImplicitReceiver(new ClassReceiver(this));
     }
 

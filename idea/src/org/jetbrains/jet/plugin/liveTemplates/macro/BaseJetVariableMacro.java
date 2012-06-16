@@ -36,6 +36,8 @@ import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
+import org.jetbrains.jet.lang.resolve.name.NamePredicate;
+import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.plugin.project.WholeProjectAnalyzerFacade;
@@ -72,7 +74,8 @@ public abstract class BaseJetVariableMacro extends Macro {
         ExpressionTypingServices callResolverContext = new InjectorForMacros(project).getExpressionTypingServices();
 
         List<VariableDescriptor> filteredDescriptors = new ArrayList<VariableDescriptor>();
-        for (DeclarationDescriptor declarationDescriptor : scope.getAllDescriptors()) {
+        // TODO: better predicate
+        for (DeclarationDescriptor declarationDescriptor : scope.getAllDescriptors(DescriptorPredicate.all())) {
             if (declarationDescriptor instanceof VariableDescriptor) {
                 VariableDescriptor variableDescriptor = (VariableDescriptor) declarationDescriptor;
                 if (isSuitable(variableDescriptor, scope, project, callResolverContext)) {
@@ -82,7 +85,7 @@ public abstract class BaseJetVariableMacro extends Macro {
         }
 
         List<JetNamedDeclaration> declarations = new ArrayList<JetNamedDeclaration>();
-        for (DeclarationDescriptor declarationDescriptor : TipsManager.excludeNotCallableExtensions(filteredDescriptors, scope)) {
+        for (DeclarationDescriptor declarationDescriptor : TipsManager.excludeNotCallableExtensions(filteredDescriptors, scope, NamePredicate.all())) {
             PsiElement declaration = BindingContextUtils.descriptorToDeclaration(bc, declarationDescriptor);
             assert declaration == null || declaration instanceof PsiNamedElement;
 

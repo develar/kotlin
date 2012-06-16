@@ -51,7 +51,7 @@ From this root project there are Run/Debug Configurations for running IDEA or th
 * VCS -> Git -> Pull
 * Run IDEA
 * a child IDEA with the Kotlin plugin will then startup
-* you can now open the [kotlin libraries project](https://github.com/JetBrains/kotlin/libraries) to then work with the various kotlin libraries etc.
+* you can now open the [kotlin libraries project](https://github.com/JetBrains/kotlin/tree/master/libraries) to then work with the various kotlin libraries etc.
 
 ### Using a pre-built Kotlin IDEA plugin
 
@@ -64,7 +64,7 @@ Preferences -> Plugins -> Browse Repositories -> Manage Repositories... -> + to 
  * [http://www.jetbrains.com/kotlin/eap-plugin-repository/updatePlugins.xml](http://www.jetbrains.com/kotlin/eap-plugin-repository/updatePlugins.xml)
 
 You can now open any Kotlin based projects. Its advisable you don't open the [root kotlin project](https://github.com/JetBrains/kotlin) as thats intended to be used to
-build the kotlin compiler and plugin itself; instead open the [kotlin libraries project](https://github.com/JetBrains/kotlin/libraries)
+build the kotlin compiler and plugin itself; instead open the [kotlin libraries project](https://github.com/JetBrains/tree/master/kotlin/libraries)
 
 
 ## If you want to work on the compiler
@@ -87,7 +87,7 @@ You can now run the various Run/Debug Configurations such as
 * download a clean [IDEA 11 EAP build](http://confluence.jetbrains.net/display/IDEADEV/IDEA+11.1+EAP)
 * Preferences -> Plugins -> Browse Repositories -> Manage Repositories... -> + to add a new repository URL
 * [http://www.jetbrains.com/kotlin/eap-plugin-repository/updatePlugins.xml](http://www.jetbrains.com/kotlin/eap-plugin-repository/updatePlugins.xml)
-* open the [kotlin libraries project](https://github.com/JetBrains/kotlin/libraries)
+* open the [kotlin libraries project](https://github.com/JetBrains/kotlin/tree/master/libraries)
 
 Then build via
 

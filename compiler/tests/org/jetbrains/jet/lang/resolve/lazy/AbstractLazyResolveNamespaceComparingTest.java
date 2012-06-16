@@ -21,7 +21,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.util.Function;
 import org.jetbrains.jet.JetTestUtils;
-import org.jetbrains.jet.cli.jvm.compiler.NamespaceComparator;
+import org.jetbrains.jet.jvm.compiler.NamespaceComparator;
 import org.jetbrains.jet.di.InjectorForTopDownAnalyzerForJvm;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
@@ -29,6 +29,7 @@ import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +49,7 @@ public abstract class AbstractLazyResolveNamespaceComparingTest extends Abstract
         InjectorForTopDownAnalyzerForJvm injector = createInjectorForTDA(module);
 
         List<JetFile> files = JetTestUtils
-                .createTestFiles(testFileName, FileUtil.loadFile(new File(testFileName)), new JetTestUtils.TestFileFactory<JetFile>() {
+                .createTestFiles(testFileName, FileUtil.loadFile(new File(testFileName), true), new JetTestUtils.TestFileFactory<JetFile>() {
                     @Override
                     public JetFile create(String fileName, String text) {
                         return JetPsiFactory.createFile(project, fileName, text);
@@ -101,6 +102,6 @@ public abstract class AbstractLazyResolveNamespaceComparingTest extends Abstract
     }
 
     private NamespaceDescriptor theOnlySubPackage(NamespaceDescriptor namespace) {
-        return (NamespaceDescriptor) namespace.getMemberScope().getAllDescriptors().iterator().next();
+        return (NamespaceDescriptor) namespace.getMemberScope().getAllDescriptors(DescriptorPredicate.all()).iterator().next();
     }
 }

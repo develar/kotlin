@@ -90,7 +90,7 @@ public inline fun <C: Collection<Boolean>> BooleanArray.filterTo(result: C, pred
  *
  * @includeFunctionBody ../../test/CollectionTest.kt filterNotIntoLinkedList
  */
-public inline fun <L: List<Boolean>> BooleanArray.filterNotTo(result: L, predicate: (Boolean) -> Boolean) : L {
+public inline fun <C: Collection<Boolean>> BooleanArray.filterNotTo(result: C, predicate: (Boolean) -> Boolean) : C {
     for (element in this) if (!predicate(element)) result.add(element)
     return result
 }
@@ -100,7 +100,7 @@ public inline fun <L: List<Boolean>> BooleanArray.filterNotTo(result: L, predica
  *
  * @includeFunctionBody ../../test/CollectionTest.kt filterNotNullIntoLinkedList
  */
-public inline fun <L: List<Boolean>> BooleanArray?.filterNotNullTo(result: L) : L {
+public inline fun <C: Collection<Boolean>> BooleanArray?.filterNotNullTo(result: C) : C {
     if (this != null) {
         for (element in this) if (element != null) result.add(element)
     }
@@ -145,7 +145,37 @@ public inline fun BooleanArray.fold(initial: Boolean, operation: (Boolean, Boole
  *
  * @includeFunctionBody ../../test/CollectionTest.kt foldRight
  */
-public inline fun BooleanArray.foldRight(initial: Boolean, operation: (Boolean, Boolean) -> Boolean): Boolean = reverse().fold(initial, operation)
+public inline fun BooleanArray.foldRight(initial: Boolean, operation: (Boolean, Boolean) -> Boolean): Boolean = reverse().fold(initial, {x, y -> operation(y, x)})
+
+
+/**
+ * Applies binary operation to all elements of iterable, going from left to right.
+ * Similar to fold function, but uses the first element as initial value
+ *
+ * @includeFunctionBody ../../test/CollectionTest.kt reduce
+ */
+public inline fun BooleanArray.reduce(operation: (Boolean, Boolean) -> Boolean): Boolean {
+    val iterator = this.iterator().sure()
+    if (!iterator.hasNext) {
+        throw UnsupportedOperationException("Empty iterable can't be reduced")
+    }
+
+    var result: Boolean = iterator.next() //compiler doesn't understand that result will initialized anyway
+    while (iterator.hasNext) {
+        result = operation(result, iterator.next())
+    }
+
+    return result
+}
+
+/**
+ * Applies binary operation to all elements of iterable, going from right to left.
+ * Similar to foldRight function, but uses the last element as initial value
+ *
+ * @includeFunctionBody ../../test/CollectionTest.kt reduceRight
+ */
+public inline fun BooleanArray.reduceRight(operation: (Boolean, Boolean) -> Boolean): Boolean = reverse().reduce { x, y -> operation(y, x) }
+
 
 /**
  * Groups the elements in the collection into a new [[Map]] using the supplied *toKey* function to calculate the key to group the elements by
@@ -197,7 +227,7 @@ public inline fun <L: List<Boolean>> BooleanArray.dropWhileTo(result: L, predica
 }
 
 /** Returns a list containing the first elements that satisfy the given *predicate* */
-public inline fun <L: List<Boolean>> BooleanArray.takeWhileTo(result: L, predicate: (Boolean) -> Boolean) : L {
+public inline fun <C: Collection<Boolean>> BooleanArray.takeWhileTo(result: C, predicate: (Boolean) -> Boolean) : C {
     for (element in this) if (predicate(element)) result.add(element) else break
     return result
 }

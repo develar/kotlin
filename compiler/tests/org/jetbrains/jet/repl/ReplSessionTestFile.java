@@ -17,7 +17,9 @@
 package org.jetbrains.jet.repl;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.CharStreams;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -34,15 +36,50 @@ import java.util.regex.Pattern;
  */
 public class ReplSessionTestFile {
 
-    @NotNull
-    private final List<Pair<String, String>> lines;
+    public enum MatchType {
+        EQUALS,
+        SUBSTRING,
+    }
 
-    public ReplSessionTestFile(@NotNull List<Pair<String, String>> lines) {
+    public static class OneLine {
+        @NotNull
+        private final String code;
+        @NotNull
+        private final String expected;
+        @NotNull
+        private final MatchType matchType;
+
+        public OneLine(@NotNull String code, @NotNull String expected, @NotNull MatchType matchType) {
+            this.code = code;
+            this.expected = expected;
+            this.matchType = matchType;
+        }
+
+        @NotNull
+        public String getCode() {
+            return code;
+        }
+
+        @NotNull
+        public String getExpected() {
+            return expected;
+        }
+
+        @NotNull
+        public MatchType getMatchType() {
+            return matchType;
+        }
+    }
+
+    @NotNull
+    private final List<OneLine> lines;
+
+    public ReplSessionTestFile(@NotNull List<OneLine> lines) {
         this.lines = lines;
     }
 
     @NotNull
-    public List<Pair<String, String>> getLines() {
+    public List<OneLine> getLines() {
         return lines;
     }
 
@@ -51,7 +88,8 @@ public class ReplSessionTestFile {
             FileInputStream inputStream = new FileInputStream(file);
             try {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "utf-8"));
-                return load(reader);
+                List<String> lines = CharStreams.readLines(reader);
+                return load(new SimpleLinesParser(lines));
             } finally {
                 inputStream.close();
             }
@@ -60,28 +98,32 @@ public class ReplSessionTestFile {
         }
     }
 
-    private static ReplSessionTestFile load(@NotNull BufferedReader reader) throws IOException {
-        List<Pair<String, String>> list = Lists.newArrayList();
-        while (true) {
-            String odd = reader.readLine();
-            if (odd == null) {
-                return new ReplSessionTestFile(list);
-            }
+    private static ReplSessionTestFile load(@NotNull SimpleLinesParser parser) throws IOException {
+        List<OneLine> list = Lists.newArrayList();
 
-            Pattern pattern = Pattern.compile(">>>( |$)(.*)");
-            Matcher matcher = pattern.matcher(odd);
-            if (!matcher.matches()) {
-                throw new IllegalStateException("odd lines must start with >>>");
-            }
+        Pattern startPattern = Pattern.compile(">>>( |$)(.*)");
+        Pattern substringPattern = Pattern.compile("substring: (.*)");
+
+        while (!parser.lookingAtEof()) {
+            Matcher matcher = parser.next(startPattern);
             String code = matcher.group(2);
 
-            String even = reader.readLine();
-            if (even == null) {
-                throw new IllegalStateException("expecting even");
+            StringBuilder value = new StringBuilder();
+
+            Matcher substringMatcher = parser.lookingAt(substringPattern);
+            if (substringMatcher != null) {
+                list.add(new OneLine(code, substringMatcher.group(1), MatchType.SUBSTRING));
+                parser.next();
+                continue;
             }
 
-            list.add(Pair.create(code, even));
+            while (!parser.lookingAtEof() && parser.lookingAt(startPattern) == null) {
+                value.append(parser.next()).append("\n");
+            }
+
+            list.add(new OneLine(code, value.toString(), MatchType.EQUALS));
         }
+        return new ReplSessionTestFile(list);
     }
 
 }

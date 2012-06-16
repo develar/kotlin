@@ -50,12 +50,12 @@ public class ClosureExpressionsTypingVisitor extends ExpressionTypingVisitor {
     }
 
     @Override
-    public JetType visitObjectLiteralExpression(final JetObjectLiteralExpression expression, final ExpressionTypingContext context) {
+    public JetTypeInfo visitObjectLiteralExpression(final JetObjectLiteralExpression expression, final ExpressionTypingContext context) {
         DelegatingBindingTrace delegatingBindingTrace = context.trace.get(TRACE_DELTAS_CACHE, expression.getObjectDeclaration());
         if (delegatingBindingTrace != null) {
             delegatingBindingTrace.addAllMyDataTo(context.trace);
             JetType type = context.trace.get(EXPRESSION_TYPE, expression);
-            return DataFlowUtils.checkType(type, expression, context);
+            return DataFlowUtils.checkType(type, expression, context, context.dataFlowInfo);
         }
         final JetType[] result = new JetType[1];
         final TemporaryBindingTrace temporaryTrace = TemporaryBindingTrace.create(context.trace);
@@ -80,17 +80,18 @@ public class ClosureExpressionsTypingVisitor extends ExpressionTypingVisitor {
         };
         ObservableBindingTrace traceAdapter = new ObservableBindingTrace(temporaryTrace);
         traceAdapter.addHandler(CLASS, handler);
-        TopDownAnalyzer.processObject(context.expressionTypingServices.getProject(), traceAdapter, context.scope, context.scope.getContainingDeclaration(), expression.getObjectDeclaration());
+        TopDownAnalyzer.processClassOrObject(context.expressionTypingServices.getProject(), traceAdapter, context.scope,
+                                             context.scope.getContainingDeclaration(), expression.getObjectDeclaration());
 
         DelegatingBindingTrace cloneDelta = new DelegatingBindingTrace(new BindingTraceContext().getBindingContext());
         temporaryTrace.addAllMyDataTo(cloneDelta);
         context.trace.record(TRACE_DELTAS_CACHE, expression.getObjectDeclaration(), cloneDelta);
         temporaryTrace.commit();
-        return DataFlowUtils.checkType(result[0], expression, context);
+        return DataFlowUtils.checkType(result[0], expression, context, context.dataFlowInfo);
     }
 
     @Override
-    public JetType visitFunctionLiteralExpression(JetFunctionLiteralExpression expression, ExpressionTypingContext context) {
+    public JetTypeInfo visitFunctionLiteralExpression(JetFunctionLiteralExpression expression, ExpressionTypingContext context) {
         JetFunctionLiteral functionLiteral = expression.getFunctionLiteral();
         JetBlockExpression bodyExpression = functionLiteral.getBodyExpression();
         if (bodyExpression == null) return null;
@@ -122,7 +123,7 @@ public class ClosureExpressionsTypingVisitor extends ExpressionTypingVisitor {
                 returnType = JetStandardClasses.getReturnTypeFromFunctionType(expectedType);
             }
             returnType = context.expressionTypingServices.getBlockReturnedType(functionInnerScope, bodyExpression, CoercionStrategy.COERCION_TO_UNIT,
-                    context.replaceExpectedType(returnType).replaceBindingTrace(temporaryTrace), temporaryTrace);
+                    context.replaceExpectedType(returnType).replaceBindingTrace(temporaryTrace), temporaryTrace).getType();
         }
         temporaryTrace.commit(new Predicate<WritableSlice>() {
             @Override
@@ -139,11 +140,11 @@ public class ClosureExpressionsTypingVisitor extends ExpressionTypingVisitor {
             JetType expectedReturnType = JetStandardClasses.getReturnTypeFromFunctionType(expectedType);
             if (JetStandardClasses.isUnit(expectedReturnType)) {
                 functionDescriptor.setReturnType(JetStandardClasses.getUnitType());
-                return DataFlowUtils.checkType(JetStandardClasses.getFunctionType(Collections.<AnnotationDescriptor>emptyList(), receiver, parameterTypes, JetStandardClasses.getUnitType()), expression, context);
+                return DataFlowUtils.checkType(JetStandardClasses.getFunctionType(Collections.<AnnotationDescriptor>emptyList(), receiver, parameterTypes, JetStandardClasses.getUnitType()), expression, context, context.dataFlowInfo);
             }
 
         }
-        return DataFlowUtils.checkType(JetStandardClasses.getFunctionType(Collections.<AnnotationDescriptor>emptyList(), receiver, parameterTypes, safeReturnType), expression, context);
+        return DataFlowUtils.checkType(JetStandardClasses.getFunctionType(Collections.<AnnotationDescriptor>emptyList(), receiver, parameterTypes, safeReturnType), expression, context, context.dataFlowInfo);
     }
 
     private SimpleFunctionDescriptorImpl createFunctionDescriptor(JetFunctionLiteralExpression expression, ExpressionTypingContext context, boolean functionTypeExpected) {

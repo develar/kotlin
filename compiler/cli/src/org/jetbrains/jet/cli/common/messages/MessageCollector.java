@@ -19,12 +19,7 @@ package org.jetbrains.jet.cli.common.messages;
 import org.jetbrains.annotations.NotNull;
 
 public interface MessageCollector {
-    MessageCollector PLAIN_TEXT_TO_SYSTEM_ERR = new MessageCollector() {
-        @Override
-        public void report(@NotNull CompilerMessageSeverity severity, @NotNull String message, @NotNull CompilerMessageLocation location) {
-            System.err.println(MessageRenderer.PLAIN.render(severity, message, location));
-        }
-    };
+    MessageCollector PLAIN_TEXT_TO_SYSTEM_ERR = new MessageCollectorPlainTextToStream(System.err);
 
     void report(@NotNull CompilerMessageSeverity severity, @NotNull String message, @NotNull CompilerMessageLocation location);
 }

@@ -22,6 +22,7 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.error.ErrorSimpleFunctionDescriptorImpl;
@@ -112,16 +113,20 @@ public class ErrorUtils {
 
         @NotNull
         @Override
-        public Collection<DeclarationDescriptor> getAllDescriptors() {
+        public Collection<DeclarationDescriptor> getAllDescriptors(@NotNull DescriptorPredicate predicate) {
             return Collections.emptyList();
         }
 
+        @Override
+        public Collection<DeclarationDescriptor> getAllDescriptors() {
+            return getAllDescriptors(DescriptorPredicate.all());
+        }
     }
 
     private static final ClassDescriptorImpl ERROR_CLASS = new ClassDescriptorImpl(ERROR_MODULE, Collections.<AnnotationDescriptor>emptyList(), Name.special("<ERROR CLASS>")) {
         @NotNull
         @Override
-        public Set<ConstructorDescriptor> getConstructors() {
+        public Collection<ConstructorDescriptor> getConstructors() {
             return ERROR_CONSTRUCTOR_GROUP;
         }
 
