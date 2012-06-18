@@ -18,6 +18,7 @@ package org.jetbrains.jet.codegen.signature.kotlin;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
+import org.jetbrains.jet.utils.BitSetUtils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 
@@ -33,23 +34,9 @@ public class JetMethodAnnotationWriter {
         this.av = av;
     }
 
-    public void writeFlags(int... flagBits) {
-        BitSet bitSet = new BitSet();
-        for (int bit : flagBits) {
-            bitSet.set(bit);
-        }
-        writeFlags(bitSet);
-    }
-
-    private void writeFlags(BitSet flags) {
-        int flagsValue = 0;
-        for (int bit = 0; bit < flags.length(); bit++) {
-            if (flags.get(bit)) {
-                flagsValue |= (1 << bit);
-            }
-        }
-
-        if (flagsValue != JvmStdlibNames.JET_METHOD_FLAGS_DEFAULT_VALUE) {
+    public void writeFlags(BitSet flags) {
+        int flagsValue = BitSetUtils.toInt(flags);
+        if (flagsValue != JvmStdlibNames.FLAGS_DEFAULT_VALUE) {
             av.visit(JvmStdlibNames.JET_METHOD_FLAGS_FIELD, flagsValue);
         }
     }

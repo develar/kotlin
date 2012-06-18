@@ -18,5 +18,5 @@ tmp
 *TestMy.java
 .*.swp
 gh-pages
-
+*.class
 .DS_Store

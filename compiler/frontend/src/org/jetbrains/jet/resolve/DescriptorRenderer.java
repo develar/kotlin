@@ -274,7 +274,7 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
         final DeclarationDescriptor containingDeclaration = declarationDescriptor.getContainingDeclaration();
         if (containingDeclaration != null) {
             FqNameUnsafe fqName = DescriptorUtils.getFQName(containingDeclaration);
-            stringBuilder.append(FqName.ROOT.toUnsafe().equals(fqName) ? "root package" : escape(fqName.getFqName()));
+            stringBuilder.append(FqName.ROOT.equalsTo(fqName) ? "root package" : escape(fqName.getFqName()));
         }
     }
 
@@ -458,6 +458,8 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
 
         @Override
         public Void visitConstructorDescriptor(ConstructorDescriptor constructorDescriptor, StringBuilder builder) {
+            renderVisibility(constructorDescriptor.getVisibility(), builder);
+
             builder.append(renderKeyword("ctor")).append(" ");
 
             ClassDescriptor classDescriptor = constructorDescriptor.getContainingDeclaration();

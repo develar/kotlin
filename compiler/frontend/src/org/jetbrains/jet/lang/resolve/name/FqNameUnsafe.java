@@ -27,7 +27,7 @@ import java.util.List;
  *
  * @author Stepan Koltsov
  */
-public class FqNameUnsafe {
+public class FqNameUnsafe extends FqNameBase {
 
     public static final Name ROOT_NAME = Name.special("<root>");
 
@@ -144,6 +144,16 @@ public class FqNameUnsafe {
         compute();
 
         return shortName;
+    }
+
+    @NotNull
+    public Name shortNameOrSpecial() {
+        if (isRoot()) {
+            return ROOT_NAME;
+        }
+        else {
+            return shortName();
+        }
     }
 
     interface WalkCallback {

@@ -30,6 +30,7 @@ import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -99,7 +100,7 @@ public class PropertyCodegen {
             if (!propertyDescriptor.isVar()) {
                 modifiers |= Opcodes.ACC_FINAL;
             }
-            if (state.getInjector().getJetStandardLibrary().isVolatile(propertyDescriptor)) {
+            if (JetStandardLibrary.isVolatile(propertyDescriptor)) {
                 modifiers |= Opcodes.ACC_VOLATILE;
             }
             Type type = state.getInjector().getJetTypeMapper().mapType(propertyDescriptor.getType(), MapTypeMode.VALUE);
@@ -179,7 +180,10 @@ public class PropertyCodegen {
         String getterName = getterName(propertyDescriptor.getName());
         MethodVisitor mv = v.newMethod(origin, flags, getterName, descriptor, null, null);
         generateJetPropertyAnnotation(mv, signature.getPropertyTypeKotlinSignature(),
-                                      signature.getJvmMethodSignature().getKotlinTypeParameter(), propertyDescriptor);
+                                      signature.getJvmMethodSignature().getKotlinTypeParameter(), propertyDescriptor,
+                                      propertyDescriptor.getGetter() == null
+                                            ? propertyDescriptor.getVisibility()
+                                            : propertyDescriptor.getGetter().getVisibility());
 
         if (propertyDescriptor.getGetter() != null) {
             assert !propertyDescriptor.getGetter().hasBody();
@@ -223,18 +227,23 @@ public class PropertyCodegen {
     }
 
     public static void generateJetPropertyAnnotation(MethodVisitor mv, @NotNull String kotlinType, @NotNull String typeParameters,
-            @NotNull PropertyDescriptor propertyDescriptor) {
+            @NotNull PropertyDescriptor propertyDescriptor, @NotNull Visibility visibility) {
         JetMethodAnnotationWriter aw = JetMethodAnnotationWriter.visitAnnotation(mv);
         Modality modality = propertyDescriptor.getModality();
+        BitSet flags = new BitSet();
+        flags.set(JvmStdlibNames.FLAG_PROPERTY_BIT);
         if (CodegenUtil.isInterface(propertyDescriptor.getContainingDeclaration()) && modality != Modality.ABSTRACT) {
-            aw.writeFlags(JvmStdlibNames.JET_METHOD_FLAG_PROPERTY_BIT,
-                          modality == Modality.FINAL
-                          ? JvmStdlibNames.JET_METHOD_FLAG_FORCE_FINAL_BIT
-                          : JvmStdlibNames.JET_METHOD_FLAG_FORCE_OPEN_BIT);
+            flags.set(modality == Modality.FINAL
+                      ? JvmStdlibNames.FLAG_FORCE_FINAL_BIT
+                      : JvmStdlibNames.FLAG_FORCE_OPEN_BIT);
         }
-        else {
-            aw.writeFlags(JvmStdlibNames.JET_METHOD_FLAG_PROPERTY_BIT);
+        if (visibility == Visibilities.INTERNAL) {
+            flags.set(JvmStdlibNames.FLAG_INTERNAL_BIT);
         }
+        else if (visibility == Visibilities.PRIVATE) {
+            flags.set(JvmStdlibNames.FLAG_PRIVATE_BIT);
+        }
+        aw.writeFlags(flags);
         aw.writeTypeParameters(typeParameters);
         aw.writePropertyType(kotlinType);
         aw.visitEnd();
@@ -276,7 +285,8 @@ public class PropertyCodegen {
         final String descriptor = signature.getJvmMethodSignature().getAsmMethod().getDescriptor();
         MethodVisitor mv = v.newMethod(origin, flags, setterName(propertyDescriptor.getName()), descriptor, null, null);
         generateJetPropertyAnnotation(mv, signature.getPropertyTypeKotlinSignature(),
-                                      signature.getJvmMethodSignature().getKotlinTypeParameter(), propertyDescriptor);
+                                      signature.getJvmMethodSignature().getKotlinTypeParameter(), propertyDescriptor,
+                                      propertyDescriptor.getSetter().getVisibility());
 
         if (propertyDescriptor.getSetter() != null) {
             assert !propertyDescriptor.getSetter().hasBody();

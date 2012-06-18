@@ -111,7 +111,7 @@ public class IdeErrorMessages {
                     @NotNull
                     @Override
                     public String render(@NotNull CallableMemberDescriptor object) {
-                        return DescriptorRenderer.TEXT.renderType(object.getReturnType());
+                        return DescriptorRenderer.HTML.renderType(object.getReturnType());
                     }
                 }, DescriptorRenderer.HTML);
 
@@ -222,7 +222,7 @@ public class IdeErrorMessages {
                 DeclarationDescriptor containingDeclaration = funDescriptor.getContainingDeclaration();
                 if (containingDeclaration != null) {
                     FqNameUnsafe fqName = DescriptorUtils.getFQName(containingDeclaration);
-                    stringBuilder.append(FqName.ROOT.toUnsafe().equals(fqName) ? "root package" : fqName.getFqName());
+                    stringBuilder.append(FqName.ROOT.equalsTo(fqName) ? "root package" : fqName.getFqName());
                 }
                 stringBuilder.append("</li>");
             }

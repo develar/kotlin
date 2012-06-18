@@ -48,11 +48,13 @@ public class JvmStdlibNames {
     public static final String JET_METHOD_TYPE_PARAMETERS_FIELD = "typeParameters";
     public static final String JET_METHOD_PROPERTY_TYPE_FIELD = "propertyType";
 
-    public static final int JET_METHOD_FLAGS_DEFAULT_VALUE = 0;
-    public static final int JET_METHOD_FLAGS_BITS = 3;
-    public static final int JET_METHOD_FLAG_PROPERTY_BIT = 0;
-    public static final int JET_METHOD_FLAG_FORCE_OPEN_BIT = 1;
-    public static final int JET_METHOD_FLAG_FORCE_FINAL_BIT = 2;
+    public static final int FLAGS_DEFAULT_VALUE = 0;
+    public static final int FLAGS_BITS = 5;
+    public static final int FLAG_PROPERTY_BIT = 0;
+    public static final int FLAG_FORCE_OPEN_BIT = 1;
+    public static final int FLAG_FORCE_FINAL_BIT = 2;
+    public static final int FLAG_PRIVATE_BIT = 3;
+    public static final int FLAG_INTERNAL_BIT = 4;
 
     public static final JvmClassName JET_CONSTRUCTOR = JvmClassName.byFqNameWithoutInnerClasses("jet.runtime.typeinfo.JetConstructor");
 
@@ -61,12 +63,14 @@ public class JvmStdlibNames {
      * @see JetConstructor#hidden()
      */
     public static final String JET_CONSTRUCTOR_HIDDEN_FIELD = "hidden";
-    
+    public static final String JET_CONSTRUCTOR_FLAGS_FIELD = "flags";
+
 
     public static final JvmClassName JET_CLASS = JvmClassName.byFqNameWithoutInnerClasses("jet.runtime.typeinfo.JetClass");
     
     public static final String JET_CLASS_SIGNATURE = "signature";
-    
+    public static final String JET_CLASS_FLAGS_FIELD = "flags";
+
 
     public static final JvmClassName JET_OBJECT = JvmClassName.byFqNameWithoutInnerClasses("jet.JetObject");
 

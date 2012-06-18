@@ -132,21 +132,27 @@ public class FunctionCodegen {
                     if (functionDescriptor instanceof PropertyAccessorDescriptor) {
                         PropertyCodegen.generateJetPropertyAnnotation(mv, propertyTypeSignature, jvmSignature.getKotlinTypeParameter(),
                                                                       ((PropertyAccessorDescriptor) functionDescriptor)
-                                                                              .getCorrespondingProperty());
+                                                                              .getCorrespondingProperty(),
+                                                                      functionDescriptor.getVisibility());
                     }
                     else if (functionDescriptor instanceof SimpleFunctionDescriptor) {
                         if (propertyTypeSignature != null) {
                             throw new IllegalStateException();
                         }
                         JetMethodAnnotationWriter aw = JetMethodAnnotationWriter.visitAnnotation(mv);
+                        BitSet kotlinFlags = new BitSet();
                         if (CodegenUtil.isInterface(functionDescriptor.getContainingDeclaration()) && modality != Modality.ABSTRACT) {
-                            aw.writeFlags(modality == Modality.FINAL
-                                          ? JvmStdlibNames.JET_METHOD_FLAG_FORCE_FINAL_BIT
-                                          : JvmStdlibNames.JET_METHOD_FLAG_FORCE_OPEN_BIT);
+                            kotlinFlags.set(modality == Modality.FINAL
+                                            ? JvmStdlibNames.FLAG_FORCE_FINAL_BIT
+                                            : JvmStdlibNames.FLAG_FORCE_OPEN_BIT);
                         }
-                        else {
-                            aw.writeFlags();
+                        if (functionDescriptor.getVisibility() == Visibilities.INTERNAL) {
+                            kotlinFlags.set(JvmStdlibNames.FLAG_INTERNAL_BIT);
                         }
+                        else if (functionDescriptor.getVisibility() == Visibilities.PRIVATE) {
+                            kotlinFlags.set(JvmStdlibNames.FLAG_PRIVATE_BIT);
+                        }
+                        aw.writeFlags(kotlinFlags);
                         aw.writeNullableReturnType(functionDescriptor.getReturnType().isNullable());
                         aw.writeTypeParameters(jvmSignature.getKotlinTypeParameter());
                         aw.writeReturnType(jvmSignature.getKotlinReturnType());

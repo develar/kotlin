@@ -31,12 +31,14 @@ import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.OverridingUtil;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
+import org.jetbrains.jet.lang.resolve.java.JdkNames;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.java.JvmClassName;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lexer.JetTokens;
+import org.jetbrains.jet.utils.BitSetUtils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -91,7 +93,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 isAbstract = true;
                 isInterface = true;
                 isAnnotation = true;
-                signature.getInterfaces().add("java/lang/annotation/Annotation");
+                signature.getInterfaces().add(JdkNames.JLA_ANNOTATION.getInternalName());
             }
             if (!jetClass.hasModifier(JetTokens.OPEN_KEYWORD) && !isAbstract) {
                 isFinal = true;
@@ -165,9 +167,20 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
         AnnotationCodegen.forClass(v.getVisitor(), typeMapper).genAnnotations(descriptor);
 
-        if (signature.getKotlinGenericSignature() != null) {
+        if (signature.getKotlinGenericSignature() != null || descriptor.getVisibility() != Visibilities.PUBLIC) {
             AnnotationVisitor annotationVisitor = v.newAnnotation(myClass, JvmStdlibNames.JET_CLASS.getDescriptor(), true);
             annotationVisitor.visit(JvmStdlibNames.JET_CLASS_SIGNATURE, signature.getKotlinGenericSignature());
+            BitSet flags = new BitSet();
+            if (descriptor.getVisibility() == Visibilities.INTERNAL) {
+                flags.set(JvmStdlibNames.FLAG_INTERNAL_BIT);
+            }
+            else if (descriptor.getVisibility() == Visibilities.PRIVATE) {
+                flags.set(JvmStdlibNames.FLAG_PRIVATE_BIT);
+            }
+            int flagsValue = BitSetUtils.toInt(flags);
+            if (JvmStdlibNames.FLAGS_DEFAULT_VALUE != flagsValue) {
+                annotationVisitor.visit(JvmStdlibNames.JET_CLASS_FLAGS_FIELD, flagsValue);
+            }
             annotationVisitor.visitEnd();
         }
     }
@@ -338,7 +351,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 MethodVisitor mv = v.newMethod(null, ACC_PUBLIC | ACC_BRIDGE | ACC_FINAL, method.getName(), method.getDescriptor(), null, null);
                 PropertyCodegen.generateJetPropertyAnnotation(mv, originalSignature.getPropertyTypeKotlinSignature(),
                                                               originalSignature.getJvmMethodSignature().getKotlinTypeParameter(),
-                                                              original);
+                                                              original, ((PropertyDescriptor) entry.getValue()).getGetter().getVisibility());
                 if (state.getClassBuilderMode() == ClassBuilderMode.STUBS) {
                     StubCodegen.generateStubCode(mv);
                 }
@@ -366,7 +379,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 MethodVisitor mv = v.newMethod(null, ACC_PUBLIC | ACC_BRIDGE | ACC_FINAL, method.getName(), method.getDescriptor(), null, null);
                 PropertyCodegen.generateJetPropertyAnnotation(mv, originalSignature2.getPropertyTypeKotlinSignature(),
                                                               originalSignature2.getJvmMethodSignature().getKotlinTypeParameter(),
-                                                              original);
+                                                              original, ((PropertyDescriptor) entry.getValue()).getSetter().getVisibility());
                 if (state.getClassBuilderMode() == ClassBuilderMode.STUBS) {
                     StubCodegen.generateStubCode(mv);
                 }
@@ -543,14 +556,17 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
             constructorMethod = JvmMethodSignature.simple("<init>", Type.VOID_TYPE, consArgTypes);
         }
 
-        int flags = ACC_PUBLIC; // TODO
+        int flags = JetTypeMapper.getAccessModifiers(constructorDescriptor, 0);
         final MethodVisitor mv = v.newMethod(myClass, flags, constructorMethod.getName(), constructorMethod.getAsmMethod().getDescriptor(), constructorMethod.getGenericsSignature(), null);
         if (state.getClassBuilderMode() == ClassBuilderMode.SIGNATURES) return;
 
         AnnotationVisitor jetConstructorVisitor = mv.visitAnnotation(JvmStdlibNames.JET_CONSTRUCTOR.getDescriptor(), true);
-        if (constructorDescriptor == null) {
-            jetConstructorVisitor.visit(JvmStdlibNames.JET_CONSTRUCTOR_HIDDEN_FIELD, true);
+
+        int flagsValue = BitSetUtils.toInt(CodegenUtil.getFlagsForVisibility(constructorDescriptor.getVisibility()));
+        if (JvmStdlibNames.FLAGS_DEFAULT_VALUE != flagsValue) {
+            jetConstructorVisitor.visit(JvmStdlibNames.JET_CLASS_FLAGS_FIELD, flagsValue);
         }
+
         jetConstructorVisitor.visitEnd();
         
         AnnotationCodegen.forMethod(mv, typeMapper).genAnnotations(constructorDescriptor);
@@ -776,16 +792,23 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
                     JvmMethodSignature jvmSignature = typeMapper.mapToCallableMethod(inheritedFun, false, OwnerKind.IMPLEMENTATION).getSignature();
                     JetMethodAnnotationWriter aw = JetMethodAnnotationWriter.visitAnnotation(mv);
+                    BitSet kotlinFlags = new BitSet();
+                    if (fun.getVisibility() == Visibilities.INTERNAL) {
+                        kotlinFlags.set(JvmStdlibNames.FLAG_INTERNAL_BIT);
+                    }
+                    else if (fun.getVisibility() == Visibilities.PRIVATE) {
+                        kotlinFlags.set(JvmStdlibNames.FLAG_PRIVATE_BIT);
+                    }
                     if (fun instanceof PropertyAccessorDescriptor) {
-                        aw.writeFlags(JvmStdlibNames.JET_METHOD_FLAG_PROPERTY_BIT);
+                        kotlinFlags.set(JvmStdlibNames.FLAG_PROPERTY_BIT);
                         aw.writeTypeParameters(jvmSignature.getKotlinTypeParameter());
                         aw.writePropertyType(jvmSignature.getKotlinReturnType());
                     } else {
-                        aw.writeFlags();
                         aw.writeNullableReturnType(fun.getReturnType().isNullable());
                         aw.writeTypeParameters(jvmSignature.getKotlinTypeParameter());
                         aw.writeReturnType(jvmSignature.getKotlinReturnType());
                     }
+                    aw.writeFlags(kotlinFlags);
                     aw.visitEnd();
 
                     if (state.getClassBuilderMode() == ClassBuilderMode.STUBS) {
@@ -925,8 +948,16 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
             throw new UnsupportedOperationException("failed to get descriptor for secondary constructor");
         }
         CallableMethod method = typeMapper.mapToCallableMethod(constructorDescriptor, kind, typeMapper.hasThis0(constructorDescriptor.getContainingDeclaration()));
-        int flags = ACC_PUBLIC; // TODO
+        int flags = JetTypeMapper.getAccessModifiers(constructorDescriptor, 0);
         final MethodVisitor mv = v.newMethod(constructor, flags, "<init>", method.getSignature().getAsmMethod().getDescriptor(), null, null);
+
+        AnnotationVisitor jetConstructorVisitor = mv.visitAnnotation(JvmStdlibNames.JET_CONSTRUCTOR.getDescriptor(), true);
+        int flagsValue = BitSetUtils.toInt(CodegenUtil.getFlagsForVisibility(constructorDescriptor.getVisibility()));
+        if (JvmStdlibNames.FLAGS_DEFAULT_VALUE != flagsValue) {
+            jetConstructorVisitor.visit(JvmStdlibNames.JET_CLASS_FLAGS_FIELD, flagsValue);
+        }
+        jetConstructorVisitor.visitEnd();
+
         if (state.getClassBuilderMode() == ClassBuilderMode.STUBS) {
             StubCodegen.generateStubCode(mv);
         }
