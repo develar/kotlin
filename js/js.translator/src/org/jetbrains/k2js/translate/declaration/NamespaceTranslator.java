@@ -25,8 +25,8 @@ import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
+import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +49,9 @@ public final class NamespaceTranslator extends AbstractTranslator {
     @NotNull
     private final ClassDeclarationTranslator classDeclarationTranslator;
 
+    @NotNull
+    private final List<JsExpression> initializers = new ArrayList<JsExpression>();
+
     /*package*/ NamespaceTranslator(@NotNull NamespaceDescriptor descriptor,
                                     @NotNull ClassDeclarationTranslator classDeclarationTranslator,
                                     @NotNull TranslationContext context) {
@@ -58,6 +61,10 @@ public final class NamespaceTranslator extends AbstractTranslator {
         this.classDeclarationTranslator = classDeclarationTranslator;
     }
 
+    @NotNull
+    public List<JsExpression> getInitializers() {
+        return initializers;
+    }
 
     @NotNull
     public JsVars getDeclarationAsVar() {
@@ -79,28 +86,33 @@ public final class NamespaceTranslator extends AbstractTranslator {
 
     private void addNamespaceInitializersAndProperties(@NotNull JsInvocation namespaceDeclaration) {
         JsFunction initializer = Translation.generateNamespaceInitializerMethod(descriptor, context());
+        if (!initializer.getBody().getStatements().isEmpty()) {
+            JsNameRef call = new JsNameRef("call");
+            call.setQualifier(initializer);
+            JsInvocation invocation = new JsInvocation();
+            invocation.setQualifier(call);
+            invocation.getArguments().add(TranslationUtils.getQualifiedReference(context(), descriptor));
+            initializers.add(invocation);
+        }
+
         List<JsPropertyInitializer> properties = new DeclarationBodyVisitor().traverseNamespace(descriptor, context());
         if (context().isEcma5()) {
-            addEcma5InitializersAndProperties(namespaceDeclaration.getArguments(), initializer, properties);
+            addEcma5InitializersAndProperties(namespaceDeclaration.getArguments(), properties);
         }
         else {
-            addEcma3InitializersAndProperties(namespaceDeclaration, initializer, properties);
+            addEcma3InitializersAndProperties(namespaceDeclaration.getArguments(), properties);
         }
     }
 
-    private static void addEcma3InitializersAndProperties(@NotNull JsInvocation namespaceDeclaration,
-            @NotNull JsFunction initializer,
+    private static void addEcma3InitializersAndProperties(@NotNull List<JsExpression> expressions,
             @NotNull List<JsPropertyInitializer> properties) {
-        List<JsPropertyInitializer> propertyList = new ArrayList<JsPropertyInitializer>();
-        propertyList.add(InitializerUtils.generateInitializeMethod(initializer));
-        propertyList.addAll(properties);
-        namespaceDeclaration.getArguments().add(newObjectLiteral(propertyList));
+        JsObjectLiteral objectLiteral = new JsObjectLiteral();
+        objectLiteral.getPropertyInitializers().addAll(properties);
+        expressions.add(objectLiteral);
     }
 
     private void addEcma5InitializersAndProperties(@NotNull List<JsExpression> expressions,
-            @NotNull JsFunction initializer,
             @NotNull List<JsPropertyInitializer> properties) {
-        expressions.add(initializer.getBody().getStatements().isEmpty() ? context().program().getNullLiteral() : initializer);
         expressions.add(properties.isEmpty() ? context().program().getNullLiteral() : newObjectLiteral(properties));
     }
 
@@ -132,6 +144,8 @@ public final class NamespaceTranslator extends AbstractTranslator {
         for (NamespaceDescriptor nestedNamespace : nestedNamespaces) {
             NamespaceTranslator nestedNamespaceTranslator = new NamespaceTranslator(nestedNamespace, classDeclarationTranslator, context());
             result.add(nestedNamespaceTranslator.getDeclarationAsInitializer());
+
+            initializers.addAll(nestedNamespaceTranslator.getInitializers());
         }
         return result;
     }
