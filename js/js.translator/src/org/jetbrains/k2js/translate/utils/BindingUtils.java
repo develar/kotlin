@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.utils;
 
 import com.google.common.collect.Sets;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -31,7 +30,6 @@ import org.jetbrains.jet.lang.resolve.calls.VariableAsFunctionResolvedCall;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.k2js.config.LibrarySourcesConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -112,16 +110,13 @@ public final class BindingUtils {
     public static List<JetDeclaration> getDeclarationsForNamespace(@NotNull BindingContext bindingContext,
             @NotNull NamespaceDescriptor namespace) {
         List<JetDeclaration> declarations = new ArrayList<JetDeclaration>();
-        for (DeclarationDescriptor descriptor : getContainedDescriptorsWhichAreNotPredefined(namespace)) {
+        for (DeclarationDescriptor descriptor : getContainedDescriptorsWhichAreNotPredefined(namespace, bindingContext)) {
             if (descriptor instanceof NamespaceDescriptor) {
                 continue;
             }
             JetDeclaration declaration = getDeclarationForDescriptor(bindingContext, descriptor);
             if (declaration != null) {
-                PsiFile file = declaration.getContainingFile();
-                if (file.getUserData(LibrarySourcesConfig.EXTERNAL_LIB) == null) {
-                    declarations.add(declaration);
-                }
+                declarations.add(declaration);
             }
         }
         return declarations;

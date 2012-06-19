@@ -98,6 +98,7 @@ public class LibrarySourcesConfig extends Config {
                 InputStream stream = file.getInputStream(entry);
                 String text = FileUtil.loadTextAndClose(stream);
                 JetFile jetFile = JetFileUtils.createPsiFile(entry.getName(), text, getProject());
+                jetFile.putUserData(EXTERNAL_LIB, true);
                 result.add(jetFile);
             }
         }
