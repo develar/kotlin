@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.plugin.compiler;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
@@ -23,7 +24,6 @@ import com.intellij.openapi.compiler.CompileScope;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.compiler.TranslatingCompiler;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -33,11 +33,11 @@ import jet.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.plugin.JetFileType;
-import org.jetbrains.jet.plugin.k2jsrun.K2JSRunnerUtils;
 import org.jetbrains.jet.plugin.project.JsModuleDetector;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.jetbrains.jet.plugin.compiler.CompilerUtils.invokeExecMethod;
 import static org.jetbrains.jet.plugin.compiler.CompilerUtils.outputCompilerMessagesAndHandleExitCode;
@@ -122,9 +122,9 @@ public final class K2JSCompiler implements TranslatingCompiler {
         }
 
         VirtualFile outDir = context.getModuleOutputDirectory(module);
-        String outFile = outDir == null ? null : K2JSRunnerUtils.constructPathToGeneratedFile(context.getProject(), outDir.getPath());
+        String outFile = outDir == null ? null : outDir.getPath() + "/" + module.getName() + ".js";
 
-        String[] commandLineArgs = constructArguments(context.getProject(), outFile, roots[0]);
+        String[] commandLineArgs = constructArguments(module, outFile, roots[0]);
         Object rc = invokeExecMethod(environment, out, context, commandLineArgs, "org.jetbrains.jet.cli.js.K2JSCompiler");
 
         if (outDir != null && !ApplicationManager.getApplication().isUnitTestMode()) {
@@ -134,19 +134,26 @@ public final class K2JSCompiler implements TranslatingCompiler {
     }
 
     @NotNull
-    private static String[] constructArguments(@NotNull Project project, @Nullable String outFile, @NotNull VirtualFile srcDir) {
+    private static String[] constructArguments(@NotNull Module module, @Nullable String outFile, @NotNull VirtualFile srcDir) {
         ArrayList<String> args = Lists.newArrayList("-tags", "-verbose", "-version", "-mainCall", "mainWithArgs");
         addPathToSourcesDir(args, srcDir);
         addOutputPath(outFile, args);
-        addLibLocationAndTarget(project, args);
+        addLibLocationAndTarget(module, args);
         return ArrayUtil.toStringArray(args);
     }
 
-    private static void addLibLocationAndTarget(@NotNull Project project, @NotNull ArrayList<String> args) {
-        Pair<String, String> libLocationAndTarget = JsModuleDetector.getLibLocationAndTargetForProject(project);
+    private static void addLibLocationAndTarget(@NotNull Module module, @NotNull ArrayList<String> args) {
+        Pair<List<String>, String> libLocationAndTarget = JsModuleDetector.getLibLocationAndTargetForProject(module);
+
+        Module[] dependencies = ModuleRootManager.getInstance(module).getDependencies();
+        List<String> libraryFiles = new ArrayList<String>();
+        for (Module dependency : dependencies) {
+         dependency.getModuleScope(false).
+        }
+
         if (libLocationAndTarget.first != null) {
-            args.add("-libzip");
-            args.add(libLocationAndTarget.first);
+            args.add("-libraryFiles");
+            args.add(Joiner.on(',').join(libLocationAndTarget.first));
         }
         if (libLocationAndTarget.second != null) {
             args.add("-target");

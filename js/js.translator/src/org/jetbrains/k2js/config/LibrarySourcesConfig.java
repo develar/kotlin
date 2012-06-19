@@ -27,6 +27,7 @@ import org.jetbrains.k2js.utils.JetFileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -36,33 +37,48 @@ import java.util.zip.ZipFile;
 /**
  * @author Pavel Talanov
  */
-public class ZippedLibrarySourcesConfig extends Config {
+public class LibrarySourcesConfig extends Config {
     @Nullable
-    protected final String pathToLibZip;
+    private final List<String> files;
 
-    public ZippedLibrarySourcesConfig(@NotNull Project project, @Nullable String pathToZip, @NotNull EcmaVersion ecmaVersion) {
+    public LibrarySourcesConfig(@NotNull Project project, @Nullable List<String> files, @NotNull EcmaVersion ecmaVersion) {
         super(project, ecmaVersion);
-        pathToLibZip = pathToZip;
+        this.files = files;
     }
 
     @NotNull
     @Override
     public List<JetFile> generateLibFiles() {
-        if (pathToLibZip == null) {
+        if (files == null) {
             return Collections.emptyList();
         }
-        try {
-            File file = new File(pathToLibZip);
-            ZipFile zipFile = new ZipFile(file);
+
+        List<JetFile> jetFiles = new ArrayList<JetFile>();
+        for (String path : files) {
+            File file = new File(path);
             try {
-                return traverseArchive(zipFile);
+                if (FileUtil.getExtension(file.getName()).equals("zip")) {
+                    jetFiles.addAll(readZip(file));
+                }
+                else {
+                    jetFiles.add(JetFileUtils.createPsiFile(file.getName(), FileUtil.loadFile(file), getProject()));
+                }
             }
-            finally {
-                zipFile.close();
+            catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
-        catch (IOException e) {
-            return Collections.emptyList();
+
+        return jetFiles;
+    }
+
+    private List<JetFile> readZip(File file) throws IOException {
+        ZipFile zipFile = new ZipFile(file);
+        try {
+            return traverseArchive(zipFile);
+        }
+        finally {
+            zipFile.close();
         }
     }
 
