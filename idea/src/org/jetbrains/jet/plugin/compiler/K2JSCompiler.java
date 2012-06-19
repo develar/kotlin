@@ -16,19 +16,16 @@
 
 package org.jetbrains.jet.plugin.compiler;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.compiler.CompileContext;
-import com.intellij.openapi.compiler.CompileScope;
-import com.intellij.openapi.compiler.CompilerMessageCategory;
-import com.intellij.openapi.compiler.TranslatingCompiler;
+import com.intellij.openapi.compiler.*;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.Chunk;
+import com.intellij.util.StringBuilderSpinAllocator;
 import jet.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -145,16 +142,29 @@ public final class K2JSCompiler implements TranslatingCompiler {
     private static void addLibLocationAndTarget(@NotNull Module module, @NotNull ArrayList<String> args) {
         Pair<List<String>, String> libLocationAndTarget = JsModuleDetector.getLibLocationAndTargetForProject(module);
 
-        Module[] dependencies = ModuleRootManager.getInstance(module).getDependencies();
-        List<String> libraryFiles = new ArrayList<String>();
-        for (Module dependency : dependencies) {
-         dependency.getModuleScope(false).
+        StringBuilder sb = StringBuilderSpinAllocator.alloc();
+        try {
+            VirtualFile[] files = CompilerManager.getInstance(module.getProject()).createModuleCompileScope(module, true)
+                    .getFiles(JetFileType.INSTANCE, true);
+            for (VirtualFile file : files) {
+                sb.append(file.getPath()).append(',');
+            }
+
+            if (libLocationAndTarget.first != null) {
+                for (String file : libLocationAndTarget.first) {
+                    sb.append(file).append(',');
+                }
+            }
+
+            if (sb.length() > 0) {
+                args.add("-libraryFiles");
+                args.add(sb.substring(0, sb.length() - 1));
+            }
+        }
+        finally {
+            StringBuilderSpinAllocator.dispose(sb);
         }
 
-        if (libLocationAndTarget.first != null) {
-            args.add("-libraryFiles");
-            args.add(Joiner.on(',').join(libLocationAndTarget.first));
-        }
         if (libLocationAndTarget.second != null) {
             args.add("-target");
             args.add(libLocationAndTarget.second);

@@ -57,7 +57,7 @@ public class LibrarySourcesConfig extends Config {
         for (String path : files) {
             File file = new File(path);
             try {
-                if (FileUtil.getExtension(file.getName()).equals("zip")) {
+                if (file.getName().endsWith(".zip")) {
                     jetFiles.addAll(readZip(file));
                 }
                 else {
