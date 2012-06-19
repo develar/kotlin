@@ -27,9 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
 
-import java.util.Collections;
-import java.util.List;
-
 /**
  * @author Pavel Talanov
  *         <p/>
@@ -60,7 +57,7 @@ public final class JsModuleDetector {
     }
 
     @NotNull
-    public static Pair<List<String>, String> getLibLocationAndTargetForProject(@NotNull Project project) {
+    public static Pair<String[], String> getLibLocationAndTargetForProject(@NotNull Project project) {
         Module module = getJSModule(project);
         if (module == null) {
             return Pair.empty();
@@ -71,11 +68,11 @@ public final class JsModuleDetector {
     }
 
     @NotNull
-    public static Pair<List<String>, String> getLibLocationAndTargetForProject(@NotNull Module module) {
+    public static Pair<String[], String> getLibLocationAndTargetForProject(@NotNull Module module) {
         K2JSModuleComponent jsModuleComponent = K2JSModuleComponent.getInstance(module);
         String pathToJavaScriptLibrary = jsModuleComponent.getPathToJavaScriptLibrary();
         String basePath = ModuleRootManager.getInstance(module).getContentRoots()[0].getPath();
-        return Pair.create(Collections.singletonList(basePath + pathToJavaScriptLibrary), jsModuleComponent.getEcmaVersion().toString());
+        return Pair.create(new String[] {basePath + pathToJavaScriptLibrary}, jsModuleComponent.getEcmaVersion().toString());
     }
 
     @Nullable

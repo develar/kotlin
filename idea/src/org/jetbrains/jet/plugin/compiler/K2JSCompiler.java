@@ -17,15 +17,21 @@
 package org.jetbrains.jet.plugin.compiler;
 
 import com.google.common.collect.Lists;
+import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.compiler.*;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.module.ModuleUtil;
+import com.intellij.openapi.roots.*;
+import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.Chunk;
+import com.intellij.util.Processor;
 import com.intellij.util.StringBuilderSpinAllocator;
+import gnu.trove.THashSet;
 import jet.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,7 +40,7 @@ import org.jetbrains.jet.plugin.project.JsModuleDetector;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 import static org.jetbrains.jet.plugin.compiler.CompilerUtils.invokeExecMethod;
 import static org.jetbrains.jet.plugin.compiler.CompilerUtils.outputCompilerMessagesAndHandleExitCode;
@@ -139,15 +145,41 @@ public final class K2JSCompiler implements TranslatingCompiler {
         return ArrayUtil.toStringArray(args);
     }
 
+    // we cannot use OrderEnumerator because it has critical bug — try https://gist.github.com/2953261, processor will never be called for module dependency
+    private static void collectModuleDependencies(Module dependentModule, Set<Module> modules) {
+        for (OrderEntry entry : ModuleRootManager.getInstance(dependentModule).getOrderEntries()) {
+            if (entry instanceof ModuleOrderEntry) {
+                ModuleOrderEntry moduleEntry = (ModuleOrderEntry) entry;
+                if (!moduleEntry.getScope().isForProductionCompile()) {
+                    continue;
+                }
+
+                Module module = moduleEntry.getModule();
+                if (module == null) {
+                    continue;
+                }
+
+                if (modules.add(module) && moduleEntry.isExported()) {
+                    collectModuleDependencies(module, modules);
+                }
+            }
+        }
+    }
+
     private static void addLibLocationAndTarget(@NotNull Module module, @NotNull ArrayList<String> args) {
-        Pair<List<String>, String> libLocationAndTarget = JsModuleDetector.getLibLocationAndTargetForProject(module);
+        Pair<String[], String> libLocationAndTarget = JsModuleDetector.getLibLocationAndTargetForProject(module);
 
         StringBuilder sb = StringBuilderSpinAllocator.alloc();
+        AccessToken token = ReadAction.start();
         try {
-            VirtualFile[] files = CompilerManager.getInstance(module.getProject()).createModuleCompileScope(module, true)
-                    .getFiles(JetFileType.INSTANCE, true);
-            for (VirtualFile file : files) {
-                sb.append(file.getPath()).append(',');
+            THashSet<Module> modules = new THashSet<Module>();
+            collectModuleDependencies(module, modules);
+            if (!modules.isEmpty()) {
+                VirtualFile[] files = CompilerManager.getInstance(module.getProject()).createModulesCompileScope(
+                        modules.toArray(new Module[modules.size()]), false).getFiles(JetFileType.INSTANCE, true);
+                for (VirtualFile file : files) {
+                    sb.append(file.getPath()).append(',');
+                }
             }
 
             if (libLocationAndTarget.first != null) {
@@ -162,6 +194,7 @@ public final class K2JSCompiler implements TranslatingCompiler {
             }
         }
         finally {
+            token.finish();
             StringBuilderSpinAllocator.dispose(sb);
         }
 

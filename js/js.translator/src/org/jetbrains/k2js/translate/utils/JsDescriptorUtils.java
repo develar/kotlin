@@ -242,7 +242,7 @@ public final class JsDescriptorUtils {
         List<DeclarationDescriptor> containedDescriptors = getContainedDescriptorsWhichAreNotPredefined(namespace);
         for (DeclarationDescriptor descriptor : containedDescriptors) {
             if (descriptor instanceof NamespaceDescriptor) {
-                if (!isNamespaceEmpty((NamespaceDescriptor)descriptor)) {
+                if (!isNamespaceEmpty((NamespaceDescriptor) descriptor)) {
                     return false;
                 }
             }
