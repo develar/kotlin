@@ -30,7 +30,7 @@ import java.util.Set;
 /**
 * @author abreslav
 */
-public abstract class JetScopeImpl extends JetScopeBase {
+public abstract class JetScopeImpl implements JetScope {
     @Override
     public ClassifierDescriptor getClassifier(@NotNull Name name) {
         return null;
@@ -88,7 +88,7 @@ public abstract class JetScopeImpl extends JetScopeBase {
 
     @NotNull
     @Override
-    public Collection<DeclarationDescriptor> getAllDescriptors(@NotNull DescriptorPredicate predicate) {
+    public Collection<DeclarationDescriptor> getAllDescriptors() {
         return Collections.emptyList();
     }
 

@@ -35,8 +35,6 @@ import org.jetbrains.jet.cli.jvm.compiler.TipsManager;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.name.NamePredicate;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.jet.plugin.caches.JetCacheManager;
@@ -349,23 +347,7 @@ public class JetCompletionContributor extends CompletionContributor {
                 (JetFile)reference.getExpression().getContainingFile())
                 .getBindingContext();
 
-        final PrefixMatcher prefixMatcher = result.getPrefixMatcher();
-
-        NamePredicate namePredicate;
-        if (prefixMatcher.getPrefix().length() == 0) {
-            namePredicate = NamePredicate.all();
-        } else {
-            class PrefixMatcherNamePredicate extends NamePredicate {
-                @Override
-                public boolean matches(@NotNull Name name) {
-                    return prefixMatcher.prefixMatches(name.getName());
-                }
-            }
-            namePredicate = new PrefixMatcherNamePredicate();
-        }
-
-        Collection<DeclarationDescriptor> descriptors = TipsManager.getReferenceVariants(
-                reference.getExpression(), bindingContext, namePredicate);
+        Collection<DeclarationDescriptor> descriptors = TipsManager.getReferenceVariants(reference.getExpression(), bindingContext);
 
         Collection<DeclarationDescriptor> checkedDescriptors = Collections2.filter(descriptors, new Predicate<DeclarationDescriptor>() {
             @Override
@@ -374,7 +356,7 @@ public class JetCompletionContributor extends CompletionContributor {
                     return false;
                 }
 
-                return isVisibleDescriptor(descriptor, session);
+                return result.getPrefixMatcher().prefixMatches(descriptor.getName().getName()) && isVisibleDescriptor(descriptor, session);
             }
         });
 

@@ -22,9 +22,7 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.resolve.scopes.JetScopeBase;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.error.ErrorSimpleFunctionDescriptorImpl;
 import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
@@ -39,7 +37,7 @@ public class ErrorUtils {
     private static final ModuleDescriptor ERROR_MODULE = new ModuleDescriptor(Name.special("<ERROR MODULE>"));
 
 
-    public static class ErrorScope extends JetScopeBase {
+    public static class ErrorScope implements JetScope {
 
         private final String debugMessage;
 
@@ -114,7 +112,7 @@ public class ErrorUtils {
 
         @NotNull
         @Override
-        public Collection<DeclarationDescriptor> getAllDescriptors(@NotNull DescriptorPredicate predicate) {
+        public Collection<DeclarationDescriptor> getAllDescriptors() {
             return Collections.emptyList();
         }
 

@@ -16,7 +16,6 @@
 
 package org.jetbrains.jet.lang.resolve.lazy;
 
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -26,10 +25,7 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicate;
-import org.jetbrains.jet.lang.resolve.scopes.DescriptorPredicateUtils;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.resolve.scopes.JetScopeBase;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 
 import java.util.*;
@@ -37,7 +33,7 @@ import java.util.*;
 /**
  * @author abreslav
  */
-public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, DP extends DeclarationProvider> extends JetScopeBase {
+public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, DP extends DeclarationProvider> implements JetScope {
     protected final ResolveSession resolveSession;
     protected final DP declarationProvider;
     protected final D thisDescriptor;
@@ -196,9 +192,7 @@ public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, D
 
     @NotNull
     @Override
-    public Collection<DeclarationDescriptor> getAllDescriptors(@NotNull DescriptorPredicate predicate) {
-        // TODO: cache only what matches predicate
-
+    public Collection<DeclarationDescriptor> getAllDescriptors() {
         for (JetDeclaration declaration : declarationProvider.getAllDeclarations()) {
             if (declaration instanceof JetClassOrObject) {
                 JetClassOrObject classOrObject = (JetClassOrObject) declaration;
@@ -228,8 +222,7 @@ public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, D
         }
         addExtraDescriptors();
         allDescriptorsComputed = true;
-
-        return DescriptorPredicateUtils.filter(allDescriptors, predicate);
+        return allDescriptors;
     }
 
     protected abstract void addExtraDescriptors();

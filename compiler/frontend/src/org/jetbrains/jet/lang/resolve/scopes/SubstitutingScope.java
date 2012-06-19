@@ -34,7 +34,7 @@ import java.util.Set;
 /**
  * @author abreslav
  */
-public class SubstitutingScope extends JetScopeBase {
+public class SubstitutingScope implements JetScope {
 
     private final JetScope workerScope;
     private final TypeSubstitutor substitutor;
@@ -149,10 +149,10 @@ public class SubstitutingScope extends JetScopeBase {
 
     @NotNull
     @Override
-    public Collection<DeclarationDescriptor> getAllDescriptors(@NotNull DescriptorPredicate predicate) {
+    public Collection<DeclarationDescriptor> getAllDescriptors() {
         if (allDescriptors == null) {
             allDescriptors = Sets.newHashSet();
-            for (DeclarationDescriptor descriptor : workerScope.getAllDescriptors(DescriptorPredicate.all())) {
+            for (DeclarationDescriptor descriptor : workerScope.getAllDescriptors()) {
                 DeclarationDescriptor substitute = substitute(descriptor);
 //                assert substitute != null : descriptor;
                 if (substitute != null) {
@@ -162,5 +162,4 @@ public class SubstitutingScope extends JetScopeBase {
         }
         return allDescriptors;
     }
-
 }
