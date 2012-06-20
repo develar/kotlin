@@ -33,11 +33,17 @@ import java.util.*;
  */
 public final class JsAstUtils {
     private static final JsNameRef DEFINE_PROPERTY = new JsNameRef("defineProperty");
+    private static final JsNameRef DEFINE_PROPERTIES = new JsNameRef("defineProperties");
+    public static final JsNameRef CREATE_OBJECT = new JsNameRef("create");
+    public static final JsNameRef FREEZE = new JsNameRef("freeze");
     private static final JsNameRef EMPTY_REF = new JsNameRef("");
 
     static {
         JsNameRef globalObjectReference = new JsNameRef("Object");
         DEFINE_PROPERTY.setQualifier(globalObjectReference);
+        CREATE_OBJECT.setQualifier(globalObjectReference);
+        DEFINE_PROPERTIES.setQualifier(globalObjectReference);
+        FREEZE.setQualifier(globalObjectReference);
     }
 
     private JsAstUtils() {

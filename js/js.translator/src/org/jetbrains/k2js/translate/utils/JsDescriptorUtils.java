@@ -30,7 +30,6 @@ import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
 import org.jetbrains.k2js.config.LibrarySourcesConfig;
-import org.jetbrains.k2js.translate.context.Namer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -145,16 +144,6 @@ public final class JsDescriptorUtils {
         return (functionDescriptor.getReceiverParameter().exists());
     }
 
-    @NotNull
-    public static String getNameForNamespace(@NotNull NamespaceDescriptor descriptor) {
-        if (descriptor.getContainingDeclaration() instanceof ModuleDescriptor) {
-            return Namer.getRootNamespaceName();
-        }
-        else {
-            return descriptor.getName().getName();
-        }
-    }
-
     //TODO: why callable descriptor
     @Nullable
     public static DeclarationDescriptor getExpectedThisDescriptor(@NotNull CallableDescriptor callableDescriptor) {
@@ -244,7 +233,7 @@ public final class JsDescriptorUtils {
                     PsiElement psiElement = BindingContextUtils.descriptorToDeclaration(context, descriptor);
                     if (psiElement != null) {
                         PsiFile file = psiElement.getContainingFile();
-                        if (file.getUserData(LibrarySourcesConfig.EXTERNAL_LIB) != null) {
+                        if (file.getUserData(LibrarySourcesConfig.EXTERNAL_MODULE_NAME) != null) {
                             continue;
                         }
                     }

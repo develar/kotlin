@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.declaration;
 
 import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
@@ -81,8 +82,11 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
 
     private void namespacesDeclarations(List<JsStatement> statements) {
         List<NamespaceTranslator> namespaceTranslators = getTranslatorsForNonEmptyNamespaces();
-        statements.addAll(declarationStatements(namespaceTranslators));
-        initializeStatements(statements, namespaceTranslators);
+        declarationStatements(namespaceTranslators, statements);
+        initializeStatements(namespaceTranslators, statements);
+        if (context().isNotEcma3()) {
+            statements.add(AstUtil.newInvocation(JsAstUtils.FREEZE, context().jsScope().declareName("_").makeRef()).makeStmt());
+        }
     }
 
     @NotNull
@@ -94,24 +98,26 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         return namespaceTranslators;
     }
 
-    @NotNull
-    private List<JsStatement> declarationStatements(@NotNull List<NamespaceTranslator> namespaceTranslators) {
-        List<JsStatement> result = Lists.newArrayList();
-        JsNameRef defs = JsAstUtils.qualified(context().jsScope().declareName("defs"), context().namer().kotlinObject());
-        for (NamespaceTranslator translator : namespaceTranslators) {
-            JsVars vars = translator.getDeclarationAsVar();
-
-            JsVars.JsVar var = vars.iterator().next();
-            JsNameRef ref = new JsNameRef(var.getName());
-            ref.setQualifier(defs);
-
-            result.add(vars);
-            result.add(JsAstUtils.assignment(ref, new JsNameRef(var.getName())).makeStmt());
+    private void declarationStatements(@NotNull List<NamespaceTranslator> namespaceTranslators,
+            @NotNull List<JsStatement> statements) {
+        JsObjectLiteral objectLiteral = new JsObjectLiteral();
+        JsNameRef packageMapNameRef = context().jsScope().declareName("_").makeRef();
+        JsExpression packageMapValue;
+        if (context().isNotEcma3()) {
+            packageMapValue = AstUtil.newInvocation(JsAstUtils.CREATE_OBJECT, context().program().getNullLiteral(), objectLiteral);
         }
-        return result;
+        else {
+            packageMapValue = objectLiteral;
+        }
+        statements.add(JsAstUtils.newVar(packageMapNameRef.getName(), packageMapValue));
+
+        for (NamespaceTranslator translator : namespaceTranslators) {
+            translator.addNamespaceDeclaration(objectLiteral.getPropertyInitializers());
+        }
     }
 
-    private static void initializeStatements(List<JsStatement> statements, List<NamespaceTranslator> namespaceTranslators) {
+    private static void initializeStatements(@NotNull List<NamespaceTranslator> namespaceTranslators,
+            @NotNull List<JsStatement> statements) {
         for (NamespaceTranslator translator : namespaceTranslators) {
             for (JsExpression expression : translator.getInitializers()) {
                 statements.add(expression.makeStmt());

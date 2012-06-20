@@ -31,7 +31,7 @@ var kotlin = {set:function (receiver, key, value) {
         return (obj1 === obj2);
     };
 
-    Kotlin.defs = {};
+    Kotlin.modules = {};
     Kotlin.Exceptions = {};
     Kotlin.Exception = Kotlin.$createClass();
     Kotlin.RuntimeException = Kotlin.$createClass(Kotlin.Exception);

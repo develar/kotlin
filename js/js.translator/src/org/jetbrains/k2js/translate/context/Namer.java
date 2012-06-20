@@ -38,7 +38,7 @@ public final class Namer {
     private static final String BACKING_FIELD_PREFIX = "$";
     private static final String SUPER_METHOD_NAME = "super_init";
     private static final String KOTLIN_OBJECT_NAME = "Kotlin";
-    private static final String ROOT_NAMESPACE = "Root";
+    private static final String ROOT_NAMESPACE = "_";
     private static final String RECEIVER_PARAMETER_NAME = "receiver";
     private static final String CLASSES_OBJECT_NAME = "classes";
     private static final String THROW_NPE_FUN_NAME = "throwNPE";
@@ -176,7 +176,7 @@ public final class Namer {
     }
 
     @NotNull
-    private JsNameRef kotlin(@NotNull String name) {
+    public JsNameRef kotlin(@NotNull String name) {
         JsNameRef reference = kotlinScope.declareName(name).makeRef();
         reference.setQualifier(kotlinName.makeRef());
         return reference;
