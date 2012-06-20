@@ -32,7 +32,6 @@ public final class Namer {
     private static final String INITIALIZE_METHOD_NAME = "initialize";
     private static final String CLASS_OBJECT_NAME = "createClass";
     private static final String TRAIT_OBJECT_NAME = "createTrait";
-    private static final String NAMESPACE_OBJECT_NAME = "createNamespace";
     private static final String OBJECT_OBJECT_NAME = "createObject";
     private static final String SETTER_PREFIX = "set_";
     private static final String GETTER_PREFIX = "get_";
@@ -112,7 +111,7 @@ public final class Namer {
     @NotNull
     private final JsName traitName;
     @NotNull
-    private final JsName namespaceName;
+    private final JsNameRef definePackage;
     @NotNull
     private final JsName objectName;
 
@@ -129,7 +128,9 @@ public final class Namer {
         kotlinName = rootScope.declareName(KOTLIN_OBJECT_NAME);
         kotlinScope = new JsScope(rootScope, "Kotlin standard object");
         traitName = kotlinScope.declareName(TRAIT_OBJECT_NAME);
-        namespaceName = kotlinScope.declareName(NAMESPACE_OBJECT_NAME);
+
+        definePackage = kotlin("definePackage");
+
         className = kotlinScope.declareName(CLASS_OBJECT_NAME);
         objectName = kotlinScope.declareName(OBJECT_OBJECT_NAME);
 
@@ -151,8 +152,8 @@ public final class Namer {
     }
 
     @NotNull
-    public JsExpression namespaceCreationMethodReference() {
-        return kotlin(namespaceName);
+    public JsNameRef packageDefinitionMethodReference() {
+        return definePackage;
     }
 
     @NotNull
@@ -168,8 +169,15 @@ public final class Namer {
     }
 
     @NotNull
-    private JsExpression kotlin(@NotNull JsName name) {
+    private JsNameRef kotlin(@NotNull JsName name) {
         JsNameRef reference = name.makeRef();
+        reference.setQualifier(kotlinName.makeRef());
+        return reference;
+    }
+
+    @NotNull
+    private JsNameRef kotlin(@NotNull String name) {
+        JsNameRef reference = kotlinScope.declareName(name).makeRef();
         reference.setQualifier(kotlinName.makeRef());
         return reference;
     }

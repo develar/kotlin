@@ -302,20 +302,25 @@ public final class JsAstUtils {
     }
 
     @NotNull
+    public static JsObjectLiteral createDataDescriptor(@NotNull JsExpression value, boolean writable, @NotNull TranslationContext context) {
+        JsObjectLiteral dataDescriptor = new JsObjectLiteral();
+        dataDescriptor.getPropertyInitializers().add(new JsPropertyInitializer(context.program().getStringLiteral("value"), value));
+        if (writable) {
+            dataDescriptor.getPropertyInitializers().add(context.namer().writablePropertyDescriptorField());
+        }
+        return dataDescriptor;
+    }
+
+    @NotNull
     private static JsObjectLiteral createPropertyDataDescriptor(boolean writable,
             @NotNull DeclarationDescriptor descriptor,
             @NotNull JsExpression value,
             @NotNull TranslationContext context) {
-        JsObjectLiteral jsPropertyDescriptor = new JsObjectLiteral();
-        List<JsPropertyInitializer> meta = jsPropertyDescriptor.getPropertyInitializers();
-        meta.add(new JsPropertyInitializer(context.program().getStringLiteral("value"), value));
-        if (writable) {
-            meta.add(context.namer().writablePropertyDescriptorField());
-        }
+        JsObjectLiteral dataDescriptor = createDataDescriptor(value, writable, context);
         if (AnnotationsUtils.isEnumerable(descriptor)) {
-            meta.add(context.namer().enumerablePropertyDescriptorField());
+            dataDescriptor.getPropertyInitializers().add(context.namer().enumerablePropertyDescriptorField());
         }
-        return jsPropertyDescriptor;
+        return dataDescriptor;
     }
 
     @NotNull

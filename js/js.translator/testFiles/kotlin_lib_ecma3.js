@@ -141,9 +141,7 @@ var Kotlin = {};
         }
     })();
 
-    Kotlin.createNamespace = function () {
-        return Kotlin.createTrait.apply(null, arguments);
-    };
+    Kotlin.definePackage = Kotlin.createTrait;
 
     Kotlin.createClass = (function () {
         var METHODS = {addMethods: addMethods};

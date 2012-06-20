@@ -79,12 +79,12 @@ public final class NamespaceTranslator extends AbstractTranslator {
     @NotNull
     private JsInvocation getNamespaceDeclaration() {
         JsInvocation namespaceDeclaration = namespaceCreateMethodInvocation();
-        addNamespaceInitializersAndProperties(namespaceDeclaration);
-        namespaceDeclaration.getArguments().add(getClassesAndNestedNamespaces());
+        addNamespaceInitializersAndProperties(namespaceDeclaration.getArguments());
+        addNestedNamespaces(namespaceDeclaration.getArguments());
         return namespaceDeclaration;
     }
 
-    private void addNamespaceInitializersAndProperties(@NotNull JsInvocation namespaceDeclaration) {
+    private void addNamespaceInitializersAndProperties(@NotNull List<JsExpression> expressions) {
         JsFunction initializer = Translation.generateNamespaceInitializerMethod(descriptor, context());
         if (!initializer.getBody().getStatements().isEmpty()) {
             JsNameRef call = new JsNameRef("call");
@@ -95,12 +95,12 @@ public final class NamespaceTranslator extends AbstractTranslator {
             initializers.add(invocation);
         }
 
-        List<JsPropertyInitializer> properties = new DeclarationBodyVisitor().traverseNamespace(descriptor, context());
+        List<JsPropertyInitializer> properties = new DeclarationBodyVisitor(classDeclarationTranslator).traverseNamespace(descriptor, context());
         if (context().isEcma5()) {
-            addEcma5InitializersAndProperties(namespaceDeclaration.getArguments(), properties);
+            addEcma5InitializersAndProperties(expressions, properties);
         }
         else {
-            addEcma3InitializersAndProperties(namespaceDeclaration.getArguments(), properties);
+            addEcma3InitializersAndProperties(expressions, properties);
         }
     }
 
@@ -118,20 +118,20 @@ public final class NamespaceTranslator extends AbstractTranslator {
 
     @NotNull
     private JsInvocation namespaceCreateMethodInvocation() {
-        return AstUtil.newInvocation(context().namer().namespaceCreationMethodReference());
+        return AstUtil.newInvocation(context().namer().packageDefinitionMethodReference());
     }
 
-    @NotNull
-    private JsObjectLiteral getClassesAndNestedNamespaces() {
-        JsObjectLiteral classesAndNestedNamespaces = new JsObjectLiteral();
-        classesAndNestedNamespaces.getPropertyInitializers().addAll(getClassesDefined());
-        classesAndNestedNamespaces.getPropertyInitializers().addAll(getNestedNamespaceDeclarations());
-        return classesAndNestedNamespaces;
-    }
-
-    @NotNull
-    private List<JsPropertyInitializer> getClassesDefined() {
-        return classDeclarationTranslator.classDeclarationsForNamespace(descriptor);
+    private void addNestedNamespaces(@NotNull List<JsExpression> expressions) {
+        List<JsPropertyInitializer> declarations = getNestedNamespaceDeclarations();
+        if (declarations.isEmpty()) {
+            // ecma5 expects strict number of arguments, but ecma3 doesn't
+            if (context().isEcma5()) {
+                expressions.add(context().program().getNullLiteral());
+            }
+        }
+        else {
+            expressions.add(newObjectLiteral(declarations));
+        }
     }
 
     @NotNull

@@ -239,13 +239,18 @@ public final class JsDescriptorUtils {
         List<DeclarationDescriptor> result = Lists.newArrayList();
         for (DeclarationDescriptor descriptor : namespace.getMemberScope().getAllDescriptors()) {
             if (!AnnotationsUtils.isPredefinedObject(descriptor)) {
-                PsiElement psiElement = BindingContextUtils.descriptorToDeclaration(context, descriptor);
-                if (psiElement != null) {
-                    PsiFile file = psiElement.getContainingFile();
-                    if (file.getUserData(LibrarySourcesConfig.EXTERNAL_LIB) == null) {
-                        result.add(descriptor);
+                // namespace may be defined in multiple files
+                if (!(descriptor instanceof NamespaceDescriptor)) {
+                    PsiElement psiElement = BindingContextUtils.descriptorToDeclaration(context, descriptor);
+                    if (psiElement != null) {
+                        PsiFile file = psiElement.getContainingFile();
+                        if (file.getUserData(LibrarySourcesConfig.EXTERNAL_LIB) != null) {
+                            continue;
+                        }
                     }
                 }
+
+                result.add(descriptor);
             }
         }
         return result;
