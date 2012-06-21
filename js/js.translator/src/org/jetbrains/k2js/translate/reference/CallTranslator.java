@@ -193,7 +193,7 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
     private JsInvocation generateCallMethodInvocation() {
-        JsNameRef callMethodNameRef = AstUtil.newQualifiedNameRef("call");
+        JsNameRef callMethodNameRef = new JsNameRef("call");
         JsInvocation callMethodInvocation = new JsInvocation();
         callMethodInvocation.setQualifier(callMethodNameRef);
         setQualifier(callMethodInvocation, callParameters.getFunctionReference());

@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="K2JSCompiler" type="Application" factoryName="Application">
+  <configuration default="false" name="K2JSCompiler chrome-ext" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="org.jetbrains.jet.cli.js.K2JSCompiler" />
     <option name="VM_PARAMETERS" value="-ea" />
-    <option name="PROGRAM_PARAMETERS" value="-verbose -mainCall mainWithArgs -srcdir ../idea/plugins/html-instant-editing/extensions/chrome-ext/src -output ../idea/plugins/html-instant-editing/extensions/chrome/kotlin/chrome-ext.js -libraryFiles dist/kotlinc/lib/kotlin-jslib.jar,../idea/plugins/html-instant-editing/extensions/platform/src/dom.kt,$PROJECT_DIR$/../idea/plugins/html-instant-editing/extensions/platform/src/js.kt,$PROJECT_DIR$/../idea/plugins/html-instant-editing/extensions/platform/src/jsonRpc.kt,$PROJECT_DIR$/../idea/plugins/html-instant-editing/extensions/platform/src/main.kt,$PROJECT_DIR$/../idea/plugins/html-instant-editing/extensions/platform/src/socket.kt -target v5" />
+    <option name="PROGRAM_PARAMETERS" value="-verbose -mainCall mainWithArgs -srcdir ../idea/plugins/html-instant-editing/extensions/chrome-ext/src -output ../idea/plugins/html-instant-editing/extensions/chrome/kotlin/chrome-ext.js -libraryFiles @browser-ext-platform,../idea/plugins/html-instant-editing/extensions/platform/src/dom.kt,../idea/plugins/html-instant-editing/extensions/platform/src/js.kt,../idea/plugins/html-instant-editing/extensions/platform/src/jsonRpc.kt,../idea/plugins/html-instant-editing/extensions/platform/src/main.kt,../idea/plugins/html-instant-editing/extensions/platform/src/socket.kt,dist/kotlinc/lib/kotlin-jslib.jar -target v5" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />

@@ -421,6 +421,11 @@ public final class StaticContext {
                     }
 
                     PsiElement element = BindingContextUtils.descriptorToDeclaration(bindingContext, descriptor);
+                    if (element == null && descriptor instanceof PropertyAccessorDescriptor) {
+                        element = BindingContextUtils.descriptorToDeclaration(bindingContext, ((PropertyAccessorDescriptor) descriptor)
+                                .getCorrespondingProperty());
+                    }
+
                     if (element != null) {
                         PsiFile file = element.getContainingFile();
                         String moduleName = file.getUserData(LibrarySourcesConfig.EXTERNAL_MODULE_NAME);
