@@ -14,6 +14,19 @@
  * limitations under the License.
  */
 
+// todo inlined
+String.prototype.startsWith = function (s) {
+  return this.indexOf(s) === 0;
+};
+
+String.prototype.endsWith = function (s) {
+  return this.indexOf(s, this.length - s.length) !== -1;
+};
+
+String.prototype.contains = function (s) {
+  return this.indexOf(s) !== -1;
+};
+
 // todo org.jetbrains.k2js.test.semantics.WebDemoExamples2Test#testBuilder
 var kotlin = {set:function (receiver, key, value) {
     return receiver.put(key, value);
