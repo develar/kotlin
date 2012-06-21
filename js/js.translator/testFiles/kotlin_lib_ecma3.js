@@ -241,4 +241,12 @@ var Kotlin = {};
         var singletonClass = Kotlin.createClass.apply(null, arguments);
         return new singletonClass();
     };
+
+    Kotlin.defineModule = function (id, module) {
+        if (id in Kotlin.modules) {
+            throw Kotlin.$new(Kotlin.Exceptions.IllegalArgumentException)();
+        }
+
+        Kotlin.modules[id] = module;
+    };
 })();

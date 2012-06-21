@@ -179,4 +179,13 @@ var Kotlin = {};
 
         return Kotlin.createClass(parent || null, initializer, descriptors);
     };
+
+    Kotlin.defineModule = function (id, module) {
+        if (id in Kotlin.modules) {
+            throw Kotlin.$new(Kotlin.Exceptions.IllegalArgumentException)();
+        }
+
+        Object.freeze(module);
+        Object.defineProperty(Kotlin.modules, id, {value: module});
+    };
 })();

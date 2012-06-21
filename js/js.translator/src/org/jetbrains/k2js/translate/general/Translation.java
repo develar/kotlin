@@ -19,6 +19,7 @@ package org.jetbrains.k2js.translate.general;
 import com.google.dart.compiler.backend.js.JsNamer;
 import com.google.dart.compiler.backend.js.JsPrettyNamer;
 import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.util.AstUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
@@ -177,7 +178,7 @@ public final class Translation {
 
         TranslationContext context = TranslationContext.rootContext(staticContext);
         statements.addAll(translateFiles(files, context));
-        addOwnPackageMapStatements(statements, context, config);
+        defineModule(statements, context, config);
 
         if (mainCallParameters.shouldBeGenerated()) {
             statements.add(generateCallToMain(context, files, mainCallParameters.arguments()));
@@ -188,12 +189,12 @@ public final class Translation {
         return context.program();
     }
 
-    private static void addOwnPackageMapStatements(@NotNull List<JsStatement> statements,
+    private static void defineModule(@NotNull List<JsStatement> statements,
             @NotNull TranslationContext context,
             @NotNull Config config) {
-        statements.add(JsAstUtils.assignment(
-                new JsArrayAccess(context.namer().kotlin("modules"), context.program().getStringLiteral(config.getModuleId())),
-                context.jsScope().declareName("_").makeRef()).makeStmt());
+        statements.add(AstUtil.newInvocation(context.namer().kotlin("defineModule"),
+                                             context.program().getStringLiteral(config.getModuleId()),
+                                             context.jsScope().declareName("_").makeRef()).makeStmt());
     }
 
     @NotNull

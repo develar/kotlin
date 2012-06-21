@@ -22,7 +22,6 @@ import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
@@ -31,7 +30,6 @@ import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newObjectLiteral;
@@ -69,13 +67,14 @@ public final class NamespaceTranslator extends AbstractTranslator {
 
     @NotNull
     public JsPropertyInitializer getDeclarationAsInitializer() {
+        addNamespaceInitializer();
         return new JsPropertyInitializer(namespaceName.makeRef(), getNamespaceDeclaration());
     }
 
     public void addNamespaceDeclaration(List<JsPropertyInitializer> list) {
         addNamespaceInitializer();
 
-        if (descriptor.getName().equals(FqNameUnsafe.ROOT_NAME)) {
+        if (DescriptorUtils.isRootNamespace(descriptor)) {
             list.addAll(getFunctionsAndClasses());
             return;
         }
@@ -129,9 +128,6 @@ public final class NamespaceTranslator extends AbstractTranslator {
 
     @NotNull
     private List<JsPropertyInitializer> getNestedNamespaceDeclarations() {
-        if (DescriptorUtils.isRootNamespace(descriptor)) {
-            return Collections.emptyList();
-        }
         List<JsPropertyInitializer> result = Lists.newArrayList();
         List<NamespaceDescriptor> nestedNamespaces = JsDescriptorUtils.getNestedNamespaces(descriptor, context().bindingContext());
         for (NamespaceDescriptor nestedNamespace : nestedNamespaces) {

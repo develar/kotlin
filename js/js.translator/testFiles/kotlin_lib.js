@@ -43,7 +43,7 @@ var kotlin = {set:function (receiver, key, value) {
     Kotlin.Exceptions.IndexOutOfBoundsException = Kotlin.$createClass(Kotlin.Exception);
     Kotlin.Exceptions.UnsupportedOperationException = Kotlin.$createClass(Kotlin.Exception);
 
-    Kotlin.throwNPE = function() {
+    Kotlin.throwNPE = function () {
         throw Kotlin.$new(Kotlin.Exceptions.NullPointerException)();
     };
 

@@ -111,7 +111,7 @@ public final class Namer {
     @NotNull
     private final JsName traitName;
     @NotNull
-    private final JsNameRef definePackage;
+    private final JsExpression definePackage;
     @NotNull
     private final JsName objectName;
 
@@ -152,7 +152,7 @@ public final class Namer {
     }
 
     @NotNull
-    public JsNameRef packageDefinitionMethodReference() {
+    public JsExpression packageDefinitionMethodReference() {
         return definePackage;
     }
 
@@ -169,22 +169,18 @@ public final class Namer {
     }
 
     @NotNull
-    private JsNameRef kotlin(@NotNull JsName name) {
-        JsNameRef reference = name.makeRef();
-        reference.setQualifier(kotlinName.makeRef());
-        return reference;
+    private JsExpression kotlin(@NotNull JsName name) {
+        return kotlin(name.makeRef());
     }
 
     @NotNull
-    public JsNameRef kotlin(@NotNull String name) {
-        JsNameRef reference = kotlinScope.declareName(name).makeRef();
-        reference.setQualifier(kotlinName.makeRef());
-        return reference;
+    public JsExpression kotlin(@NotNull String name) {
+        return kotlin(kotlinScope.declareName(name));
     }
 
     @NotNull
     private JsExpression kotlin(@NotNull JsExpression reference) {
-        setQualifier(reference, kotlinName.makeRef());
+        setQualifier(reference, kotlinObject());
         return reference;
     }
 

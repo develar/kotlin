@@ -25,14 +25,17 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
-import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.config.LibrarySourcesConfig;
 import org.jetbrains.k2js.translate.context.generator.Generator;
 import org.jetbrains.k2js.translate.context.generator.Rule;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
-import org.jetbrains.k2js.translate.utils.*;
+import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
+import org.jetbrains.k2js.translate.utils.JsAstUtils;
+import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
+import org.jetbrains.k2js.translate.utils.PredefinedAnnotation;
 
 import java.util.Map;
 
@@ -187,7 +190,7 @@ public final class StaticContext {
                     }
 
                     String name;
-                    if (descriptor.getName().equals(FqNameUnsafe.ROOT_NAME)) {
+                    if (DescriptorUtils.isRootNamespace((NamespaceDescriptor) descriptor)) {
                         name = Namer.getRootNamespaceName();
                     }
                     else {
@@ -405,13 +408,13 @@ public final class StaticContext {
                     }
 
                     final JsNameRef result = new JsNameRef(getNameForDescriptor(containingDescriptor));
-                    if (containingDescriptor.getName().equals(FqNameUnsafe.ROOT_NAME)) {
+                    if (DescriptorUtils.isRootNamespace((NamespaceDescriptor) containingDescriptor)) {
                         return result;
                     }
 
                     JsNameRef qualifier = result;
                     while ((containingDescriptor = getContainingDeclaration(containingDescriptor)) instanceof NamespaceDescriptor &&
-                           !containingDescriptor.getName().equals(FqNameUnsafe.ROOT_NAME)) {
+                           !DescriptorUtils.isRootNamespace((NamespaceDescriptor) containingDescriptor)) {
                         JsNameRef ref = getNameForDescriptor(containingDescriptor).makeRef();
                         qualifier.setQualifier(ref);
                         qualifier = ref;
@@ -426,6 +429,10 @@ public final class StaticContext {
                         }
                         else if (moduleName != null) {
                             qualifier.setQualifier(new JsArrayAccess(namer.kotlin("modules"), program.getStringLiteral(moduleName)));
+                        }
+                        else if (result == qualifier && result.getIdent().equals("kotlin")) {
+                            // todo WebDemoExamples2Test#testBuilder, package "kotlin" from kotlin/js/js.libraries/src/stdlib/JUMaps.kt must be inlined
+                            return qualifier;
                         }
                     }
 
@@ -489,10 +496,7 @@ public final class StaticContext {
             Rule<Boolean> topLevelNamespaceHaveNoQualifier = new Rule<Boolean>() {
                 @Override
                 public Boolean apply(@NotNull DeclarationDescriptor descriptor) {
-                    if (!(descriptor instanceof NamespaceDescriptor)) {
-                        return null;
-                    }
-                    if (descriptor.getName().equals(FqNameUnsafe.ROOT_NAME)) {
+                    if (descriptor instanceof NamespaceDescriptor && DescriptorUtils.isRootNamespace((NamespaceDescriptor) descriptor)) {
                         return true;
                     }
                     return null;

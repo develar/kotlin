@@ -84,9 +84,6 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         List<NamespaceTranslator> namespaceTranslators = getTranslatorsForNonEmptyNamespaces();
         declarationStatements(namespaceTranslators, statements);
         initializeStatements(namespaceTranslators, statements);
-        if (context().isNotEcma3()) {
-            statements.add(AstUtil.newInvocation(JsAstUtils.FREEZE, context().jsScope().declareName("_").makeRef()).makeStmt());
-        }
     }
 
     @NotNull
