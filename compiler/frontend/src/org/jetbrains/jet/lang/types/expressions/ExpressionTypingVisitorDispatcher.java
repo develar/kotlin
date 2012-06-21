@@ -26,7 +26,6 @@ import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.DeferredType;
 import org.jetbrains.jet.lang.types.ErrorUtils;
-import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.JetTypeInfo;
 import org.jetbrains.jet.util.lazy.ReenteringLazyValueComputationException;
 
@@ -38,8 +37,8 @@ import static org.jetbrains.jet.lang.diagnostics.Errors.TYPECHECKER_HAS_RUN_INTO
 public class ExpressionTypingVisitorDispatcher extends JetVisitor<JetTypeInfo, ExpressionTypingContext> implements ExpressionTypingInternals {
 
     @Override
-    public JetTypeInfo visitIdeTemplateExpression(JetIdeTemplateExpression expression, ExpressionTypingContext data) {
-        return basic.visitIdeTemplateExpression(expression, data);
+    public JetTypeInfo visitIdeTemplate(JetIdeTemplate expression, ExpressionTypingContext data) {
+        return basic.visitIdeTemplate(expression, data);
     }
 
     @NotNull
@@ -69,8 +68,8 @@ public class ExpressionTypingVisitorDispatcher extends JetVisitor<JetTypeInfo, E
     }
 
     @Override
-    public JetType getSelectorReturnType(@NotNull ReceiverDescriptor receiver, @Nullable ASTNode callOperationNode, @NotNull JetExpression selectorExpression, @NotNull ExpressionTypingContext context) {
-        return basic.getSelectorReturnType(receiver, callOperationNode, selectorExpression, context);
+    public JetTypeInfo getSelectorReturnTypeInfo(@NotNull ReceiverDescriptor receiver, @Nullable ASTNode callOperationNode, @NotNull JetExpression selectorExpression, @NotNull ExpressionTypingContext context) {
+        return basic.getSelectorReturnTypeInfo(receiver, callOperationNode, selectorExpression, context);
     }
 
     @Override
@@ -115,8 +114,11 @@ public class ExpressionTypingVisitorDispatcher extends JetVisitor<JetTypeInfo, E
     @NotNull
     private JetTypeInfo getTypeInfo(@NotNull JetExpression expression, ExpressionTypingContext context, JetVisitor<JetTypeInfo, ExpressionTypingContext> visitor) {
         if (context.trace.get(BindingContext.PROCESSED, expression)) {
-            return JetTypeInfo.create(context.trace.getBindingContext().get(BindingContext.EXPRESSION_TYPE, expression),
-                                      context.dataFlowInfo);
+            DataFlowInfo dataFlowInfo = context.trace.get(BindingContext.EXPRESSION_DATA_FLOW_INFO, expression);
+            if (dataFlowInfo == null) {
+                dataFlowInfo = context.dataFlowInfo;
+            }
+            return JetTypeInfo.create(context.trace.getBindingContext().get(BindingContext.EXPRESSION_TYPE, expression), dataFlowInfo);
         }
         JetTypeInfo result;
         try {
@@ -128,7 +130,7 @@ public class ExpressionTypingVisitorDispatcher extends JetVisitor<JetTypeInfo, E
             }
 
             if (result.getType() instanceof DeferredType) {
-                result = JetTypeInfo.create(((DeferredType) result.getType()).getActualType(), context.dataFlowInfo);
+                result = JetTypeInfo.create(((DeferredType) result.getType()).getActualType(), result.getDataFlowInfo());
             }
             if (result.getType() != null) {
                 context.trace.record(BindingContext.EXPRESSION_TYPE, expression, result.getType());
@@ -144,7 +146,10 @@ public class ExpressionTypingVisitorDispatcher extends JetVisitor<JetTypeInfo, E
             context.trace.record(BindingContext.RESOLUTION_SCOPE, expression, context.scope);
         }
         context.trace.record(BindingContext.PROCESSED, expression);
-        return result;        
+        if (result.getDataFlowInfo() != context.dataFlowInfo) {
+            context.trace.record(BindingContext.EXPRESSION_DATA_FLOW_INFO, expression, result.getDataFlowInfo());
+        }
+        return result;
     }  
 
     //////////////////////////////////////////////////////////////////////////////////////////////

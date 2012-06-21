@@ -33,7 +33,9 @@ import org.jetbrains.jet.lang.resolve.calls.CallMaker;
 import org.jetbrains.jet.lang.resolve.calls.OverloadResolutionResults;
 import org.jetbrains.jet.lang.resolve.calls.OverloadResolutionResultsUtil;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
+import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowValue;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowValueFactory;
+import org.jetbrains.jet.lang.resolve.calls.autocasts.Nullability;
 import org.jetbrains.jet.lang.resolve.constants.*;
 import org.jetbrains.jet.lang.resolve.constants.StringValue;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
@@ -72,9 +74,10 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     public JetTypeInfo visitSimpleNameExpression(JetSimpleNameExpression expression, ExpressionTypingContext context) {
         // TODO : other members
         // TODO : type substitutions???
-        JetType type = DataFlowUtils.checkType(getSelectorReturnType(NO_RECEIVER, null, expression, context), expression, context);
+        JetTypeInfo typeInfo = getSelectorReturnTypeInfo(NO_RECEIVER, null, expression, context);
+        JetType type = DataFlowUtils.checkType(typeInfo.getType(), expression, context);
         ExpressionTypingUtils.checkWrappingInRef(expression, context);
-        return JetTypeInfo.create(type, context.dataFlowInfo); // TODO : Extensions to this
+        return JetTypeInfo.create(type, typeInfo.getDataFlowInfo()); // TODO : Extensions to this
     }
 
     @Nullable
@@ -192,37 +195,41 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     public JetTypeInfo visitBinaryWithTypeRHSExpression(JetBinaryExpressionWithTypeRHS expression, ExpressionTypingContext context) {
         JetTypeReference right = expression.getRight();
         JetType result = null;
+        DataFlowInfo dataFlowInfo = context.dataFlowInfo;
         if (right != null) {
             JetType targetType = context.expressionTypingServices.getTypeResolver().resolveType(context.scope, right, context.trace, true);
 
+            boolean tryWithNoExpectedType = true;
             if (isTypeFlexible(expression.getLeft()) || expression.getOperationSign().getReferencedNameElementType() == JetTokens.COLON) {
                 TemporaryBindingTrace temporaryTraceWithExpectedType = TemporaryBindingTrace.create(context.trace);
-                boolean success = checkBinaryWithTypeRHS(expression, context.replaceBindingTrace(temporaryTraceWithExpectedType).replaceExpectedType(targetType), targetType);
-                if (success) {
+                ExpressionTypingContext contextWithTemporaryTrace = context.replaceBindingTrace(temporaryTraceWithExpectedType).replaceExpectedType(targetType);
+                JetTypeInfo typeInfo = facade.getTypeInfo(expression.getLeft(), contextWithTemporaryTrace);
+                if (typeInfo.getType() != null && checkBinaryWithTypeRHS(expression, contextWithTemporaryTrace, targetType, typeInfo.getType())) {
                     temporaryTraceWithExpectedType.commit();
-                }
-                else {
-                    checkBinaryWithTypeRHS(expression, context.replaceExpectedType(NO_EXPECTED_TYPE), targetType);
+                    dataFlowInfo = typeInfo.getDataFlowInfo();
+                    tryWithNoExpectedType = false;
                 }
             }
-            else {
-                checkBinaryWithTypeRHS(expression, context.replaceExpectedType(NO_EXPECTED_TYPE), targetType);
+
+            if (tryWithNoExpectedType) {
+                ExpressionTypingContext contextWithNoExpectedType = context.replaceExpectedType(NO_EXPECTED_TYPE);
+                JetTypeInfo typeInfo = facade.getTypeInfo(expression.getLeft(), contextWithNoExpectedType);
+                if (typeInfo.getType() != null) {
+                    checkBinaryWithTypeRHS(expression, contextWithNoExpectedType, targetType, typeInfo.getType());
+                    dataFlowInfo = typeInfo.getDataFlowInfo();
+                }
             }
 
             IElementType operationType = expression.getOperationSign().getReferencedNameElementType();
             result = operationType == JetTokens.AS_SAFE ? TypeUtils.makeNullable(targetType) : targetType;
         }
         else {
-            facade.getTypeInfo(expression.getLeft(), context.replaceExpectedType(NO_EXPECTED_TYPE));
+            dataFlowInfo = facade.getTypeInfo(expression.getLeft(), context.replaceExpectedType(NO_EXPECTED_TYPE)).getDataFlowInfo();
         }
-        return DataFlowUtils.checkType(result, expression, context, context.dataFlowInfo);
+        return DataFlowUtils.checkType(result, expression, context, dataFlowInfo);
     }
 
-    private boolean checkBinaryWithTypeRHS(JetBinaryExpressionWithTypeRHS expression, ExpressionTypingContext context, @NotNull JetType targetType) {
-
-        JetType actualType = facade.getTypeInfo(expression.getLeft(), context).getType();
-        if (actualType == null) return false;
-
+    private boolean checkBinaryWithTypeRHS(JetBinaryExpressionWithTypeRHS expression, ExpressionTypingContext context, @NotNull JetType targetType, JetType actualType) {
         JetSimpleNameExpression operationSign = expression.getOperationSign();
         IElementType operationType = operationSign.getReferencedNameElementType();
         if (operationType == JetTokens.COLON) {
@@ -537,11 +544,14 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         if (selectorExpression == null) return JetTypeInfo.create(null, context.dataFlowInfo);
         if (receiverType == null) receiverType = ErrorUtils.createErrorType("Type for " + expression.getText());
 
+        context = context.replaceDataFlowInfo(receiverTypeInfo.getDataFlowInfo());
+
         if (selectorExpression instanceof JetSimpleNameExpression) {
             propagateConstantValues(expression, context, (JetSimpleNameExpression) selectorExpression);
         }
 
-        JetType selectorReturnType = getSelectorReturnType(new ExpressionReceiver(receiverExpression, receiverType), expression.getOperationTokenNode(), selectorExpression, context);
+        JetTypeInfo selectorReturnTypeInfo = getSelectorReturnTypeInfo(new ExpressionReceiver(receiverExpression, receiverType), expression.getOperationTokenNode(), selectorExpression, context);
+        JetType selectorReturnType = selectorReturnTypeInfo.getType();
 
         //TODO move further
         if (expression.getOperationSign() == JetTokens.SAFE_ACCESS) {
@@ -552,12 +562,11 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             }
         }
 
-        JetType result = selectorReturnType;
         // TODO : this is suspicious: remove this code?
-        if (result != null) {
-            context.trace.record(BindingContext.EXPRESSION_TYPE, selectorExpression, result);
+        if (selectorReturnType != null) {
+            context.trace.record(BindingContext.EXPRESSION_TYPE, selectorExpression, selectorReturnType);
         }
-        return DataFlowUtils.checkType(result, expression, context, receiverTypeInfo.getDataFlowInfo());
+        return DataFlowUtils.checkType(selectorReturnType, expression, context, selectorReturnTypeInfo.getDataFlowInfo());
     }
 
     private void propagateConstantValues(JetQualifiedExpression expression, ExpressionTypingContext context, JetSimpleNameExpression selectorExpression) {
@@ -639,34 +648,33 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         return null;
     }
 
-    @Nullable
-    public JetType getSelectorReturnType(@NotNull ReceiverDescriptor receiver, @Nullable ASTNode callOperationNode, @NotNull JetExpression selectorExpression, @NotNull ExpressionTypingContext context) {
+    @NotNull
+    public JetTypeInfo getSelectorReturnTypeInfo(@NotNull ReceiverDescriptor receiver, @Nullable ASTNode callOperationNode, @NotNull JetExpression selectorExpression, @NotNull ExpressionTypingContext context) {
         if (selectorExpression instanceof JetCallExpression) {
-
-            return getCallExpressionType((JetCallExpression) selectorExpression, receiver, callOperationNode, context);
+            return getCallExpressionTypeInfo((JetCallExpression) selectorExpression, receiver, callOperationNode, context);
         }
         else if (selectorExpression instanceof JetSimpleNameExpression) {
-
-            return getSimpleNameExpressionType((JetSimpleNameExpression) selectorExpression, receiver, callOperationNode, context);
+            return getSimpleNameExpressionTypeInfo((JetSimpleNameExpression) selectorExpression, receiver, callOperationNode, context);
         }
         else if (selectorExpression instanceof JetQualifiedExpression) {
-
             JetQualifiedExpression qualifiedExpression = (JetQualifiedExpression) selectorExpression;
             JetExpression newReceiverExpression = qualifiedExpression.getReceiverExpression();
-            JetType newReceiverType = getSelectorReturnType(receiver, callOperationNode, newReceiverExpression, context.replaceExpectedType(NO_EXPECTED_TYPE));
+            JetTypeInfo newReceiverTypeInfo = getSelectorReturnTypeInfo(receiver, callOperationNode, newReceiverExpression, context.replaceExpectedType(NO_EXPECTED_TYPE));
+            JetType newReceiverType = newReceiverTypeInfo.getType();
+            DataFlowInfo newReceiverDataFlowInfo = newReceiverTypeInfo.getDataFlowInfo();
             JetExpression newSelectorExpression = qualifiedExpression.getSelectorExpression();
             if (newReceiverType != null && newSelectorExpression != null) {
-                return getSelectorReturnType(new ExpressionReceiver(newReceiverExpression, newReceiverType), qualifiedExpression.getOperationTokenNode(), newSelectorExpression, context);
+                return getSelectorReturnTypeInfo(new ExpressionReceiver(newReceiverExpression, newReceiverType), qualifiedExpression.getOperationTokenNode(), newSelectorExpression, context.replaceDataFlowInfo(newReceiverDataFlowInfo));
             }
         }
         else {
             context.trace.report(ILLEGAL_SELECTOR.on(selectorExpression, selectorExpression.getText()));
         }
-        return null;
+        return JetTypeInfo.create(null, context.dataFlowInfo);
     }
 
-    @Nullable
-    private JetType getSimpleNameExpressionType(@NotNull JetSimpleNameExpression nameExpression, @NotNull ReceiverDescriptor receiver,
+    @NotNull
+    private JetTypeInfo getSimpleNameExpressionTypeInfo(@NotNull JetSimpleNameExpression nameExpression, @NotNull ReceiverDescriptor receiver,
             @Nullable ASTNode callOperationNode, @NotNull ExpressionTypingContext context) {
 
         boolean[] result = new boolean[1];
@@ -675,7 +683,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         JetType type = getVariableType(nameExpression, receiver, callOperationNode, context.replaceBindingTrace(traceForVariable), result);
         if (result[0]) {
             traceForVariable.commit();
-            return type;
+            return JetTypeInfo.create(type, context.dataFlowInfo);
         }
 
         Call call = CallMaker.makeCall(nameExpression, receiver, callOperationNode, nameExpression, Collections.<ValueArgument>emptyList());
@@ -685,15 +693,16 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             traceForFunction.commit();
             boolean hasValueParameters = functionDescriptor == null || functionDescriptor.getValueParameters().size() > 0;
             context.trace.report(FUNCTION_CALL_EXPECTED.on(nameExpression, nameExpression, hasValueParameters));
-            return functionDescriptor != null ? functionDescriptor.getReturnType() : null;
+            type = functionDescriptor != null ? functionDescriptor.getReturnType() : null;
+            return JetTypeInfo.create(type, context.dataFlowInfo);
         }
 
         traceForVariable.commit();
-        return null;
+        return JetTypeInfo.create(null, context.dataFlowInfo);
     }
 
-    @Nullable
-    private JetType getCallExpressionType(@NotNull JetCallExpression callExpression, @NotNull ReceiverDescriptor receiver,
+    @NotNull
+    private JetTypeInfo getCallExpressionTypeInfo(@NotNull JetCallExpression callExpression, @NotNull ReceiverDescriptor receiver,
             @Nullable ASTNode callOperationNode, @NotNull ExpressionTypingContext context) {
 
         boolean[] result = new boolean[1];
@@ -709,7 +718,22 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 boolean hasValueParameters = functionDescriptor == null || functionDescriptor.getValueParameters().size() > 0;
                 context.trace.report(FUNCTION_CALL_EXPECTED.on(callExpression, callExpression, hasValueParameters));
             }
-            return functionDescriptor != null ? functionDescriptor.getReturnType() : null;
+            if (functionDescriptor == null) {
+                return JetTypeInfo.create(null, context.dataFlowInfo);
+            }
+            JetType type = functionDescriptor.getReturnType();
+
+            DataFlowInfo dataFlowInfo = context.dataFlowInfo;
+            JetValueArgumentList argumentList = callExpression.getValueArgumentList();
+            if (argumentList != null) {
+                for (JetValueArgument argument : argumentList.getArguments()) {
+                    JetExpression expression = argument.getArgumentExpression();
+                    if (expression != null) {
+                        dataFlowInfo = dataFlowInfo.and(facade.getTypeInfo(expression, context.replaceDataFlowInfo(dataFlowInfo)).getDataFlowInfo());
+                    }
+                }
+            }
+            return JetTypeInfo.create(type, dataFlowInfo);
         }
 
         JetExpression calleeExpression = callExpression.getCalleeExpression();
@@ -721,11 +745,11 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 traceForVariable.commit();
                 context.trace.report(FUNCTION_EXPECTED.on((JetReferenceExpression) calleeExpression, calleeExpression,
                                                           type != null ? type : ErrorUtils.createErrorType("")));
-                return null;
+                return JetTypeInfo.create(null, context.dataFlowInfo);
             }
         }
         traceForFunction.commit();
-        return null;
+        return JetTypeInfo.create(null, context.dataFlowInfo);
     }
 
     private static void checkSuper(@NotNull ReceiverDescriptor receiverDescriptor, @NotNull OverloadResolutionResults<? extends CallableDescriptor> results,
@@ -743,8 +767,8 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
 
     @Override
     public JetTypeInfo visitCallExpression(JetCallExpression expression, ExpressionTypingContext context) {
-        JetType expressionType = getCallExpressionType(expression, NO_RECEIVER, null, context);
-        return DataFlowUtils.checkType(expressionType, expression, context, context.dataFlowInfo);
+        JetTypeInfo expressionTypeInfo = getCallExpressionTypeInfo(expression, NO_RECEIVER, null, context);
+        return DataFlowUtils.checkType(expressionTypeInfo.getType(), expression, context, expressionTypeInfo.getDataFlowInfo());
     }
 
     @Override
@@ -783,6 +807,10 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         if (operationType == JetTokens.EXCLEXCL) {
             if (isKnownToBeNotNull(baseExpression, context)) {
                 context.trace.report(UNNECESSARY_NOT_NULL_ASSERTION.on(operationSign, type));
+            }
+            else {
+                DataFlowValue value = DataFlowValueFactory.INSTANCE.createDataFlowValue(baseExpression, type, context.trace.getBindingContext());
+                dataFlowInfo = dataFlowInfo.disequate(value, DataFlowValue.NULL);
             }
             return DataFlowUtils.checkType(TypeUtils.makeNotNullable(type), expression, context, dataFlowInfo);
         }
@@ -872,12 +900,6 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         if (variable == null) {
             trace.report(VARIABLE_EXPECTED.on(expression != null ? expression : expressionWithParenthesis));
         }
-    }
-
-    @Override
-    public JetTypeInfo visitIdeTemplateExpression(JetIdeTemplateExpression expression, ExpressionTypingContext context) {
-        context.trace.report(UNRESOLVED_IDE_TEMPLATE.on(expression, ObjectUtils.notNull(expression.getText(), "<no name>")));
-        return JetTypeInfo.create(null, context.dataFlowInfo);
     }
 
     @Override
@@ -1015,29 +1037,50 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     private void ensureNonemptyIntersectionOfOperandTypes(JetBinaryExpression expression, ExpressionTypingContext context) {
-        JetSimpleNameExpression operationSign = expression.getOperationReference();
         JetExpression left = expression.getLeft();
         JetExpression right = expression.getRight();
 
         // TODO : duplicated effort for == and !=
-        JetType leftType = facade.getTypeInfo(left, context.replaceScope(context.scope)).getType();
+        JetType leftType = facade.getTypeInfo(left, context).getType();
         if (leftType != null && right != null) {
-            JetType rightType = facade.getTypeInfo(right, context.replaceScope(context.scope)).getType();
+            JetType rightType = facade.getTypeInfo(right, context).getType();
 
             if (rightType != null) {
                 if (TypeUtils.isIntersectionEmpty(leftType, rightType)) {
-                    context.trace.report(EQUALITY_NOT_APPLICABLE.on(expression, operationSign, leftType, rightType));
+                    context.trace.report(EQUALITY_NOT_APPLICABLE.on(expression, expression.getOperationReference(), leftType, rightType));
                 }
-            }
-            if (isSenselessComparisonWithNull(leftType, right) || isSenselessComparisonWithNull(rightType, left)) {
-                context.trace.report(SENSELESS_COMPARISON.on(expression, expression, operationSign.getReferencedNameElementType() == JetTokens.EXCLEQ));
+                checkSenselessComparisonWithNull(expression, left, right, context);
             }
         }
     }
 
-    private boolean isSenselessComparisonWithNull(@Nullable JetType firstType, @NotNull JetExpression secondExpression) {
-        if (firstType == null) return false;
-        return !firstType.isNullable() && secondExpression instanceof JetConstantExpression && secondExpression.getNode().getElementType() == JetNodeTypes.NULL;
+    private void checkSenselessComparisonWithNull(@NotNull JetBinaryExpression expression, @NotNull JetExpression left, @NotNull JetExpression right, @NotNull ExpressionTypingContext context) {
+        JetExpression expr;
+        if (left instanceof JetConstantExpression && left.getNode().getElementType() == JetNodeTypes.NULL) {
+            expr = right;
+        }
+        else if (right instanceof JetConstantExpression && right.getNode().getElementType() == JetNodeTypes.NULL) {
+            expr = left;
+        }
+        else return;
+
+        JetSimpleNameExpression operationSign = expression.getOperationReference();
+        JetType type = facade.getTypeInfo(expr, context).getType();
+        DataFlowValue value = DataFlowValueFactory.INSTANCE.createDataFlowValue(expr, type, context.trace.getBindingContext());
+        Nullability nullability = context.dataFlowInfo.getNullability(value);
+
+        boolean expressionIsAlways;
+        boolean equality = operationSign.getReferencedNameElementType() == JetTokens.EQEQ || operationSign.getReferencedNameElementType() == JetTokens.EQEQEQ;
+
+        if (nullability == Nullability.NULL) {
+            expressionIsAlways = equality;
+        }
+        else if (nullability == Nullability.NOT_NULL) {
+            expressionIsAlways = !equality;
+        }
+        else return;
+
+        context.trace.report(SENSELESS_COMPARISON.on(expression, expression, expressionIsAlways));
     }
 
     protected JetType visitAssignmentOperation(JetBinaryExpression expression, ExpressionTypingContext context) {

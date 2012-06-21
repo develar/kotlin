@@ -30,8 +30,7 @@ public interface JetNodeTypes {
 
     IElementType CLASS     = JetStubElementTypes.CLASS;
     IElementType FUN       = JetStubElementTypes.FUNCTION;
-
-    JetNodeType PROPERTY   = new JetNodeType("PROPERTY", JetProperty.class);
+    IElementType PROPERTY  = JetStubElementTypes.PROPERTY;
 
     JetNodeType TYPEDEF    = new JetNodeType("TYPEDEF", JetTypedef.class);
     JetNodeType OBJECT_DECLARATION = new JetNodeType("OBJECT_DECLARATION", JetObjectDeclaration.class);
@@ -42,8 +41,8 @@ public interface JetNodeTypes {
     JetNodeType ENUM_ENTRY            = new JetNodeType("ENUM_ENTRY", JetEnumEntry.class);
     JetNodeType ANONYMOUS_INITIALIZER = new JetNodeType("ANONYMOUS_INITIALIZER", JetClassInitializer.class);
 
-    JetNodeType TYPE_PARAMETER_LIST                 = new JetNodeType("TYPE_PARAMETER_LIST", JetTypeParameterList.class);
-    JetNodeType TYPE_PARAMETER                      = new JetNodeType("TYPE_PARAMETER", JetTypeParameter.class);
+    IElementType TYPE_PARAMETER_LIST                 = JetStubElementTypes.TYPE_PARAMETER_LIST;
+    IElementType TYPE_PARAMETER                      = JetStubElementTypes.TYPE_PARAMETER;
     JetNodeType DELEGATION_SPECIFIER_LIST           = new JetNodeType("DELEGATION_SPECIFIER_LIST", JetDelegationSpecifierList.class);
     JetNodeType DELEGATOR_BY                        = new JetNodeType("DELEGATOR_BY", JetDelegatorByExpressionSpecifier.class);
     JetNodeType DELEGATOR_SUPER_CALL                = new JetNodeType("DELEGATOR_SUPER_CALL", JetDelegatorToSuperCall.class);
@@ -163,5 +162,5 @@ public interface JetNodeTypes {
     JetNodeType NAMESPACE_HEADER = new JetNodeType("NAMESPACE_HEADER", JetNamespaceHeader.class);
     JetNodeType SCRIPT = new JetNodeType("SCRIPT", JetScript.class);
 
-    JetNodeType IDE_TEMPLATE_EXPRESSION   = new JetNodeType("IDE_TEMPLATE_EXPRESSION", JetIdeTemplateExpression.class);
+    JetNodeType IDE_TEMPLATE_EXPRESSION   = new JetNodeType("IDE_TEMPLATE_EXPRESSION", JetIdeTemplate.class);
 }

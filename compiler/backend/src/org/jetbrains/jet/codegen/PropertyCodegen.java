@@ -126,7 +126,8 @@ public class PropertyCodegen {
     }
 
     private static boolean isExternallyAccessible(PropertyDescriptor p) {
-        return p.getVisibility() != Visibilities.PRIVATE || DescriptorUtils.isClassObject(p.getContainingDeclaration());
+        return p.getVisibility() != Visibilities.PRIVATE || DescriptorUtils.isClassObject(p.getContainingDeclaration())
+               || p.getContainingDeclaration() instanceof NamespaceDescriptor;
     }
 
     private void generateSetter(JetProperty p, PropertyDescriptor propertyDescriptor) {
@@ -230,18 +231,12 @@ public class PropertyCodegen {
             @NotNull PropertyDescriptor propertyDescriptor, @NotNull Visibility visibility) {
         JetMethodAnnotationWriter aw = JetMethodAnnotationWriter.visitAnnotation(mv);
         Modality modality = propertyDescriptor.getModality();
-        BitSet flags = new BitSet();
+        BitSet flags = CodegenUtil.getFlagsForVisibility(visibility);
         flags.set(JvmStdlibNames.FLAG_PROPERTY_BIT);
         if (CodegenUtil.isInterface(propertyDescriptor.getContainingDeclaration()) && modality != Modality.ABSTRACT) {
             flags.set(modality == Modality.FINAL
                       ? JvmStdlibNames.FLAG_FORCE_FINAL_BIT
                       : JvmStdlibNames.FLAG_FORCE_OPEN_BIT);
-        }
-        if (visibility == Visibilities.INTERNAL) {
-            flags.set(JvmStdlibNames.FLAG_INTERNAL_BIT);
-        }
-        else if (visibility == Visibilities.PRIVATE) {
-            flags.set(JvmStdlibNames.FLAG_PRIVATE_BIT);
         }
         aw.writeFlags(flags);
         aw.writeTypeParameters(typeParameters);
@@ -256,6 +251,7 @@ public class PropertyCodegen {
         int modifiers = JetTypeMapper.getAccessModifiers(propertyDescriptor, 0);
         PropertySetterDescriptor setter = propertyDescriptor.getSetter();
         int flags = setter == null ? modifiers : JetTypeMapper.getAccessModifiers(setter, modifiers);
+        flags |= (propertyDescriptor.getModality() == Modality.ABSTRACT ? Opcodes.ACC_ABSTRACT : 0);
         generateDefaultSetter(propertyDescriptor, flags, p);
     }
 

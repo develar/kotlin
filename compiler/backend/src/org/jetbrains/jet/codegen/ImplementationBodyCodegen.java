@@ -169,13 +169,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         if (signature.getKotlinGenericSignature() != null || descriptor.getVisibility() != Visibilities.PUBLIC) {
             AnnotationVisitor annotationVisitor = v.newAnnotation(myClass, JvmStdlibNames.JET_CLASS.getDescriptor(), true);
             annotationVisitor.visit(JvmStdlibNames.JET_CLASS_SIGNATURE, signature.getKotlinGenericSignature());
-            BitSet flags = new BitSet();
-            if (descriptor.getVisibility() == Visibilities.INTERNAL) {
-                flags.set(JvmStdlibNames.FLAG_INTERNAL_BIT);
-            }
-            else if (descriptor.getVisibility() == Visibilities.PRIVATE) {
-                flags.set(JvmStdlibNames.FLAG_PRIVATE_BIT);
-            }
+            BitSet flags = CodegenUtil.getFlagsForVisibility(descriptor.getVisibility());
             int flagsValue = BitSetUtils.toInt(flags);
             if (JvmStdlibNames.FLAGS_DEFAULT_VALUE != flagsValue) {
                 annotationVisitor.visit(JvmStdlibNames.JET_CLASS_FLAGS_FIELD, flagsValue);
@@ -317,7 +311,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
             Method originalMethod = typeMapper.mapSignature(original.getName(), original).getAsmMethod();
             Type[] argTypes = method.getArgumentTypes();
 
-            MethodVisitor mv = v.newMethod(null, ACC_PUBLIC| ACC_BRIDGE| ACC_FINAL, bridge.getName().getName(), method.getDescriptor(), null, null);
+            MethodVisitor mv = v.newMethod(null, ACC_BRIDGE | ACC_FINAL, bridge.getName().getName(), method.getDescriptor(), null, null);
             if (state.getClassBuilderMode() == ClassBuilderMode.STUBS) {
                 StubCodegen.generateStubCode(mv);
             }
@@ -791,13 +785,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
                     JvmMethodSignature jvmSignature = typeMapper.mapToCallableMethod(inheritedFun, false, OwnerKind.IMPLEMENTATION).getSignature();
                     JetMethodAnnotationWriter aw = JetMethodAnnotationWriter.visitAnnotation(mv);
-                    BitSet kotlinFlags = new BitSet();
-                    if (fun.getVisibility() == Visibilities.INTERNAL) {
-                        kotlinFlags.set(JvmStdlibNames.FLAG_INTERNAL_BIT);
-                    }
-                    else if (fun.getVisibility() == Visibilities.PRIVATE) {
-                        kotlinFlags.set(JvmStdlibNames.FLAG_PRIVATE_BIT);
-                    }
+                    BitSet kotlinFlags = CodegenUtil.getFlagsForVisibility(fun.getVisibility());
                     if (fun instanceof PropertyAccessorDescriptor) {
                         kotlinFlags.set(JvmStdlibNames.FLAG_PROPERTY_BIT);
                         aw.writeTypeParameters(jvmSignature.getKotlinTypeParameter());

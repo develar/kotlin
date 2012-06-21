@@ -90,7 +90,7 @@ public class FunctionCodegen {
         List<ValueParameterDescriptor> paramDescrs = functionDescriptor.getValueParameters();
         List<TypeParameterDescriptor> typeParameters = (functionDescriptor instanceof PropertyAccessorDescriptor ? ((PropertyAccessorDescriptor)functionDescriptor).getCorrespondingProperty(): functionDescriptor).getTypeParameters();
 
-        int flags = ACC_PUBLIC; // TODO.
+        int flags = JetTypeMapper.getAccessModifiers(functionDescriptor, 0);
         
         if (!functionDescriptor.getValueParameters().isEmpty()
                 && functionDescriptor.getValueParameters().get(functionDescriptor.getValueParameters().size() - 1)
@@ -140,17 +140,11 @@ public class FunctionCodegen {
                             throw new IllegalStateException();
                         }
                         JetMethodAnnotationWriter aw = JetMethodAnnotationWriter.visitAnnotation(mv);
-                        BitSet kotlinFlags = new BitSet();
+                        BitSet kotlinFlags = CodegenUtil.getFlagsForVisibility(functionDescriptor.getVisibility());
                         if (CodegenUtil.isInterface(functionDescriptor.getContainingDeclaration()) && modality != Modality.ABSTRACT) {
                             kotlinFlags.set(modality == Modality.FINAL
                                             ? JvmStdlibNames.FLAG_FORCE_FINAL_BIT
                                             : JvmStdlibNames.FLAG_FORCE_OPEN_BIT);
-                        }
-                        if (functionDescriptor.getVisibility() == Visibilities.INTERNAL) {
-                            kotlinFlags.set(JvmStdlibNames.FLAG_INTERNAL_BIT);
-                        }
-                        else if (functionDescriptor.getVisibility() == Visibilities.PRIVATE) {
-                            kotlinFlags.set(JvmStdlibNames.FLAG_PRIVATE_BIT);
                         }
                         aw.writeFlags(kotlinFlags);
                         aw.writeNullableReturnType(functionDescriptor.getReturnType().isNullable());

@@ -145,6 +145,11 @@ public class JetClass extends JetTypeParameterListOwnerStub<PsiJetClassStub> imp
     }
 
     public boolean isTrait() {
+        PsiJetClassStub stub = getStub();
+        if (stub != null) {
+            return stub.isTrait();
+        }
+
         return findChildByType(JetTokens.TRAIT_KEYWORD) != null;
     }
 
@@ -241,16 +246,6 @@ public class JetClass extends JetTypeParameterListOwnerStub<PsiJetClassStub> imp
                 }
             }
         }
-    }
-
-    @Override
-    public String getName() {
-        PsiJetClassStub stub = getStub();
-        if (stub != null) {
-            return stub.getName();
-        }
-
-        return super.getName();
     }
 
     @Override
