@@ -57,7 +57,14 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
                                           @NotNull TranslationContext context) {
         CompileTimeConstant<?> compileTimeValue =
             context.bindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
+
+        // todo try to compile idea project
+        if (compileTimeValue == null && expression.getText().equals("null")) {
+            return context.program().getNullLiteral();
+        }
+
         assert compileTimeValue != null;
+
         if (compileTimeValue instanceof NullValue) {
             return context.program().getNullLiteral();
         }
