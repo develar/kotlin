@@ -24,6 +24,12 @@ public fun <T> java.lang.Iterable<T>.count() : Int {
   return number
 }
 
+private fun <T> countTo(n: Int): (T) -> Boolean {
+  var count = 0
+  return { ++count; count <= n }
+}
+
+
 /**
  * Get the first element in the collection.
  *
@@ -78,7 +84,7 @@ public fun <T> java.lang.Iterable<T>.contains(item : T) : Boolean {
   }
 
   for (var elem in this) {
-    if (elem.equals(item)) {
+    if (elem == item) {
       return true
     }
   }
@@ -94,8 +100,7 @@ public fun <T> java.lang.Iterable<T>.contains(item : T) : Boolean {
 public fun <T> java.lang.Iterable<T>.withIndices() : java.lang.Iterable<#(Int, T)> {
     return object : java.lang.Iterable<#(Int, T)> {
         public override fun iterator(): java.util.Iterator<#(Int, T)> {
-            // TODO explicit typecast as a workaround for KT-1457, should be removed when it is fixed
-            return NumberedIterator<T>(this@withIndices.iterator().sure()) as java.util.Iterator<#(Int, T)>
+            return NumberedIterator<T>(this@withIndices.iterator()!!)
         }
     }
 }

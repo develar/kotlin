@@ -17,8 +17,6 @@
 package org.jetbrains.jet.lang.psi.stubs.elements;
 
 import com.intellij.lang.ASTNode;
-import com.intellij.lang.LighterAST;
-import com.intellij.lang.LighterASTNode;
 import com.intellij.psi.stubs.IndexSink;
 import com.intellij.psi.stubs.StubElement;
 import com.intellij.psi.stubs.StubInputStream;
@@ -48,17 +46,12 @@ public class JetFunctionElementType extends JetStubElementType<PsiJetFunctionStu
     }
 
     @Override
-    public PsiJetFunctionStub createStub(LighterAST tree, LighterASTNode node, StubElement parentStub) {
-        return null;
-    }
-
-    @Override
     public JetNamedFunction createPsi(@NotNull PsiJetFunctionStub stub) {
         return new JetNamedFunction(stub);
     }
 
     @Override
-    public PsiJetFunctionStub createStub(@NotNull JetNamedFunction psi, StubElement parentStub) {
+    public PsiJetFunctionStub createStub(@NotNull JetNamedFunction psi, @NotNull StubElement parentStub) {
         final boolean isTopLevel = parentStub instanceof PsiJetFileStub;
         final boolean isExtension = psi.getReceiverTypeRef() != null;
 

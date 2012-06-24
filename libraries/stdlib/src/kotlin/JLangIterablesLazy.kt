@@ -85,10 +85,6 @@ public inline fun <in T> java.lang.Iterable<T?>?.requireNoNulls() : List<T> {
  * @includeFunctionBody ../../test/CollectionTest.kt drop
  */
 public inline fun <T> java.lang.Iterable<T>.drop(n: Int): List<T> {
-    fun countTo(n: Int): (T) -> Boolean {
-      var count = 0
-      return { ++count; count <= n }
-    }
     return dropWhile(countTo(n))
 }
 
@@ -105,10 +101,6 @@ public inline fun <T> java.lang.Iterable<T>.dropWhile(predicate: (T) -> Boolean)
  * @includeFunctionBody ../../test/CollectionTest.kt take
  */
 public inline fun <T> java.lang.Iterable<T>.take(n: Int): List<T> {
-    fun countTo(n: Int): (T) -> Boolean {
-      var count = 0
-      return { ++count; count <= n }
-    }
     return takeWhile(countTo(n))
 }
 

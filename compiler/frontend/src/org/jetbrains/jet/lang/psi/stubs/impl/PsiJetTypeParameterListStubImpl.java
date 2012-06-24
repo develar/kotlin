@@ -30,4 +30,9 @@ public class PsiJetTypeParameterListStubImpl extends StubBase<JetTypeParameterLi
     public PsiJetTypeParameterListStubImpl(@NotNull IStubElementType elementType, final StubElement parent) {
         super(parent, elementType);
     }
+
+    @Override
+    public String toString() {
+        return "PsiJetTypeParameterListStubImpl";
+    }
 }

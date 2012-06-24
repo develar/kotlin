@@ -18,20 +18,18 @@ package org.jetbrains.jet.lang.psi.stubs.elements;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.impl.java.stubs.PsiJavaFileStub;
-import com.intellij.psi.impl.java.stubs.StubPsiFactory;
-import com.intellij.psi.stubs.ILightStubElementType;
-import com.intellij.psi.stubs.PsiFileStub;
+import com.intellij.psi.stubs.IStubElementType;
 import com.intellij.psi.stubs.StubElement;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.plugin.JetLanguage;
 
 /**
  * @author Nikolay Krasko
  */
-public abstract class JetStubElementType<StubT extends StubElement, PsiT extends PsiElement>
-        extends ILightStubElementType<StubT, PsiT> {
+public abstract class JetStubElementType<StubT extends StubElement, PsiT extends PsiElement> extends IStubElementType<StubT, PsiT> {
 
     public JetStubElementType(@NotNull @NonNls String debugName) {
         super(debugName, JetLanguage.INSTANCE);
@@ -39,21 +37,27 @@ public abstract class JetStubElementType<StubT extends StubElement, PsiT extends
 
     public abstract PsiT createPsiFromAst(@NotNull ASTNode node);
 
-    protected StubPsiFactory getPsiFactory(StubT stub) {
-        return getFileStub(stub).getPsiFactory();
-    }
-
-    private PsiJavaFileStub getFileStub(StubT stub) {
-        StubElement parent = stub;
-        while (!(parent instanceof PsiFileStub)) {
-            parent = parent.getParentStub();
-        }
-
-        return (PsiJavaFileStub)parent;
-    }
-
     @Override
     public String getExternalId() {
         return "jet." + toString();
+    }
+
+    @Override
+    public boolean shouldCreateStub(ASTNode node) {
+        PsiElement psi = node.getPsi();
+
+        if (PsiTreeUtil.getParentOfType(psi, JetFunctionLiteral.class) != null) {
+            return false;
+        }
+
+        JetBlockExpression blockExpression = PsiTreeUtil.getParentOfType(psi, JetBlockExpression.class);
+        @SuppressWarnings("unchecked") JetDeclarationWithBody stubStopElement =
+                PsiTreeUtil.getParentOfType(blockExpression, JetFunction.class, JetPropertyAccessor.class);
+
+        if (stubStopElement != null) {
+            return false;
+        }
+
+        return super.shouldCreateStub(node);
     }
 }

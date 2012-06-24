@@ -229,18 +229,23 @@ public class DeclarationResolver {
         // TODO : not all the parameters are real properties
         JetScope memberScope = classDescriptor.getScopeForSupertypeResolution();
         ConstructorDescriptor constructorDescriptor = descriptorResolver.resolvePrimaryConstructorDescriptor(memberScope, classDescriptor, klass, trace);
-        for (JetParameter parameter : klass.getPrimaryConstructorParameters()) {
-            if (parameter.getValOrVarNode() != null) {
-                PropertyDescriptor propertyDescriptor = descriptorResolver.resolvePrimaryConstructorParameterToAProperty(
-                        classDescriptor,
-                        memberScope,
-                        parameter, trace
-                );
-                classDescriptor.getBuilder().addPropertyDescriptor(propertyDescriptor);
-                context.getPrimaryConstructorParameterProperties().put(parameter, propertyDescriptor);
-            }
-        }
         if (constructorDescriptor != null) {
+            List<ValueParameterDescriptor> valueParameterDescriptors = constructorDescriptor.getValueParameters();
+            List<JetParameter> primaryConstructorParameters = klass.getPrimaryConstructorParameters();
+            assert valueParameterDescriptors.size() == primaryConstructorParameters.size();
+            for (ValueParameterDescriptor valueParameterDescriptor : valueParameterDescriptors) {
+                JetParameter parameter = primaryConstructorParameters.get(valueParameterDescriptor.getIndex());
+                if (parameter.getValOrVarNode() != null) {
+                    PropertyDescriptor propertyDescriptor = descriptorResolver.resolvePrimaryConstructorParameterToAProperty(
+                            classDescriptor,
+                            valueParameterDescriptor,
+                            memberScope,
+                            parameter, trace
+                    );
+                    classDescriptor.getBuilder().addPropertyDescriptor(propertyDescriptor);
+                    context.getPrimaryConstructorParameterProperties().put(parameter, propertyDescriptor);
+                }
+            }
             classDescriptor.setPrimaryConstructor(constructorDescriptor, trace);
         }
     }

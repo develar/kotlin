@@ -222,21 +222,20 @@ public inline fun <T, C: Collection<in T>> java.lang.Iterable<T>.takeWhileTo(res
     return result
 }
 
+/** Copies all elements into the given collection */
+public inline fun <in T, C: Collection<in T>> java.lang.Iterable<T>.toCollection(result: C) : C {
+    for (element in this) result.add(element)
+    return result
+}
+
 /**
  * Reverses the order the elements into a list
  *
  * @includeFunctionBody ../../test/CollectionTest.kt reverse
  */
 public inline fun <T> java.lang.Iterable<T>.reverse() : List<T> {
-    val answer = LinkedList<T>()
-    for (element in this) answer.addFirst(element)
-    return answer
-}
-
-/** Copies all elements into the given collection */
-public inline fun <in T, C: Collection<in T>> java.lang.Iterable<T>.toCollection(result: C) : C {
-    for (element in this) result.add(element)
-    return result
+    val list = toList()
+    return list.reverse()
 }
 
 /** Copies all elements into a [[LinkedList]]  */
@@ -250,9 +249,6 @@ public inline fun <in T> java.lang.Iterable<T>.toCollection() : Collection<T> = 
 
 /** Copies all elements into a [[Set]] */
 public inline fun <in T> java.lang.Iterable<T>.toSet() : Set<T> = toCollection(HashSet<T>())
-
-/** Copies all elements into a [[SortedSet]] */
-public inline fun <in T> java.lang.Iterable<T>.toSortedSet() : SortedSet<T> = toCollection(TreeSet<T>())
 
 /**
   TODO figure out necessary variance/generics ninja stuff... :)

@@ -41,22 +41,22 @@
                                         <exclude name="dom/html/window.kt"/>
                                         <exclude name="stdlib/test.kt"/>
                                         <exclude name="stdlib/dom.kt"/>
+                                        <exclude name="stdlib/jutil.kt"/>
                                     </fileset>
                                 </copy>
                                 <copy todir="${basedir}/target/generated-js-library">
                                     <fileset dir="${kotlin-js-lib-srcdir}">
                                         <include name="stdlib/test.kt"/>
+                                        <include name="stdlib/jutil.kt"/>
                                         <include name="stdlib/dom.kt"/>
                                         <include name="core/strings.kt"/>
                                     </fileset>
                                 </copy>
                                 <copy todir="${basedir}/target/generated-js-library/kotlin">
-<!--
                                     <fileset dir="${basedir}/../../stdlib/src/kotlin/dom">
                                         <include name="**/*.kt"/>
                                         <exclude name="**/*JVM.kt"/>
                                     </fileset>
--->
                                     <fileset dir="${basedir}/../../stdlib/src/kotlin/support">
                                         <include name="**/*.kt"/>
                                         <exclude name="**/*JVM.kt"/>
@@ -67,6 +67,13 @@
                                     </fileset>
                                     <fileset dir="${basedir}/../../stdlib/src/kotlin">
                                         <include name="Preconditions.kt"/>
+                                        <include name="Iterators.kt"/>
+                                        <include name="JUtil.kt"/>
+                                        <include name="JUtilCollections.kt"/>
+                                        <include name="JUtilMaps.kt"/>
+                                        <include name="JLangIterables.kt"/>
+                                        <include name="JLangIterablesLazy.kt"/>
+                                        <include name="JLangIterablesSpecial.kt"/>
 <!--
                                         <include name="Ordering.kt"/>
 -->
