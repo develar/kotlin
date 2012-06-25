@@ -73,6 +73,15 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
         /*package*/ JsExpression translate() {
+        // todo: temp hack, wait
+        final JsExpression a = callParameters.getThisObject();
+        if (a instanceof JsNameRef) {
+            JsNameRef ref = (JsNameRef) a;
+            if (ref.getIdent().equals("classes") && ref.getQualifier() instanceof JsNameRef && ((JsNameRef) ref.getQualifier()).getIdent().equals("Components")) {
+                return new JsArrayAccess(a, arguments.get(0));
+            }
+        }
+
         if (isIntrinsic()) {
             return intrinsicInvocation();
         }
@@ -261,11 +270,9 @@ public final class CallTranslator extends AbstractTranslator {
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
                 JsExpression qualifiedCallee = getQualifiedCallee(receiver);
-
                 if (isEcma5PropertyAccess()) {
                     return ecma5PropertyAccess(qualifiedCallee);
                 }
-
                 return newInvocation(qualifiedCallee, arguments);
             }
         }, context());
