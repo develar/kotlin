@@ -85,7 +85,7 @@ public final class Translation {
 
     @NotNull
     public static JsExpression translateClassDeclaration(@NotNull JetClass classDeclaration,
-            @NotNull Map<JsName, JsName> aliasingMap,
+            @NotNull Map<JetClass, JsNameRef> aliasingMap,
             @NotNull TranslationContext context) {
         return ClassTranslator.generateClassCreationExpression(classDeclaration, aliasingMap, context);
     }

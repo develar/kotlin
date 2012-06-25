@@ -22,7 +22,6 @@ import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getSuperclassDescriptors;
@@ -35,18 +34,16 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getSuperclass
  * @author Pavel Talanov
  */
 public final class ClassSortingUtils {
-
     private ClassSortingUtils() {
     }
 
     @NotNull
-    public static List<JetClass> sortUsingInheritanceOrder(@NotNull List<JetClass> elements,
+    public static List<JetClass> sortUsingInheritanceOrder(@NotNull List<ClassDescriptor> descriptors,
                                                            @NotNull BindingContext bindingContext) {
-        List<ClassDescriptor> descriptors = descriptorsFromClasses(elements, bindingContext);
         PartiallyOrderedSet<ClassDescriptor> partiallyOrderedSet
                 = new PartiallyOrderedSet<ClassDescriptor>(descriptors, inheritanceOrder());
         List<JetClass> sortedClasses = descriptorsToClasses(partiallyOrderedSet.partiallySortedElements(), bindingContext);
-        assert elements.size() == sortedClasses.size();
+        assert descriptors.size() == sortedClasses.size();
         return sortedClasses;
     }
 
@@ -73,16 +70,4 @@ public final class ClassSortingUtils {
         }
         return sortedClasses;
     }
-
-
-    @NotNull
-    private static List<ClassDescriptor> descriptorsFromClasses(@NotNull List<JetClass> classesToSort,
-                                                                @NotNull BindingContext bindingContext) {
-        List<ClassDescriptor> descriptorList = new ArrayList<ClassDescriptor>();
-        for (JetClass jetClass : classesToSort) {
-            descriptorList.add(BindingUtils.getClassDescriptor(bindingContext, jetClass));
-        }
-        return descriptorList;
-    }
-
 }

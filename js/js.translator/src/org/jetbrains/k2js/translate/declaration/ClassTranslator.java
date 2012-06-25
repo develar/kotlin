@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
+import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetObjectLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetParameter;
@@ -31,6 +32,7 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.initializer.InitializerUtils;
+import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
@@ -64,7 +66,7 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
-                                                               @NotNull Map<JsName, JsName> aliasingMap,
+                                                               @NotNull Map<JetClass, JsNameRef> aliasingMap,
                                                                @NotNull TranslationContext context) {
         return (new ClassTranslator(classDeclaration, aliasingMap, context)).translateClassOrObjectCreation();
     }
@@ -73,13 +75,13 @@ public final class ClassTranslator extends AbstractTranslator {
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
 
                                                                @NotNull TranslationContext context) {
-        return (new ClassTranslator(classDeclaration, Collections.<JsName, JsName>emptyMap(), context)).translateClassOrObjectCreation();
+        return (new ClassTranslator(classDeclaration, Collections.<JetClass, JsNameRef>emptyMap(), context)).translateClassOrObjectCreation();
     }
 
     @NotNull
     public static JsExpression generateObjectLiteralExpression(@NotNull JetObjectLiteralExpression objectLiteralExpression,
                                                                @NotNull TranslationContext context) {
-        return (new ClassTranslator(objectLiteralExpression.getObjectDeclaration(), Collections.<JsName, JsName>emptyMap(), context))
+        return (new ClassTranslator(objectLiteralExpression.getObjectDeclaration(), Collections.<JetClass, JsNameRef>emptyMap(), context))
             .translateObjectLiteralExpression();
     }
 
@@ -96,10 +98,10 @@ public final class ClassTranslator extends AbstractTranslator {
     private final ClassDescriptor descriptor;
 
     @NotNull
-    private final Map<JsName, JsName> aliasingMap;
+    private final Map<JetClass, JsNameRef> aliasingMap;
 
     private ClassTranslator(@NotNull JetClassOrObject classDeclaration,
-                            @NotNull Map<JsName, JsName> aliasingMap,
+                            @NotNull Map<JetClass, JsNameRef> aliasingMap,
                             @NotNull TranslationContext context) {
         super(context.newDeclaration(classDeclaration));
         this.aliasingMap = aliasingMap;
@@ -227,12 +229,13 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     private JsExpression getClassReference(@NotNull ClassDescriptor superClassDescriptor) {
-        //NOTE: aliasing here is needed for the declaration generation step
-        JsName name = context().getNameForDescriptor(superClassDescriptor);
-        JsName alias = aliasingMap.get(name);
-        if (alias != null) {
-            return alias.makeRef();
+        // aliasing here is needed for the declaration generation step
+        JsNameRef name = aliasingMap.get(BindingUtils.getClassForDescriptor(bindingContext(), superClassDescriptor));
+        if (name != null) {
+            return name;
         }
+
+        // from library
         return getQualifiedReference(context(), superClassDescriptor);
     }
 
