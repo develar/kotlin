@@ -1,5 +1,5 @@
 package bar
 
-open class B() {
+open class A() {
     fun f() = 6
 }
