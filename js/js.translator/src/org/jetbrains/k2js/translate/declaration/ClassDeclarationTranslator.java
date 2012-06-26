@@ -23,6 +23,7 @@ import gnu.trove.TLinkable;
 import gnu.trove.TLinkableAdaptor;
 import gnu.trove.TLinkedList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.Modality;
 import org.jetbrains.jet.lang.psi.JetClass;
@@ -68,8 +69,13 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     }
 
     public final class LocalClassRefProvider {
+        @Nullable
         public JsNameRef get(JetClass declaration, JetClass referencedDeclaration, ClassDescriptor referencedDescriptor) {
             ListItem item = openClassToItem.get(declaration);
+            // class declared in library
+            if (item == null) {
+                return null;
+            }
 
             if (referencedDescriptor.getModality() != Modality.FINAL) {
                 addAfter(item, openClassToItem.get(referencedDeclaration));
