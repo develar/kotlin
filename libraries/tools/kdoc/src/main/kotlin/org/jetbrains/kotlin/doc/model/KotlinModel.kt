@@ -4,6 +4,7 @@ import kotlin.*
 import kotlin.util.*
 
 import org.jetbrains.kotlin.doc.KDocConfig
+import org.jetbrains.kotlin.doc.*
 import org.jetbrains.kotlin.doc.highlighter.SyntaxHighligher
 
 import java.util.*
@@ -44,6 +45,7 @@ import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils.LineAndColumn
 import org.jetbrains.jet.internal.com.intellij.psi.PsiFileSystemItem
 import java.io.File
 import org.jetbrains.jet.internal.com.intellij.psi.PsiElement
+import org.jetbrains.jet.internal.com.intellij.openapi.vfs.local.CoreLocalVirtualFile
 
 
 /**
@@ -175,7 +177,10 @@ abstract class KClassOrPackage(model: KModel, declarationDescriptor: Declaration
     }
 }
 
-class KModel(var context: BindingContext, val config: KDocConfig) {
+// htmlPath does not include "html-src" prefix
+class SourceInfo(val psi: JetFile, val relativePath: String, val htmlPath: String)
+
+class KModel(val context: BindingContext, val config: KDocConfig, val sourceDirs: List<File>, val sources: List<JetFile>) {
     // TODO generates java.lang.NoSuchMethodError: kotlin.util.namespace.hashMap(Ljet/TypeInfo;Ljet/TypeInfo;)Ljava/util/HashMap;
     //val packages = sortedMap<String,KPackage>()
     public val packageMap: SortedMap<String, KPackage> = TreeMap<String, KPackage>()
@@ -208,35 +213,47 @@ class KModel(var context: BindingContext, val config: KDocConfig) {
 
     private val readMeDirsScanned = HashSet<String>()
 
-    /**
-     * Returns the root project directory for calculating relative source links
-     */
-    fun projectRootDir(): String {
-        if (_projectRootDir == null) {
-            val rootDir = config.projectRootDir
-            _projectRootDir = if (rootDir == null) {
-                warning("KDocConfig does not have a projectRootDir defined so we cannot generate relative source Hrefs")
-                ""
-            } else {
-                File(rootDir).getCanonicalPath() ?: ""
+
+
+    val sourcesInfo: List<SourceInfo>
+    ;{
+
+        val normalizedSourceDirs: List<String> =
+        sourceDirs.map { file -> file.getCanonicalPath()!! }
+
+        private fun relativePath(psiFile: PsiFile): String {
+            val file = File((psiFile.getVirtualFile() as CoreLocalVirtualFile).getPath()).getCanonicalFile()!!
+            val filePath = file.getPath()!!
+            for (sourceDirPath in normalizedSourceDirs) {
+                if (filePath.startsWith(sourceDirPath) && filePath.length() > sourceDirPath.length()) {
+                    return filePath.substring(sourceDirPath.length + 1)
+                }
             }
+            throw Exception("$file is not a child of any source roots $normalizedSourceDirs")
         }
-        return _projectRootDir ?: ""
+
+        sourcesInfo = sources.map { source ->
+            val relativePath = relativePath(source)
+            val htmlPath = relativePath.replaceFirst("\\.kt$", "") + ".html"
+            SourceInfo(source, relativePath, htmlPath)
+        }
     }
 
+    private val sourceInfoByFile = sourcesInfo.toHashMapMappingToKey<JetFile, SourceInfo> { sourceInfo -> sourceInfo.psi }
 
-    /** Loads the model from the given set of source files */
-    fun load(sources: List<JetFile?>): Unit {
+    fun sourceInfoByFile(file: JetFile) = sourceInfoByFile.get(file)!!
+
+
+    ;{
+        /** Loads the model from the given set of source files */
         val allNamespaces = HashSet<NamespaceDescriptor>()
         for (source in sources) {
-            if (source != null) {
-                // We retrieve a descriptor by a PSI element from the context
-                val namespaceDescriptor = BindingContextUtils.namespaceDescriptor(context, source)
-                if (namespaceDescriptor != null) {
-                    allNamespaces.add(namespaceDescriptor);
-                } else {
-                    warning("No NamespaceDescriptor for source $source")
-                }
+            // We retrieve a descriptor by a PSI element from the context
+            val namespaceDescriptor = BindingContextUtils.namespaceDescriptor(context, source)
+            if (namespaceDescriptor != null) {
+                allNamespaces.add(namespaceDescriptor);
+            } else {
+                warning("No NamespaceDescriptor for source $source")
             }
         }
         val allClasses = HashSet<KClass>()
@@ -254,6 +271,26 @@ class KModel(var context: BindingContext, val config: KDocConfig) {
             }
         }
     }
+
+
+
+
+    /**
+    * Returns the root project directory for calculating relative source links
+    */
+    fun projectRootDir(): String {
+        if (_projectRootDir == null) {
+            val rootDir = config.projectRootDir
+            _projectRootDir = if (rootDir == null) {
+                warning("KDocConfig does not have a projectRootDir defined so we cannot generate relative source Hrefs")
+                ""
+            } else {
+                File(rootDir).getCanonicalPath() ?: ""
+            }
+        }
+        return _projectRootDir ?: ""
+    }
+
 
     /* Returns the package for the given name or null if it does not exist */
     fun getPackage(name: String): KPackage? = packageMap.get(name)
@@ -464,7 +501,7 @@ class KModel(var context: BindingContext, val config: KDocConfig) {
     }
 
 
-    protected fun getPsiElement(descriptor: DeclarationDescriptor): PsiElement? {
+    fun getPsiElement(descriptor: DeclarationDescriptor): PsiElement? {
         return try {
             BindingContextUtils.descriptorToDeclaration(context, descriptor)
         } catch (e: Throwable) {
@@ -683,7 +720,7 @@ $highlight"""
             val container = dec
             if (container is NamespaceDescriptor) {
                 val pkg = getPackage(container)
-                return pkg.getClass(name, classElement)
+                return pkg.getClass(classElement)
             } else {
                 dec = dec?.getContainingDeclaration()
             }
@@ -930,11 +967,15 @@ class KPackage(model: KModel, val descriptor: NamespaceDescriptor,
 
     fun toString() = "KPackage($name)"
 
-    fun getClass(name: String, descriptor: ClassDescriptor): KClass {
+    fun getClass(descriptor: ClassDescriptor): KClass {
+        val name = descriptor.getName().getName()
         var created = false
         val klass = classMap.getOrPut(name) {
             created = true
-            KClass(this, descriptor, name)
+            val psiFile = model.getPsiElement(descriptor)?.getContainingFile()
+            val jetFile = psiFile as? JetFile
+            val sourceInfo = if (jetFile != null) model.sourceInfoByFile(jetFile) else null
+            KClass(this, descriptor, sourceInfo)
         }
         if (created) {
             // sometimes we may have source files for a package in different source directories
@@ -1037,15 +1078,20 @@ class KType(val jetType: JetType, model: KModel, val klass: KClass?, val argumen
     get() = jetType.isNullable()
 }
 
-class KClass(val pkg: KPackage, val descriptor: ClassDescriptor,
-        val simpleName: String,
-        var group: String = "Other",
-        var annotations: List<KAnnotation> = arrayList<KAnnotation>(),
-        var typeParameters: List<KTypeParameter> = arrayList<KTypeParameter>(),
-        var since: String = "",
-        var authors: List<String> = arrayList<String>(),
-        var baseClasses: List<KType> = arrayList<KType>(),
-        var nestedClasses: List<KClass> = arrayList<KClass>()): KClassOrPackage(pkg.model, descriptor), Comparable<KClass> {
+class KClass(
+        val pkg: KPackage,
+        val descriptor: ClassDescriptor,
+        val sourceInfo: SourceInfo?)
+    : KClassOrPackage(pkg.model, descriptor), Comparable<KClass>
+{
+    val simpleName = descriptor.getName().getName()
+    var group: String = "Other"
+    var annotations: List<KAnnotation> = arrayList<KAnnotation>()
+    var typeParameters: List<KTypeParameter> = arrayList<KTypeParameter>()
+    var since: String = ""
+    var authors: List<String> = arrayList<String>()
+    var baseClasses: List<KType> = arrayList<KType>()
+    var nestedClasses: List<KClass> = arrayList<KClass>()
 
     public override fun compareTo(other: KClass): Int = name.compareTo(other.name)
 
@@ -1094,7 +1140,7 @@ class KClass(val pkg: KPackage, val descriptor: ClassDescriptor,
         return $url
     }
 
-    public val name: String = pkg.qualifiedName(simpleName)
+    public val name: String = pkg.qualifiedName(descriptor.getName().getName())
 
     public val packageName: String = pkg.name
 

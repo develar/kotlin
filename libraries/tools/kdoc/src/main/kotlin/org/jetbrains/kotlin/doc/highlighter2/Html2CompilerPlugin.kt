@@ -15,9 +15,14 @@ import org.jetbrains.jet.internal.com.intellij.psi.PsiElement
 import org.jetbrains.jet.internal.com.intellij.psi.impl.source.tree.LeafPsiElement
 import org.jetbrains.jet.JetNodeTypes
 import org.jetbrains.jet.lexer.JetTokens
+import org.jetbrains.kotlin.doc.Doclet
+import org.jetbrains.kotlin.doc.model.KModel
+import org.jetbrains.jet.lang.psi.JetFile
+import org.jetbrains.kotlin.doc.model.SourceInfo
+import org.jetbrains.kotlin.doc.*
 
 
-class Html2CompilerPlugin(private val compilerArguments: KDocArguments) : CompilerPlugin {
+class Html2CompilerPlugin(private val compilerArguments: KDocArguments) : Doclet {
 
     private val docOutputRoot: File
     {
@@ -28,7 +33,7 @@ class Html2CompilerPlugin(private val compilerArguments: KDocArguments) : Compil
         docOutputRoot = File(docOutputDir)
     }
 
-    private val srcOutputRoot = File(docOutputRoot, "src")
+    private val srcOutputRoot = File(docOutputRoot, names.htmlSourceDirName)
 
     private val sourceDirs: List<File> =
         compilerArguments
@@ -51,7 +56,7 @@ class Html2CompilerPlugin(private val compilerArguments: KDocArguments) : Compil
         throw Exception("$file is not a child of any source roots $sourceDirPaths")
     }
 
-    override fun processFiles(context: CompilerPluginContext) {
+    override fun generate(model: KModel, outputDir: File) {
         srcOutputRoot.mkdirs()
 
         val css = javaClass<Html2CompilerPlugin>().getClassLoader()!!.getResourceAsStream(
@@ -62,14 +67,15 @@ class Html2CompilerPlugin(private val compilerArguments: KDocArguments) : Compil
             #()
         }
 
-        for (file in context.getFiles().requireNoNulls()) {
-            processFile(file)
+        for (sourceInfo in model.sourcesInfo) {
+            processFile(sourceInfo)
         }
     }
 
-    private fun processFile(psiFile: PsiFile) {
-        val relativePath = fileToWrite(psiFile)
-        val htmlFile = File(srcOutputRoot, relativePath.replaceFirst("\\.kt$", "") + ".html")
+    private fun processFile(sourceInfo: SourceInfo) {
+        val psiFile = sourceInfo.psi
+        val htmlPath = sourceInfo.htmlPath
+        val htmlFile = File(srcOutputRoot, htmlPath)
 
         println("Generating $htmlFile")
         htmlFile.getParentFile()!!.mkdirs()
