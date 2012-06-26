@@ -19,6 +19,9 @@ package org.jetbrains.k2js.translate.declaration;
 import com.google.dart.compiler.backend.js.ast.*;
 import com.google.dart.compiler.util.AstUtil;
 import gnu.trove.THashMap;
+import gnu.trove.TLinkable;
+import gnu.trove.TLinkableAdaptor;
+import gnu.trove.TLinkedList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.Modality;
@@ -26,14 +29,13 @@ import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
-import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.k2js.translate.utils.ClassSortingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
+import static org.jetbrains.k2js.translate.general.Translation.translateClassDeclaration;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newBlock;
 
@@ -46,10 +48,10 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     private int localNameCounter;
 
     @NotNull
-    private final List<ClassDescriptor> descriptors = new ArrayList<ClassDescriptor>();
+    private final THashMap<JetClass, ListItem> openClassToItem = new THashMap<JetClass, ListItem>();
 
-    @NotNull
-    private final THashMap<JetClass, JsNameRef> classToLabel = new THashMap<JetClass, JsNameRef>();
+    private final TLinkedList<ListItem> openList = new TLinkedList<ListItem>();
+    private final List<ListItem> finalList = new ArrayList<ListItem>();
 
     @NotNull
     private final JsFunction dummyFunction;
@@ -65,6 +67,41 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         classesVar = new JsVars.JsVar(declarationsObject);
     }
 
+    public final class LocalClassRefProvider {
+        public JsNameRef get(JetClass declaration, JetClass referencedDeclaration, ClassDescriptor referencedDescriptor) {
+            ListItem item = openClassToItem.get(declaration);
+
+            if (referencedDescriptor.getModality() != Modality.FINAL) {
+                addAfter(item, openClassToItem.get(referencedDeclaration));
+            }
+
+            return item.label;
+        }
+
+        private void addAfter(@NotNull ListItem item, @NotNull ListItem referencedItem) {
+            for (TLinkable link = item.getNext(); link != null; link = link.getNext()) {
+                if (link == referencedItem) {
+                    return;
+                }
+            }
+
+            openList.remove(referencedItem);
+            openList.addBefore((ListItem) item.getNext(), referencedItem);
+        }
+    }
+
+    private static class ListItem extends TLinkableAdaptor {
+        private final JetClass declaration;
+        private final JsNameRef label;
+
+        private JsExpression translatedDeclaration;
+
+        private ListItem(JetClass declaration, JsNameRef label) {
+            this.declaration = declaration;
+            this.label = label;
+        }
+    }
+
     @NotNull
     public JsVars getDeclarationsStatement() {
         JsVars vars = new JsVars();
@@ -74,21 +111,13 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
 
     public void generateDeclarations() {
         JsObjectLiteral valueLiteral = new JsObjectLiteral();
-        List<JetClass> declarations = ClassSortingUtils.sortUsingInheritanceOrder(descriptors, bindingContext());
         JsVars vars = new JsVars();
-        for (JetClass declaration : declarations) {
-            JsNameRef label = classToLabel.get(declaration);
-            JsExpression definition = Translation.translateClassDeclaration(declaration, classToLabel, context());
-            JsExpression value;
-            if (label.getName() == null) {
-                value = definition;
-            }
-            else {
-                vars.add(new JsVar(label.getName(), definition));
-                value = label;
-            }
+        LocalClassRefProvider localClassRefProvider = new LocalClassRefProvider();
+        List<JsPropertyInitializer> propertyInitializers = valueLiteral.getPropertyInitializers();
 
-            valueLiteral.getPropertyInitializers().add(new JsPropertyInitializer(label, value));
+        generateOpenClassDeclarations(vars, localClassRefProvider, propertyInitializers);
+        for (ListItem item : finalList) {
+            generate(item, propertyInitializers, translateClassDeclaration(item.declaration, localClassRefProvider, context()), vars);
         }
 
         if (vars.isEmpty()) {
@@ -103,20 +132,58 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         classesVar.setInitExpr(AstUtil.newInvocation(dummyFunction));
     }
 
+    private void generateOpenClassDeclarations(@NotNull JsVars vars,
+            @NotNull LocalClassRefProvider localClassRefProvider,
+            @NotNull List<JsPropertyInitializer> propertyInitializers) {
+        // first pass: set up list order
+        for (ListItem item : openList) {
+            item.translatedDeclaration = translateClassDeclaration(item.declaration, localClassRefProvider, context());
+        }
+        // second pass: generate
+        for (ListItem item : openList) {
+            generate(item, propertyInitializers, item.translatedDeclaration, vars);
+        }
+    }
+
+    private static void generate(@NotNull ListItem item,
+            @NotNull List<JsPropertyInitializer> propertyInitializers,
+            @NotNull JsExpression definition,
+            @NotNull JsVars vars) {
+        JsExpression value;
+        if (item.label.getName() == null) {
+            value = definition;
+        }
+        else {
+            assert item.label.getName() != null;
+            vars.add(new JsVar(item.label.getName(), definition));
+            value = item.label;
+        }
+
+        propertyInitializers.add(new JsPropertyInitializer(item.label, value));
+    }
+
     @NotNull
     public JsPropertyInitializer translateAndGetClassNameToClassObject(@NotNull JetClass declaration) {
         ClassDescriptor descriptor = getClassDescriptor(context().bindingContext(), declaration);
-        descriptors.add(descriptor);
+
         JsNameRef labelRef;
         String label = 'c' + Integer.toString(localNameCounter++, 36);
-        if (descriptor.getModality() == Modality.FINAL) {
+        boolean isFinal = descriptor.getModality() == Modality.FINAL;
+        if (isFinal) {
             labelRef = new JsNameRef(label);
         }
         else {
             labelRef = dummyFunction.getScope().declareName(label).makeRef();
         }
 
-        classToLabel.put(declaration, labelRef);
+        ListItem item = new ListItem(declaration, labelRef);
+        if (isFinal) {
+            finalList.add(item);
+        }
+        else {
+            openList.add(item);
+            openClassToItem.put(declaration, item);
+        }
 
         JsNameRef qualifiedLabelRef = new JsNameRef(labelRef.getIdent());
         qualifiedLabelRef.setQualifier(declarationsObject.makeRef());

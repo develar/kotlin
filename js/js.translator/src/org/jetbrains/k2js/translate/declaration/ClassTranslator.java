@@ -36,9 +36,7 @@ import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static com.google.dart.compiler.util.AstUtil.newSequence;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
@@ -66,22 +64,22 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
-                                                               @NotNull Map<JetClass, JsNameRef> aliasingMap,
-                                                               @NotNull TranslationContext context) {
-        return (new ClassTranslator(classDeclaration, aliasingMap, context)).translateClassOrObjectCreation();
+            @NotNull ClassDeclarationTranslator.LocalClassRefProvider localClassRefProvider,
+            @NotNull TranslationContext context) {
+        return (new ClassTranslator(classDeclaration, localClassRefProvider, context)).translateClassOrObjectCreation();
     }
 
     @NotNull
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
 
                                                                @NotNull TranslationContext context) {
-        return (new ClassTranslator(classDeclaration, Collections.<JetClass, JsNameRef>emptyMap(), context)).translateClassOrObjectCreation();
+        return (new ClassTranslator(classDeclaration, null, context)).translateClassOrObjectCreation();
     }
 
     @NotNull
     public static JsExpression generateObjectLiteralExpression(@NotNull JetObjectLiteralExpression objectLiteralExpression,
                                                                @NotNull TranslationContext context) {
-        return (new ClassTranslator(objectLiteralExpression.getObjectDeclaration(), Collections.<JetClass, JsNameRef>emptyMap(), context))
+        return (new ClassTranslator(objectLiteralExpression.getObjectDeclaration(), null, context))
             .translateObjectLiteralExpression();
     }
 
@@ -97,14 +95,14 @@ public final class ClassTranslator extends AbstractTranslator {
     @NotNull
     private final ClassDescriptor descriptor;
 
-    @NotNull
-    private final Map<JetClass, JsNameRef> aliasingMap;
+    @Nullable
+    private final ClassDeclarationTranslator.LocalClassRefProvider localClassRefProvider;
 
     private ClassTranslator(@NotNull JetClassOrObject classDeclaration,
-                            @NotNull Map<JetClass, JsNameRef> aliasingMap,
-                            @NotNull TranslationContext context) {
+            @Nullable ClassDeclarationTranslator.LocalClassRefProvider localClassRefProvider,
+            @NotNull TranslationContext context) {
         super(context.newDeclaration(classDeclaration));
-        this.aliasingMap = aliasingMap;
+        this.localClassRefProvider = localClassRefProvider;
         this.descriptor = getClassDescriptor(context.bindingContext(), classDeclaration);
         this.classDeclaration = classDeclaration;
     }
@@ -211,8 +209,7 @@ public final class ClassTranslator extends AbstractTranslator {
 
     private void addTraits(@NotNull List<JsExpression> superclassReferences,
                            @NotNull List<ClassDescriptor> superclassDescriptors) {
-        for (ClassDescriptor superClassDescriptor :
-            superclassDescriptors) {
+        for (ClassDescriptor superClassDescriptor : superclassDescriptors) {
             assert (superClassDescriptor.getKind() == ClassKind.TRAIT) : "Only traits are expected here";
             superclassReferences.add(getClassReference(superClassDescriptor));
         }
@@ -230,9 +227,12 @@ public final class ClassTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression getClassReference(@NotNull ClassDescriptor superClassDescriptor) {
         // aliasing here is needed for the declaration generation step
-        JsNameRef name = aliasingMap.get(BindingUtils.getClassForDescriptor(bindingContext(), superClassDescriptor));
-        if (name != null) {
-            return name;
+        if (localClassRefProvider != null) {
+            JsNameRef name = localClassRefProvider.get(BindingUtils.getClassForDescriptor(bindingContext(), superClassDescriptor),
+                                                       (JetClass) classDeclaration, descriptor);
+            if (name != null) {
+                return name;
+            }
         }
 
         // from library
