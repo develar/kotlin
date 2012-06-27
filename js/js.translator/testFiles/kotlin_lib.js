@@ -141,11 +141,14 @@ var kotlin = {set:function (receiver, key, value) {
             }
             this.array[index] = value;
         },
+        toArray: function () {
+            return this.array.slice(0, this.$size);
+        },
         size: function () {
             return this.$size;
         },
         iterator: function () {
-            return Kotlin.$new(ArrayIterator)(this.array);
+            return Kotlin.arrayIterator(this.array);
         },
         add: function (element) {
             this.array[this.$size++] = element;
