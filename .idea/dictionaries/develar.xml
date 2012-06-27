@@ -2,6 +2,7 @@
   <dictionary name="develar">
     <words>
       <w>ecmascript</w>
+      <w>inlined</w>
       <w>intrinsics</w>
       <w>obfuscatable</w>
       <w>overridable</w>
