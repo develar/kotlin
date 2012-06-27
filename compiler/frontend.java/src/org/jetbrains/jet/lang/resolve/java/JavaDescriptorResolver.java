@@ -30,7 +30,6 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.psi.JetNamedFunction;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
-import org.jetbrains.jet.lang.psi.JetTypeReference;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.constants.*;
 import org.jetbrains.jet.lang.resolve.constants.StringValue;
@@ -45,6 +44,7 @@ import org.jetbrains.jet.rt.signature.JetSignatureAdapter;
 import org.jetbrains.jet.rt.signature.JetSignatureExceptionsAdapter;
 import org.jetbrains.jet.rt.signature.JetSignatureReader;
 import org.jetbrains.jet.rt.signature.JetSignatureVisitor;
+import org.jetbrains.jet.utils.ExceptionUtils;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -1221,12 +1221,14 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         if (namedMembers.functionDescriptors != null) {
             return;
         }
-        
+
+        TemporaryBindingTrace tempTrace = TemporaryBindingTrace.create(trace);
+
         final Set<FunctionDescriptor> functions = new HashSet<FunctionDescriptor>();
 
         Set<SimpleFunctionDescriptor> functionsFromCurrent = Sets.newHashSet();
         for (PsiMethodWrapper method : namedMembers.methods) {
-            FunctionDescriptorImpl function = resolveMethodToFunctionDescriptor(psiClass, method, scopeData);
+            FunctionDescriptorImpl function = resolveMethodToFunctionDescriptor(psiClass, method, scopeData, tempTrace);
             if (function != null) {
                 functionsFromCurrent.add((SimpleFunctionDescriptor) function);
             }
@@ -1254,7 +1256,13 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
 
         functions.addAll(functionsFromCurrent);
 
-        namedMembers.functionDescriptors = functions;
+        try {
+            namedMembers.functionDescriptors = functions;
+            tempTrace.commit();
+        } catch (Throwable e) {
+            assert false : "No errors are expected while saving state";
+            throw ExceptionUtils.rethrow(e);
+        }
     }
     
     private Set<SimpleFunctionDescriptor> getFunctionsFromSupertypes(ResolverScopeData scopeData, Name methodName) {
@@ -1343,7 +1351,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
     @Nullable
     private FunctionDescriptorImpl resolveMethodToFunctionDescriptor(
             @NotNull final PsiClass psiClass, final PsiMethodWrapper method,
-            @NotNull ResolverScopeData scopeData) {
+            @NotNull ResolverScopeData scopeData, BindingTrace tempTrace) {
 
         getResolverScopeData(scopeData);
 
@@ -1383,29 +1391,12 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         JetType returnType = makeReturnType(returnPsiType, method, methodTypeVariableResolver);
 
         // TODO consider better place for this check
-        String signature = method.getSignatureAnnotation().signature();
-        if (!signature.isEmpty()) {
-            try {
-                JetNamedFunction altFunDeclaration = JetPsiFactory.createFunction(project, signature);
-                AlternativeSignatureParsing.checkForSyntaxErrors(method, altFunDeclaration);
-
-                ValueParameterDescriptors altValueParameters = AlternativeSignatureParsing
-                        .computeAlternativeValueParameters(valueParameterDescriptors, altFunDeclaration);
-                JetTypeReference returnTypeRef = altFunDeclaration.getReturnTypeRef();
-                JetType altReturnType = returnTypeRef != null
-                                        ? AlternativeSignatureParsing.computeAlternativeTypeFromAnnotation(returnTypeRef.getTypeElement(),
-                                                                                                           returnType)
-                                        : returnType;
-                List<TypeParameterDescriptor> altTypeParameters = AlternativeSignatureParsing
-                        .computeAlternativeTypeParameters(methodTypeParameters, altFunDeclaration);
-                // if no exceptions were thrown, save alternative data
-                valueParameterDescriptors = altValueParameters;
-                returnType = altReturnType;
-                methodTypeParameters = altTypeParameters;
-            }
-            catch (AlternativeSignatureMismatchException e) {
-                scopeData.addAlternativeSignatureError(e.getMessage());
-            }
+        AlternativeSignatureData alternativeSignatureData =
+                new AlternativeSignatureData(method, valueParameterDescriptors, returnType, methodTypeParameters);
+        if (!alternativeSignatureData.isNone() && alternativeSignatureData.getError() == null) {
+            valueParameterDescriptors = alternativeSignatureData.getValueParameters();
+            returnType = alternativeSignatureData.getReturnType();
+            methodTypeParameters = alternativeSignatureData.getTypeParameters();
         }
 
         functionDescriptorImpl.initialize(
@@ -1418,8 +1409,9 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
                 resolveVisibility(method.getPsiMethod(), method.getJetMethod()),
                 /*isInline = */ false
         );
-        trace.record(BindingContext.FUNCTION, method.getPsiMethod(), functionDescriptorImpl);
-        BindingContextUtils.recordFunctionDeclarationToDescriptor(trace, method.getPsiMethod(), functionDescriptorImpl);
+
+        BindingContextUtils.recordFunctionDeclarationToDescriptor(tempTrace, method.getPsiMethod(), functionDescriptorImpl);
+
         FunctionDescriptor substitutedFunctionDescriptor = functionDescriptorImpl;
         if (method.getPsiMethod().getContainingClass() != psiClass && !method.isStatic()) {
             throw new IllegalStateException("non-static method in subclass");
@@ -1513,7 +1505,8 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         for (Map.Entry<Name, NamedMembers> entry : scopeData.namedMembersMap.entrySet()) {
             Name methodName = entry.getKey();
             NamedMembers namedMembers = entry.getValue();
-            resolveNamedGroupFunctions(scopeData.classOrNamespaceDescriptor, scopeData.psiClass, substitutorForGenericSupertypes, namedMembers, methodName, scopeData);
+            resolveNamedGroupFunctions(scopeData.classOrNamespaceDescriptor, scopeData.psiClass, substitutorForGenericSupertypes,
+                                       namedMembers, methodName, scopeData);
             functions.addAll(namedMembers.functionDescriptors);
         }
 

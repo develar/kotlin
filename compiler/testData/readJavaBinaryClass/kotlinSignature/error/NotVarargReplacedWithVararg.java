@@ -14,10 +14,18 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.resolve.java;
+package test;
 
-public class AlternativeSignatureMismatchException extends Exception {
-    public AlternativeSignatureMismatchException(String message) {
-        super(message);
+import java.lang.String;
+import java.lang.UnsupportedOperationException;
+import java.util.*;
+import java.util.BitSet;
+import java.util.List;
+
+import jet.runtime.typeinfo.KotlinSignature;
+
+public class NotVarargReplacedWithVararg {
+    @KotlinSignature("fun foo(vararg s : String)")
+    public void foo(String s) {
     }
 }

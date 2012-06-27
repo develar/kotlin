@@ -538,17 +538,15 @@ public class LazyResolveNamespaceComparingTestGenerated {
         public void testNsVar() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/prop/NsVar.kt");
         }
-
+        
         @Test
         public void testOverrideClassVal() throws Exception {
-            //TODO Disabled until lazy resolve supports inherited visibility (KT-2285)
-            //doTestSinglePackage("compiler/testData/readKotlinBinaryClass/prop/OverrideClassVal.kt");
+            doTestSinglePackage("compiler/testData/readKotlinBinaryClass/prop/OverrideClassVal.kt");
         }
-
+        
         @Test
         public void testOverrideTraitVal() throws Exception {
-            //TODO Disabled until lazy resolve supports inherited visibility (KT-2285)
-            //doTestSinglePackage("compiler/testData/readKotlinBinaryClass/prop/OverrideTraitVal.kt");
+            doTestSinglePackage("compiler/testData/readKotlinBinaryClass/prop/OverrideTraitVal.kt");
         }
         
         @Test
@@ -695,58 +693,57 @@ public class LazyResolveNamespaceComparingTestGenerated {
         public void testTuple0() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/type/Tuple0.kt");
         }
-
+        
         @Test
         public void testInternalAbstractTraitMembersOverridden() throws Exception {
-            //TODO Disabled until lazy resolve supports inherited visibility (KT-2285)
-            //doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/InternalAbstractTraitMembersOverridden.kt");
+            doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/InternalAbstractTraitMembersOverridden.kt");
         }
-
+        
         @Test
         public void testInternalClass() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/InternalClass.kt");
         }
-
+        
         @Test
         public void testInternalConstructor() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/InternalConstructor.kt");
         }
-
+        
         @Test
         public void testInternalTopLevelMembers() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/InternalTopLevelMembers.kt");
         }
-
+        
         @Test
         public void testInternalTraitMembers() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/InternalTraitMembers.kt");
         }
-
+        
         @Test
         public void testInternalTraitMembersInherited() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/InternalTraitMembersInherited.kt");
         }
-
+        
         @Test
         public void testPrivateClass() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/PrivateClass.kt");
         }
-
+        
         @Test
         public void testPrivateTopLevelFun() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/PrivateTopLevelFun.kt");
         }
-
+        
         @Test
         public void testPrivateTopLevelVal() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/PrivateTopLevelVal.kt");
         }
-
+        
         @Test
         public void testTopLevelVarWithPrivateSetter() throws Exception {
             doTestSinglePackage("compiler/testData/readKotlinBinaryClass/visibility/TopLevelVarWithPrivateSetter.kt");
         }
-
+        
         public static void allTestsPresent(Class<?> clazz, File testDataDir, boolean recursive) {
             Set<String> methodNames = new HashSet<String>();
             for (Method method : clazz.getDeclaredMethods()) {
@@ -850,16 +847,15 @@ public class LazyResolveNamespaceComparingTestGenerated {
         public void testFinalFieldAsVal() throws Exception {
             doTestSinglePackage("compiler/testData/readJavaBinaryClass/FinalFieldAsVal.kt");
         }
-
+        
         @Test
         public void testInnerClass() throws Exception {
             doTestSinglePackage("compiler/testData/readJavaBinaryClass/InnerClass.kt");
         }
-
+        
         @Test
         public void testInnerClassesInGeneric() throws Exception {
-            //TODO Disabled until lazy resolve supports inherited visibility (KT-2285)
-            //doTestSinglePackage("compiler/testData/readJavaBinaryClass/InnerClassesInGeneric.kt");
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/InnerClassesInGeneric.kt");
         }
         
         @Test
@@ -898,8 +894,98 @@ public class LazyResolveNamespaceComparingTestGenerated {
         }
         
         @Test
+        public void testAddingNullability() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/AddingNullability.kt");
+        }
+        
+        @Test
+        public void testExtraUpperBound() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/ExtraUpperBound.kt");
+        }
+        
+        @Test
+        public void testMissingUpperBound() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/MissingUpperBound.kt");
+        }
+        
+        @Test
+        public void testNotVarargReplacedWithVararg() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/NotVarargReplacedWithVararg.kt");
+        }
+        
+        @Test
+        public void testReturnTypeMissing() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/ReturnTypeMissing.kt");
+        }
+        
+        @Test
         public void testSyntaxError() throws Exception {
             doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/SyntaxError.kt");
+        }
+        
+        @Test
+        public void testVarargReplacedWithNotVararg() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/VarargReplacedWithNotVararg.kt");
+        }
+        
+        @Test
+        public void testWrongMethodName() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongMethodName.kt");
+        }
+        
+        @Test
+        public void testWrongReturnTypeStructure() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongReturnTypeStructure.kt");
+        }
+        
+        @Test
+        public void testWrongTypeName1() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongTypeName1.kt");
+        }
+        
+        @Test
+        public void testWrongTypeName2() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongTypeName2.kt");
+        }
+        
+        @Test
+        public void testWrongTypeName3() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongTypeName3.kt");
+        }
+        
+        @Test
+        public void testWrongTypeParameterBoundStructure1() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongTypeParameterBoundStructure1.kt");
+        }
+        
+        @Test
+        public void testWrongTypeParameterBoundStructure2() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongTypeParameterBoundStructure2.kt");
+        }
+        
+        @Test
+        public void testWrongTypeParametersCount() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongTypeParametersCount.kt");
+        }
+        
+        @Test
+        public void testWrongTypeVariance() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongTypeVariance.kt");
+        }
+        
+        @Test
+        public void testWrongValueParametersCount() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongValueParametersCount.kt");
+        }
+        
+        @Test
+        public void testWrongValueParameterStructure1() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongValueParameterStructure1.kt");
+        }
+        
+        @Test
+        public void testWrongValueParameterStructure2() throws Exception {
+            doTestSinglePackage("compiler/testData/readJavaBinaryClass/kotlinSignature/error/WrongValueParameterStructure2.kt");
         }
         
         @Test
@@ -1032,14 +1118,23 @@ public class LazyResolveNamespaceComparingTestGenerated {
         }
         
         @Test
-        public void testGenericFunction() throws Exception {
-            doTest("compiler/testData/lazyResolve/genericFunction.kt");
+        public void testClassObject() throws Exception {
+            doTest("compiler/testData/lazyResolve/descriptorRenderer/ClassObject.kt");
         }
-
+        
+        @Test
+        public void testEnum() throws Exception {
+            doTest("compiler/testData/lazyResolve/namespaceComparator/enum.kt");
+        }
+        
+        @Test
+        public void testGenericFunction() throws Exception {
+            doTest("compiler/testData/lazyResolve/namespaceComparator/genericFunction.kt");
+        }
+        
         @Test
         public void testSimpleClass() throws Exception {
-            //TODO Disabled until lazy resolve supports inherited visibility (KT-2285)
-            //doTest("compiler/testData/lazyResolve/simpleClass.kt");
+            doTest("compiler/testData/lazyResolve/namespaceComparator/simpleClass.kt");
         }
         
         public static void allTestsPresent(Class<?> clazz, File testDataDir, boolean recursive) {

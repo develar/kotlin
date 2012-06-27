@@ -16,9 +16,13 @@
 
 package org.jetbrains.jet.lang.resolve.lazy;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Maps;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.util.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.di.InjectorForLazyResolve;
@@ -28,6 +32,7 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.BindingTraceContext;
+import org.jetbrains.jet.lang.resolve.lazy.data.JetClassInfoUtil;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -35,26 +40,55 @@ import org.jetbrains.jet.lang.resolve.scopes.InnerClassesScopeWrapper;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author abreslav
  */
 public class ResolveSession {
+    private static final Function<FqName, Name> NO_ALIASES = new Function<FqName, Name>() {
+
+        @Override
+        public Name fun(FqName name) {
+            return null;
+        }
+    };
+
     private final ModuleDescriptor module;
     private final LazyPackageDescriptor rootPackage;
 
     private final BindingTrace trace = new BindingTraceContext();
     private final DeclarationProviderFactory declarationProviderFactory;
 
+    private final Predicate<FqNameUnsafe> specialClasses;
+
+
     private final InjectorForLazyResolve injector;
     private final ModuleConfiguration moduleConfiguration;
 
+    private final Map<JetEnumEntry, ClassDescriptor> enumEntryClassDescriptorCache = Maps.newHashMap();
+    private final Function<FqName, Name> classifierAliases;
+
+    public ResolveSession(
+        @NotNull Project project,
+        @NotNull ModuleDescriptor rootDescriptor,
+        @NotNull ModuleConfiguration moduleConfiguration,
+        @NotNull DeclarationProviderFactory declarationProviderFactory
+    ) {
+        this(project, rootDescriptor, moduleConfiguration, declarationProviderFactory, NO_ALIASES, Predicates.<FqNameUnsafe>alwaysFalse());
+    }
+
+    @Deprecated // Internal use only
     public ResolveSession(
             @NotNull Project project,
             @NotNull ModuleDescriptor rootDescriptor,
             @NotNull ModuleConfiguration moduleConfiguration,
-            @NotNull DeclarationProviderFactory declarationProviderFactory
+            @NotNull DeclarationProviderFactory declarationProviderFactory,
+            @NotNull Function<FqName, Name> classifierAliases,
+            @NotNull Predicate<FqNameUnsafe> specialClasses
     ) {
+        this.classifierAliases = classifierAliases;
+        this.specialClasses = specialClasses;
         this.injector = new InjectorForLazyResolve(project, this, trace);
         this.module = rootDescriptor;
         this.moduleConfiguration = moduleConfiguration;
@@ -69,6 +103,10 @@ public class ResolveSession {
     @NotNull
     /*package*/ InjectorForLazyResolve getInjector() {
         return injector;
+    }
+
+    /*package*/ boolean isClassSpecial(@NotNull FqNameUnsafe fqName) {
+        return specialClasses.apply(fqName);
     }
 
     @NotNull
@@ -98,6 +136,10 @@ public class ResolveSession {
 
     @NotNull
     public ClassDescriptor getClassDescriptor(@NotNull JetClassOrObject classOrObject) {
+        if (classOrObject instanceof JetEnumEntry) {
+            JetEnumEntry enumEntry = (JetEnumEntry) classOrObject;
+            return getEnumEntryClassDescriptor(enumEntry);
+        }
         if (classOrObject.getParent() instanceof JetClassObject) {
             return getClassObjectDescriptor((JetClassObject) classOrObject.getParent());
         }
@@ -106,6 +148,23 @@ public class ResolveSession {
         assert name != null : "Name is null for " + classOrObject + " " + classOrObject.getText();
         ClassifierDescriptor classifier = resolutionScope.getClassifier(name);
         return (ClassDescriptor) classifier;
+    }
+
+    @NotNull
+    private ClassDescriptor getEnumEntryClassDescriptor(@NotNull JetEnumEntry jetEnumEntry) {
+        ClassDescriptor classDescriptor = enumEntryClassDescriptorCache.get(jetEnumEntry);
+        if (classDescriptor != null) {
+            return classDescriptor;
+        }
+
+        DeclarationDescriptor containingDeclaration = getInjector().getScopeProvider().getResolutionScopeForDeclaration(jetEnumEntry)
+                .getContainingDeclaration();
+        LazyClassDescriptor newClassDescriptor = new LazyClassDescriptor(this,
+                                                                         containingDeclaration,
+                                                                         jetEnumEntry.getNameAsName(),
+                                                                         JetClassInfoUtil.createClassLikeInfo(jetEnumEntry));
+        enumEntryClassDescriptorCache.put(jetEnumEntry, newClassDescriptor);
+        return newClassDescriptor;
     }
 
     /*package*/ LazyClassDescriptor getClassObjectDescriptor(JetClassObject classObject) {
@@ -252,8 +311,18 @@ public class ResolveSession {
             }
         }, null);
         if (result == null) {
-            throw new IllegalStateException("No descriptor resolevd for " + declaration + " " + declaration.getText());
+            throw new IllegalStateException("No descriptor resolved for " + declaration + " " + declaration.getText());
         }
         return result;
+    }
+
+    @NotNull
+    /*package*/ Name resolveClassifierAlias(@NotNull FqName packageName, @NotNull Name alias) {
+        // TODO: creating a new FqName object every time...
+        Name actualName = classifierAliases.fun(packageName.child(alias));
+        if (actualName == null) {
+            return alias;
+        }
+        return actualName;
     }
 }

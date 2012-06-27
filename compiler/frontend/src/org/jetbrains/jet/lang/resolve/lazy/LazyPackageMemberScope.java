@@ -18,6 +18,7 @@ package org.jetbrains.jet.lang.resolve.lazy;
 
 import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
@@ -64,6 +65,13 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
         return namespaceDescriptor;
     }
 
+    @Override
+    public ClassifierDescriptor getClassifier(@NotNull Name name) {
+        // TODO: creating an FqName every time may be a performance problem
+        Name actualName = resolveSession.resolveClassifierAlias(DescriptorUtils.getFQName(thisDescriptor).toSafe(), name);
+        return super.getClassifier(actualName);
+    }
+
     @NotNull
     @Override
     protected JetScope getScopeForMemberDeclarationResolution(JetDeclaration declaration) {
@@ -92,5 +100,11 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
         for (FqName packageFqName : declarationProvider.getAllDeclaredPackages()) {
             getNamespace(packageFqName.shortName());
         }
+    }
+
+    @Override
+    public String toString() {
+        // Do not add details here, they may compromise the laziness during debugging
+        return "lazy scope for package " + thisDescriptor.getName();
     }
 }

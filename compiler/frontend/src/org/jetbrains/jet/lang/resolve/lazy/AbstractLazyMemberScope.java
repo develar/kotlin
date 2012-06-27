@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.resolve.lazy.data.JetClassInfoUtil;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
@@ -68,9 +69,8 @@ public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, D
 
         if (object != classOrObjectDeclaration instanceof JetObjectDeclaration) return null;
 
-        ClassMemberDeclarationProvider classMemberDeclarationProvider =
-                resolveSession.getDeclarationProviderFactory().getClassMemberDeclarationProvider(classOrObjectDeclaration);
-        ClassDescriptor classDescriptor = new LazyClassDescriptor(resolveSession, thisDescriptor, name, classMemberDeclarationProvider);
+        ClassDescriptor classDescriptor = new LazyClassDescriptor(resolveSession, thisDescriptor, name,
+                                                                  JetClassInfoUtil.createClassLikeInfo(classOrObjectDeclaration));
 
         classDescriptors.put(name, classDescriptor);
         allDescriptors.add(classDescriptor);
@@ -194,7 +194,14 @@ public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, D
     @Override
     public Collection<DeclarationDescriptor> getAllDescriptors() {
         for (JetDeclaration declaration : declarationProvider.getAllDeclarations()) {
-            if (declaration instanceof JetClassOrObject) {
+            if (declaration instanceof JetEnumEntry) {
+                JetEnumEntry jetEnumEntry = (JetEnumEntry) declaration;
+                Name name = jetEnumEntry.getNameAsName();
+                if (name != null) {
+                    getProperties(name);
+                }
+            }
+            else if (declaration instanceof JetClassOrObject) {
                 JetClassOrObject classOrObject = (JetClassOrObject) declaration;
                 Name name = classOrObject.getNameAsName();
                 if (name != null) {
@@ -234,4 +241,10 @@ public abstract class AbstractLazyMemberScope<D extends DeclarationDescriptor, D
             result.add(receiver);
         }
     }
+
+    // Do not change this, override in concrete subclasses:
+    // it is very easy to compromise laziness of this class, and fail all the debugging
+    // a generic implementation can't do this properly
+    @Override
+    public abstract String toString();
 }
