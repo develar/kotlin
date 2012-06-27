@@ -38,7 +38,7 @@ import org.jetbrains.k2js.facade.exceptions.TranslationInternalException;
 import org.jetbrains.k2js.facade.exceptions.UnsupportedFeatureException;
 import org.jetbrains.k2js.translate.context.StaticContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
+import org.jetbrains.k2js.translate.declaration.ClassAliasingMap;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import org.jetbrains.k2js.translate.declaration.NamespaceDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.ExpressionVisitor;
@@ -85,9 +85,9 @@ public final class Translation {
 
     @NotNull
     public static JsExpression translateClassDeclaration(@NotNull JetClass classDeclaration,
-            @NotNull ClassDeclarationTranslator.LocalClassRefProvider localClassRefProvider,
+            @NotNull ClassAliasingMap classAliasingMap,
             @NotNull TranslationContext context) {
-        return ClassTranslator.generateClassCreationExpression(classDeclaration, localClassRefProvider, context);
+        return ClassTranslator.generateClassCreationExpression(classDeclaration, classAliasingMap, context);
     }
 
     @NotNull

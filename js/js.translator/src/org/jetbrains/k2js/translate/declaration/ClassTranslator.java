@@ -64,9 +64,9 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
-            @NotNull ClassDeclarationTranslator.LocalClassRefProvider localClassRefProvider,
+            @NotNull ClassAliasingMap aliasingMap,
             @NotNull TranslationContext context) {
-        return (new ClassTranslator(classDeclaration, localClassRefProvider, context)).translateClassOrObjectCreation();
+        return (new ClassTranslator(classDeclaration, aliasingMap, context)).translateClassOrObjectCreation();
     }
 
     @NotNull
@@ -96,13 +96,13 @@ public final class ClassTranslator extends AbstractTranslator {
     private final ClassDescriptor descriptor;
 
     @Nullable
-    private final ClassDeclarationTranslator.LocalClassRefProvider localClassRefProvider;
+    private final ClassAliasingMap aliasingMap;
 
     private ClassTranslator(@NotNull JetClassOrObject classDeclaration,
-            @Nullable ClassDeclarationTranslator.LocalClassRefProvider localClassRefProvider,
+            @Nullable ClassAliasingMap aliasingMap,
             @NotNull TranslationContext context) {
         super(context.newDeclaration(classDeclaration));
-        this.localClassRefProvider = localClassRefProvider;
+        this.aliasingMap = aliasingMap;
         this.descriptor = getClassDescriptor(context.bindingContext(), classDeclaration);
         this.classDeclaration = classDeclaration;
     }
@@ -227,9 +227,9 @@ public final class ClassTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression getClassReference(@NotNull ClassDescriptor superClassDescriptor) {
         // aliasing here is needed for the declaration generation step
-        if (localClassRefProvider != null) {
-            JsNameRef name = localClassRefProvider.get(BindingUtils.getClassForDescriptor(bindingContext(), superClassDescriptor),
-                                                       (JetClass) classDeclaration, descriptor);
+        if (aliasingMap != null) {
+            JsNameRef name = aliasingMap.get(BindingUtils.getClassForDescriptor(bindingContext(), superClassDescriptor),
+                                                       (JetClass) classDeclaration);
             if (name != null) {
                 return name;
             }

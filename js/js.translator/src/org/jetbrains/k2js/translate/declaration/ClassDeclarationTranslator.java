@@ -68,19 +68,17 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         classesVar = new JsVars.JsVar(declarationsObject);
     }
 
-    public final class LocalClassRefProvider {
+    private final class OpenClassRefProvider implements ClassAliasingMap {
+        @Override
         @Nullable
-        public JsNameRef get(JetClass declaration, JetClass referencedDeclaration, ClassDescriptor referencedDescriptor) {
+        public JsNameRef get(JetClass declaration, JetClass referencedDeclaration) {
             ListItem item = openClassToItem.get(declaration);
             // class declared in library
             if (item == null) {
                 return null;
             }
 
-            if (referencedDescriptor.getModality() != Modality.FINAL) {
-                addAfter(item, openClassToItem.get(referencedDeclaration));
-            }
-
+            addAfter(item, openClassToItem.get(referencedDeclaration));
             return item.label;
         }
 
@@ -93,6 +91,14 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
 
             openList.remove(referencedItem);
             openList.addBefore((ListItem) item.getNext(), referencedItem);
+        }
+    }
+
+    private final class FinalClassRefProvider implements ClassAliasingMap {
+        @Override
+        public JsNameRef get(JetClass declaration, JetClass referencedDeclaration) {
+            ListItem item = openClassToItem.get(declaration);
+            return item == null ? null : item.label;
         }
     }
 
@@ -118,13 +124,10 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     public void generateDeclarations() {
         JsObjectLiteral valueLiteral = new JsObjectLiteral();
         JsVars vars = new JsVars();
-        LocalClassRefProvider localClassRefProvider = new LocalClassRefProvider();
         List<JsPropertyInitializer> propertyInitializers = valueLiteral.getPropertyInitializers();
 
-        generateOpenClassDeclarations(vars, localClassRefProvider, propertyInitializers);
-        for (ListItem item : finalList) {
-            generate(item, propertyInitializers, translateClassDeclaration(item.declaration, localClassRefProvider, context()), vars);
-        }
+        generateOpenClassDeclarations(vars, propertyInitializers);
+        generateFinalClassDeclarations(vars, propertyInitializers);
 
         if (vars.isEmpty()) {
             classesVar.setInitExpr(valueLiteral);
@@ -138,16 +141,22 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         classesVar.setInitExpr(AstUtil.newInvocation(dummyFunction));
     }
 
-    private void generateOpenClassDeclarations(@NotNull JsVars vars,
-            @NotNull LocalClassRefProvider localClassRefProvider,
-            @NotNull List<JsPropertyInitializer> propertyInitializers) {
+    private void generateOpenClassDeclarations(@NotNull JsVars vars, @NotNull List<JsPropertyInitializer> propertyInitializers) {
+        ClassAliasingMap classAliasingMap = new OpenClassRefProvider();
         // first pass: set up list order
         for (ListItem item : openList) {
-            item.translatedDeclaration = translateClassDeclaration(item.declaration, localClassRefProvider, context());
+            item.translatedDeclaration = translateClassDeclaration(item.declaration, classAliasingMap, context());
         }
         // second pass: generate
         for (ListItem item : openList) {
             generate(item, propertyInitializers, item.translatedDeclaration, vars);
+        }
+    }
+
+    private void generateFinalClassDeclarations(@NotNull JsVars vars, @NotNull List<JsPropertyInitializer> propertyInitializers) {
+        ClassAliasingMap classAliasingMap = new FinalClassRefProvider();
+        for (ListItem item : finalList) {
+            generate(item, propertyInitializers, translateClassDeclaration(item.declaration, classAliasingMap, context()), vars);
         }
     }
 
