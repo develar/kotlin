@@ -156,10 +156,10 @@ public trait Map<K, V> {
 }
 
 library
-public open class HashMap<K, V>() : java.util.Map<K, V> {
+public open class HashMap<K, V>() : Map<K, V> {
     public override fun size() : Int = js.noImpl
     public override fun isEmpty() : Boolean = js.noImpl
-    public override fun get(key : Any?) : V = js.noImpl
+    public override fun get(key : Any?) : V? = js.noImpl
     public override fun containsKey(key : Any?) : Boolean = js.noImpl
     public override fun put(key : K, value : V) : V = js.noImpl
     public override fun putAll(m : java.util.Map<out K, out V>) : Unit = js.noImpl
