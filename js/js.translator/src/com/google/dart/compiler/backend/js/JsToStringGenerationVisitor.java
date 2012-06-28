@@ -4,68 +4,12 @@
 
 package com.google.dart.compiler.backend.js;
 
-import com.google.common.collect.Lists;
-import com.google.dart.compiler.backend.js.ast.HasName;
-import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
-import com.google.dart.compiler.backend.js.ast.JsArrayLiteral;
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
-import com.google.dart.compiler.backend.js.ast.JsBlock;
-import com.google.dart.compiler.backend.js.ast.JsBooleanLiteral;
-import com.google.dart.compiler.backend.js.ast.JsBreak;
-import com.google.dart.compiler.backend.js.ast.JsCase;
-import com.google.dart.compiler.backend.js.ast.JsCatch;
-import com.google.dart.compiler.backend.js.ast.JsConditional;
-import com.google.dart.compiler.backend.js.ast.JsContext;
-import com.google.dart.compiler.backend.js.ast.JsContinue;
-import com.google.dart.compiler.backend.js.ast.JsDebugger;
-import com.google.dart.compiler.backend.js.ast.JsDefault;
-import com.google.dart.compiler.backend.js.ast.JsDoWhile;
-import com.google.dart.compiler.backend.js.ast.JsEmpty;
-import com.google.dart.compiler.backend.js.ast.JsExprStmt;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsFor;
-import com.google.dart.compiler.backend.js.ast.JsForIn;
-import com.google.dart.compiler.backend.js.ast.JsFunction;
-import com.google.dart.compiler.backend.js.ast.JsIf;
-import com.google.dart.compiler.backend.js.ast.JsInvocation;
-import com.google.dart.compiler.backend.js.ast.JsLabel;
-import com.google.dart.compiler.backend.js.ast.JsName;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
-import com.google.dart.compiler.backend.js.ast.JsNew;
-import com.google.dart.compiler.backend.js.ast.JsNullLiteral;
-import com.google.dart.compiler.backend.js.ast.JsNumberLiteral;
-import com.google.dart.compiler.backend.js.ast.JsObjectLiteral;
-import com.google.dart.compiler.backend.js.ast.JsOperator;
-import com.google.dart.compiler.backend.js.ast.JsParameter;
-import com.google.dart.compiler.backend.js.ast.JsPostfixOperation;
-import com.google.dart.compiler.backend.js.ast.JsPrefixOperation;
-import com.google.dart.compiler.backend.js.ast.JsProgram;
-import com.google.dart.compiler.backend.js.ast.JsProgramFragment;
-import com.google.dart.compiler.backend.js.ast.JsPropertyInitializer;
-import com.google.dart.compiler.backend.js.ast.JsRegExp;
-import com.google.dart.compiler.backend.js.ast.JsReturn;
-import com.google.dart.compiler.backend.js.ast.JsStatement;
-import com.google.dart.compiler.backend.js.ast.JsStringLiteral;
-import com.google.dart.compiler.backend.js.ast.JsSwitch;
-import com.google.dart.compiler.backend.js.ast.JsThisRef;
-import com.google.dart.compiler.backend.js.ast.JsThrow;
-import com.google.dart.compiler.backend.js.ast.JsTry;
-import com.google.dart.compiler.backend.js.ast.JsUnaryOperator;
-import com.google.dart.compiler.backend.js.ast.JsVars;
-import com.google.dart.compiler.backend.js.ast.JsVisitable;
-import com.google.dart.compiler.backend.js.ast.JsVisitor;
-import com.google.dart.compiler.backend.js.ast.JsWhile;
+import com.google.dart.compiler.backend.js.ast.*;
 import com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
-import com.google.dart.compiler.common.HasSourceInfo;
 import com.google.dart.compiler.util.TextOutput;
+import gnu.trove.TIntArrayList;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -128,18 +72,18 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     final int n = chars.length;
     int quoteCount = 0;
     int aposCount = 0;
-    for (int i = 0; i < n; ++i) {
-      switch (chars[i]) {
-        case '"':
-          ++quoteCount;
-          break;
-        case '\'':
-          ++aposCount;
-          break;
+      for (char aChar : chars) {
+          switch (aChar) {
+              case '"':
+                  ++quoteCount;
+                  break;
+              case '\'':
+                  ++aposCount;
+                  break;
+          }
       }
-    }
 
-    StringBuffer result = new StringBuffer(value.length() + 16);
+    StringBuilder result = new StringBuilder(value.length() + 16);
 
     char quoteChar = (quoteCount < aposCount || forceDoubleQuote) ? '"' : '\'';
     result.append(quoteChar);
@@ -223,8 +167,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     }
     result.append(quoteChar);
     escapeClosingTags(result);
-    String resultString = result.toString();
-    return resultString;
+    return result.toString();
   }
 
   /**
@@ -234,7 +177,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
    *
    * @param str an unescaped literal; May be null
    */
-  private static void escapeClosingTags(StringBuffer str) {
+  private static void escapeClosingTags(StringBuilder str) {
     if (str == null) {
       return;
     }
@@ -247,6 +190,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
   }
 
   protected boolean needSemi = true;
+  private boolean lineBreakAfterBlock = true;
 
   /**
    * "Global" blocks are either the global block of a fragment, or a block
@@ -256,8 +200,8 @@ public class JsToStringGenerationVisitor extends JsVisitor {
    */
   private Set<JsBlock> globalBlocks = new HashSet<JsBlock>();
   private final TextOutput p;
-  private ArrayList<Integer> statementEnds = new ArrayList<Integer>();
-  private ArrayList<Integer> statementStarts = new ArrayList<Integer>();
+  private TIntArrayList statementEnds = new TIntArrayList();
+  private TIntArrayList statementStarts = new TIntArrayList();
 
   public JsToStringGenerationVisitor(TextOutput out) {
     this.p = out;
@@ -598,6 +542,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     }
     _rparen();
 
+    lineBreakAfterBlock = false;
     accept(x.getBody());
     needSemi = true;
     return false;
@@ -941,7 +886,6 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     return false;
   }
 
-  // CHECKSTYLE_NAMING_OFF
   protected void _newline() {
     p.newline();
   }
@@ -951,6 +895,11 @@ public class JsToStringGenerationVisitor extends JsVisitor {
   }
 
   protected void printJsBlock(JsBlock x, boolean truncate, boolean finalNewline) {
+      if (!lineBreakAfterBlock) {
+          finalNewline = false;
+          lineBreakAfterBlock = true;
+      }
+
     boolean needBraces = !x.isGlobalBlock();
 
     if (needBraces) {
@@ -960,67 +909,70 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     }
 
     int count = 0;
-    for (Iterator<JsStatement> iter = x.getStatements().iterator(); iter.hasNext(); ++count) {
-      boolean isGlobal = x.isGlobalBlock() || globalBlocks.contains(x);
+      Iterator<JsStatement> iterator = x.getStatements().iterator();
+      while (iterator.hasNext()) {
+        boolean isGlobal = x.isGlobalBlock() || globalBlocks.contains(x);
 
-      if (truncate && count > JSBLOCK_LINES_TO_PRINT) {
-        p.print("[...]");
-        _newlineOpt();
-        break;
-      }
-      JsStatement stmt = iter.next();
-      needSemi = true;
-      boolean shouldRecordPositions = isGlobal && !(stmt instanceof JsBlock);
-      boolean stmtIsGlobalBlock = false;
-      if (isGlobal) {
-        if (stmt instanceof JsBlock) {
-          // A block inside a global block is still considered global
-          stmtIsGlobalBlock = true;
-          globalBlocks.add((JsBlock) stmt);
-        }
-      }
-      if (shouldRecordPositions) {
-        statementStarts.add(p.getPosition());
-      }
-      accept(stmt);
-      if (stmtIsGlobalBlock) {
-        globalBlocks.remove(stmt);
-      }
-      if (needSemi) {
-        /*
-         * Special treatment of function decls: If they are the only item in a
-         * statement (i.e. not part of an assignment operation), just give them
-         * a newline instead of a semi.
-         */
-        boolean functionStmt =
-            stmt instanceof JsExprStmt && ((JsExprStmt) stmt).getExpression() instanceof JsFunction;
-        /*
-         * Special treatment of the last statement in a block: only a few
-         * statements at the end of a block require semicolons.
-         */
-        boolean lastStatement = !iter.hasNext() && needBraces && !JsRequiresSemiVisitor.exec(stmt);
-        if (functionStmt) {
-          if (lastStatement) {
-            _newlineOpt();
-          } else {
-            _newline();
-          }
-        } else {
-          if (lastStatement) {
-            _semiOpt();
-          } else {
-            _semi();
-          }
+        if (truncate && count > JSBLOCK_LINES_TO_PRINT) {
+          p.print("[...]");
           _newlineOpt();
+          break;
         }
+        JsStatement statement = iterator.next();
+        needSemi = true;
+        boolean shouldRecordPositions = isGlobal && !(statement instanceof JsBlock);
+        boolean stmtIsGlobalBlock = false;
+        if (isGlobal) {
+          if (statement instanceof JsBlock) {
+            // A block inside a global block is still considered global
+            stmtIsGlobalBlock = true;
+            globalBlocks.add((JsBlock) statement);
+          }
+        }
+        if (shouldRecordPositions) {
+          statementStarts.add(p.getPosition());
+        }
+        accept(statement);
+        if (stmtIsGlobalBlock) {
+            //noinspection SuspiciousMethodCalls
+            globalBlocks.remove(statement);
+        }
+        if (needSemi) {
+          /*
+           * Special treatment of function decls: If they are the only item in a
+           * statement (i.e. not part of an assignment operation), just give them
+           * a newline instead of a semi.
+           */
+          boolean functionStmt =
+              statement instanceof JsExprStmt && ((JsExprStmt) statement).getExpression() instanceof JsFunction;
+          /*
+           * Special treatment of the last statement in a block: only a few
+           * statements at the end of a block require semicolons.
+           */
+          boolean lastStatement = !iterator.hasNext() && needBraces && !JsRequiresSemiVisitor.exec(statement);
+          if (functionStmt) {
+            if (lastStatement) {
+              _newlineOpt();
+            } else {
+              _newline();
+            }
+          } else {
+            if (lastStatement) {
+              _semiOpt();
+            } else {
+              _semi();
+            }
+            _newlineOpt();
+          }
+        }
+        if (shouldRecordPositions) {
+          assert (statementStarts.size() == statementEnds.size() + 1);
+          statementEnds.add(p.getPosition());
+        }
+          ++count;
       }
-      if (shouldRecordPositions) {
-        assert (statementStarts.size() == statementEnds.size() + 1);
-        statementEnds.add(p.getPosition());
-      }
-    }
 
-    if (needBraces) {
+      if (needBraces) {
       // _blockClose() modified
       p.indentOut();
       p.print('}');

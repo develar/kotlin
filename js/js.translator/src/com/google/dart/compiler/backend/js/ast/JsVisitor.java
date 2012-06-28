@@ -6,7 +6,6 @@ package com.google.dart.compiler.backend.js.ast;
 
 import com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -92,7 +91,7 @@ public class JsVisitor {
   };
 
   public final <T extends JsVisitable> T accept(T node) {
-    return this.<T>doAccept(node);
+    return this.doAccept(node);
   }
 
   public final <T extends JsVisitable> void acceptList(List<T> collection) {
