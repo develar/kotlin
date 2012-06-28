@@ -23,6 +23,11 @@ public final class JsNameRef extends JsExpression implements CanBooleanEval, Has
     this.ident = ident;
   }
 
+  public JsNameRef(String ident, JsExpression qualifier) {
+    this.ident = ident;
+    this.qualifier = qualifier;
+  }
+
   public String getIdent() {
     return (name == null) ? ident : name.getIdent();
   }

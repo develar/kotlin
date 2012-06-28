@@ -16,7 +16,6 @@
 
 package org.jetbrains.k2js.translate.reference;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
 import com.google.dart.compiler.util.AstUtil;
 import com.intellij.lang.ASTNode;
@@ -113,11 +112,7 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
     private JsExpression invokeCall() {
-        JsInvocation callMethodInvocation = generateCallMethodInvocation();
-        List<JsExpression> parameters = Lists.<JsExpression>newArrayList(context().program().getNullLiteral());
-        parameters.addAll(arguments);
-        setArguments(callMethodInvocation, parameters);
-        return callMethodInvocation;
+        return new JsInvocation(callParameters.getFunctionReference(), arguments);
     }
 
     private boolean isExpressionAsFunction() {
@@ -215,18 +210,7 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression constructExtensionLiteralCall(@NotNull JsExpression realReceiver) {
         List<JsExpression> callArguments = generateExtensionCallArgumentList(realReceiver);
-        JsInvocation callMethodInvocation = generateCallMethodInvocation();
-        setArguments(callMethodInvocation, callArguments);
-        return callMethodInvocation;
-    }
-
-    @NotNull
-    private JsInvocation generateCallMethodInvocation() {
-        JsNameRef callMethodNameRef = new JsNameRef("call");
-        JsInvocation callMethodInvocation = new JsInvocation();
-        callMethodInvocation.setQualifier(callMethodNameRef);
-        setQualifier(callMethodInvocation, callParameters.getFunctionReference());
-        return callMethodInvocation;
+        return new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()), callArguments);
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")

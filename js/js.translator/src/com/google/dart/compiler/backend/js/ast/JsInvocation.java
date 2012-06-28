@@ -12,10 +12,16 @@ import java.util.List;
  */
 public final class JsInvocation extends JsExpression implements HasArguments {
 
-  private final List<JsExpression> args = new ArrayList<JsExpression>();
+  private final List<JsExpression> args;
   private JsExpression qualifier;
 
   public JsInvocation() {
+      args = new ArrayList<JsExpression>();
+  }
+
+  public JsInvocation(JsExpression qualifier, List<JsExpression> args) {
+      this.qualifier = qualifier;
+      this.args = args;
   }
 
   @Override
