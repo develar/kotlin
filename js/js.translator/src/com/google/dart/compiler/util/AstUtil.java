@@ -4,32 +4,14 @@
 
 package com.google.dart.compiler.util;
 
-import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
-import com.google.dart.compiler.backend.js.ast.JsBlock;
-import com.google.dart.compiler.backend.js.ast.JsCase;
-import com.google.dart.compiler.backend.js.ast.JsDefault;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsFunction;
-import com.google.dart.compiler.backend.js.ast.JsInvocation;
-import com.google.dart.compiler.backend.js.ast.JsName;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
-import com.google.dart.compiler.backend.js.ast.JsParameter;
-import com.google.dart.compiler.backend.js.ast.JsPrefixOperation;
-import com.google.dart.compiler.backend.js.ast.JsScope;
-import com.google.dart.compiler.backend.js.ast.JsStatement;
-import com.google.dart.compiler.backend.js.ast.JsSwitch;
-import com.google.dart.compiler.backend.js.ast.JsSwitchMember;
-import com.google.dart.compiler.backend.js.ast.JsUnaryOperator;
-import com.google.dart.compiler.backend.js.ast.JsVars;
+import com.google.dart.compiler.backend.js.ast.*;
 import com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import com.google.dart.compiler.common.SourceInfo;
 
 /**
  * @author johnlenz@google.com (John Lenz)
  */
-public class AstUtil {
+public final class AstUtil {
 
   public static JsInvocation newInvocation(
       JsExpression target, JsExpression ... params) {
@@ -74,18 +56,6 @@ public class AstUtil {
     return nameRef;
   }
 
-  public static JsNameRef newNameRef(JsExpression qualifier, JsName prop) {
-    JsNameRef nameRef = new JsNameRef(prop);
-    if (qualifier != null) {
-      nameRef.setQualifier(qualifier);
-    }
-    return nameRef;
-  }
-
-  public static JsNameRef newPrototypeNameRef(JsExpression qualifier) {
-    return newNameRef(qualifier, "prototype");
-  }
-
   public static JsArrayAccess newArrayAccess(JsExpression target, JsExpression key) {
     JsArrayAccess arr = new JsArrayAccess();
     arr.setArrayExpr(target);
@@ -93,10 +63,10 @@ public class AstUtil {
     return arr;
   }
 
-  public static JsBlock newBlock(JsStatement ... stmts) {
+  public static JsBlock newBlock(JsStatement ... statements) {
     JsBlock jsBlock = new JsBlock();
-    for (JsStatement stmt : stmts) {
-      jsBlock.getStatements().add(stmt);
+    for (JsStatement statement : statements) {
+      jsBlock.getStatements().add(statement);
     }
     return jsBlock;
   }
@@ -185,18 +155,6 @@ public class AstUtil {
   public static JsBinaryOperation comma(SourceInfo src, JsExpression op1, JsExpression op2) {
     return (JsBinaryOperation)new JsBinaryOperation(JsBinaryOperator.COMMA, op1, op2)
        .setSourceRef(src);
-  }
-
-  public static JsNameRef nameref(SourceInfo src, String name) {
-    return (JsNameRef) new JsNameRef(name).setSourceRef(src);
-  }
-
-  public static JsNameRef nameref(SourceInfo src, JsName qualifier, String prop) {
-    return AstUtil.nameref(src, qualifier.makeRef().setSourceRef(src), prop);
-  }
-
-  public static JsNameRef nameref(SourceInfo src, JsExpression qualifier, String prop) {
-    return (JsNameRef) newNameRef(qualifier, prop).setSourceRef(src);
   }
 
   public static JsExpression assign(SourceInfo src, JsNameRef op1, JsExpression op2) {

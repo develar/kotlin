@@ -47,8 +47,7 @@ public final class JsAstUtils {
 
     @NotNull
     public static JsPropertyInitializer newNamedMethod(@NotNull JsName name, @NotNull JsFunction function) {
-        JsNameRef methodName = name.makeRef();
-        return new JsPropertyInitializer(methodName, function);
+        return new JsPropertyInitializer(name.makeRef(), function);
     }
 
     @NotNull
@@ -193,13 +192,6 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsObjectLiteral newObjectLiteral(@NotNull List<JsPropertyInitializer> propertyList) {
-        JsObjectLiteral jsObjectLiteral = new JsObjectLiteral();
-        jsObjectLiteral.getPropertyInitializers().addAll(propertyList);
-        return jsObjectLiteral;
-    }
-
-    @NotNull
     public static JsVars newVar(@NotNull JsName name, @Nullable JsExpression expr) {
         JsVars.JsVar var = new JsVars.JsVar(name);
         if (expr != null) {
@@ -249,16 +241,6 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsInvocation newInvocation(@NotNull JsExpression target, List<JsExpression> params) {
-        JsInvocation invoke = new JsInvocation();
-        invoke.setQualifier(target);
-        for (JsExpression expr : params) {
-            invoke.getArguments().add(expr);
-        }
-        return invoke;
-    }
-
-    @NotNull
     public static JsExpression newSequence(@NotNull List<JsExpression> expressions) {
         assert !expressions.isEmpty();
         if (expressions.size() == 1) {
@@ -273,9 +255,7 @@ public final class JsAstUtils {
 
     @NotNull
     public static JsFunction createFunctionWithEmptyBody(@NotNull JsScope parent) {
-        JsFunction correspondingFunction = new JsFunction(parent);
-        correspondingFunction.setBody(new JsBlock());
-        return correspondingFunction;
+        return new JsFunction(parent, new JsBlock());
     }
 
     @NotNull
@@ -327,8 +307,7 @@ public final class JsAstUtils {
 
     @NotNull
     public static JsInvocation encloseFunction(@NotNull JsFunction function) {
-        JsInvocation blockFunctionInvocation = new JsInvocation();
-        blockFunctionInvocation.setQualifier(EMPTY_REF);
+        JsInvocation blockFunctionInvocation = new JsInvocation(EMPTY_REF);
         blockFunctionInvocation.getArguments().add(function);
         return blockFunctionInvocation;
     }
@@ -338,9 +317,7 @@ public final class JsAstUtils {
         JsFunction packageBlockFunction = createFunctionWithEmptyBody(scope);
 
         JsInvocation packageBlockFunctionInvocation = encloseFunction(packageBlockFunction);
-        JsInvocation packageBlock = new JsInvocation();
-        packageBlock.setQualifier(packageBlockFunctionInvocation);
-        to.add(packageBlock.makeStmt());
+        to.add(new JsInvocation(packageBlockFunctionInvocation).makeStmt());
 
         return packageBlockFunction;
     }

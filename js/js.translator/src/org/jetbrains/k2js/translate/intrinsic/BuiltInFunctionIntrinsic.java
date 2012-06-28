@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.intrinsic;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsInvocation;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,6 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.newInvocation;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
 
 /**
@@ -47,6 +47,6 @@ public final class BuiltInFunctionIntrinsic implements Intrinsic {
         assert receiver != null;
         JsNameRef functionReference = AstUtil.newQualifiedNameRef(functionName);
         setQualifier(functionReference, receiver);
-        return newInvocation(functionReference, arguments);
+        return new JsInvocation(functionReference, arguments);
     }
 }

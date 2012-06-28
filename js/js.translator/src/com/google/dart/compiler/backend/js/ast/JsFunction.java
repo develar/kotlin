@@ -42,6 +42,11 @@ public final class JsFunction extends JsLiteral implements HasName {
     this(parent, null, false);
   }
 
+  public JsFunction(JsScope parent, JsBlock body) {
+    this(parent, null, false);
+    this.body = body;
+  }
+
   /**
    * Creates a function that is not derived from Dart source.
    */

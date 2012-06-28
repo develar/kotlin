@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.intrinsic.string;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsInvocation;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +27,6 @@ import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
 
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.newInvocation;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
 
 /**
@@ -45,6 +45,6 @@ public enum CharAtIntrinsic implements Intrinsic {
         //TODO: provide better way
         JsNameRef charAtReference = AstUtil.newQualifiedNameRef("charAt");
         setQualifier(charAtReference, receiver);
-        return newInvocation(charAtReference, arguments);
+        return new JsInvocation(charAtReference, arguments);
     }
 }

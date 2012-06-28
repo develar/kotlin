@@ -12,9 +12,14 @@ import java.util.List;
  */
 public final class JsObjectLiteral extends JsLiteral {
 
-  private final List<JsPropertyInitializer> props = new ArrayList<JsPropertyInitializer>();
+  private final List<JsPropertyInitializer> props;
 
   public JsObjectLiteral() {
+    props = new ArrayList<JsPropertyInitializer>();
+  }
+
+  public JsObjectLiteral(List<JsPropertyInitializer> props) {
+    this.props = props;
   }
 
   public List<JsPropertyInitializer> getPropertyInitializers() {

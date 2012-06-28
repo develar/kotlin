@@ -236,7 +236,7 @@ public final class CallTranslator extends AbstractTranslator {
         List<JsExpression> argumentList = generateExtensionCallArgumentList(receiver);
         JsExpression functionReference = callParameters.getFunctionReference();
         setQualifier(functionReference, getThisObjectOrQualifier());
-        return newInvocation(functionReference, argumentList);
+        return new JsInvocation(functionReference, argumentList);
     }
 
     @NotNull
@@ -257,7 +257,7 @@ public final class CallTranslator extends AbstractTranslator {
                 if (isEcma5PropertyAccess()) {
                     return ecma5PropertyAccess(qualifiedCallee);
                 }
-                return newInvocation(qualifiedCallee, arguments);
+                return new JsInvocation(qualifiedCallee, arguments);
             }
         }, context());
     }

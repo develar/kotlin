@@ -33,7 +33,6 @@ import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.reference.ReferenceTranslator;
-import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 import org.jetbrains.k2js.translate.utils.closure.ClosureContext;
@@ -52,7 +51,6 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.*;
  * @author Pavel Talanov
  */
 public final class FunctionTranslator extends AbstractTranslator {
-
     @NotNull
     public static FunctionTranslator newInstance(@NotNull JetDeclarationWithBody function,
             @NotNull TranslationContext context) {
@@ -123,7 +121,6 @@ public final class FunctionTranslator extends AbstractTranslator {
         return context().newDeclaration(functionDeclaration).innerBlock(functionBody);
     }
 
-
     @NotNull
     public JsFunction translateAsLocalFunction() {
         JsName functionName = context().getNameForElement(functionDeclaration);
@@ -177,7 +174,7 @@ public final class FunctionTranslator extends AbstractTranslator {
     private JsExpression wrapInClosureCaptureExpression(@NotNull JsExpression wrappedExpression,
             @NotNull ClosureContext closureContext) {
         JsFunction dummyFunction = new JsFunction(context().jsScope());
-        JsInvocation dummyFunctionInvocation = AstUtil.newInvocation(dummyFunction);
+        JsInvocation dummyFunctionInvocation = new JsInvocation(dummyFunction);
         for (VariableDescriptor variableDescriptor : closureContext.getDescriptors()) {
             dummyFunction.getParameters().add(new JsParameter(context().getNameForDescriptor(variableDescriptor)));
             dummyFunctionInvocation.getArguments().add(ReferenceTranslator.translateAsLocalNameReference(variableDescriptor, context()));
@@ -186,7 +183,7 @@ public final class FunctionTranslator extends AbstractTranslator {
                 dummyFunctionInvocation.getArguments().add(aliasForContainingClassThis.initExpression());
             }
         }
-        dummyFunction.setBody(AstUtil.newBlock(new JsReturn(wrappedExpression)));
+        dummyFunction.setBody(new JsBlock(new JsReturn(wrappedExpression)));
         return dummyFunctionInvocation;
     }
 
@@ -201,9 +198,8 @@ public final class FunctionTranslator extends AbstractTranslator {
             assert descriptor.getModality().equals(Modality.ABSTRACT);
             return;
         }
-        functionBody.getStatements().add(translateFunctionBody(descriptor, functionDeclaration, functionBodyContext));
+        functionBody.getStatements().addAll(translateFunctionBody(descriptor, functionDeclaration, functionBodyContext).getStatements());
     }
-
 
     @NotNull
     private List<JsParameter> translateParameters() {

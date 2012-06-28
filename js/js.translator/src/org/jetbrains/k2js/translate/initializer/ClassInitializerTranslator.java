@@ -93,7 +93,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         else {
             JsName superMethodName = context().jsScope().declareName(Namer.superMethodName());
             superMethodName.setObfuscatable(false);
-            initializerStatements.add(convertToStatement(newInvocation(thisQualifiedReference(superMethodName), arguments)));
+            initializerStatements.add(convertToStatement(new JsInvocation(thisQualifiedReference(superMethodName), arguments)));
         }
     }
 

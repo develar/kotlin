@@ -12,17 +12,23 @@ import java.util.List;
  */
 public class JsBlock extends JsStatement {
 
-  private final List<JsStatement> stmts = new ArrayList<JsStatement>();
+  private final List<JsStatement> statements;
 
   public JsBlock() {
+      statements = new ArrayList<JsStatement>();
   }
 
   public JsBlock(JsStatement stmt) {
-    stmts.add(stmt);
+    this();
+    statements.add(stmt);
+  }
+
+  public JsBlock(List<JsStatement> statements) {
+    this.statements = statements;
   }
 
   public List<JsStatement> getStatements() {
-    return stmts;
+    return statements;
   }
 
   public boolean isGlobalBlock() {
@@ -32,7 +38,7 @@ public class JsBlock extends JsStatement {
   @Override
   public void traverse(JsVisitor v, JsContext ctx) {
     if (v.visit(this, ctx)) {
-      v.acceptWithInsertRemove(stmts);
+      v.acceptWithInsertRemove(statements);
     }
     v.endVisit(this, ctx);
   }
