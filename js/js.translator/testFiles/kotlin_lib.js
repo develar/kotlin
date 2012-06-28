@@ -153,13 +153,13 @@ var kotlin = {set:function (receiver, key, value) {
         add: function (element) {
             this.array[this.$size++] = element;
         },
+        addAt: function (index, element) {
+            this.array.splice(index, 0, element);
+            this.$size++;
+        },
         removeAt: function (index) {
-            var newSize = this.$size - 1;
-            for (var i = index; i < newSize; ++i) {
-                this.array[i] = this.array[i + 1];
-            }
-            this.array.length = newSize;
-            this.$size = newSize;
+            this.array.splice(index, 1);
+            this.$size--;
         },
         clear: function () {
             this.array.length = 0;

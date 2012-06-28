@@ -95,23 +95,25 @@ library
 public trait List<E>: Collection<E> {
     fun get(index: Int): E
     fun set(index: Int, element: E): E
+
     fun add(index: Int, element: E): Unit
     fun remove(index: Int): E
+
     fun indexOf(o: E?): Int
 }
 
 library
 public abstract class AbstractList<E>(): AbstractCollection<E>(), List<E> {
-    override fun indexOf(o: E?): Int = js.noImpl
-
     override fun get(index: Int): E = js.noImpl
     override fun set(index: Int, element: E): E = js.noImpl
 
-    override fun add(e: E): Boolean = js.noImpl
+    library("addAt")
     override fun add(index: Int, element: E): Unit = js.noImpl
 
     library("removeAt")
     override fun remove(index: Int): E = js.noImpl
+
+    override fun indexOf(o: E?): Int = js.noImpl
 }
 
 library
@@ -157,7 +159,7 @@ library
 public open class HashMap<K, V>() : java.util.Map<K, V> {
     public override fun size() : Int = js.noImpl
     public override fun isEmpty() : Boolean = js.noImpl
-    public override fun get(key : Any?) : V? = js.noImpl
+    public override fun get(key : Any?) : V = js.noImpl
     public override fun containsKey(key : Any?) : Boolean = js.noImpl
     public override fun put(key : K, value : V) : V = js.noImpl
     public override fun putAll(m : java.util.Map<out K, out V>) : Unit = js.noImpl
