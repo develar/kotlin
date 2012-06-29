@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.utils;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -42,9 +41,6 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedRe
  * @author Pavel Talanov
  */
 public final class TranslationUtils {
-
-    private static final JsNameRef UNDEFINED_LITERAL = AstUtil.newQualifiedNameRef("undefined");
-
     private TranslationUtils() {
     }
 
@@ -53,7 +49,7 @@ public final class TranslationUtils {
             @NotNull FunctionDescriptor descriptor,
             @NotNull TranslationContext context) {
         if (JsDescriptorUtils.isExtension(descriptor)) {
-            return translateExtensionFunctionAsEcma5PropertyDescriptor(function, descriptor, context);
+            return translateExtensionFunctionAsEcma5DataDescriptor(function, descriptor, context);
         }
         else {
             JsStringLiteral getOrSet = context.program().getStringLiteral(descriptor instanceof PropertyGetterDescriptor ? "get" : "set");
@@ -62,7 +58,7 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    private static JsPropertyInitializer translateExtensionFunctionAsEcma5PropertyDescriptor(@NotNull JsFunction function,
+    private static JsPropertyInitializer translateExtensionFunctionAsEcma5DataDescriptor(@NotNull JsFunction function,
             @NotNull FunctionDescriptor descriptor, @NotNull TranslationContext context) {
         JsObjectLiteral meta = JsAstUtils.createDataDescriptor(function, descriptor.getModality().isOverridable(), context);
         return new JsPropertyInitializer(context.getNameForDescriptor(descriptor).makeRef(), meta);
@@ -73,7 +69,7 @@ public final class TranslationUtils {
             @NotNull JsExpression expressionToCheck) {
         JsNullLiteral nullLiteral = context.program().getNullLiteral();
         JsBinaryOperation notNull = inequality(expressionToCheck, nullLiteral);
-        JsBinaryOperation notUndefined = inequality(expressionToCheck, UNDEFINED_LITERAL);
+        JsBinaryOperation notUndefined = inequality(expressionToCheck, context.program().getUndefinedLiteral());
         return and(notNull, notUndefined);
     }
 
@@ -82,7 +78,7 @@ public final class TranslationUtils {
             @NotNull JsExpression expressionToCheck) {
         JsNullLiteral nullLiteral = context.program().getNullLiteral();
         JsBinaryOperation isNull = equality(expressionToCheck, nullLiteral);
-        JsBinaryOperation isUndefined = equality(expressionToCheck, UNDEFINED_LITERAL);
+        JsBinaryOperation isUndefined = equality(expressionToCheck, context.program().getUndefinedLiteral());
         return or(isNull, isUndefined);
     }
 

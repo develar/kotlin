@@ -20,8 +20,8 @@ import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsPropertyInitializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.Modality;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
@@ -86,9 +86,13 @@ public final class DeclarationBodyVisitor extends TranslatorVisitor<List<JsPrope
     @NotNull
     public List<JsPropertyInitializer> visitNamedFunction(@NotNull JetNamedFunction expression,
                                                           @NotNull TranslationContext context) {
+        FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
+        if (descriptor.getModality() == Modality.ABSTRACT) {
+            return Collections.emptyList();
+        }
+
         JsPropertyInitializer methodAsPropertyInitializer = Translation.functionTranslator(expression, context).translateAsMethod();
         if (context.isEcma5()) {
-            FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
             JsExpression methodBodyExpression = methodAsPropertyInitializer.getValueExpr();
             methodAsPropertyInitializer.setValueExpr(JsAstUtils.createPropertyDataDescriptor(descriptor, methodBodyExpression, context));
         }
