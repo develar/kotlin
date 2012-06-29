@@ -16,8 +16,6 @@
 
 package org.jetbrains.k2js.translate.general;
 
-import com.google.dart.compiler.backend.js.JsNamer;
-import com.google.dart.compiler.backend.js.JsPrettyNamer;
 import com.google.dart.compiler.backend.js.ast.*;
 import com.google.dart.compiler.util.AstUtil;
 import com.intellij.openapi.util.text.StringUtil;
@@ -188,8 +186,8 @@ public final class Translation {
             }
         }
         generateTestCalls(context, files, block, rawStatements);
-        JsNamer namer = new JsPrettyNamer();
-        namer.exec(context.program());
+        //JsNamer namer = new JsPrettyNamer();
+        //namer.exec(context.program());
         return context.program();
     }
 

@@ -205,9 +205,6 @@ public final class StaticContext {
                 @Nullable
                 public JsName apply(@NotNull DeclarationDescriptor descriptor) {
                     NamingScope namingScope = getEnclosingScope(descriptor);
-                    if (descriptor instanceof ClassDescriptor) {
-                        return namingScope.declareUnobfuscatableName(descriptor.getName().getName());
-                    }
                     return namingScope.declareObfuscatableName(descriptor.getName().getName());
                 }
             };
@@ -368,11 +365,18 @@ public final class StaticContext {
                         return null;
                     }
                     NamingScope enclosingScope = getEnclosingScope(descriptor);
-                    JsFunction correspondingFunction = JsAstUtils.createFunctionWithEmptyBody(enclosingScope.jsScope());
-                    NamingScope newScope = enclosingScope.innerScope(correspondingFunction.getScope());
-                    assert (!scopeToFunction.containsKey(newScope)) : "Scope to function value overridden for " + descriptor;
-                    scopeToFunction.put(newScope, correspondingFunction);
-                    return newScope;
+
+                    //if (descriptor.getContainingDeclaration() instanceof FunctionDescriptor) {
+                    //    JsFunction.createInner(enclosingScope.jsScope());
+                    //    return
+                    //}
+                    //else {
+                        JsFunction correspondingFunction = JsAstUtils.createFunctionWithEmptyBody(enclosingScope.jsScope());
+                        NamingScope newScope = enclosingScope.innerScope(correspondingFunction.getScope());
+                        assert (!scopeToFunction.containsKey(newScope)) : "Scope to function value overridden for " + descriptor;
+                        scopeToFunction.put(newScope, correspondingFunction);
+                        return newScope;
+                    //}
                 }
             };
             addRule(createFunctionObjectsForCallableDescriptors);

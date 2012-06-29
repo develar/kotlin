@@ -26,13 +26,6 @@ public final class JsRootScope extends JsScope {
   }
 
   @Override
-  protected JsName doCreateName(String ident, String shortIdent, String originalName) {
-    JsName name = super.doCreateName(ident, shortIdent, originalName);
-    name.setObfuscatable(false);
-    return name;
-  }
-
-  @Override
   protected JsName findExistingNameNoRecurse(String ident) {
     JsName name = super.findExistingNameNoRecurse(ident);
     if (name == null) {
@@ -42,7 +35,7 @@ public final class JsRootScope extends JsScope {
          * must report a legitimate enclosing scope, we can't simply have a shared set of symbol
          * names.
          */
-        name = doCreateName(ident, ident, ident);
+        name = doCreateName(ident, ident);
       }
     }
     return name;

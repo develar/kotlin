@@ -35,7 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.*;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToStatement;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.thisQualifiedReference;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateArgumentList;
 
@@ -47,6 +48,12 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     private final JetClassOrObject classDeclaration;
     @NotNull
     private final List<JsStatement> initializerStatements = new ArrayList<JsStatement>();
+
+    //private final JsFunction constructor;
+
+    private static void createConstructor() {
+
+    }
 
     public ClassInitializerTranslator(@NotNull JetClassOrObject classDeclaration, @NotNull TranslationContext context) {
         // Note: it's important we use scope for class descriptor because anonymous function used in property initializers
@@ -62,9 +69,10 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         JsFunction result = context().getFunctionObject(primaryConstructor);
         //NOTE: while we translate constructor parameters we also add property initializer statements
         // for properties declared as constructor parameters
-        setParameters(result, translatePrimaryConstructorParameters());
+        result.getParameters().addAll(translatePrimaryConstructorParameters());
         mayBeAddCallToSuperMethod(result);
         initializerStatements.addAll(new InitializerVisitor().traverseClass(classDeclaration, context()));
+        //result.setBody(new JsBlock(initializerStatements));
         result.getBody().getStatements().addAll(initializerStatements);
         return result;
     }
@@ -72,27 +80,25 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     private void mayBeAddCallToSuperMethod(JsFunction initializer) {
         if (hasAncestorClass(bindingContext(), classDeclaration)) {
             JetDelegatorToSuperCall superCall = getSuperCall();
-            if (superCall == null) return;
+            if (superCall == null) {
+                return;
+            }
             addCallToSuperMethod(superCall, initializer);
         }
     }
 
     private void addCallToSuperMethod(@NotNull JetDelegatorToSuperCall superCall, JsFunction initializer) {
         List<JsExpression> arguments = translateArguments(superCall);
-
-        //TODO: can be problematic to maintain
         if (context().isEcma5()) {
             JsName ref = context().jsScope().declareName("$initializer");
             initializer.setName(ref);
-            JsInvocation call = new JsInvocation();
-            call.setQualifier(AstUtil.newNameRef(AstUtil.newNameRef(ref.makeRef(), "baseInitializer"), "call"));
+            JsInvocation call = new JsInvocation(AstUtil.newNameRef(AstUtil.newNameRef(ref.makeRef(), "baseInitializer"), "call"));
             call.getArguments().add(new JsThisRef());
             call.getArguments().addAll(arguments);
             initializerStatements.add(call.makeStmt());
         }
         else {
             JsName superMethodName = context().jsScope().declareName(Namer.superMethodName());
-            superMethodName.setObfuscatable(false);
             initializerStatements.add(convertToStatement(new JsInvocation(thisQualifiedReference(superMethodName), arguments)));
         }
     }

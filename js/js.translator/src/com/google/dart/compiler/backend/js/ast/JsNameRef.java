@@ -46,10 +46,6 @@ public final class JsNameRef extends JsExpression implements CanBooleanEval, Has
     return qualifier;
   }
 
-  public String getShortIdent() {
-    return (name == null) ? ident : name.getShortIdent();
-  }
-
   @Override
   public boolean hasSideEffects() {
     if (qualifier == null) {

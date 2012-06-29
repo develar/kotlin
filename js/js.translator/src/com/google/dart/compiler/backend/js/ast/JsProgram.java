@@ -32,7 +32,7 @@ public final class JsProgram extends JsNode {
    */
   public JsProgram(String unitId) {
     rootScope = new JsRootScope(this);
-    topScope = new JsScope(rootScope, "Global", unitId);
+    topScope = new JsScope(rootScope, "Global", unitId, false);
     objectScope = new JsScope(rootScope, "Object");
     setFragmentCount(1);
 

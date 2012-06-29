@@ -133,22 +133,7 @@ public final class AstUtil {
     return jsCase;
   }
 
-  public static JsFunction newFunction(
-     JsScope scope, JsName name, JsParameter[] params, JsStatement ... stmts) {
-    JsFunction fn = new JsFunction(scope);
-    if (name != null) {
-      fn.setName(name);
-    }
-    if (params != null) {
-      for (JsParameter param : params) {
-        fn.getParameters().add(param);
-      }
-    }
-    fn.setBody(newBlock(stmts));
-    return fn;
-  }
-
-  public static JsInvocation call(SourceInfo src, JsExpression target, JsExpression ... params) {
+    public static JsInvocation call(SourceInfo src, JsExpression target, JsExpression ... params) {
     return (JsInvocation) newInvocation(target, params).setSourceRef(src);
   }
 

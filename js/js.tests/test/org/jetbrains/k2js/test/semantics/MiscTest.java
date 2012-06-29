@@ -93,7 +93,7 @@ public final class MiscTest extends AbstractExpressionTest {
     }
 
     public void testFunInConstructor() throws Exception {
-        fooBoxTest();
+        fooBoxTest(EnumSet.of(EcmaVersion.v5));
     }
 
     public void testFunInConstructorBlock() throws Exception {

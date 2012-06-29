@@ -6,6 +6,7 @@ package com.google.dart.compiler.backend.js.ast;
 
 import com.google.dart.compiler.common.SourceInfo;
 import com.google.dart.compiler.common.Symbol;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,12 +23,12 @@ public final class JsFunction extends JsLiteral implements HasName {
     System.out.println(code);
   }
 
-  protected JsBlock body;
-  protected final List<JsParameter> params = new ArrayList<JsParameter>();
-  protected final JsScope scope;
+    private JsBlock body;
+    private final List<JsParameter> params = new ArrayList<JsParameter>();
+    private final JsScope scope;
   private boolean artificiallyRescued;
   private boolean executeOnce;
-  private boolean fromDart;
+  private final boolean fromDart = false;
   private JsFunction impliedExecute;
   private JsName name;
   private boolean trace = false;
@@ -42,6 +43,10 @@ public final class JsFunction extends JsLiteral implements HasName {
     this(parent, null, false);
   }
 
+    public JsFunction(JsScope parent, boolean isDummy) {
+        this(parent, null, isDummy);
+    }
+
   public JsFunction(JsScope parent, JsBlock body) {
     this(parent, null, false);
     this.body = body;
@@ -54,19 +59,22 @@ public final class JsFunction extends JsLiteral implements HasName {
     this(parent, name, false);
   }
 
-  /**
-   * Creates a named function, possibly derived from Dart source.
-   */
-  public JsFunction(JsScope parent, JsName name, boolean fromDart) {
-    assert (parent != null);
-    this.fromDart = fromDart;
-    setName(name);
-    String scopeName = (name == null) ? "<anonymous>" : name.getIdent();
-    scopeName = "function " + scopeName;
-    this.scope = new JsScope(parent, scopeName);
-  }
+    private JsFunction(JsScope parent, @Nullable JsName name, boolean isDummy) {
+        this(name, new JsScope(parent, "function " + ((name == null) ? "<anonymous>" : name.getIdent())));
+    }
 
-  public JsBlock getBody() {
+    private JsFunction(@Nullable JsName name, JsScope scope) {
+        setName(name);
+        this.scope = scope;
+    }
+
+    public static JsFunction createWithScope(JsScope parent) {
+        JsFunction function = new JsFunction(null, parent);
+        function.setBody(new JsBlock());
+        return function;
+    }
+
+    public JsBlock getBody() {
     return body;
   }
 
@@ -145,10 +153,6 @@ public final class JsFunction extends JsLiteral implements HasName {
 
   public void setExecuteOnce(boolean executeOnce) {
     this.executeOnce = executeOnce;
-  }
-
-  public void setFromDart(boolean fromDart) {
-    this.fromDart = fromDart;
   }
 
   public void setImpliedExecute(JsFunction impliedExecute) {

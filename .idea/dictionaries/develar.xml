@@ -2,10 +2,12 @@
   <dictionary name="develar">
     <words>
       <w>ecmascript</w>
+      <w>ident</w>
       <w>inlined</w>
       <w>intrinsics</w>
       <w>obfuscatable</w>
       <w>overridable</w>
+      <w>recurse</w>
       <w>unobfuscatable</w>
       <w>unsupplied</w>
     </words>

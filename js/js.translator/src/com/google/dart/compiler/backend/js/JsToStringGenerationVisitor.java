@@ -1076,7 +1076,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
   }
 
   private void _nameDef(JsName name) {
-    p.print(name.getShortIdent());
+    p.print(name.getIdent());
   }
 
   private void _nameOf(HasName hasName) {
@@ -1084,7 +1084,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
   }
 
   private void _nameRef(JsNameRef nameRef) {
-    p.print(nameRef.getShortIdent());
+    p.print(nameRef.getIdent());
   }
 
   private boolean _nestedPop(JsStatement statement) {

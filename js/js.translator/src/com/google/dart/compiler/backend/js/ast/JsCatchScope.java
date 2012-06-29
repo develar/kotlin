@@ -12,24 +12,17 @@ import java.util.NoSuchElementException;
  * the catch argument's name.
  */
 public class JsCatchScope extends JsScope {
-
   private final JsName name;
 
   public JsCatchScope(JsScope parent, String ident) {
     super(parent, "Catch scope");
-    this.name = new JsName(this, ident, ident, ident);
+    this.name = new JsName(this, ident, ident);
   }
 
   @Override
-  public JsName declareName(String ident) {
+  public JsName declareName(String identifier) {
     // Declare into parent scope!
-    return getParent().declareName(ident);
-  }
-
-  @Override
-  public JsName declareName(String ident, String shortIdent) {
-    // Declare into parent scope!
-    return getParent().declareName(ident, shortIdent);
+    return getParent().declareName(identifier);
   }
 
   @Override
@@ -60,16 +53,12 @@ public class JsCatchScope extends JsScope {
   }
 
   @Override
-  protected JsName doCreateName(String ident, String shortIdent, String originalName) {
+  protected JsName doCreateName(String ident, String originalName) {
     throw new UnsupportedOperationException("Cannot create a name in a catch scope");
   }
 
   @Override
   protected JsName findExistingNameNoRecurse(String ident) {
-    if (name.getIdent().equals(ident)) {
-      return name;
-    } else {
-      return null;
-    }
+      return name.getIdent().equals(ident) ? name : null;
   }
 }

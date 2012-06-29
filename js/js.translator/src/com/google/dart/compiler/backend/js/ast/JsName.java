@@ -14,8 +14,6 @@ import java.io.Serializable;
 public class JsName implements Symbol, Serializable {
   private final JsScope enclosing;
   private final String ident;
-  private boolean isObfuscatable;
-  private String shortIdent;
   private String originalName;
 
   /**
@@ -26,14 +24,12 @@ public class JsName implements Symbol, Serializable {
   /**
    * @param ident the unmangled ident to use for this name
    */
-  JsName(JsScope enclosing, String ident, String shortIdent, String originalName) {
+  JsName(JsScope enclosing, String ident, String originalName) {
     this.enclosing = enclosing;
     this.ident = ident;
-    this.shortIdent = shortIdent;
     if (originalName != null) {
       this.originalName = originalName;
     }
-    this.isObfuscatable = true;
   }
 
   public JsScope getEnclosing() {
@@ -44,20 +40,8 @@ public class JsName implements Symbol, Serializable {
     return ident;
   }
 
-  public String getShortIdent() {
-    return shortIdent;
-  }
-
   public String getOriginalName() {
     return originalName;
-  }
-
-  public JsNode getStaticRef() {
-    return staticRef;
-  }
-
-  public boolean isObfuscatable() {
-    return isObfuscatable;
   }
 
   public JsNameRef makeRef() {
@@ -65,11 +49,6 @@ public class JsName implements Symbol, Serializable {
   }
 
   public void setObfuscatable(boolean isObfuscatable) {
-    this.isObfuscatable = isObfuscatable;
-  }
-
-  public void setShortIdent(String shortIdent) {
-    this.shortIdent = shortIdent;
   }
 
   /**

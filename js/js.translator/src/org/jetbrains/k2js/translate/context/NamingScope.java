@@ -56,9 +56,7 @@ public final class NamingScope {
     @NotNull
         /*package*/ JsName declareUnobfuscatableName(@NotNull String name) {
         NameUtils.requireIdentifier(name);
-        JsName declaredName = scope.declareName(name);
-        declaredName.setObfuscatable(false);
-        return declaredName;
+        return scope.declareName(name);
     }
 
     @NotNull
