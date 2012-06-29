@@ -18,9 +18,9 @@ package org.jetbrains.jet.cli.jvm.repl;
 
 import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.asm4.ClassReader;
+import org.jetbrains.asm4.ClassVisitor;
 import org.jetbrains.jet.lang.resolve.java.JvmClassName;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.PrintWriter;
 import java.util.Map;
@@ -63,4 +63,10 @@ public class ReplClassLoader extends ClassLoader {
         }
     }
 
+    // todo asm4
+    private class TraceClassVisitor extends ClassVisitor {
+        public TraceClassVisitor(PrintWriter writer) {
+            super(0);
+        }
+    }
 }

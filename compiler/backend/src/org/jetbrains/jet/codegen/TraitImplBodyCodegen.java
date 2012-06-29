@@ -24,7 +24,7 @@ import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.objectweb.asm.Opcodes;
+import org.jetbrains.asm4.Opcodes;
 
 import java.util.List;
 

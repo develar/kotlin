@@ -163,7 +163,7 @@ public class JetDiagnosticsTest extends JetLiteFixture {
         if (hasJavaFiles) {
             // According to yole@ the only way to import java files is to write them on disk
             // -- stepan.koltsov@ 2012-02-29
-            myEnvironment.addToClasspath(javaFilesDir);
+            myEnvironment.addJarToClassPath(javaFilesDir);
         }
 
         List<JetFile> jetFiles = Lists.newArrayList();

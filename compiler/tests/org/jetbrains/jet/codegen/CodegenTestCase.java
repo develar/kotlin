@@ -32,7 +32,7 @@ import org.jetbrains.jet.lang.resolve.AnalyzingUtils;
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
 import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
 import org.jetbrains.jet.parsing.JetParsingTest;
-import org.objectweb.asm.Type;
+import org.jetbrains.asm4.Type;
 
 import java.io.File;
 import java.io.IOException;
@@ -79,7 +79,7 @@ public abstract class CodegenTestCase extends UsefulTestCase {
     }
 
     protected void addToClasspath(@NotNull File file) {
-        myEnvironment.addToClasspath(file);
+        myEnvironment.addJarToClassPath(file);
         extraClasspath.add(file);
     }
 
@@ -166,7 +166,7 @@ public abstract class CodegenTestCase extends UsefulTestCase {
         }
     }
 
-    private Constructor getConstructor(@NotNull Class<?> clazz, org.objectweb.asm.commons.Method method) {
+    private Constructor getConstructor(@NotNull Class<?> clazz, org.jetbrains.asm4.commons.Method method) {
         if (!method.getName().equals("<init>")) {
             throw new IllegalArgumentException("not constructor: " + method);
         }

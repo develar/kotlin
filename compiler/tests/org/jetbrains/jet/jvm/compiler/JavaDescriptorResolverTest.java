@@ -72,7 +72,7 @@ public class JavaDescriptorResolverTest extends TestCaseWithTmpdir {
 
         JetCoreEnvironment jetCoreEnvironment = JetTestUtils.createEnvironmentWithMockJdkAndIdeaAnnotations(
                 myTestRootDisposable, CompilerSpecialMode.JDK_HEADERS);
-        jetCoreEnvironment.addToClasspath(tmpdir);
+        jetCoreEnvironment.addJarToClassPath(tmpdir);
 
         InjectorForJavaSemanticServices injector = new InjectorForJavaSemanticServices(
                 jetCoreEnvironment.getCompilerDependencies(), jetCoreEnvironment.getProject());

@@ -32,8 +32,8 @@ import org.jetbrains.jet.test.TestCaseWithTmpdir;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
 import org.jetbrains.jet.plugin.JetLanguage;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Opcodes;
+import org.jetbrains.asm4.ClassReader;
+import org.jetbrains.asm4.Opcodes;
 
 import java.io.File;
 import java.io.IOException;

@@ -75,11 +75,11 @@ public class TestlibTest extends CodegenTestCase {
                 throw new AssertionError();
             }
 
-            myEnvironment.addToClasspath(junitJar);
+            myEnvironment.addJarToClassPath(junitJar);
 
-            myEnvironment.addToClasspath(myEnvironment.getCompilerDependencies().getRuntimeJar());
+            myEnvironment.addJarToClassPath(myEnvironment.getCompilerDependencies().getRuntimeJar());
 
-            CoreLocalFileSystem localFileSystem = myEnvironment.getLocalFileSystem();
+            CoreLocalFileSystem localFileSystem = myEnvironment.getEnvironment().getLocalFileSystem();
             myEnvironment.addSources(localFileSystem.findFileByPath(JetParsingTest.getTestDataDir() + "/../../libraries/stdlib/test"));
             myEnvironment.addSources(localFileSystem.findFileByPath(JetParsingTest.getTestDataDir() + "/../../libraries/kunit/src"));
 

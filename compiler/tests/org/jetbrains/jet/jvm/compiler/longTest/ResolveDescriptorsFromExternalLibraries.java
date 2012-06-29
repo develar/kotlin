@@ -149,7 +149,7 @@ public class ResolveDescriptorsFromExternalLibraries {
         JetCoreEnvironment jetCoreEnvironment;
         if (jar != null) {
             jetCoreEnvironment = JetTestUtils.createEnvironmentWithMockJdkAndIdeaAnnotations(junk, CompilerSpecialMode.STDLIB);
-            jetCoreEnvironment.addToClasspath(jar);
+            jetCoreEnvironment.addJarToClassPath(jar);
         }
         else {
             CompilerDependencies compilerDependencies = CompileCompilerDependenciesTest.compilerDependenciesForTests(CompilerSpecialMode.STDLIB, false);

@@ -18,10 +18,11 @@ package org.jetbrains.jet.codegen.signature;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.asm4.Type;
+import org.jetbrains.asm4.commons.Method;
+import org.jetbrains.asm4.signature.SignatureVisitor;
+import org.jetbrains.asm4.signature.SignatureWriter;
 import org.jetbrains.jet.codegen.JetTypeMapper;
-import org.jetbrains.jet.codegen.signature.JvmMethodParameterKind;
-import org.jetbrains.jet.codegen.signature.JvmMethodParameterSignature;
-import org.jetbrains.jet.codegen.signature.JvmMethodSignature;
 import org.jetbrains.jet.lang.resolve.java.JetSignatureUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.Variance;
@@ -29,11 +30,6 @@ import org.jetbrains.jet.rt.signature.JetSignatureAdapter;
 import org.jetbrains.jet.rt.signature.JetSignatureReader;
 import org.jetbrains.jet.rt.signature.JetSignatureVariance;
 import org.jetbrains.jet.rt.signature.JetSignatureWriter;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.Method;
-import org.objectweb.asm.signature.SignatureVisitor;
-import org.objectweb.asm.signature.SignatureWriter;
-import org.objectweb.asm.util.CheckSignatureAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,11 +40,13 @@ import java.util.Stack;
  */
 public class BothSignatureWriter {
 
-    private static final boolean DEBUG_SIGNATURE_WRITER = true;
+    private static final boolean DEBUG_SIGNATURE_WRITER = false;
 
     public enum Mode {
-        METHOD(CheckSignatureAdapter.METHOD_SIGNATURE),
-        CLASS(CheckSignatureAdapter.CLASS_SIGNATURE),
+        //METHOD(CheckSignatureAdapter.METHOD_SIGNATURE),
+        METHOD(0),
+        //CLASS(CheckSignatureAdapter.CLASS_SIGNATURE),
+        CLASS(0),
         ;
         
         private final int asmType;
@@ -100,7 +98,9 @@ public class BothSignatureWriter {
         this.needGenerics = needGenerics;
 
         if (DEBUG_SIGNATURE_WRITER) {
-            signatureVisitor = new CheckSignatureAdapter(mode.asmType, signatureWriter);
+            //signatureVisitor = new CheckSignatureAdapter(mode.asmType, signatureWriter);
+            // todo asm4
+            signatureVisitor = null;
         }
         else {
             signatureVisitor = signatureWriter;

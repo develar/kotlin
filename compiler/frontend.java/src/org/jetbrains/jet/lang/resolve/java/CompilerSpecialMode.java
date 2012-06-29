@@ -29,11 +29,13 @@ public enum CompilerSpecialMode {
     ;
 
     public boolean includeJdkHeaders() {
-        return this == REGULAR || this == STDLIB || this == IDEA;
+        return false;
+        //return this == REGULAR || this == STDLIB || this == IDEA;
     }
 
     public boolean includeKotlinRuntime() {
-        return this == REGULAR;
+        return false;
+        //return this == REGULAR;
     }
 
     public boolean includeJdk() {

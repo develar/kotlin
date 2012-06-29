@@ -1,12 +1,12 @@
 <project name="Update Dependencies" default="update">
-    <property name="build.zip" value="ideaIC-117.SNAPSHOT.win.zip"/>
+    <property name="build.zip" value="ideaIC-118.SNAPSHOT.win.zip"/>
 
     <target name="update" depends="fetch-third-party">
         <execute_update/>
     </target>
 
     <target name="jb_update" depends="fetch-third-party">
-        <execute_update teamcity="http://buildserver.labs.intellij.net" teamcity.build="bt2560"/>
+        <execute_update teamcity="http://buildserver.labs.intellij.net" teamcity.build="bt662"/>
     </target>
 
     <target name="fetch-third-party">
@@ -95,8 +95,8 @@
             <get src="${tc}/core/annotations.jar" dest="${core}/annotations.jar"/>
             <get src="${tc}/core/asm.jar" dest="${core}/asm.jar"/>
             <get src="${tc}/core/asm-commons.jar" dest="${core}/asm-commons.jar"/>
-            <get src="${tc}/core/cli-10.jar" dest="${core}/cli-10.jar"/>
-            <get src="${tc}/core/guava-11.0.1.jar" dest="${core}/guava-11.0.1.jar"/>
+            <get src="${tc}/core/cli-parser-1.1.jar" dest="${core}/cli-parser-1.1.jar"/>
+            <get src="${tc}/core/guava-12.0.jar" dest="${core}/guava-12.0.jar"/>
             <get src="${tc}/core/picocontainer.jar" dest="${core}/picocontainer.jar"/>
             <get src="${tc}/core/trove4j.jar" dest="${core}/trove4j.jar"/>
 
@@ -104,6 +104,8 @@
             <unzip src="ideaSDK/${build.zip}" dest="ideaSDK"/>
             <delete file="ideaSDK/${build.zip}"/>
 
+            <copy file="ideaSDK/lib/asm4-all.jar" todir="${core}"/>
+            <copy file="ideaSDK/lib/jdom.jar" todir="${core}"/>
             <copy file="ideaSDK/lib/jdom.jar" todir="${core}"/>
             <copy file="ideaSDK/lib/jna.jar" todir="${core}"/>
             <copy file="ideaSDK/lib/log4j.jar" todir="${core}"/>

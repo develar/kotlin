@@ -36,14 +36,14 @@ public class StdlibTest extends CodegenTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         createEnvironmentWithFullJdk();
-        myEnvironment.addToClasspath(ForTestCompileRuntime.runtimeJarForTests());
+        myEnvironment.addJarToClassPath(ForTestCompileRuntime.runtimeJarForTests());
         File junitJar = new File("libraries/lib/junit-4.9.jar");
 
         if (!junitJar.exists()) {
             throw new AssertionError();
         }
 
-        myEnvironment.addToClasspath(junitJar);
+        myEnvironment.addJarToClassPath(junitJar);
     }
 
     @Override

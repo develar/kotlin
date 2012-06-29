@@ -182,7 +182,7 @@ public class JetTestUtils {
     public static JetCoreEnvironment createEnvironmentWithMockJdkAndIdeaAnnotations(Disposable disposable, @NotNull CompilerSpecialMode compilerSpecialMode) {
         JetCoreEnvironment environment =
                 new JetCoreEnvironment(disposable, CompileCompilerDependenciesTest.compilerDependenciesForTests(compilerSpecialMode, true));
-        environment.addToClasspath(getAnnotationsJar());
+        environment.addJarToClassPath(getAnnotationsJar());
         return environment;
     }
 

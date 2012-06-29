@@ -76,7 +76,7 @@ public class KotlinToJVMBytecodeCompiler {
 
         CompileEnvironmentUtil.addSourcesFromModuleToEnvironment(configuration.getEnvironment(), moduleBuilder, directory);
         for (String classpathRoot : moduleBuilder.getClasspathRoots()) {
-            configuration.getEnvironment().addToClasspath(new File(classpathRoot));
+            configuration.getEnvironment().addJarToClassPath(new File(classpathRoot));
         }
 
         GenerationState generationState = analyzeAndGenerate(configuration);

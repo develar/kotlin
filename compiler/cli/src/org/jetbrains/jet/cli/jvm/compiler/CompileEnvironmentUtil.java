@@ -30,10 +30,10 @@ import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.codegen.ClassFileFactory;
 import org.jetbrains.jet.codegen.GeneratedClassLoader;
 import org.jetbrains.jet.codegen.GenerationState;
-import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.java.CompilerDependencies;
 import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
+import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.utils.PathUtil;
 
 import java.io.File;
@@ -90,7 +90,7 @@ public class CompileEnvironmentUtil {
             if (kotlin == null) {
                 throw new IllegalStateException("kotlin runtime not found");
             }
-            env.addToClasspath(kotlin);
+            env.addJarToClassPath(kotlin);
         }
     }
 
@@ -99,7 +99,7 @@ public class CompileEnvironmentUtil {
         if (JavaPsiFacade.getInstance(env.getProject()).findClass("java.lang.Object", GlobalSearchScope.allScope(env.getProject())) ==
             null) {
             // TODO: prepend
-            env.addToClasspath(findRtJar());
+            env.addJarToClassPath(findRtJar());
         }
     }
 
@@ -300,7 +300,7 @@ public class CompileEnvironmentUtil {
             if (!path.exists()) {
                 throw new CompileEnvironmentException("'" + path + "' does not exist");
             }
-            environment.addToClasspath(path);
+            environment.addJarToClassPath(path);
         }
     }
 

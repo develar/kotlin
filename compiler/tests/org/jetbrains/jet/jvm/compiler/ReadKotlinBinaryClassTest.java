@@ -89,8 +89,8 @@ public class ReadKotlinBinaryClassTest extends TestCaseWithTmpdir {
 
         jetCoreEnvironment = JetTestUtils.createEnvironmentWithMockJdkAndIdeaAnnotations(myTestRootDisposable, CompilerSpecialMode.JDK_HEADERS);
 
-        jetCoreEnvironment.addToClasspath(tmpdir);
-        jetCoreEnvironment.addToClasspath(new File("out/production/runtime"));
+        jetCoreEnvironment.addJarToClassPath(tmpdir);
+        jetCoreEnvironment.addJarToClassPath(new File("out/production/runtime"));
 
         InjectorForJavaSemanticServices injector = new InjectorForJavaSemanticServices(
                 jetCoreEnvironment.getCompilerDependencies(), jetCoreEnvironment.getProject());

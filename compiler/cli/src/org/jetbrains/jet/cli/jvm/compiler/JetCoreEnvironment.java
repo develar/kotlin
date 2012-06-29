@@ -16,7 +16,8 @@
 
 package org.jetbrains.jet.cli.jvm.compiler;
 
-import com.intellij.core.JavaCoreEnvironment;
+import com.intellij.core.CoreApplicationEnvironment;
+import com.intellij.core.JavaCoreProjectEnvironment;
 import com.intellij.lang.java.JavaParserDefinition;
 import com.intellij.mock.MockApplication;
 import com.intellij.openapi.Disposable;
@@ -45,8 +46,9 @@ import java.util.List;
 /**
  * @author yole
  */
-public class JetCoreEnvironment extends JavaCoreEnvironment {
+public class JetCoreEnvironment extends JavaCoreProjectEnvironment {
     private final List<JetFile> sourceFiles = new ArrayList<JetFile>();
+
 
     @NotNull
     public static JetCoreEnvironment getCoreEnvironmentForJS(Disposable disposable) {
@@ -62,17 +64,17 @@ public class JetCoreEnvironment extends JavaCoreEnvironment {
     private final CompilerDependencies compilerDependencies;
 
     public JetCoreEnvironment(Disposable parentDisposable, @NotNull CompilerDependencies compilerDependencies) {
-        super(parentDisposable);
+        super(parentDisposable, new CoreApplicationEnvironment(parentDisposable));
 
         this.compilerDependencies = compilerDependencies;
 
-        registerFileType(JetFileType.INSTANCE, "kt");
-        registerFileType(JetFileType.INSTANCE, "kts");
-        registerFileType(JetFileType.INSTANCE, "ktm");
-        registerFileType(JetFileType.INSTANCE, JetParser.KTSCRIPT_FILE_SUFFIX); // should be renamed to kts
-        registerFileType(JetFileType.INSTANCE, "jet");
-        registerParserDefinition(new JavaParserDefinition());
-        registerParserDefinition(new JetParserDefinition());
+        getEnvironment().registerFileType(JetFileType.INSTANCE, "kt");
+        getEnvironment().registerFileType(JetFileType.INSTANCE, "kts");
+        getEnvironment().registerFileType(JetFileType.INSTANCE, "ktm");
+        getEnvironment().registerFileType(JetFileType.INSTANCE, JetParser.KTSCRIPT_FILE_SUFFIX); // should be renamed to kts
+        getEnvironment().registerFileType(JetFileType.INSTANCE, "jet");
+        getEnvironment().registerParserDefinition(new JavaParserDefinition());
+        getEnvironment().registerParserDefinition(new JetParserDefinition());
 
 
         myProject.registerService(JetFilesProvider.class, new CliJetFilesProvider(this));
@@ -83,23 +85,23 @@ public class JetCoreEnvironment extends JavaCoreEnvironment {
         CompilerSpecialMode compilerSpecialMode = compilerDependencies.getCompilerSpecialMode();
 
         if (compilerSpecialMode.includeJdk()) {
-            addToClasspath(compilerDependencies.getJdkJar());
+            addJarToClassPath(compilerDependencies.getJdkJar());
         }
 
         if (compilerSpecialMode.includeJdkHeaders()) {
             for (VirtualFile root : compilerDependencies.getJdkHeaderRoots()) {
-                addLibraryRoot(root);
+                addSourcesToClasspath(root);
             }
         }
         if (compilerSpecialMode.includeKotlinRuntime()) {
-            addToClasspath(compilerDependencies.getRuntimeJar());
+            addJarToClassPath(compilerDependencies.getRuntimeJar());
         }
 
         JetStandardLibrary.initialize(getProject());
     }
 
     public MockApplication getApplication() {
-        return myApplication;
+        return getEnvironment().getApplication();
     }
 
     private void addSources(File file) {
@@ -112,7 +114,7 @@ public class JetCoreEnvironment extends JavaCoreEnvironment {
             }
         }
         else {
-            VirtualFile fileByPath = getLocalFileSystem().findFileByPath(file.getAbsolutePath());
+            VirtualFile fileByPath = getEnvironment().getLocalFileSystem().findFileByPath(file.getAbsolutePath());
             if (fileByPath != null) {
                 PsiFile psiFile = PsiManager.getInstance(getProject()).findFile(fileByPath);
                 if (psiFile instanceof JetFile) {
@@ -143,7 +145,7 @@ public class JetCoreEnvironment extends JavaCoreEnvironment {
             return;
         }
 
-        VirtualFile vFile = getLocalFileSystem().findFileByPath(path);
+        VirtualFile vFile = getEnvironment().getLocalFileSystem().findFileByPath(path);
         if (vFile == null) {
             throw new CompileEnvironmentException("File/directory not found: " + path);
         }
@@ -168,7 +170,7 @@ public class JetCoreEnvironment extends JavaCoreEnvironment {
             for (URL url : ((URLClassLoader) loader).getURLs()) {
                 File file = new File(url.getPath());
                 if (file.exists() && (!file.isFile() || file.getPath().endsWith(".jar"))) {
-                    addToClasspath(file);
+                    addJarToClassPath(file);
                 }
             }
         }

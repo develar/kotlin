@@ -103,7 +103,7 @@ public class CompileKotlinAgainstKotlinTest extends TestCaseWithTmpdir {
     private void compileB() throws IOException {
         JetCoreEnvironment jetCoreEnvironment = JetTestUtils.createEnvironmentWithMockJdkAndIdeaAnnotations(myTestRootDisposable);
 
-        jetCoreEnvironment.addToClasspath(aDir);
+        jetCoreEnvironment.addJarToClassPath(aDir);
 
         String text = FileUtil.loadFile(ktBFile);
 

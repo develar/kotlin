@@ -17,8 +17,8 @@
 package org.jetbrains.jet.codegen;
 
 import org.jetbrains.annotations.NotNull;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.util.TraceClassVisitor;
+import org.jetbrains.asm4.ClassVisitor;
+import org.jetbrains.asm4.ClassWriter;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -91,5 +91,15 @@ public class ClassBuilderFactories {
                 return visitor.toByteArray();
             }
         };
+    }
+
+    // todo asm4
+    private static class TraceClassVisitor extends ClassVisitor {
+        public TraceClassVisitor(PrintWriter writer) {
+            super(0);
+        }
+
+        public void print(PrintWriter writer) {
+        }
     }
 }
