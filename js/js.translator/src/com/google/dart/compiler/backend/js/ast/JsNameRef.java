@@ -28,6 +28,11 @@ public final class JsNameRef extends JsExpression implements CanBooleanEval, Has
     this.qualifier = qualifier;
   }
 
+  public JsNameRef(JsName name, JsExpression qualifier) {
+    this.name = name;
+    this.qualifier = qualifier;
+  }
+
   public String getIdent() {
     return (name == null) ? ident : name.getIdent();
   }
@@ -70,7 +75,6 @@ public final class JsNameRef extends JsExpression implements CanBooleanEval, Has
 
   @Override
   public boolean isDefinitelyNotNull() {
-    // TODO: look for single-assignment of stuff from Java?
     return false;
   }
 
@@ -89,10 +93,6 @@ public final class JsNameRef extends JsExpression implements CanBooleanEval, Has
     } else {
       return false;
     }
-  }
-
-  public boolean isResolved() {
-    return name != null;
   }
 
   public void resolve(JsName name) {

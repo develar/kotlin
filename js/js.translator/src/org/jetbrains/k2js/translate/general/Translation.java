@@ -175,7 +175,9 @@ public final class Translation {
         List<JsStatement> statements = rootFunction.getBody().getStatements();
         statements.add(program.getStringLiteral("use strict").makeStmt());
 
-        TranslationContext context = TranslationContext.rootContext(staticContext);
+        TranslationContext context = TranslationContext.rootFunctionContext(staticContext, rootFunction);
+        staticContext.getAnonymousFunctionTranslator().setRootContext(context);
+        statements.add(staticContext.getAnonymousFunctionTranslator().toJsStatement());
         statements.addAll(translateFiles(files, context));
         defineModule(statements, context, config);
 
@@ -185,7 +187,8 @@ public final class Translation {
                 statements.add(statement);
             }
         }
-        generateTestCalls(context, files, block, rawStatements);
+
+        generateTestCalls(TranslationContext.rootContext(staticContext), files, block, rawStatements);
         //JsNamer namer = new JsPrettyNamer();
         //namer.exec(context.program());
         return context.program();

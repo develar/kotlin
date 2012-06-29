@@ -26,6 +26,7 @@ public final class JsProgram extends JsNode {
 
     private final JsNullLiteral nullLiteral = new JsNullLiteral();
     private final JsNameRef undefinedLiteral = new JsNameRef("undefined");
+    private final JsThisRef thisLiteral = new JsThisRef();
 
     private final JsBooleanLiteral falseLiteral = new JsBooleanLiteral(false);
     private final JsBooleanLiteral trueLiteral = new JsBooleanLiteral(true);
@@ -133,6 +134,10 @@ public final class JsProgram extends JsNode {
 
     public JsBooleanLiteral getTrueLiteral() {
         return trueLiteral;
+    }
+
+    public JsThisRef getThisLiteral() {
+        return thisLiteral;
     }
 
     public JsNameRef getUndefinedLiteral() {

@@ -17,10 +17,7 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.common.collect.Lists;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
-import com.google.dart.compiler.backend.js.ast.JsObjectLiteral;
-import com.google.dart.compiler.backend.js.ast.JsStatement;
+import com.google.dart.compiler.backend.js.ast.*;
 import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
@@ -44,15 +41,15 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
 
     public static List<JsStatement> translateFiles(@NotNull List<JetFile> files, @NotNull TranslationContext context) {
         Set<NamespaceDescriptor> namespaceDescriptorSet = getAllNonNativeNamespaceDescriptors(context.bindingContext(), files);
-        return (new NamespaceDeclarationTranslator(Lists.newArrayList(namespaceDescriptorSet), context)).translate();
+        return (new NamespaceDeclarationTranslator(namespaceDescriptorSet, context)).translate();
     }
 
     @NotNull
     private final ClassDeclarationTranslator classDeclarationTranslator;
     @NotNull
-    private final List<NamespaceDescriptor> namespaceDescriptors;
+    private final Iterable<NamespaceDescriptor> namespaceDescriptors;
 
-    private NamespaceDeclarationTranslator(@NotNull List<NamespaceDescriptor> namespaceDescriptors,
+    private NamespaceDeclarationTranslator(@NotNull Iterable<NamespaceDescriptor> namespaceDescriptors,
                                            @NotNull TranslationContext context) {
         super(context);
         this.namespaceDescriptors = namespaceDescriptors;
@@ -94,7 +91,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         else {
             packageMapValue = objectLiteral;
         }
-        statements.add(JsAstUtils.newVar(packageMapNameRef.getName(), packageMapValue));
+        statements.add(new JsVars(new JsVars.JsVar(packageMapNameRef.getName(), packageMapValue)));
 
         for (NamespaceTranslator translator : namespaceTranslators) {
             translator.addNamespaceDeclaration(objectLiteral.getPropertyInitializers());
@@ -111,7 +108,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private static List<NamespaceDescriptor> filterTopLevelAndRootNamespaces(@NotNull List<NamespaceDescriptor> namespaceDescriptors) {
+    private static List<NamespaceDescriptor> filterTopLevelAndRootNamespaces(@NotNull Iterable<NamespaceDescriptor> namespaceDescriptors) {
         List<NamespaceDescriptor> result = Lists.newArrayList();
         for (NamespaceDescriptor descriptor : namespaceDescriptors) {
             if (DescriptorUtils.isTopLevelNamespace(descriptor) || DescriptorUtils.isRootNamespace(descriptor)) {

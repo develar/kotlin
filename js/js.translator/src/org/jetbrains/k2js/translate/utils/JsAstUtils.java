@@ -75,12 +75,6 @@ public final class JsAstUtils {
         return (JsExpression) jsNode;
     }
 
-    public static JsNameRef thisQualifiedReference(@NotNull JsName name) {
-        JsNameRef result = name.makeRef();
-        result.setQualifier(new JsThisRef());
-        return result;
-    }
-
     @NotNull
     public static JsBlock newBlock(List<JsStatement> statements) {
         JsBlock result = new JsBlock();
@@ -236,10 +230,6 @@ public final class JsAstUtils {
         parameters.addAll(newParams);
     }
 
-    public static void setParameters(@NotNull JsFunction function, JsParameter... arguments) {
-        setParameters(function, Arrays.asList(arguments));
-    }
-
     @NotNull
     public static JsExpression newSequence(@NotNull List<JsExpression> expressions) {
         assert !expressions.isEmpty();
@@ -271,7 +261,7 @@ public final class JsAstUtils {
     public static JsInvocation definePropertyDataDescriptor(@NotNull PropertyDescriptor descriptor,
             @NotNull JsExpression value,
             @NotNull TranslationContext context) {
-        return AstUtil.newInvocation(DEFINE_PROPERTY, new JsThisRef(),
+        return AstUtil.newInvocation(DEFINE_PROPERTY, context.program().getThisLiteral(),
                                      context.program().getStringLiteral(context.getNameForDescriptor(descriptor).getIdent()),
                                      createPropertyDataDescriptor(descriptor.isVar(), descriptor, value, context));
     }
@@ -307,18 +297,13 @@ public final class JsAstUtils {
 
     @NotNull
     public static JsInvocation encloseFunction(@NotNull JsFunction function) {
-        JsInvocation blockFunctionInvocation = new JsInvocation(EMPTY_REF);
-        blockFunctionInvocation.getArguments().add(function);
-        return blockFunctionInvocation;
+        return new JsInvocation(EMPTY_REF, function);
     }
 
     @NotNull
     public static JsFunction createPackage(@NotNull List<JsStatement> to, @NotNull JsScope scope) {
         JsFunction packageBlockFunction = createFunctionWithEmptyBody(scope);
-
-        JsInvocation packageBlockFunctionInvocation = encloseFunction(packageBlockFunction);
-        to.add(new JsInvocation(packageBlockFunctionInvocation).makeStmt());
-
+        to.add(new JsInvocation(encloseFunction(packageBlockFunction)).makeStmt());
         return packageBlockFunction;
     }
 }

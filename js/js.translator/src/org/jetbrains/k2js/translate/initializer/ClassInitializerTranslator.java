@@ -36,7 +36,6 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.*;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToStatement;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.thisQualifiedReference;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateArgumentList;
 
@@ -93,13 +92,13 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
             JsName ref = context().jsScope().declareName("$initializer");
             initializer.setName(ref);
             JsInvocation call = new JsInvocation(AstUtil.newNameRef(AstUtil.newNameRef(ref.makeRef(), "baseInitializer"), "call"));
-            call.getArguments().add(new JsThisRef());
+            call.getArguments().add(context().program().getThisLiteral());
             call.getArguments().addAll(arguments);
             initializerStatements.add(call.makeStmt());
         }
         else {
             JsName superMethodName = context().jsScope().declareName(Namer.superMethodName());
-            initializerStatements.add(convertToStatement(new JsInvocation(thisQualifiedReference(superMethodName), arguments)));
+            initializerStatements.add(convertToStatement(new JsInvocation(new JsNameRef(superMethodName, context().program().getThisLiteral()), arguments)));
         }
     }
 

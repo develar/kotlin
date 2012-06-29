@@ -19,6 +19,7 @@ package org.jetbrains.k2js.translate.context;
 import com.google.dart.compiler.backend.js.ast.JsName;
 import com.google.dart.compiler.backend.js.ast.JsScope;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.name.NameUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
@@ -42,9 +43,8 @@ public final class NamingScope {
     }
 
     @NotNull
-    public NamingScope innerScope(@NotNull String scopeName) {
-        JsScope innerJsScope = new JsScope(jsScope(), scopeName);
-        return innerScope(innerJsScope);
+    public NamingScope innerScope(@Nullable String scopeName) {
+        return innerScope(new JsScope(jsScope(), scopeName));
     }
 
     @SuppressWarnings("MethodMayBeStatic")

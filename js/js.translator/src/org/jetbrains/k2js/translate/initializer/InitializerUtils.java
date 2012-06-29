@@ -38,10 +38,7 @@ public final class InitializerUtils {
 
     @NotNull
     public static JsPropertyInitializer generateInitializeMethod(@NotNull JsFunction initializerFunction) {
-        JsPropertyInitializer initializer = new JsPropertyInitializer();
-        initializer.setLabelExpr(Namer.initializeMethodReference());
-        initializer.setValueExpr(initializerFunction);
-        return initializer;
+        return new JsPropertyInitializer(Namer.initializeMethodReference(), initializerFunction);
     }
 
     @NotNull

@@ -4,7 +4,9 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-import java.util.ArrayList;
+import com.intellij.util.SmartList;
+
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -12,62 +14,66 @@ import java.util.List;
  */
 public final class JsInvocation extends JsExpression implements HasArguments {
 
-  private final List<JsExpression> args;
-  private JsExpression qualifier;
+    private final List<JsExpression> args;
+    private JsExpression qualifier;
 
-  public JsInvocation() {
-      args = new ArrayList<JsExpression>();
-  }
-
-  public JsInvocation(JsExpression qualifier, List<JsExpression> args) {
-      this.qualifier = qualifier;
-      this.args = args;
-  }
-
-  public JsInvocation(JsExpression qualifier) {
-     this();
-     this.qualifier = qualifier;
-  }
-
-  @Override
-  public List<JsExpression> getArguments() {
-    return args;
-  }
-
-  public JsExpression getQualifier() {
-    return qualifier;
-  }
-
-  @Override
-  public boolean hasSideEffects() {
-    return true;
-  }
-
-  @Override
-  public boolean isDefinitelyNotNull() {
-    return false;
-  }
-
-  @Override
-  public boolean isDefinitelyNull() {
-    return false;
-  }
-
-  public void setQualifier(JsExpression qualifier) {
-    this.qualifier = qualifier;
-  }
-
-  @Override
-  public void traverse(JsVisitor v, JsContext ctx) {
-    if (v.visit(this, ctx)) {
-      qualifier = v.accept(qualifier);
-      v.acceptList(args);
+    public JsInvocation() {
+        args = new SmartList<JsExpression>();
     }
-    v.endVisit(this, ctx);
-  }
 
-  @Override
-  public NodeKind getKind() {
-    return NodeKind.INVOKE;
-  }
+    public JsInvocation(JsExpression qualifier, List<JsExpression> args) {
+        this.qualifier = qualifier;
+        this.args = args;
+    }
+
+    public JsInvocation(JsExpression qualifier, JsExpression parameter) {
+        this(qualifier, Collections.singletonList(parameter));
+    }
+
+    public JsInvocation(JsExpression qualifier) {
+        this();
+        this.qualifier = qualifier;
+    }
+
+    @Override
+    public List<JsExpression> getArguments() {
+        return args;
+    }
+
+    public JsExpression getQualifier() {
+        return qualifier;
+    }
+
+    @Override
+    public boolean hasSideEffects() {
+        return true;
+    }
+
+    @Override
+    public boolean isDefinitelyNotNull() {
+        return false;
+    }
+
+    @Override
+    public boolean isDefinitelyNull() {
+        return false;
+    }
+
+    public void setQualifier(JsExpression qualifier) {
+        this.qualifier = qualifier;
+    }
+
+    @Override
+    public void traverse(JsVisitor v, JsContext ctx) {
+        if (v.visit(this, ctx)) {
+            qualifier = v.accept(qualifier);
+            v.acceptList(args);
+        }
+        v.endVisit(this, ctx);
+    }
+
+    @Override
+    public NodeKind getKind() {
+        return NodeKind.INVOKE;
+    }
 }

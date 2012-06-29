@@ -11,7 +11,6 @@ import java.util.List;
  * A JavaScript object literal.
  */
 public final class JsObjectLiteral extends JsLiteral {
-
   private final List<JsPropertyInitializer> props;
 
   public JsObjectLiteral() {

@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.Modality;
 import org.jetbrains.jet.lang.psi.JetClass;
+import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
@@ -46,7 +47,7 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.newBlock;
  *         Generates a big block where are all the classes(objects representing them) are created.
  */
 public final class ClassDeclarationTranslator extends AbstractTranslator {
-    private int localNameCounter;
+    private final LabelGenerator localLabelGenerator = new LabelGenerator('c');
 
     @NotNull
     private final THashMap<JetClass, ListItem> openClassToItem = new THashMap<JetClass, ListItem>();
@@ -182,7 +183,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         ClassDescriptor descriptor = getClassDescriptor(context().bindingContext(), declaration);
 
         JsNameRef labelRef;
-        String label = 'c' + Integer.toString(localNameCounter++, 36);
+        String label = localLabelGenerator.generate();
         boolean isFinal = descriptor.getModality() == Modality.FINAL;
         if (isFinal) {
             labelRef = new JsNameRef(label);

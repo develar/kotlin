@@ -25,6 +25,7 @@ import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.config.EcmaVersion;
+import org.jetbrains.k2js.translate.expression.AnonymousFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 
 import java.util.Map;
@@ -53,6 +54,14 @@ public final class TranslationContext {
         AliasingContext rootAliasingContext = AliasingContext.getCleanContext();
         return new TranslationContext(staticContext,
                                       rootDynamicContext, rootAliasingContext);
+    }
+
+    @NotNull
+    public static TranslationContext rootFunctionContext(@NotNull StaticContext staticContext, JsFunction rootFunction) {
+        DynamicContext rootDynamicContext =
+                DynamicContext.rootContext(NamingScope.rootScope(rootFunction.getScope()), rootFunction.getBody());
+        AliasingContext rootAliasingContext = AliasingContext.getCleanContext();
+        return new TranslationContext(staticContext, rootDynamicContext, rootAliasingContext);
     }
 
     public boolean isEcma5() {
@@ -183,8 +192,18 @@ public final class TranslationContext {
     }
 
     @NotNull
+    public NamingScope scope() {
+        return dynamicContext.getScope();
+    }
+
+    @NotNull
     public AliasingContext aliasingContext() {
         return aliasingContext;
+    }
+
+    @NotNull
+    public AnonymousFunctionTranslator anonymousFunctionTranslator() {
+        return staticContext.getAnonymousFunctionTranslator();
     }
 
     @NotNull

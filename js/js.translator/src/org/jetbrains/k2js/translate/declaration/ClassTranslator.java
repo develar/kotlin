@@ -71,7 +71,6 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
-
                                                                @NotNull TranslationContext context) {
         return (new ClassTranslator(classDeclaration, null, context)).translateClassOrObjectCreation();
     }

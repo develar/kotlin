@@ -114,7 +114,7 @@ public final class TranslationUtils {
     public static JsNameRef backingFieldReference(@NotNull TranslationContext context,
             @NotNull PropertyDescriptor descriptor) {
         JsName backingFieldName = context.getNameForDescriptor(descriptor);
-        return qualified(backingFieldName, new JsThisRef());
+        return qualified(backingFieldName, context.program().getThisLiteral());
     }
 
     @NotNull
@@ -167,7 +167,7 @@ public final class TranslationUtils {
                 return alias.makeRef();
             }
         }
-        return new JsThisRef();
+        return context.program().getThisLiteral();
     }
 
     @NotNull

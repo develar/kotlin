@@ -8,8 +8,7 @@ package com.google.dart.compiler.backend.js.ast;
  * A JavaScript <code>this</code> reference.
  */
 public final class JsThisRef extends JsValueLiteral {
-
-  public JsThisRef() {
+    JsThisRef() {
     super();
   }
 

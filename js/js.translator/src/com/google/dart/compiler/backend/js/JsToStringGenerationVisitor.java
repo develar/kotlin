@@ -687,37 +687,43 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     return false;
   }
 
-  @Override
-  public boolean visit(JsObjectLiteral x, JsContext ctx) {
-    _lbrace();
-    boolean sep = false;
-    for (Object element : x.getPropertyInitializers()) {
-      sep = _sepCommaOptSpace(sep);
-      JsPropertyInitializer propInit = (JsPropertyInitializer) element;
-      printLabel : {
-        JsExpression labelExpr = propInit.getLabelExpr();
-        // labels can be either string, integral, or decimal literals
-        if (labelExpr instanceof JsStringLiteral) {
-          String propName = ((JsStringLiteral) labelExpr).getValue();
-          if (VALID_NAME_PATTERN.matcher(propName).matches()
-              && !JsReservedIdentifiers.isKeyword(propName)) {
-            p.print(propName);
-            break printLabel;
-          }
+    @Override
+    public boolean visit(JsObjectLiteral x, JsContext ctx) {
+        _lbrace();
+        boolean sep = false;
+        for (Object element : x.getPropertyInitializers()) {
+            sep = _sepCommaOptSpace(sep);
+            JsPropertyInitializer propInit = (JsPropertyInitializer) element;
+            printLabel:
+            {
+                JsExpression labelExpr = propInit.getLabelExpr();
+                // labels can be either string, integral, or decimal literals
+                if (labelExpr instanceof JsNameRef) {
+                    p.print(((JsNameRef) labelExpr).getIdent());
+                    break printLabel;
+                }
+                else if (labelExpr instanceof JsStringLiteral) {
+                    String propName = ((JsStringLiteral) labelExpr).getValue();
+                    if (VALID_NAME_PATTERN.matcher(propName).matches()
+                        && !JsReservedIdentifiers.isKeyword(propName)) {
+                        p.print(propName);
+                        break printLabel;
+                    }
+                }
+                accept(labelExpr);
+            }
+            _colon();
+            _space();
+            JsExpression valueExpr = propInit.getValueExpr();
+            _parenPushIfCommaExpr(valueExpr);
+            accept(valueExpr);
+            _parenPopIfCommaExpr(valueExpr);
         }
-        accept(labelExpr);
-      }
-      _colon();
-      JsExpression valueExpr = propInit.getValueExpr();
-      _parenPushIfCommaExpr(valueExpr);
-      accept(valueExpr);
-      _parenPopIfCommaExpr(valueExpr);
+        _rbrace();
+        return false;
     }
-    _rbrace();
-    return false;
-  }
 
-  @Override
+    @Override
   public boolean visit(JsParameter x, JsContext ctx) {
     _nameOf(x);
     return false;

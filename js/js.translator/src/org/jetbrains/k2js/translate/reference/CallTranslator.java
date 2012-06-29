@@ -257,6 +257,11 @@ public final class CallTranslator extends AbstractTranslator {
                 if (isEcma5PropertyAccess()) {
                     return ecma5PropertyAccess(qualifiedCallee);
                 }
+
+                if (receiver == null && qualifiedCallee instanceof JsNameRef) {
+                    return new JsInvocation(new JsNameRef("call", qualifiedCallee), context().program().getThisLiteral());
+                }
+
                 return new JsInvocation(qualifiedCallee, arguments);
             }
         }, context());
