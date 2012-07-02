@@ -28,7 +28,7 @@ import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.google.dart.compiler.util.AstUtil.newAssignment;
@@ -234,7 +234,7 @@ public final class TranslationUtils {
             @NotNull JetBinaryExpression binaryExpression) {
         JsExpression left = translateLeftExpression(context, binaryExpression);
         JsExpression right = translateRightExpression(context, binaryExpression);
-        return intrinsic.apply(left, Arrays.asList(right), context);
+        return intrinsic.apply(left, Collections.singletonList(right), context);
     }
 
     @Nullable

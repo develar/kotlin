@@ -12,13 +12,14 @@ var Kotlin = {};
     var emptyFunction = function () {
     };
 
-    function $A(iterable) {
-        if (!iterable) return [];
-        if ('toArray' in Object(iterable)) return iterable.toArray();
-        var length = iterable.length || 0, results = new Array(length);
-        while (length--) results[length] = iterable[length];
-        return results;
-    }
+    Kotlin.argumentsToArrayLike = function (args) {
+        var n = args.length;
+        var result = new Array(n);
+        while (n--) {
+            result[n] = args[n];
+        }
+        return result;
+    };
 
     (function () {
         function extend(destination, source) {
@@ -62,25 +63,11 @@ var Kotlin = {};
             return array;
         }
 
-        function merge(array, args) {
-            array = slice.call(array, 0);
-            return update(array, args);
-        }
-
         function argumentNames() {
             var names = this.toString().match(/^[\s\(]*function[^(]*\(([^)]*)\)/)[1]
                 .replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '')
                 .replace(/\s+/g, '').split(',');
             return names.length == 1 && !names[0] ? [] : names;
-        }
-
-        function bind(context) {
-            if (arguments.length < 2 && Object.isUndefined(arguments[0])) return this;
-            var __method = this, args = slice.call(arguments, 1);
-            return function () {
-                var a = merge(args, arguments);
-                return __method.apply(context, a);
-            };
         }
 
         function bindAsEventListener(context) {
@@ -101,7 +88,6 @@ var Kotlin = {};
 
         return {
             argumentNames: argumentNames,
-            bind: bind,
             bindAsEventListener: bindAsEventListener,
             wrap: wrap
         };
@@ -149,7 +135,7 @@ var Kotlin = {};
         }
 
         function create() {
-            var parent = null, properties = $A(arguments);
+            var parent = null, properties = Kotlin.argumentsToArrayLike(arguments);
             if (typeof (properties[0]) == "function") {
                 parent = properties.shift();
             }

@@ -20,8 +20,6 @@ import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.mozilla.javascript.JavaScriptException;
 
-import java.util.EnumSet;
-
 /**
  * @author Pavel Talanov
  *         <p/>
@@ -93,7 +91,7 @@ public final class MiscTest extends AbstractExpressionTest {
     }
 
     public void testFunInConstructor() throws Exception {
-        fooBoxTest(EnumSet.of(EcmaVersion.v5));
+        fooBoxTest();
     }
 
     public void testFunInConstructorBlock() throws Exception {

@@ -112,7 +112,22 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
     private JsExpression invokeCall() {
-        return new JsInvocation(callParameters.getFunctionReference(), arguments);
+        // ecma 5 uses function as property (getter), so, "this" is defined
+        // but ecma 4 uses function as result of call get_ function, so, "this" is undefined and we must pass it
+        //if (context().isEcma5()) {
+        //    return new JsInvocation(callParameters.getFunctionReference(), arguments);
+        //}
+        //else {
+            // todo ecma3
+            return generateCall(callParameters.getThisObject());
+        //}
+    }
+
+    private JsInvocation generateCall(@Nullable JsExpression thisExpression) {
+        JsInvocation call = new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()));
+        call.getArguments().add(thisExpression == null ? context().program().getNullLiteral() : thisExpression);
+        call.getArguments().addAll(arguments);
+        return call;
     }
 
     private boolean isExpressionAsFunction() {
@@ -256,10 +271,6 @@ public final class CallTranslator extends AbstractTranslator {
                 JsExpression qualifiedCallee = getQualifiedCallee(receiver);
                 if (isEcma5PropertyAccess()) {
                     return ecma5PropertyAccess(qualifiedCallee);
-                }
-
-                if (receiver == null && qualifiedCallee instanceof JsNameRef) {
-                    return new JsInvocation(new JsNameRef("call", qualifiedCallee), context().program().getThisLiteral());
                 }
 
                 return new JsInvocation(qualifiedCallee, arguments);

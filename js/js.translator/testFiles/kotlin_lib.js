@@ -363,12 +363,11 @@ var kotlin = {set:function (receiver, key, value) {
     };
 
     Kotlin.arrayFromFun = function (size, initFun) {
-        var res = [];
-        var i = size;
-        while (i > 0) {
-            res[--i] = initFun(i);
+        var result = new Array(size);
+        for (var i = 0; i < size; i++) {
+            result[i] = initFun(i);
         }
-        return res;
+        return result;
     };
 
     Kotlin.arrayIndices = function (arr) {
@@ -879,4 +878,47 @@ var kotlin = {set:function (receiver, key, value) {
             HashSet.call(this);
         }});
     }());
+
+    // native concat doesn't work for arguments
+    Kotlin.concat = function (a, b) {
+        var r = new Array(a.length + b.length);
+        var i = 0;
+        var n = a.length;
+        for (; i < n; i++) {
+            r[i] = a[i];
+        }
+        n = b.length;
+        for (var j = 0; j < n;) {
+            r[i++] = b[j++];
+        }
+        return r;
+    }
 })();
+
+// we cannot use Function.bind, because if we bind with null self, but call with not null — fun must receive passed not null self
+// test case: WebDemoExamples2Test.testBuilder
+Kotlin.b0 = function (f, self, value) {
+    return function () {
+        return f.call(self || this, value);
+    }
+};
+Kotlin.b1 = function (f, self, values) {
+    return function () {
+        return f.apply(self || this, values);
+    }
+};
+Kotlin.b2 = function (f, self, values) {
+    return function () {
+        return f.apply(self || this, Kotlin.concat(values, arguments));
+    }
+};
+Kotlin.b3 = function (f, self) {
+    return function () {
+        return f.call(self)
+    }
+};
+Kotlin.b4 = function (f, self) {
+    return function () {
+        return f.apply(self, Kotlin.argumentsToArrayLike(arguments));
+    }
+};

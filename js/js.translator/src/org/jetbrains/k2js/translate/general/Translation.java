@@ -225,8 +225,7 @@ public final class Translation {
 
     private static void setArguments(@NotNull TranslationContext context, @NotNull List<String> arguments,
             @NotNull JsInvocation translatedCall) {
-        JsArrayLiteral arrayLiteral = new JsArrayLiteral();
-        arrayLiteral.getExpressions().addAll(toStringLiteralList(arguments, context.program()));
+        JsArrayLiteral arrayLiteral = new JsArrayLiteral(toStringLiteralList(arguments, context.program()));
         JsAstUtils.setArguments(translatedCall, Collections.<JsExpression>singletonList(arrayLiteral));
     }
 

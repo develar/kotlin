@@ -154,15 +154,14 @@ public final class FunctionTranslator extends AbstractTranslator {
     private List<JsParameter> translateParameters() {
         List<JsParameter> jsParameters = new ArrayList<JsParameter>();
         mayBeAddThisParameterForExtensionFunction(jsParameters);
-        for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
-            jsParameters.add(new JsParameter(declareParameter(valueParameter)));
-        }
+        addParameters(jsParameters, descriptor, context());
         return jsParameters;
     }
 
-    @NotNull
-    private JsName declareParameter(@NotNull ValueParameterDescriptor valueParameter) {
-        return context().getNameForDescriptor(valueParameter);
+    public static void addParameters(List<JsParameter> list, FunctionDescriptor descriptor, TranslationContext context) {
+        for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
+            list.add(new JsParameter(context.getNameForDescriptor(valueParameter)));
+        }
     }
 
     private void mayBeAddThisParameterForExtensionFunction(@NotNull List<JsParameter> jsParameters) {

@@ -693,10 +693,17 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         boolean sep = false;
         for (Object element : x.getPropertyInitializers()) {
             sep = _sepCommaOptSpace(sep);
-            JsPropertyInitializer propInit = (JsPropertyInitializer) element;
+            JsPropertyInitializer item = (JsPropertyInitializer) element;
+            boolean wasIndented = false;
             printLabel:
             {
-                JsExpression labelExpr = propInit.getLabelExpr();
+                if (item.getValueExpr() instanceof JsFunction) {
+                    _newlineOpt();
+                    p.indentIn();
+                    wasIndented = true;
+                }
+
+                JsExpression labelExpr = item.getLabelExpr();
                 // labels can be either string, integral, or decimal literals
                 if (labelExpr instanceof JsNameRef) {
                     p.print(((JsNameRef) labelExpr).getIdent());
@@ -710,14 +717,19 @@ public class JsToStringGenerationVisitor extends JsVisitor {
                         break printLabel;
                     }
                 }
+
                 accept(labelExpr);
             }
             _colon();
             _space();
-            JsExpression valueExpr = propInit.getValueExpr();
+            JsExpression valueExpr = item.getValueExpr();
             _parenPushIfCommaExpr(valueExpr);
             accept(valueExpr);
             _parenPopIfCommaExpr(valueExpr);
+
+            if (wasIndented) {
+                p.indentOut();
+            }
         }
         _rbrace();
         return false;
@@ -1123,7 +1135,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     p.print(CHARS_NULL);
   }
 
-  private boolean _parenCalc(JsExpression parent, JsExpression child, boolean wrongAssoc) {
+  private static boolean _parenCalc(JsExpression parent, JsExpression child, boolean wrongAssoc) {
     int parentPrec = JsPrecedenceVisitor.exec(parent);
     int childPrec = JsPrecedenceVisitor.exec(child);
     return (parentPrec > childPrec || (parentPrec == childPrec && wrongAssoc));
@@ -1165,17 +1177,15 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     return doPush;
   }
 
-  private boolean _parenPushIfCommaExpr(JsExpression x) {
-    boolean doPush =
-        x instanceof JsBinaryOperation
-            && ((JsBinaryOperation) x).getOperator() == JsBinaryOperator.COMMA;
-    if (doPush) {
-      _lparen();
+    private boolean _parenPushIfCommaExpr(JsExpression x) {
+        boolean doPush = x instanceof JsBinaryOperation && ((JsBinaryOperation) x).getOperator() == JsBinaryOperator.COMMA;
+        if (doPush) {
+            _lparen();
+        }
+        return doPush;
     }
-    return doPush;
-  }
 
-  private boolean _parenPushOrSpace(JsExpression parent, JsExpression child, boolean wrongAssoc) {
+    private boolean _parenPushOrSpace(JsExpression parent, JsExpression child, boolean wrongAssoc) {
     boolean doPush = _parenCalc(parent, child, wrongAssoc);
     if (doPush) {
       _lparen();

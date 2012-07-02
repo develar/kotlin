@@ -26,8 +26,8 @@ public final class JsInvocation extends JsExpression implements HasArguments {
         this.args = args;
     }
 
-    public JsInvocation(JsExpression qualifier, JsExpression parameter) {
-        this(qualifier, Collections.singletonList(parameter));
+    public JsInvocation(JsExpression qualifier, JsExpression arg) {
+        this(qualifier, Collections.singletonList(arg));
     }
 
     public JsInvocation(JsExpression qualifier) {
