@@ -56,6 +56,10 @@ public abstract class SingleFileTranslationTest extends BasicTest {
         runFunctionOutputTest(ecmaVersions, filename, "foo", "box", true);
     }
 
+    public void checkFooBoxIsTrue(@NotNull String filename) throws Exception {
+        runFunctionOutputTest(DEFAULT_ECMA_VERSIONS, filename, "foo", "box", true);
+    }
+
     protected void fooBoxTest() throws Exception {
         checkFooBoxIsTrue(getTestName(true) + ".kt", DEFAULT_ECMA_VERSIONS);
     }

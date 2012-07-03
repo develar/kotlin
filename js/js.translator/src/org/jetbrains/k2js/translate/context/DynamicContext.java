@@ -24,7 +24,6 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
 
 //TODO: consider renaming to scoping context
 public final class DynamicContext {
-
     @NotNull
     public static DynamicContext rootContext(@NotNull NamingScope rootScope, @NotNull JsBlock globalBlock) {
         return new DynamicContext(rootScope, globalBlock);

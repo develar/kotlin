@@ -189,8 +189,6 @@ public final class Translation {
         }
 
         generateTestCalls(TranslationContext.rootContext(staticContext), files, block, rawStatements);
-        //JsNamer namer = new JsPrettyNamer();
-        //namer.exec(context.program());
         return context.program();
     }
 

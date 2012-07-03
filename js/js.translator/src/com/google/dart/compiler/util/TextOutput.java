@@ -8,7 +8,6 @@ package com.google.dart.compiler.util;
  * Interface used for printing text output.
  */
 public interface TextOutput {
-
   int getPosition();
 
   int getLine();
@@ -27,7 +26,7 @@ public interface TextOutput {
 
   void print(char[] s);
 
-  void print(String s);
+  void print(CharSequence s);
 
   void printOpt(char c);
 

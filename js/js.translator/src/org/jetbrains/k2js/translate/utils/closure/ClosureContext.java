@@ -17,6 +17,8 @@
 package org.jetbrains.k2js.translate.utils.closure;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 
 import java.util.Collection;
@@ -32,7 +34,8 @@ public final class ClosureContext {
 
     private boolean hasLocalVariables;
 
-    public boolean hasReferenceToThis;
+    @Nullable
+    public ClassDescriptor outerClassDescriptor;
 
     public boolean hasLocalVariables() {
         return hasLocalVariables;

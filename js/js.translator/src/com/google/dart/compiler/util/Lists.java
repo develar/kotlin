@@ -17,10 +17,6 @@ import java.util.List;
  * assumed to be mutable.
  */
 public class Lists {
-
-  private static final Class<?> MULTI_LIST_CLASS = ArrayList.class;
-  private static final Class<?> SINGLETON_LIST_CLASS = Collections.singletonList(null).getClass();
-
   public static <T> List<T> add(List<T> list, int index, T toAdd) {
     switch (list.size()) {
       case 0:
@@ -197,34 +193,6 @@ public class Lists {
         return create(items[0]);
       default:
         return new ArrayList<T>(Arrays.asList(items));
-    }
-  }
-
-  public static <T> List<T> normalize(List<T> list) {
-    switch (list.size()) {
-      case 0:
-        return create();
-      case 1: {
-        if (list.getClass() == SINGLETON_LIST_CLASS) {
-          return list;
-        }
-        return create(list.get(0));
-      }
-      default:
-        if (list.getClass() == MULTI_LIST_CLASS) {
-          return list;
-        }
-        return new ArrayList<T>(list);
-    }
-  }
-
-  public static <T> List<T> normalizeUnmodifiable(List<T> list) {
-    if (list.size() < 2) {
-      return normalize(list);
-    } else {
-      List<T> copy = new ArrayList<T>(list.size());
-      Collections.copy(copy, list);
-      return copy;
     }
   }
 

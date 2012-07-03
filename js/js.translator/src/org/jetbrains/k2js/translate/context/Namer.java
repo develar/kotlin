@@ -163,9 +163,7 @@ public final class Namer {
 
     @NotNull
     public JsExpression throwNPEFunctionCall() {
-        JsNameRef reference = AstUtil.newQualifiedNameRef(THROW_NPE_FUN_NAME);
-        JsInvocation invocation = AstUtil.newInvocation(reference);
-        return kotlin(invocation);
+        return new JsInvocation(new JsNameRef(THROW_NPE_FUN_NAME, kotlinObject()));
     }
 
     @NotNull

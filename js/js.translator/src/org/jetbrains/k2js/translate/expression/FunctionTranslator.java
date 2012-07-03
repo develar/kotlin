@@ -20,14 +20,16 @@ package org.jetbrains.k2js.translate.expression;
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.Modality;
+import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
 import org.jetbrains.jet.lang.psi.JetDeclarationWithBody;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.context.Namer;
-import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
@@ -39,7 +41,6 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 import static org.jetbrains.k2js.translate.utils.FunctionBodyTranslator.translateFunctionBody;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setParameters;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getContainingClass;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
 
@@ -81,24 +82,10 @@ public final class FunctionTranslator extends AbstractTranslator {
 
     @NotNull
     private TranslationContext getFunctionBodyContext() {
-        if (isLiteral()) {
-            return getFunctionBodyContextForLiteral();
-        }
         if (isExtensionFunction()) {
             return getFunctionBodyContextForExtensionFunction();
         }
         return getContextWithFunctionBodyBlock();
-    }
-
-    @NotNull
-    private TranslationContext getFunctionBodyContextForLiteral() {
-        ClassDescriptor containingClass = getContainingClass(descriptor);
-        if (containingClass == null) {
-            return getContextWithFunctionBodyBlock();
-        }
-        JsExpression thisQualifier = TranslationUtils.getThisObject(context(), containingClass);
-        TemporaryVariable aliasForContainingClassThis = context().declareTemporary(thisQualifier);
-        return getContextWithFunctionBodyBlock().innerContextWithThisAliased(containingClass, aliasForContainingClassThis.name());
     }
 
     @NotNull
@@ -172,10 +159,6 @@ public final class FunctionTranslator extends AbstractTranslator {
     }
 
     private boolean isExtensionFunction() {
-        return JsDescriptorUtils.isExtension(descriptor) && !isLiteral();
-    }
-
-    private boolean isLiteral() {
-        return functionDeclaration instanceof JetFunctionLiteralExpression;
+        return JsDescriptorUtils.isExtension(descriptor) && !(functionDeclaration instanceof JetFunctionLiteralExpression);
     }
 }

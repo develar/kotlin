@@ -1,12 +1,14 @@
 <component name="ProjectDictionaryState">
   <dictionary name="develar">
     <words>
+      <w>builtins</w>
       <w>ecmascript</w>
       <w>ident</w>
       <w>inlined</w>
       <w>intrinsics</w>
       <w>obfuscatable</w>
       <w>overridable</w>
+      <w>parentless</w>
       <w>recurse</w>
       <w>unobfuscatable</w>
       <w>unsupplied</w>

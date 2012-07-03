@@ -33,9 +33,9 @@ class CaptureClosureVisitor extends JetTreeVisitor<ClosureContext> {
     @NotNull
     private final BindingContext bindingContext;
     @NotNull
-    private final JetElement functionElement;
+    private final PsiElement functionElement;
 
-    /*package*/ CaptureClosureVisitor(@NotNull JetElement functionElement, @NotNull BindingContext bindingContext) {
+    /*package*/ CaptureClosureVisitor(@NotNull PsiElement functionElement, @NotNull BindingContext bindingContext) {
         this.bindingContext = bindingContext;
         this.functionElement = functionElement;
     }
@@ -57,7 +57,7 @@ class CaptureClosureVisitor extends JetTreeVisitor<ClosureContext> {
 
     @Override
     public Void visitSimpleNameExpression(@NotNull JetSimpleNameExpression expression,
-                                          @NotNull ClosureContext context) {
+            @NotNull ClosureContext context) {
         if (expression.getNode().getElementType() == JetNodeTypes.OPERATION_REFERENCE) {
             return null;
         }
@@ -65,7 +65,7 @@ class CaptureClosureVisitor extends JetTreeVisitor<ClosureContext> {
         DeclarationDescriptor descriptor = BindingUtils.getNullableDescriptorForReferenceExpression(bindingContext, expression);
         if (!(descriptor instanceof VariableDescriptor)) {
             if (descriptor instanceof SimpleFunctionDescriptor && !descriptor.getName().isSpecial()) {
-                context.hasReferenceToThis = true;
+                checkOuterClassDescriptor(descriptor, context);
             }
             return null;
         }
@@ -99,7 +99,7 @@ class CaptureClosureVisitor extends JetTreeVisitor<ClosureContext> {
 
         boolean isProperty = descriptor instanceof PropertyDescriptor;
         if (isProperty) {
-            context.hasReferenceToThis = true;
+            checkOuterClassDescriptor(descriptor, context);
             return false;
         }
 
@@ -108,5 +108,14 @@ class CaptureClosureVisitor extends JetTreeVisitor<ClosureContext> {
         }
 
         return variableDeclaration.getNode().getElementType().equals(JetNodeTypes.LOOP_PARAMETER);
+    }
+
+    private static void checkOuterClassDescriptor(DeclarationDescriptor descriptor, ClosureContext context) {
+        if (context.outerClassDescriptor == null) {
+            DeclarationDescriptor containingDeclaration = descriptor.getContainingDeclaration();
+            if (containingDeclaration instanceof ClassDescriptor) {
+                context.outerClassDescriptor = (ClassDescriptor) containingDeclaration;
+            }
+        }
     }
 }

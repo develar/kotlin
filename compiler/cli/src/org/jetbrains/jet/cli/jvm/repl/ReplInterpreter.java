@@ -95,7 +95,8 @@ public class ReplInterpreter {
         // TODO: add extraClasspath to jetCoreEnvironment
         jetCoreEnvironment = new JetCoreEnvironment(disposable, compilerDependencies);
         for (File pathElement : extraClasspath) {
-            jetCoreEnvironment.addToClasspath(pathElement);
+            // todo leda
+            //jetCoreEnvironment.addToClasspath(pathElement);
         }
         Project project = jetCoreEnvironment.getProject();
         trace = new BindingTraceContext();

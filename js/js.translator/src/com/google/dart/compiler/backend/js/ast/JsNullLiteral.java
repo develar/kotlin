@@ -8,7 +8,6 @@ package com.google.dart.compiler.backend.js.ast;
  * A JavaScript null literal.
  */
 public final class JsNullLiteral extends JsValueLiteral {
-
   // Should only be instantiated in JsProgram
   JsNullLiteral() {
   }

@@ -32,7 +32,6 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBa
  * @author Pavel Talanov
  */
 public final class InitializerUtils {
-
     private InitializerUtils() {
     }
 

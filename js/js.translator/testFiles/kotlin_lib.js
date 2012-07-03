@@ -899,17 +899,17 @@ var kotlin = {set:function (receiver, key, value) {
 // test case: WebDemoExamples2Test.testBuilder
 Kotlin.b0 = function (f, self, value) {
     return function () {
-        return f.call(self || this, value);
+        return f.call(self !== null ? self : this, value);
     }
 };
 Kotlin.b1 = function (f, self, values) {
     return function () {
-        return f.apply(self || this, values);
+        return f.apply(self !== null ? self : this, values);
     }
 };
 Kotlin.b2 = function (f, self, values) {
     return function () {
-        return f.apply(self || this, Kotlin.concat(values, arguments));
+        return f.apply(self !== null ? self : this, Kotlin.concat(values, arguments));
     }
 };
 Kotlin.b3 = function (f, self) {

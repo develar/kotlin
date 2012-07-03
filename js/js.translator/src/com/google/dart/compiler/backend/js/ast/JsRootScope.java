@@ -29,7 +29,7 @@ public final class JsRootScope extends JsScope {
   protected JsName findExistingNameNoRecurse(String ident) {
     JsName name = super.findExistingNameNoRecurse(ident);
     if (name == null) {
-      if (JsReservedIdentifiers.getReservedGlobalSymbols().contains(ident)) {
+        if (JsReservedIdentifiers.reservedGlobalSymbols.contains(ident)) {
         /*
          * Lazily add JsNames for reserved identifiers.  Since a JsName for a reserved global symbol
          * must report a legitimate enclosing scope, we can't simply have a shared set of symbol

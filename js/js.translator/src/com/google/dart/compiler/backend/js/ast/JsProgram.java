@@ -5,15 +5,15 @@
 package com.google.dart.compiler.backend.js.ast;
 
 import gnu.trove.TDoubleObjectHashMap;
+import gnu.trove.THashMap;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
  * A JavaScript program.
  */
 public final class JsProgram extends JsNode {
-
     private final JsStatement debuggerStmt;
     private final JsEmpty emptyStmt;
 
@@ -21,7 +21,7 @@ public final class JsProgram extends JsNode {
     private final TDoubleObjectHashMap<JsNumberLiteral> numberLiteralMap = new TDoubleObjectHashMap<JsNumberLiteral>();
     private final JsScope objectScope;
     private final JsRootScope rootScope;
-    private final Map<String, JsStringLiteral> stringLiteralMap = new HashMap<String, JsStringLiteral>();
+    private final Map<String, JsStringLiteral> stringLiteralMap = new THashMap<String, JsStringLiteral>();
     private final JsScope topScope;
 
     private final JsNullLiteral nullLiteral = new JsNullLiteral();
@@ -31,12 +31,14 @@ public final class JsProgram extends JsNode {
     private final JsBooleanLiteral falseLiteral = new JsBooleanLiteral(false);
     private final JsBooleanLiteral trueLiteral = new JsBooleanLiteral(true);
 
+    private final JsStringLiteral valueName = new JsStringLiteral("value");
+
     /**
      * Constructs a JavaScript program object.
      */
     public JsProgram(String unitId) {
         rootScope = new JsRootScope(this);
-        topScope = new JsScope(rootScope, "Global", unitId, false);
+        topScope = new JsScope(rootScope, "Global", unitId);
         objectScope = new JsScope(rootScope, "Object");
         setFragmentCount(1);
 
@@ -90,13 +92,17 @@ public final class JsProgram extends JsNode {
     }
 
     public JsNumberLiteral getNumberLiteral(double value) {
-        JsNumberLiteral lit = numberLiteralMap.get(value);
-        if (lit == null) {
-            lit = new JsNumberLiteral(value);
-            numberLiteralMap.put(value, lit);
+        JsNumberLiteral literal = numberLiteralMap.get(value);
+        if (literal == null) {
+            literal = new JsNumberLiteral(value);
+            numberLiteralMap.put(value, literal);
         }
 
-        return lit;
+        return literal;
+    }
+
+    public JsStringLiteral getValueName() {
+        return valueName;
     }
 
     public JsScope getObjectScope() {
@@ -124,12 +130,12 @@ public final class JsProgram extends JsNode {
      * Creates or retrieves a JsStringLiteral from an interned object pool.
      */
     public JsStringLiteral getStringLiteral(String value) {
-        JsStringLiteral lit = stringLiteralMap.get(value);
-        if (lit == null) {
-            lit = new JsStringLiteral(value);
-            stringLiteralMap.put(value, lit);
+        JsStringLiteral literal = stringLiteralMap.get(value);
+        if (literal == null) {
+            literal = new JsStringLiteral(value);
+            stringLiteralMap.put(value, literal);
         }
-        return lit;
+        return literal;
     }
 
     public JsBooleanLiteral getTrueLiteral() {
@@ -152,7 +158,7 @@ public final class JsProgram extends JsNode {
     }
 
     @Override
-    public void traverse(JsVisitor v, JsContext ctx) {
+    public void traverse(JsVisitor v, @Nullable JsContext ctx) {
         if (v.visit(this, ctx)) {
             for (JsProgramFragment fragment : fragments) {
                 v.accept(fragment);

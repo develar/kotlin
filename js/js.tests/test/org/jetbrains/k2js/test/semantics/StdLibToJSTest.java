@@ -22,7 +22,7 @@ import org.jetbrains.k2js.config.EcmaVersion;
  */
 public class StdLibToJSTest extends StdLibTestSupport {
 
-    public void testCompileJavaScriptFiles() throws Exception {
+    public void _testCompileJavaScriptFiles() throws Exception {
         generateJavaScriptFiles(EcmaVersion.all(),
                                 "libraries/stdlib/src",
                                 "kotlin/Preconditions.kt",

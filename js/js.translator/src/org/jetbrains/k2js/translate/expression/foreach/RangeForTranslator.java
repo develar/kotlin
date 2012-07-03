@@ -118,6 +118,6 @@ public final class RangeForTranslator extends ForTranslator {
 
     @NotNull
     private JsExpression callFunction(@NotNull String funName) {
-        return AstUtil.newInvocation(getField(funName));
+        return new JsInvocation(getField(funName));
     }
 }

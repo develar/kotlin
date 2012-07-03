@@ -29,7 +29,6 @@ import org.jetbrains.k2js.translate.utils.JsAstUtils;
  *         Basically a wrapper around JsScope.
  */
 public final class NamingScope {
-
     @NotNull
     public static NamingScope rootScope(@NotNull JsScope rootScope) {
         return new NamingScope(rootScope);
@@ -45,6 +44,11 @@ public final class NamingScope {
     @NotNull
     public NamingScope innerScope(@Nullable String scopeName) {
         return innerScope(new JsScope(jsScope(), scopeName));
+    }
+
+    @NotNull
+    public NamingScope innerScope() {
+        return innerScope(new JsScope(jsScope(), null));
     }
 
     @SuppressWarnings("MethodMayBeStatic")

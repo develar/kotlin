@@ -21,7 +21,7 @@ import org.jetbrains.k2js.config.EcmaVersion;
 /**
  */
 public class StdLibTestToJSTest extends StdLibTestSupport {
-    public void testGenerateTestCase() throws Exception {
+    public void _testGenerateTestCase() throws Exception {
         generateJavaScriptFiles(EcmaVersion.all(),
                                 "libraries/stdlib/test",
                                 "ListTest.kt",

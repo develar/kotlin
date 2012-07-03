@@ -97,7 +97,9 @@ var Kotlin = {};
 
     Kotlin.createObject = function (initializer, properties) {
         var o = Object.create(null, properties || undefined);
-        initializer.call(o);
+        if (initializer != null) {
+            initializer.call(o);
+        }
         return o;
     };
 

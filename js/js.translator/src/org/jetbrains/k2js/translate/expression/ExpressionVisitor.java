@@ -342,7 +342,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitFunctionLiteralExpression(@NotNull JetFunctionLiteralExpression expression,
                                                  @NotNull TranslationContext context) {
-        return context.anonymousFunctionTranslator().translate(expression, context);
+        return context.anonymousFunctionTranslator().translate(expression);
     }
 
     @Override

@@ -13,7 +13,6 @@ import java.util.List;
  * Represents a JavaScript invocation.
  */
 public final class JsInvocation extends JsExpression implements HasArguments {
-
     private final List<JsExpression> args;
     private JsExpression qualifier;
 

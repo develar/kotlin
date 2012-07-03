@@ -7,12 +7,8 @@ public fun max<T>(col : Collection<T>, comp : Comparator<T>) : T = js.noImpl
 
 library
 public trait Comparator<T> {
-    fun compare(obj1 : T, obj2 : T) : Int;
+    public fun compare(obj1 : T, obj2 : T) : Int
 }
-
-library("comparator")
-public fun comparator<T>(f : (T, T) -> Int) : Comparator<T> = js.noImpl
-
 
 library
 public trait Iterator<T> {
@@ -59,19 +55,19 @@ val Collections = object {
 
 library
 public trait Collection<E>: Iterable<E> {
-    open fun size(): Int
-    open fun isEmpty(): Boolean
-    open fun contains(o: Any?): Boolean
-    override fun iterator(): Iterator<E>
-    fun toArray(): Array<E>
+    public open fun size(): Int
+    public open fun isEmpty(): Boolean
+    public open fun contains(o: Any?): Boolean
+    public override fun iterator(): Iterator<E>
+    public fun toArray(): Array<E>
     // open fun toArray<T>(a : Array<out T>) : Array<T>
-    open fun add(e: E): Boolean
-    open fun remove(o: Any?): Boolean
+    public open fun add(e: E): Boolean
+    public open fun remove(o: Any?): Boolean
     //open fun containsAll(c : java.util.Collection<*>) : Boolean
-    open fun addAll(c: Collection<out E>): Boolean
+    public open fun addAll(c: Collection<out E>): Boolean
     //open fun removeAll(c : java.util.Collection<*>) : Boolean
     //open fun retainAll(c : java.util.Collection<*>) : Boolean
-    open fun clear(): Unit
+    public open fun clear(): Unit
 }
 
 library
@@ -93,13 +89,13 @@ public abstract class AbstractCollection<E>() : Collection<E> {
 
 library
 public trait List<E>: Collection<E> {
-    fun get(index: Int): E
-    fun set(index: Int, element: E): E
+    public fun get(index: Int): E
+    public fun set(index: Int, element: E): E
 
-    fun add(index: Int, element: E): Unit
-    fun remove(index: Int): E
+    public fun add(index: Int, element: E): Unit
+    public fun remove(index: Int): E
 
-    fun indexOf(o: E?): Int
+    public fun indexOf(o: E?): Int
 }
 
 library
@@ -130,28 +126,24 @@ public open class HashSet<E>(): AbstractCollection<E>(), java.util.Set<E> {
 
 library
 public trait Map<K, V> {
-    open fun size() : Int
-    open fun isEmpty() : Boolean
-    open fun containsKey(key : Any?) : Boolean
-    open fun containsValue(value : Any?) : Boolean
-    open fun get(key : Any?) : V?
-    open fun put(key : K, value : V) : V?
-    open fun remove(key : Any?) : V?
-    open fun putAll(m : java.util.Map<out K, out V>) : Unit
-    open fun clear() : Unit
-    open fun keySet() : java.util.Set<K>
-    open fun values() : java.util.Collection<V>
+    public open fun size(): Int
+    public open fun isEmpty(): Boolean
+    public open fun containsKey(key: Any?): Boolean
+    public open fun containsValue(value: Any?): Boolean
+    public open fun get(key: Any?): V?
+    public open fun put(key: K, value: V): V?
+    public open fun remove(key: Any?): V?
+    public open fun putAll(m: java.util.Map<out K, out V>): Unit
+    public open fun clear(): Unit
+    public open fun keySet(): java.util.Set<K>
+    public open fun values(): java.util.Collection<V>
 
-    open fun entrySet() : java.util.Set<Entry<K, V>>
-//    open fun equals(o : Any?) : Boolean
-//    open fun hashCode() : Int
+    public open fun entrySet(): java.util.Set<Entry<K, V>>
 
     trait Entry<K, V> {
-        open fun getKey() : K
-        open fun getValue() : V
-        open fun setValue(value : V) : V
-//            open fun equals(o : Any?) : Boolean
-//            open fun hashCode() : Int
+        open fun getKey(): K
+        open fun getValue(): V
+        open fun setValue(value: V): V
     }
 }
 

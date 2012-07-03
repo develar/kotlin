@@ -51,7 +51,7 @@ public final class PrimitiveRangeToIntrinsic implements Intrinsic {
                                           context.program().getNumberLiteral(1));
         //TODO: provide a way not to hard code this value
         JsNameRef expr = AstUtil.newQualifiedNameRef("Kotlin.NumberRange");
-        HasArguments numberRangeConstructorInvocation = context.isEcma5() ? AstUtil.newInvocation(expr) : new JsNew(expr);
+        HasArguments numberRangeConstructorInvocation = context.isEcma5() ? new JsInvocation(expr) : new JsNew(expr);
         //TODO: add tests and correct expression for reversed ranges.
         JsBooleanLiteral isRangeReversed = context.program().getFalseLiteral();
         setArguments(numberRangeConstructorInvocation, rangeStart, rangeSize, isRangeReversed);

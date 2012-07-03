@@ -4,8 +4,6 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-import com.google.common.collect.Interner;
-import com.google.common.collect.Interners;
 import com.google.dart.compiler.util.Lists;
 import com.google.dart.compiler.util.Maps;
 import org.jetbrains.annotations.Nullable;
@@ -52,23 +50,16 @@ public class JsScope implements Serializable {
     protected int tempIndex = 0;
     private final String scopeId;
 
-    private final boolean isDummy;
-
     public JsScope(JsScope parent, String description) {
-        this(parent, description, null, false);
+        this(parent, description, null);
     }
 
-    public JsScope(JsScope parent, String description, boolean isDummy) {
-        this(parent, description, null, isDummy);
-    }
-
-    public JsScope(JsScope parent, @Nullable String description, @Nullable String scopeId, boolean isDummy) {
+    public JsScope(JsScope parent, @Nullable String description, @Nullable String scopeId) {
         assert (parent != null);
         this.scopeId = scopeId;
         this.description = description;
         this.parent = parent;
         parent.children = Lists.add(parent.children, this);
-        this.isDummy = isDummy;
     }
 
     /**
@@ -113,11 +104,10 @@ public class JsScope implements Serializable {
     /**
      * Subclasses can be parentless.
      */
-    protected JsScope(String description) {
+    protected JsScope(@Nullable String description) {
         this.description = description;
         this.parent = null;
         this.scopeId = null;
-        isDummy = false;
     }
 
     /**
@@ -181,10 +171,6 @@ public class JsScope implements Serializable {
     public JsName declareName(String ident, String originalName) {
         JsName name = findExistingNameNoRecurse(ident);
         return name != null ? name : doCreateName(ident, originalName);
-    }
-
-    boolean nullableEquals(String s1, String s2) {
-        return (s1 == null) ? (s2 == null) : s1.equals(s2);
     }
 
     /**

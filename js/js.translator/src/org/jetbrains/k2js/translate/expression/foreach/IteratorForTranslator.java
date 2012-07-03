@@ -94,9 +94,7 @@ public final class IteratorForTranslator extends ForTranslator {
             return hasNext;
         }
         else {
-            JsInvocation invocation = new JsInvocation();
-            invocation.setQualifier(hasNext);
-            return invocation;
+            return new JsInvocation(hasNext);
         }
     }
 

@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import gnu.trove.THashMap;
 import gnu.trove.TLinkable;
 import gnu.trove.TLinkableAdaptor;
@@ -144,7 +143,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         result.add(vars);
         result.add(new JsReturn(valueLiteral));
         dummyFunction.setBody(newBlock(result));
-        classesVar.setInitExpr(AstUtil.newInvocation(dummyFunction));
+        classesVar.setInitExpr(new JsInvocation(dummyFunction));
     }
 
     private void generateOpenClassDeclarations(@NotNull JsVars vars, @NotNull List<JsPropertyInitializer> propertyInitializers) {

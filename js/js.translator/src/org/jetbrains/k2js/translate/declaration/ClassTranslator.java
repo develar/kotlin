@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
@@ -27,7 +26,6 @@ import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetObjectLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetParameter;
-import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
@@ -38,13 +36,11 @@ import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.dart.compiler.util.AstUtil.newSequence;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForConstructorParameter;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.*;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.getQualifiedReference;
-import static org.jetbrains.k2js.translate.utils.TranslationUtils.getThisObject;
 
 /**
  * @author Pavel Talanov
@@ -66,13 +62,13 @@ public final class ClassTranslator extends AbstractTranslator {
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
             @NotNull ClassAliasingMap aliasingMap,
             @NotNull TranslationContext context) {
-        return (new ClassTranslator(classDeclaration, aliasingMap, context)).translateClassOrObjectCreation();
+        return (new ClassTranslator(classDeclaration, aliasingMap, context)).translateClassOrObjectCreation(context);
     }
 
     @NotNull
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
                                                                @NotNull TranslationContext context) {
-        return (new ClassTranslator(classDeclaration, null, context)).translateClassOrObjectCreation();
+        return (new ClassTranslator(classDeclaration, null, context)).translateClassOrObjectCreation(context);
     }
 
     @NotNull
@@ -87,9 +83,6 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     private final JetClassOrObject classDeclaration;
-
-    @Nullable
-    private TemporaryVariable aliasForContainingClassThis = null;
 
     @NotNull
     private final ClassDescriptor descriptor;
@@ -110,38 +103,40 @@ public final class ClassTranslator extends AbstractTranslator {
     private JsExpression translateObjectLiteralExpression() {
         ClassDescriptor containingClass = getContainingClass(descriptor);
         if (containingClass == null) {
-            return translateClassOrObjectCreation();
+            return translateClassOrObjectCreation(context());
         }
         return translateAsObjectCreationExpressionWithEnclosingThisSaved(containingClass);
     }
 
     @NotNull
     private JsExpression translateAsObjectCreationExpressionWithEnclosingThisSaved(@NotNull ClassDescriptor containingClass) {
-        aliasForContainingClassThis = context().declareTemporary(getThisObject(context(), containingClass));
-        return newSequence(aliasForContainingClassThis.assignmentExpression(), translateClassOrObjectCreation());
+        return context().anonymousFunctionTranslator().translate(containingClass, classDeclaration, this);
     }
 
     @NotNull
-    private JsExpression translateClassOrObjectCreation() {
+    public JsExpression translateClassOrObjectCreation(@NotNull TranslationContext classDeclarationContext) {
         JsInvocation jsClassDeclaration = classCreateMethodInvocation();
         if (!isObject()) {
             addSuperclassReferences(jsClassDeclaration);
         }
-        addClassOwnDeclarations(jsClassDeclaration);
+        addClassOwnDeclarations(jsClassDeclaration, classDeclarationContext);
         return jsClassDeclaration;
     }
 
     @NotNull
     private JsInvocation classCreateMethodInvocation() {
+        JsExpression qualifier;
         if (isObject()) {
-            return AstUtil.newInvocation(context().namer().objectCreationMethodReference());
+            qualifier = context().namer().objectCreationMethodReference();
         }
         else if (isTrait() && !context().isEcma5()) {
-            return AstUtil.newInvocation(context().namer().traitCreationMethodReference());
+            qualifier = context().namer().traitCreationMethodReference();
         }
         else {
-            return AstUtil.newInvocation(context().namer().classCreationMethodReference());
+            qualifier = context().namer().classCreationMethodReference();
         }
+
+        return new JsInvocation(qualifier);
     }
 
     private boolean isObject() {
@@ -152,14 +147,24 @@ public final class ClassTranslator extends AbstractTranslator {
         return descriptor.getKind().equals(ClassKind.TRAIT);
     }
 
-    private void addClassOwnDeclarations(@NotNull JsInvocation jsClassDeclaration) {
-        TranslationContext classDeclarationContext = getClassDeclarationContext();
+    private void addClassOwnDeclarations(@NotNull JsInvocation jsClassDeclaration, @NotNull TranslationContext classDeclarationContext) {
         JsObjectLiteral properties = new JsObjectLiteral();
         List<JsPropertyInitializer> propertyList = properties.getPropertyInitializers();
         if (!isTrait()) {
             JsFunction initializer = Translation.generateClassInitializerMethod(classDeclaration, classDeclarationContext);
             if (context().isEcma5()) {
-                jsClassDeclaration.getArguments().add(initializer.getName() == null ? initializer : JsAstUtils.encloseFunction(initializer));
+                JsExpression expression;
+                if (isObject() && initializer.getBody().getStatements().isEmpty()) {
+                    expression = context().program().getNullLiteral();
+                }
+                else if (initializer.getName() != null) {
+                    expression = JsAstUtils.encloseFunction(initializer);
+                }
+                else {
+                    expression = initializer;
+                }
+
+                jsClassDeclaration.getArguments().add(expression);
             }
             else {
                 propertyList.add(InitializerUtils.generateInitializeMethod(initializer));
@@ -256,15 +261,5 @@ public final class ClassTranslator extends AbstractTranslator {
             }
         }
         return result;
-    }
-
-    @NotNull
-    private TranslationContext getClassDeclarationContext() {
-        if (aliasForContainingClassThis == null) {
-            return context();
-        }
-        ClassDescriptor containingClass = getContainingClass(descriptor);
-        assert containingClass != null;
-        return context().innerContextWithThisAliased(containingClass, aliasForContainingClassThis.name());
     }
 }

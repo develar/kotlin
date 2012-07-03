@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ClassReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
@@ -153,20 +154,21 @@ public final class TranslationUtils {
     public static JsExpression getThisObject(@NotNull TranslationContext context,
             @NotNull DeclarationDescriptor correspondingDeclaration) {
         if (correspondingDeclaration instanceof ClassDescriptor) {
-            JsName alias = context.aliasingContext().getAliasForThis(correspondingDeclaration);
+            JsNameRef alias = context.aliasingContext().getAliasRefForThis(correspondingDeclaration);
             if (alias != null) {
-                return alias.makeRef();
+                return alias;
             }
         }
         if (correspondingDeclaration instanceof CallableDescriptor) {
             DeclarationDescriptor receiverDescriptor =
                     getExpectedReceiverDescriptor((CallableDescriptor) correspondingDeclaration);
             assert receiverDescriptor != null;
-            JsName alias = context.aliasingContext().getAliasForThis(receiverDescriptor);
+            JsNameRef alias = context.aliasingContext().getAliasRefForThis(receiverDescriptor);
             if (alias != null) {
-                return alias.makeRef();
+                return alias;
             }
         }
+
         return context.program().getThisLiteral();
     }
 
@@ -238,14 +240,20 @@ public final class TranslationUtils {
     }
 
     @Nullable
-    public static JsExpression resolveThisObjectForResolvedCall(@NotNull ResolvedCall<?> call,
-            @NotNull TranslationContext context) {
+    public static JsExpression resolveThisObjectForResolvedCall(@NotNull ResolvedCall<?> call, @NotNull TranslationContext context) {
         ReceiverDescriptor thisObject = call.getThisObject();
         if (!thisObject.exists()) {
             return null;
         }
-        DeclarationDescriptor expectedThisDescriptor = getDeclarationDescriptorForReceiver(thisObject);
-        return getThisObject(context, expectedThisDescriptor);
+
+        if (thisObject instanceof ClassReceiver) {
+            JsNameRef ref = context.aliasingContext().getAliasRefForThis(((ClassReceiver) thisObject).getDeclarationDescriptor());
+            if (ref != null) {
+                return ref;
+            }
+        }
+
+        return getThisObject(context, getDeclarationDescriptorForReceiver(thisObject));
     }
 
     public static boolean isNullLiteral(@NotNull TranslationContext context, @NotNull JsExpression expression) {

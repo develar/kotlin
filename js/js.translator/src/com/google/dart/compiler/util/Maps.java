@@ -15,45 +15,12 @@ import java.util.LinkedHashMap;
  * be mutable.
  */
 public class Maps {
-
-  private static final Class<?> MULTI_MAP_CLASS = HashMap.class;
-  private static final Class<?> SINGLETON_MAP_CLASS =
-      Collections.singletonMap(null, null).getClass();
-
   public static <K, V> Map<K, V> create() {
     return Collections.emptyMap();
   }
 
   public static <K, V> Map<K, V> create(K key, V value) {
     return Collections.singletonMap(key, value);
-  }
-
-  public static <K, V> Map<K, V> normalize(Map<K, V> map) {
-    switch (map.size()) {
-      case 0:
-        return create();
-      case 1: {
-        if (map.getClass() == SINGLETON_MAP_CLASS) {
-          return map;
-        }
-        K key = map.keySet().iterator().next();
-        return create(key, map.get(key));
-      }
-      default:
-        if (map.getClass() == MULTI_MAP_CLASS) {
-          return map;
-        }
-        return new HashMap<K, V>(map);
-    }
-  }
-
-  public static <K, V> Map<K, V> normalizeUnmodifiable(Map<K, V> map) {
-    if (map.size() < 2) {
-      return normalize(map);
-    } else {
-      // TODO: implement an UnmodifiableHashMap?
-      return Collections.unmodifiableMap(normalize(map));
-    }
   }
 
   public static <K, V> Map<K, V> put(Map<K, V> map, K key, V value) {
@@ -75,35 +42,6 @@ public class Maps {
         // HashMap
         map.put(key, value);
         return map;
-    }
-  }
-
-  public static <K, V> Map<K, V> putAll(Map<K, V> map, Map<K, V> toAdd) {
-    switch (toAdd.size()) {
-      case 0:
-        // No-op.
-        return map;
-      case 1: {
-        // Add one element.
-        K key = toAdd.keySet().iterator().next();
-        return put(map, key, toAdd.get(key));
-      }
-      default:
-        // True list merge, result >= 2.
-        switch (map.size()) {
-          case 0:
-            return new HashMap<K, V>(toAdd);
-          case 1: {
-            HashMap<K, V> result = new HashMap<K, V>();
-            K key = map.keySet().iterator().next();
-            result.put(key, map.get(key));
-            result.putAll(toAdd);
-            return result;
-          }
-          default:
-            map.putAll(toAdd);
-            return map;
-        }
     }
   }
 

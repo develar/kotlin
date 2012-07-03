@@ -10,13 +10,11 @@ import com.google.dart.compiler.util.TextOutput;
 import gnu.trove.TIntArrayList;
 
 import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * Produces text output from a JavaScript AST.
  */
 public class JsToStringGenerationVisitor extends JsVisitor {
-
   private static final char[] CHARS_BREAK = "break".toCharArray();
   private static final char[] CHARS_CASE = "case".toCharArray();
   private static final char[] CHARS_CATCH = "catch".toCharArray();
@@ -49,15 +47,9 @@ public class JsToStringGenerationVisitor extends JsVisitor {
    */
   private static final int JSBLOCK_LINES_TO_PRINT = 3;
 
-  /**
-   * A variable name is valid if it contains only letters, numbers, _, $ and
-   * does not begin with a number. There are actually other valid variable
-   * names, such as ones that contain escaped Unicode characters, but we
-   * surround those names with quotes in property initializers to be safe.
-   */
-  private static final Pattern VALID_NAME_PATTERN = Pattern.compile("[a-zA-Z_$][\\w$]*");
+    protected JsStringLiteral valueName;
 
-  public static String javaScriptString(String value) {
+  public static CharSequence javaScriptString(String value) {
     return javaScriptString(value, false);
   }
 
@@ -67,13 +59,13 @@ public class JsToStringGenerationVisitor extends JsVisitor {
    * . The difference is that we quote with either &quot; or &apos; depending on
    * which one is used less inside the string.
    */
-  public static String javaScriptString(String value, boolean forceDoubleQuote) {
-    char[] chars = value.toCharArray();
-    final int n = chars.length;
-    int quoteCount = 0;
-    int aposCount = 0;
-      for (char aChar : chars) {
-          switch (aChar) {
+  public static CharSequence javaScriptString(CharSequence chars, boolean forceDoubleQuote) {
+      final int n = chars.length();
+      int quoteCount = 0;
+      int aposCount = 0;
+
+      for (int i = 0; i < n; i++) {
+          switch (chars.charAt(i)) {
               case '"':
                   ++quoteCount;
                   break;
@@ -83,94 +75,97 @@ public class JsToStringGenerationVisitor extends JsVisitor {
           }
       }
 
-    StringBuilder result = new StringBuilder(value.length() + 16);
+      StringBuilder result = new StringBuilder(n + 16);
 
-    char quoteChar = (quoteCount < aposCount || forceDoubleQuote) ? '"' : '\'';
-    result.append(quoteChar);
+      char quoteChar = (quoteCount < aposCount || forceDoubleQuote) ? '"' : '\'';
+      result.append(quoteChar);
 
-    for (int i = 0; i < n; ++i) {
-      char c = chars[i];
+      for (int i = 0; i < n; i++) {
+          char c = chars.charAt(i);
 
-      if (' ' <= c && c <= '~' && c != quoteChar && c != '\\') {
-        // an ordinary print character (like C isprint())
-        result.append(c);
-        continue;
-      }
-
-      int escape = -1;
-      switch (c) {
-        case '\b':
-          escape = 'b';
-          break;
-        case '\f':
-          escape = 'f';
-          break;
-        case '\n':
-          escape = 'n';
-          break;
-        case '\r':
-          escape = 'r';
-          break;
-        case '\t':
-          escape = 't';
-          break;
-        case '"':
-          escape = '"';
-          break; // only reach here if == quoteChar
-        case '\'':
-          escape = '\'';
-          break; // only reach here if == quoteChar
-        case '\\':
-          escape = '\\';
-          break;
-      }
-
-      if (escape >= 0) {
-        // an \escaped sort of character
-        result.append('\\');
-        result.append((char) escape);
-      } else {
-        /*
-         * Emit characters from 0 to 31 that don't have a single character
-         * escape sequence in octal where possible. This saves one or two
-         * characters compared to the hexadecimal format '\xXX'.
-         *
-         * These short octal sequences may only be used at the end of the string
-         * or where the following character is a non-digit. Otherwise, the
-         * following character would be incorrectly interpreted as belonging to
-         * the sequence.
-         */
-        if (c < ' ' && (i == n - 1 || chars[i + 1] < '0' || chars[i + 1] > '9')) {
-          result.append('\\');
-          if (c > 0x7) {
-            result.append((char) ('0' + (0x7 & (c >> 3))));
+          if (' ' <= c && c <= '~' && c != quoteChar && c != '\\') {
+              // an ordinary print character (like C isprint())
+              result.append(c);
+              continue;
           }
-          result.append((char) ('0' + (0x7 & c)));
-        } else {
-          int hexSize;
-          if (c < 256) {
-            // 2-digit hex
-            result.append("\\x");
-            hexSize = 2;
-          } else {
-            // Unicode.
-            result.append("\\u");
-            hexSize = 4;
+
+          int escape = -1;
+          switch (c) {
+              case '\b':
+                  escape = 'b';
+                  break;
+              case '\f':
+                  escape = 'f';
+                  break;
+              case '\n':
+                  escape = 'n';
+                  break;
+              case '\r':
+                  escape = 'r';
+                  break;
+              case '\t':
+                  escape = 't';
+                  break;
+              case '"':
+                  escape = '"';
+                  break; // only reach here if == quoteChar
+              case '\'':
+                  escape = '\'';
+                  break; // only reach here if == quoteChar
+              case '\\':
+                  escape = '\\';
+                  break;
           }
-          // append hexadecimal form of ch left-padded with 0
-          for (int shift = (hexSize - 1) * 4; shift >= 0; shift -= 4) {
-            int digit = 0xf & (c >> shift);
-            result.append(HEX_DIGITS[digit]);
+
+          if (escape >= 0) {
+              // an \escaped sort of character
+              result.append('\\');
+              result.append((char) escape);
           }
-        }
+          else {
+              /*
+              * Emit characters from 0 to 31 that don't have a single character
+              * escape sequence in octal where possible. This saves one or two
+              * characters compared to the hexadecimal format '\xXX'.
+              *
+              * These short octal sequences may only be used at the end of the string
+              * or where the following character is a non-digit. Otherwise, the
+              * following character would be incorrectly interpreted as belonging to
+              * the sequence.
+              */
+              if (c < ' ' && (i == n - 1 || chars.charAt(i + 1) < '0' || chars.charAt(i + 1) > '9')) {
+                  result.append('\\');
+                  if (c > 0x7) {
+                      result.append((char) ('0' + (0x7 & (c >> 3))));
+                  }
+                  result.append((char) ('0' + (0x7 & c)));
+              }
+              else {
+                  int hexSize;
+                  if (c < 256) {
+                      // 2-digit hex
+                      result.append("\\x");
+                      hexSize = 2;
+                  }
+                  else {
+                      // Unicode.
+                      result.append("\\u");
+                      hexSize = 4;
+                  }
+                  // append hexadecimal form of ch left-padded with 0
+                  for (int shift = (hexSize - 1) * 4; shift >= 0; shift -= 4) {
+                      int digit = 0xf & (c >> shift);
+                      result.append(HEX_DIGITS[digit]);
+                  }
+              }
+          }
       }
-    }
-    result.append(quoteChar);
-    escapeClosingTags(result);
-    return result.toString();
+      result.append(quoteChar);
+      escapeClosingTags(result);
+      return result;
   }
 
-  /**
+    /**
    * Escapes any closing XML tags embedded in <code>str</code>, which could
    * potentially cause a parse failure in a browser, for example, embedding a
    * closing <code>&lt;script&gt;</code> tag.
@@ -183,7 +178,6 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     }
 
     int index = 0;
-
     while ((index = str.indexOf("</", index)) != -1) {
       str.insert(index + 1, '\\');
     }
@@ -518,37 +512,33 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     return false;
   }
 
-  // function foo(a, b) {
-  // stmts...
-  // }
-  //
   @Override
   public boolean visit(JsFunction x, JsContext ctx) {
-    _function();
+      _function();
 
-    // Functions can be anonymous.
-    //
-    if (x.getName() != null) {
+      // Functions can be anonymous
+      if (x.getName() != null) {
+          _space();
+          _nameOf(x);
+      }
+
+      _lparen();
+      boolean sep = false;
+      for (Object element : x.getParameters()) {
+          JsParameter param = (JsParameter) element;
+          sep = _sepCommaOptSpace(sep);
+          accept(param);
+      }
+      _rparen();
       _space();
-      _nameOf(x);
-    }
 
-    _lparen();
-    boolean sep = false;
-    for (Object element : x.getParameters()) {
-      JsParameter param = (JsParameter) element;
-      sep = _sepCommaOptSpace(sep);
-      accept(param);
-    }
-    _rparen();
-
-    lineBreakAfterBlock = false;
-    accept(x.getBody());
-    needSemi = true;
-    return false;
+      lineBreakAfterBlock = false;
+      accept(x.getBody());
+      needSemi = true;
+      return false;
   }
 
-  @Override
+    @Override
   public boolean visit(JsIf x, JsContext ctx) {
     _if();
     _spaceOpt();
@@ -688,38 +678,30 @@ public class JsToStringGenerationVisitor extends JsVisitor {
   }
 
     @Override
-    public boolean visit(JsObjectLiteral x, JsContext ctx) {
+    public boolean visit(JsObjectLiteral objectLiteral, JsContext context) {
         _lbrace();
         boolean sep = false;
-        for (Object element : x.getPropertyInitializers()) {
+        for (JsPropertyInitializer item : objectLiteral.getPropertyInitializers()) {
             sep = _sepCommaOptSpace(sep);
-            JsPropertyInitializer item = (JsPropertyInitializer) element;
             boolean wasIndented = false;
-            printLabel:
-            {
-                if (item.getValueExpr() instanceof JsFunction) {
-                    _newlineOpt();
-                    p.indentIn();
-                    wasIndented = true;
-                }
+            if (item.getValueExpr() instanceof JsFunction && item.getLabelExpr() != valueName) {
+                _newlineOpt();
+                p.indentIn();
+                wasIndented = true;
+            }
 
-                JsExpression labelExpr = item.getLabelExpr();
-                // labels can be either string, integral, or decimal literals
-                if (labelExpr instanceof JsNameRef) {
-                    p.print(((JsNameRef) labelExpr).getIdent());
-                    break printLabel;
-                }
-                else if (labelExpr instanceof JsStringLiteral) {
-                    String propName = ((JsStringLiteral) labelExpr).getValue();
-                    if (VALID_NAME_PATTERN.matcher(propName).matches()
-                        && !JsReservedIdentifiers.isKeyword(propName)) {
-                        p.print(propName);
-                        break printLabel;
-                    }
-                }
-
+            JsExpression labelExpr = item.getLabelExpr();
+            // labels can be either string, integral, or decimal literals
+            if (labelExpr instanceof JsNameRef) {
+                p.print(((JsNameRef) labelExpr).getIdent());
+            }
+            else if (labelExpr instanceof JsStringLiteral) {
+                p.print(((JsStringLiteral) labelExpr).getValue());
+            }
+            else {
                 accept(labelExpr);
             }
+
             _colon();
             _space();
             JsExpression valueExpr = item.getValueExpr();
@@ -1245,7 +1227,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
    *
    * @return <code>true</code> if a space needs to be printed
    */
-  private boolean _spaceCalc(JsOperator op, JsExpression arg) {
+  private static boolean _spaceCalc(JsOperator op, JsExpression arg) {
     if (op.isKeyword()) {
       return true;
     }
@@ -1305,8 +1287,6 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     p.print(CHARS_WHILE);
   }
 
-  // CHECKSTYLE_NAMING_ON
-
   private void indent() {
     p.indentIn();
   }
@@ -1316,7 +1296,6 @@ public class JsToStringGenerationVisitor extends JsVisitor {
   }
 
   private void printStringLiteral(String value) {
-    String resultString = javaScriptString(value);
-    p.print(resultString);
+    p.print(javaScriptString(value));
   }
 }

@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.utils;
 
 import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
@@ -261,9 +260,11 @@ public final class JsAstUtils {
     public static JsInvocation definePropertyDataDescriptor(@NotNull PropertyDescriptor descriptor,
             @NotNull JsExpression value,
             @NotNull TranslationContext context) {
-        return AstUtil.newInvocation(DEFINE_PROPERTY, context.program().getThisLiteral(),
-                                     context.program().getStringLiteral(context.getNameForDescriptor(descriptor).getIdent()),
-                                     createPropertyDataDescriptor(descriptor.isVar(), descriptor, value, context));
+        JsInvocation invocation = new JsInvocation(DEFINE_PROPERTY);
+        invocation.getArguments().add(context.program().getThisLiteral());
+        invocation.getArguments().add(context.program().getStringLiteral(context.getNameForDescriptor(descriptor).getIdent()));
+        invocation.getArguments().add(createPropertyDataDescriptor(descriptor.isVar(), descriptor, value, context));
+        return invocation;
     }
 
     @NotNull
@@ -276,7 +277,7 @@ public final class JsAstUtils {
     @NotNull
     public static JsObjectLiteral createDataDescriptor(@NotNull JsExpression value, boolean writable, @NotNull TranslationContext context) {
         JsObjectLiteral dataDescriptor = new JsObjectLiteral();
-        dataDescriptor.getPropertyInitializers().add(new JsPropertyInitializer(context.program().getStringLiteral("value"), value));
+        dataDescriptor.getPropertyInitializers().add(new JsPropertyInitializer(context.program().getValueName(), value));
         if (writable) {
             dataDescriptor.getPropertyInitializers().add(context.namer().writablePropertyDescriptorField());
         }

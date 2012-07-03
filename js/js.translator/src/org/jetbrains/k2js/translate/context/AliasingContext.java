@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.context;
 
 import com.google.common.collect.Maps;
 import com.google.dart.compiler.backend.js.ast.JsName;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
@@ -29,8 +30,7 @@ import java.util.Map;
  * @author Pavel Talanov
  */
 public class AliasingContext {
-
-    private static AliasingContext ROOT = new AliasingContext(null) {
+    private static final AliasingContext ROOT = new AliasingContext(null) {
         @Override
         public JsName getAliasForThis(@NotNull DeclarationDescriptor descriptor) {
             return null;
@@ -61,8 +61,14 @@ public class AliasingContext {
     @Nullable
     private final AliasingContext parent;
 
+    private boolean outerThisWasCaptured;
+
     private AliasingContext(@Nullable AliasingContext parent) {
         this.parent = parent;
+    }
+
+    public boolean wasOuterThisCaptured() {
+        return outerThisWasCaptured;
     }
 
     @NotNull
@@ -96,9 +102,16 @@ public class AliasingContext {
     public JsName getAliasForThis(@NotNull DeclarationDescriptor descriptor) {
         JsName alias = aliasesForThis.get(descriptor.getOriginal());
         if (alias != null) {
+            outerThisWasCaptured = true;
             return alias;
         }
         return getParent().getAliasForThis(descriptor);
+    }
+
+    @Nullable
+    public JsNameRef getAliasRefForThis(@NotNull DeclarationDescriptor descriptor) {
+        JsName alias = getAliasForThis(descriptor);
+        return alias != null ? alias.makeRef() : null;
     }
 
     @Nullable

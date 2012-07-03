@@ -14,26 +14,25 @@ import com.google.dart.compiler.util.TextOutput;
  * Generates JavaScript source from an AST.
  */
 public class JsSourceGenerationVisitor extends JsToStringGenerationVisitor {
+    public JsSourceGenerationVisitor(TextOutput out) {
+        super(out);
+    }
 
-  public JsSourceGenerationVisitor(TextOutput out) {
-    super(out);
-  }
+    @Override
+    public boolean visit(JsProgram program, JsContext ctx) {
+        valueName = program.getValueName();
+        return true;
+    }
 
-  @Override
-  public boolean visit(JsProgram x, JsContext ctx) {
-    // Descend naturally.
-    return true;
-  }
+    @Override
+    public boolean visit(JsProgramFragment x, JsContext ctx) {
+        // Descend naturally.
+        return true;
+    }
 
-  @Override
-  public boolean visit(JsProgramFragment x, JsContext ctx) {
-    // Descend naturally.
-    return true;
-  }
-
-  @Override
-  public boolean visit(JsBlock x, JsContext ctx) {
-    printJsBlock(x, false, true);
-    return false;
-  }
+    @Override
+    public boolean visit(JsBlock x, JsContext ctx) {
+        printJsBlock(x, false, true);
+        return false;
+    }
 }
