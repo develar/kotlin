@@ -459,7 +459,7 @@
     </target>
 
   <target name="dist"
-              depends="init,prepareDist,injectorsGenerator,generateInjectors,compiler,compilerSources,antTools,jdkAnnotations,runtime,lang,jslib"/>
+              depends="init,prepareDist,injectorsGenerator,generateInjectors,compiler,compilerSources,antTools,runtime,lang,jslib"/>
     
     <target name="zip" depends="dist">
         <zip destfile="${output}/${output.name}.zip">

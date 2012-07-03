@@ -41,7 +41,7 @@ public class AnonymousFunctionTranslator {
     }
 
     public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration) {
-        NamingScope namingScope = rootContext.scope().innerScope((String) null);
+        NamingScope namingScope = rootContext.scope().innerScope();
         JsBlock body = new JsBlock();
         TranslationContext funContext = rootContext.contextWithScope(namingScope, body);
 
@@ -61,7 +61,7 @@ public class AnonymousFunctionTranslator {
     public JsExpression translate(@NotNull ClassDescriptor containingClass,
             JetClassOrObject declaration,
             ClassTranslator classTranslator) {
-        NamingScope namingScope = rootContext.scope().innerScope((String) null);
+        NamingScope namingScope = rootContext.scope().innerScope();
 
         JsName outerThisName = namingScope.jsScope().declareName("$this");
 
