@@ -184,3 +184,8 @@ public class StringBuilder() : Appendable {
 
 library
 class NoSuchElementException() : Exception() {}
+
+public trait Enumeration<E> {
+    open fun hasMoreElements(): Boolean
+    open fun nextElement(): E?
+}

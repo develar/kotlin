@@ -67,7 +67,11 @@ public final class ExtensionFunctionTest extends SingleFileTranslationTest {
         fooBoxTest();
     }
 
-    public void testExtensionFunctionCalledFromFor() throws Exception {
+    public void testExtensionOnClassWithExplicitAndImplicitReceiver() throws Exception {
+        fooBoxTest();
+    }
+
+    public void testExtensionPropertyOnClassWithExplicitAndImplicitReceiver() throws Exception {
         fooBoxTest();
     }
 }
