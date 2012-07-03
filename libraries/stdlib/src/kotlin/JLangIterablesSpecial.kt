@@ -5,6 +5,7 @@ import java.util.Collection
 import java.util.List
 import java.util.AbstractList
 import java.util.Iterator
+import java.util.Comparator
 
 /**
  * Count the number of elements in collection.
@@ -72,19 +73,6 @@ public fun <T> java.lang.Iterable<T>.last() : T {
 }
 
 /**
- * Copies all elements into a [[List]] and sorts it by value of compare_function(element)
- *
- * E.g. arrayList("two" to 2, "one" to 1).sortBy({it._2}) returns list sorted by second element of tuple
- *
- * @includeFunctionBody ../../test/CollectionTest.kt sortBy
- */
-public inline fun <in T, R: Comparable<in R>> java.lang.Iterable<T>.sortBy(f: (T) -> R): java.util.List<T> {
-    val sortedList = this.toList()
-    java.util.Collections.sort(sortedList, comparator {(x, y) -> f(x).compareTo(f(y))})
-    return sortedList
-}
-
-/**
  * Checks if collection contains given item.
  *
  * Method checks equality of the objects with T.equals method.
@@ -116,6 +104,18 @@ public fun <T> java.lang.Iterable<T>.withIndices() : java.lang.Iterable<#(Int, T
             return NumberedIterator<T>(this@withIndices.iterator()!!)
         }
     }
+}
+
+public inline fun <in T: java.lang.Comparable<T>> java.lang.Iterable<T>.sort() : List<T> {
+    val list = toList()
+    java.util.Collections.sort(list)
+    return list
+}
+
+public inline fun <in T> java.lang.Iterable<T>.sort(comparator: java.util.Comparator<T>) : List<T> {
+    val list = toList()
+    java.util.Collections.sort(list, comparator)
+    return list
 }
 
 private class NumberedIterator<TT>(private val sourceIterator : java.util.Iterator<TT>) : java.util.Iterator<#(Int, TT)> {

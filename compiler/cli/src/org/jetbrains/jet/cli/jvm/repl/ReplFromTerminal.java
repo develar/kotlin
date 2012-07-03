@@ -17,6 +17,7 @@
 package org.jetbrains.jet.cli.jvm.repl;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.util.io.FileUtil;
 import jline.console.ConsoleReader;
 import jline.console.history.FileHistory;
 import org.jetbrains.annotations.NotNull;
@@ -24,8 +25,8 @@ import org.jetbrains.jet.lang.resolve.java.CompilerDependencies;
 import org.jetbrains.jet.utils.ExceptionUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,8 +41,10 @@ public class ReplFromTerminal {
 
     private final ConsoleReader consoleReader;
 
-    public ReplFromTerminal(@NotNull final Disposable disposable, @NotNull final CompilerDependencies compilerDependencies) {
-        final List<File> extraClasspath = Collections.<File>emptyList();
+    public ReplFromTerminal(
+            @NotNull final Disposable disposable,
+            @NotNull final CompilerDependencies compilerDependencies,
+            @NotNull final List<File> extraClasspath) {
         new Thread("initialize-repl") {
             @Override
             public void run() {
@@ -88,9 +91,10 @@ public class ReplFromTerminal {
         try {
             System.out.println("Kotlin interactive shell");
             System.out.println("Type :help for help, :quit for quit");
+            WhatNextAfterOneLine next = WhatNextAfterOneLine.READ_LINE;
             while (true) {
-                boolean next = one();
-                if (!next) {
+                next = one(next);
+                if (next == WhatNextAfterOneLine.QUIT) {
                     break;
                 }
             }
@@ -105,46 +109,80 @@ public class ReplFromTerminal {
         }
     }
 
-    private boolean one() {
+    private enum WhatNextAfterOneLine {
+        READ_LINE,
+        INCOMPLETE,
+        QUIT,
+    }
+
+    @NotNull
+    private WhatNextAfterOneLine one(@NotNull WhatNextAfterOneLine next) {
         try {
-            String line = consoleReader.readLine(">>> ");
+            String line = consoleReader.readLine(next == WhatNextAfterOneLine.INCOMPLETE ? "... " : ">>> ");
             if (line == null) {
-                return false;
+                return WhatNextAfterOneLine.QUIT;
             }
 
             if (line.startsWith(":")) {
-                return oneCommand(line.substring(1));
+                boolean notQuit = oneCommand(line.substring(1));
+                return notQuit ? WhatNextAfterOneLine.READ_LINE : WhatNextAfterOneLine.QUIT;
             }
 
-            ReplInterpreter.LineResult lineResult = getReplInterpreter().eval(line);
-            if (!lineResult.isSuccessful()) {
-                System.out.print(lineResult.getErrorText());
+            ReplInterpreter.LineResultType lineResultType = eval(line);
+            if (lineResultType == ReplInterpreter.LineResultType.INCOMPLETE) {
+                return WhatNextAfterOneLine.INCOMPLETE;
             }
-            else if (!lineResult.isUnit()) {
-                System.out.println(lineResult.getValue());
+            else {
+                return WhatNextAfterOneLine.READ_LINE;
             }
-            return true;
         }
         catch (Exception e) {
             throw ExceptionUtils.rethrow(e);
         }
     }
 
-    private boolean oneCommand(@NotNull String command) {
-        if (command.equals("help")) {
+    @NotNull
+    private ReplInterpreter.LineResultType eval(@NotNull String line) {
+        ReplInterpreter.LineResult lineResult = getReplInterpreter().eval(line);
+        if (lineResult.getType() == ReplInterpreter.LineResultType.SUCCESS) {
+            if (!lineResult.isUnit()) {
+                System.out.println(lineResult.getValue());
+            }
+        }
+        else if (lineResult.getType() == ReplInterpreter.LineResultType.INCOMPLETE) {
+        }
+        else if (lineResult.getType() == ReplInterpreter.LineResultType.ERROR) {
+            System.out.print(lineResult.getErrorText());
+        }
+        else {
+            throw new IllegalStateException("unknown line result type: " + lineResult);
+        }
+        return lineResult.getType();
+    }
+
+    private boolean oneCommand(@NotNull String command) throws Exception {
+        List<String> split = splitCommand(command);
+        if (split.size() >= 1 && command.equals("help")) {
             System.out.println("This is Kotlin REPL help");
             System.out.println("Available commands are:");
             System.out.println(":help                   show this help");
             System.out.println(":quit                   exit the interpreter");
             System.out.println(":dump bytecode          dump classes to terminal");
+            System.out.println(":load <file>            load script from specified file");
             return true;
         }
-        else if (command.equals("dump bytecode")) {
+        else if (split.size() >= 2 && split.get(0).equals("dump") && split.get(1).equals("bytecode")) {
             getReplInterpreter().dumpClasses(new PrintWriter(System.out));
             return true;
         }
-        else if (command.equals("quit")) {
+        else if (split.size() >= 1 && split.get(0).equals("quit")) {
             return false;
+        }
+        else if (split.size() >= 2 && split.get(0).equals("load")) {
+            String fileName = split.get(1);
+            String scriptText = FileUtil.loadFile(new File(fileName));
+            eval(scriptText);
+            return true;
         }
         else {
             System.out.println("Unknown command");
@@ -153,8 +191,12 @@ public class ReplFromTerminal {
         }
     }
 
-    public static void run(@NotNull Disposable disposable, @NotNull CompilerDependencies compilerDependencies) {
-        new ReplFromTerminal(disposable, compilerDependencies).doRun();
+    private static List<String> splitCommand(@NotNull String command) {
+        return Arrays.asList(command.split(" "));
+    }
+
+    public static void run(@NotNull Disposable disposable, @NotNull CompilerDependencies compilerDependencies, @NotNull List<File> extraClasspath) {
+        new ReplFromTerminal(disposable, compilerDependencies, extraClasspath).doRun();
     }
 
 }

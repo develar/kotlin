@@ -78,7 +78,7 @@ public class JetStubsTest extends LightCodeInsightFixtureTestCase {
     public void testFunctionParameters() {
         doBuildTest("fun some(t: Int, other: String = \"hello\") { }",
                     "PsiJetFileStubImpl[package=]\n" +
-                    "  FUN:PsiJetFunctionStubImpl[top name=some]\n" +
+                    "  FUN:PsiJetFunctionStubImpl[top topFQName=some name=some]\n" +
                     "    VALUE_PARAMETER_LIST:PsiJetParameterListStubImpl\n" +
                     "      VALUE_PARAMETER:PsiJetParameterStubImpl[val name=t typeText=Int defaultValue=null]\n" +
                     "      VALUE_PARAMETER:PsiJetParameterStubImpl[val name=other typeText=String defaultValue=\"hello\"]\n");
@@ -87,14 +87,31 @@ public class JetStubsTest extends LightCodeInsightFixtureTestCase {
     public void testNotStoreInFunction() {
         doBuildTest("fun some() { val test = 12;\n fun fake() {}\n class FakeClass\n }",
                     "PsiJetFileStubImpl[package=]\n" +
-                    "  FUN:PsiJetFunctionStubImpl[top name=some]\n" +
+                    "  FUN:PsiJetFunctionStubImpl[top topFQName=some name=some]\n" +
                     "    VALUE_PARAMETER_LIST:PsiJetParameterListStubImpl\n");
+    }
+
+    public void testPackageProperty() {
+        doBuildTest("package test.testing\n" +
+                    "val some = 12",
+                    "PsiJetFileStubImpl[package=test.testing]\n" +
+                    "  PROPERTY:PsiJetPropertyStubImpl[val top topFQName=test.testing.some name=some typeText=null bodyText=12]\n");
+    }
+
+    public void testClassProperty() {
+        doBuildTest("class More { \n" +
+                    "  private val test : Int = 11\n" +
+                    "}",
+                    "PsiJetFileStubImpl[package=]\n" +
+                    "  CLASS:PsiJetClassStubImpl[name=More fqn=More superNames=[]]\n" +
+                    "    TYPE_PARAMETER_LIST:PsiJetTypeParameterListStubImpl\n" +
+                    "    PROPERTY:PsiJetPropertyStubImpl[val name=test typeText=Int bodyText=11]\n");
     }
 
     public void testNotStorePropertyFromInitializer() {
         doBuildTest("fun DoubleArray.some() = for (element in this) println(element)",
                     "PsiJetFileStubImpl[package=]\n" +
-                    "  FUN:PsiJetFunctionStubImpl[top ext name=some]\n" +
+                    "  FUN:PsiJetFunctionStubImpl[top topFQName=some ext name=some]\n" +
                     "    VALUE_PARAMETER_LIST:PsiJetParameterListStubImpl\n");
     }
 
@@ -127,6 +144,19 @@ public class JetStubsTest extends LightCodeInsightFixtureTestCase {
                     "    ENUM_ENTRY:PsiJetClassStubImpl[enumEntry name=Second fqn=Test.Second superNames=[]]\n" +
                     "      TYPE_PARAMETER_LIST:PsiJetTypeParameterListStubImpl\n"
         );
+    }
+
+    public void testAnnotationClass() {
+        doBuildTest("annotation class Test {}",
+                    "PsiJetFileStubImpl[package=]\n" +
+                    "  CLASS:PsiJetClassStubImpl[isAnnotation name=Test fqn=Test superNames=[]]\n" +
+                    "    TYPE_PARAMETER_LIST:PsiJetTypeParameterListStubImpl\n");
+    }
+
+    public void testNamedObject() {
+        doBuildTest("object Test {}",
+                    "PsiJetFileStubImpl[package=]\n" +
+                    "  OBJECT_DECLARATION:PsiJetObjectStubImpl[name=Test fqName=Test]\n");
     }
 
     private void doBuildTest(@NonNls final String source, @NonNls @NotNull final String tree) {

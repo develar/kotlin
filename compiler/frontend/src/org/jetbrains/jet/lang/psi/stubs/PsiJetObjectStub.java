@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-a = 0
-f = (t = a, t1 = t, a = ++t1, t)
+package org.jetbrains.jet.lang.psi.stubs;
 
-test = function () {
-    return (f == 0) && (a == 1)
+import com.intellij.psi.stubs.NamedStub;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
+import org.jetbrains.jet.lang.resolve.name.FqName;
+
+/**
+ * @author Nikolay Krasko
+ */
+public interface PsiJetObjectStub extends NamedStub<JetObjectDeclaration> {
+    @Nullable
+    FqName getFQName();
 }

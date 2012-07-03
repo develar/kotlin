@@ -24,6 +24,7 @@ import org.jetbrains.jet.lang.psi.JetNamedFunction;
 import org.jetbrains.jet.lang.psi.JetProperty;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -33,10 +34,10 @@ public interface DeclarationProvider {
     List<JetDeclaration> getAllDeclarations();
 
     @NotNull
-    List<JetNamedFunction> getFunctionDeclarations(@NotNull Name name);
+    Collection<JetNamedFunction> getFunctionDeclarations(@NotNull Name name);
 
     @NotNull
-    List<JetProperty> getPropertyDeclarations(@NotNull Name name);
+    Collection<JetProperty> getPropertyDeclarations(@NotNull Name name);
 
     @Nullable
     JetClassOrObject getClassOrObjectDeclaration(@NotNull Name name);
