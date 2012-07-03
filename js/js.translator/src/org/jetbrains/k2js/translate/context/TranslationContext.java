@@ -25,7 +25,7 @@ import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.config.EcmaVersion;
-import org.jetbrains.k2js.translate.expression.AnonymousFunctionTranslator;
+import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 
 import java.util.Map;
@@ -207,8 +207,8 @@ public final class TranslationContext {
     }
 
     @NotNull
-    public AnonymousFunctionTranslator anonymousFunctionTranslator() {
-        return staticContext.getAnonymousFunctionTranslator();
+    public LiteralFunctionTranslator literalFunctionTranslator() {
+        return staticContext.getLiteralFunctionTranslator();
     }
 
     @NotNull

@@ -40,7 +40,6 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getResolvedCallFor
  * @author Pavel Talanov
  */
 public abstract class AbstractCallExpressionTranslator extends AbstractTranslator {
-
     @NotNull
     protected final JetCallExpression expression;
     @NotNull

@@ -110,7 +110,7 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     private JsExpression translateAsObjectCreationExpressionWithEnclosingThisSaved(@NotNull ClassDescriptor containingClass) {
-        return context().anonymousFunctionTranslator().translate(containingClass, classDeclaration, this);
+        return context().literalFunctionTranslator().translate(containingClass, classDeclaration, this);
     }
 
     @NotNull

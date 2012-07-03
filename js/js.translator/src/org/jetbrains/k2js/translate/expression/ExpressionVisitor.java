@@ -114,8 +114,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
                                         @NotNull TranslationContext context) {
         JetExpression returnedExpression = jetReturnExpression.getReturnedExpression();
         if (returnedExpression != null) {
-            JsExpression jsExpression = translateAsExpression(returnedExpression, context);
-            return new JsReturn(jsExpression);
+            return new JsReturn(translateAsExpression(returnedExpression, context));
         }
         return new JsReturn();
     }
@@ -315,7 +314,6 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         return Translation.translateWhenExpression(expression, context);
     }
 
-
     @Override
     @NotNull
     public JsNode visitBinaryWithTypeRHSExpression(@NotNull JetBinaryExpressionWithTypeRHS expression,
@@ -342,7 +340,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitFunctionLiteralExpression(@NotNull JetFunctionLiteralExpression expression,
                                                  @NotNull TranslationContext context) {
-        return context.anonymousFunctionTranslator().translate(expression);
+        return context.literalFunctionTranslator().translate(expression);
     }
 
     @Override

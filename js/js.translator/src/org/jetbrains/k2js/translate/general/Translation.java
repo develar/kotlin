@@ -176,8 +176,8 @@ public final class Translation {
         statements.add(program.getStringLiteral("use strict").makeStmt());
 
         TranslationContext context = TranslationContext.rootFunctionContext(staticContext, rootFunction);
-        staticContext.getAnonymousFunctionTranslator().setRootContext(context);
-        statements.add(staticContext.getAnonymousFunctionTranslator().toJsStatement());
+        staticContext.getLiteralFunctionTranslator().setRootContext(context);
+        statements.add(staticContext.getLiteralFunctionTranslator().toJsStatement());
         statements.addAll(translateFiles(files, context));
         defineModule(statements, context, config);
 

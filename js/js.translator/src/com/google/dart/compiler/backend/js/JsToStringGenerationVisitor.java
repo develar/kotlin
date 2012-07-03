@@ -516,9 +516,9 @@ public class JsToStringGenerationVisitor extends JsVisitor {
   public boolean visit(JsFunction x, JsContext ctx) {
       _function();
 
+      _space();
       // Functions can be anonymous
       if (x.getName() != null) {
-          _space();
           _nameOf(x);
       }
 

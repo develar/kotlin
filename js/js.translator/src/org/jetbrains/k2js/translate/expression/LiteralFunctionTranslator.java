@@ -4,6 +4,7 @@ import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.SimpleFunctionDescriptor;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
 import org.jetbrains.k2js.translate.LabelGenerator;
@@ -18,14 +19,14 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescrip
 import static org.jetbrains.k2js.translate.utils.FunctionBodyTranslator.translateFunctionBody;
 
 // todo easy incremental compiler implementation — generated functions should be inside corresponding class/namespace definition
-public class AnonymousFunctionTranslator {
+public class LiteralFunctionTranslator {
     private final List<JsPropertyInitializer> properties = new ArrayList<JsPropertyInitializer>();
     private final LabelGenerator labelGenerator = new LabelGenerator('f');
     private final JsNameRef containingVarRef = new JsNameRef("_f");
 
     private TranslationContext rootContext;
 
-    public AnonymousFunctionTranslator() {
+    public LiteralFunctionTranslator() {
 
     }
 
@@ -41,6 +42,9 @@ public class AnonymousFunctionTranslator {
     }
 
     public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration) {
+        FunctionDescriptor descriptor = getFunctionDescriptor(rootContext.bindingContext(), declaration);
+
+
         NamingScope namingScope = rootContext.scope().innerScope();
         JsBlock body = new JsBlock();
         TranslationContext funContext = rootContext.contextWithScope(namingScope, body);
@@ -48,11 +52,16 @@ public class AnonymousFunctionTranslator {
         JsFunction fun = new JsFunction(funContext.jsScope());
         fun.setBody(body);
 
-        FunctionDescriptor descriptor = getFunctionDescriptor(funContext.bindingContext(), declaration);
+
         body.getStatements().addAll(translateFunctionBody(descriptor, declaration, funContext).getStatements());
 
         JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
         properties.add(new JsPropertyInitializer(nameRef, fun));
+
+        if (!(descriptor.getContainingDeclaration() instanceof SimpleFunctionDescriptor)) {
+            FunctionTranslator.addParameters(fun.getParameters(), descriptor, funContext);
+            return fun;
+        }
 
         InnerFunctionTranslator translator = new InnerFunctionTranslator(declaration, descriptor, funContext, fun);
         return translator.translate(nameRef);

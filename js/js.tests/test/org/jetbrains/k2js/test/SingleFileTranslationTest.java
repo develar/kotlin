@@ -32,8 +32,8 @@ import static org.jetbrains.k2js.test.utils.JsTestUtils.readFile;
  */
 @SuppressWarnings("JUnitTestCaseWithNonTrivialConstructors")
 public abstract class SingleFileTranslationTest extends BasicTest {
-    private static final EnumSet<EcmaVersion> DEFAULT_ECMA_VERSIONS = EcmaVersion.all();
-    //private static final EnumSet<EcmaVersion> DEFAULT_ECMA_VERSIONS = EnumSet.of(EcmaVersion.v5);
+    //private static final EnumSet<EcmaVersion> DEFAULT_ECMA_VERSIONS = EcmaVersion.all();
+    private static final EnumSet<EcmaVersion> DEFAULT_ECMA_VERSIONS = EnumSet.of(EcmaVersion.v5);
 
     public SingleFileTranslationTest(@NotNull String main) {
         super(main);

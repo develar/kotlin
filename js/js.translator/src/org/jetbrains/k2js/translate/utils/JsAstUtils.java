@@ -186,13 +186,7 @@ public final class JsAstUtils {
 
     @NotNull
     public static JsVars newVar(@NotNull JsName name, @Nullable JsExpression expr) {
-        JsVars.JsVar var = new JsVars.JsVar(name);
-        if (expr != null) {
-            var.setInitExpr(expr);
-        }
-        JsVars vars = new JsVars();
-        vars.add(var);
-        return vars;
+        return new JsVars(new JsVars.JsVar(name, expr));
     }
 
     public static void addVarDeclaration(@NotNull JsBlock block, @NotNull JsVars vars) {
