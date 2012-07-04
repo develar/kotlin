@@ -7,6 +7,7 @@ import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.SimpleFunctionDescriptor;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
+import org.jetbrains.jet.lang.psi.JetProperty;
 import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.NamingScope;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -58,7 +59,7 @@ public class LiteralFunctionTranslator {
         JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
         properties.add(new JsPropertyInitializer(nameRef, fun));
 
-        if (!(descriptor.getContainingDeclaration() instanceof SimpleFunctionDescriptor)) {
+        if (declaration.getParent() instanceof JetProperty && !(((JetProperty) declaration.getParent()).isLocal())) {
             FunctionTranslator.addParameters(fun.getParameters(), descriptor, funContext);
             return fun;
         }

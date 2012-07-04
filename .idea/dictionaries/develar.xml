@@ -6,6 +6,7 @@
       <w>ident</w>
       <w>inlined</w>
       <w>intrinsics</w>
+      <w>nomen</w>
       <w>obfuscatable</w>
       <w>overridable</w>
       <w>parentless</w>

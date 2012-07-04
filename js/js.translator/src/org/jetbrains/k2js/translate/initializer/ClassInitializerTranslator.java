@@ -48,12 +48,6 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     @NotNull
     private final List<JsStatement> initializerStatements = new ArrayList<JsStatement>();
 
-    //private final JsFunction constructor;
-
-    private static void createConstructor() {
-
-    }
-
     public ClassInitializerTranslator(@NotNull JetClassOrObject classDeclaration, @NotNull TranslationContext context) {
         // Note: it's important we use scope for class descriptor because anonymous function used in property initializers
         // belong to the properties themselves
@@ -71,8 +65,16 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         result.getParameters().addAll(translatePrimaryConstructorParameters());
         mayBeAddCallToSuperMethod(result);
         initializerStatements.addAll(new InitializerVisitor().traverseClass(classDeclaration, context()));
-        //result.setBody(new JsBlock(initializerStatements));
-        result.getBody().getStatements().addAll(initializerStatements);
+
+        for (JsStatement statement : initializerStatements) {
+            if (statement instanceof JsBlock) {
+                result.getBody().getStatements().addAll(((JsBlock) statement).getStatements());
+            }
+            else {
+                result.getBody().getStatements().add(statement);
+            }
+        }
+
         return result;
     }
 

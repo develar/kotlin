@@ -134,8 +134,7 @@ public final class Translation {
     @NotNull
     public static JsFunction generateClassInitializerMethod(@NotNull JetClassOrObject classDeclaration,
             @NotNull TranslationContext context) {
-        final ClassInitializerTranslator classInitializerTranslator = new ClassInitializerTranslator(classDeclaration, context);
-        return classInitializerTranslator.generateInitializeMethod();
+        return new ClassInitializerTranslator(classDeclaration, context).generateInitializeMethod();
     }
 
     @NotNull

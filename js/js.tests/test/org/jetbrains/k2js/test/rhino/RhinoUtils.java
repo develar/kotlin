@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static junit.framework.Assert.fail;
 import static org.jetbrains.jet.utils.ExceptionUtils.rethrow;
 import static org.jetbrains.k2js.test.BasicTest.pathToTestFilesRoot;
 
@@ -38,19 +39,57 @@ import static org.jetbrains.k2js.test.BasicTest.pathToTestFilesRoot;
  * @author Pavel Talanov
  */
 public final class RhinoUtils {
-    public static final String JSLINT_LIB = pathToTestFilesRoot() + "jslint.js";
+    public static final String JSHINT_LIB = pathToTestFilesRoot() + "jshint.js";
 
     public static final String KOTLIN_JS_LIB_COMMON = pathToTestFilesRoot() + "kotlin_lib.js";
     private static final String KOTLIN_JS_LIB_ECMA_3 = pathToTestFilesRoot() + "kotlin_lib_ecma3.js";
     private static final String KOTLIN_JS_LIB_ECMA_5 = pathToTestFilesRoot() + "kotlin_lib_ecma5.js";
 
-    private static final Set<String> IGNORED_JSLINT_WARNINGS = new THashSet<String>();
+    private static final Set<String> IGNORED_JSHINT_WARNINGS = new THashSet<String>();
     private static final Map<EcmaVersion, ScriptableObject> versionToScope = new THashMap<EcmaVersion, ScriptableObject>();
+
+    private static final NativeObject JSHINT_OPTIONS = new NativeObject();
 
     static {
         // don't read JS, use kotlin and idea debugger ;)
-        IGNORED_JSLINT_WARNINGS
-                .add("Wrap an immediate function invocation in parentheses to assist the reader in understanding that the expression is the result of a function, and not the function itself.");
+        //IGNORED_JSHINT_WARNINGS.add(
+        //        "Wrap an immediate function invocation in parentheses to assist the reader in understanding that the expression is the result of a function, and not the function itself.");
+        //IGNORED_JSHINT_WARNINGS.add("Expected exactly one space between ';' and 'else'.");
+        //// stupid jslint, see $initializer fun
+        //IGNORED_JSHINT_WARNINGS.add("Do not wrap function literals in parens unless they are to be immediately invoked.");
+        //// stupid jslint
+        //IGNORED_JSHINT_WARNINGS.add("'_' was used before it was defined.");
+        //IGNORED_JSHINT_WARNINGS.add("Empty block.");
+        IGNORED_JSHINT_WARNINGS.add("Expected to see a statement and instead saw a block.");
+        //IGNORED_JSHINT_WARNINGS.add("Unexpected '.'.");
+        //// todo
+        //IGNORED_JSHINT_WARNINGS.add("Strange loop.");
+        //IGNORED_JSHINT_WARNINGS.add("Weird relation.");
+        //IGNORED_JSHINT_WARNINGS.add("Weird condition.");
+        //IGNORED_JSHINT_WARNINGS.add("Expected ';' and instead saw ','.");
+        //IGNORED_JSHINT_WARNINGS.add("Expected an identifier and instead saw ','.");
+        //// it is normal,
+        //IGNORED_JSHINT_WARNINGS.add("Unexpected 'else' after 'return'.");
+        IGNORED_JSHINT_WARNINGS.add("Expected ')' and instead saw 'return'.");
+
+        //IGNORED_JSHINT_WARNINGS.add()
+
+        // todo fix dart ast?
+        //JSHINT_OPTIONS.defineProperty("white", true, ScriptableObject.READONLY);
+        // vars, http://uxebu.com/blog/2010/04/02/one-var-statement-for-one-varia
+        // ble/
+        //JSHINT_OPTIONS.defineProperty("vars", true, ScriptableObject.READONLY);
+        NativeArray globals = new NativeArray(new Object[] {"Kotlin"});
+        JSHINT_OPTIONS.defineProperty("predef", globals, ScriptableObject.READONLY);
+        // todo
+        JSHINT_OPTIONS.defineProperty("expr", true, ScriptableObject.READONLY);
+        JSHINT_OPTIONS.defineProperty("asi", true, ScriptableObject.READONLY);
+        //JSHINT_OPTIONS.defineProperty("nomen", true, ScriptableObject.READONLY);
+        //JSHINT_OPTIONS.defineProperty("continue", true, ScriptableObject.READONLY);
+        //JSHINT_OPTIONS.defineProperty("plusplus", true, ScriptableObject.READONLY);
+        //JSHINT_OPTIONS.defineProperty("evil", true, ScriptableObject.READONLY);
+
+        //JSHINT_OPTIONS.defineProperty("indent", 2, ScriptableObject.READONLY);
     }
 
     private RhinoUtils() {
@@ -85,7 +124,12 @@ public final class RhinoUtils {
             putGlobalVariablesIntoScope(scope, variables);
             for (String filename : fileNames) {
                 runFileWithRhino(filename, context, scope);
-                lintIt(context, filename, scope);
+                String problems = lintIt(context, filename, scope);
+                if (problems != null) {
+                    //fail(problems);
+                    //noinspection UseOfSystemOutOrSystemErr
+                    System.out.print(problems);
+                }
             }
             checker.runChecks(context, scope);
         }
@@ -94,33 +138,20 @@ public final class RhinoUtils {
         }
     }
 
-    @SuppressWarnings("UseOfSystemOutOrSystemErr")
-    private static void lintIt(Context context, String fileName, ScriptableObject scope) throws IOException {
+    @Nullable
+    private static String lintIt(Context context, String fileName, ScriptableObject scope) throws IOException {
         if (Boolean.valueOf(System.getProperty("test.lint.skip"))) {
-            return;
+            return null;
         }
 
-        NativeObject options = new NativeObject();
-        // todo fix dart ast?
-        options.defineProperty("white", true, ScriptableObject.READONLY);
-        // vars, http://uxebu.com/blog/2010/04/02/one-var-statement-for-one-variable/
-        options.defineProperty("vars", true, ScriptableObject.READONLY);
-        NativeArray globals = new NativeArray(new Object[] {"Kotlin"});
-        options.defineProperty("predef", globals, ScriptableObject.READONLY);
-
-        Object[] args = {FileUtil.loadFile(new File(fileName)), options};
-        Function function = (Function) ScriptableObject.getProperty(scope.getParentScope(), "JSLINT");
+        Object[] args = {FileUtil.loadFile(new File(fileName)), JSHINT_OPTIONS};
+        Function function = (Function) ScriptableObject.getProperty(scope.getParentScope(), "JSHINT");
         Object status = function.call(context, scope.getParentScope(), scope.getParentScope(), args);
-        Boolean noErrors = (Boolean) Context.jsToJava(status, Boolean.class);
-        if (!noErrors) {
+        if (!(Boolean) Context.jsToJava(status, Boolean.class)) {
             Object errors = function.get("errors", scope);
-            if (errors == null) {
-                return;
-            }
-
-            System.out.println(fileName);
+            StringBuilder sb = new StringBuilder(fileName);
             for (Object errorObj : ((NativeArray) errors)) {
-                if (!(errorObj instanceof NativeObject)) {
+                if (errorObj == null) {
                     continue;
                 }
 
@@ -133,14 +164,21 @@ public final class RhinoUtils {
                 Object reasonObj = e.get("reason");
                 if (reasonObj instanceof String) {
                     String reason = (String) reasonObj;
-                    if (IGNORED_JSLINT_WARNINGS.contains(reason)) {
+                    if (IGNORED_JSHINT_WARNINGS.contains(reason) ||
+                        reason.startsWith("Expected exactly one space between ')' and ") ||
+                        reason.startsWith("Expected '}' to match '{' from line ") ||
+                        reason.startsWith("Expected '{' and instead saw ")) {
                         continue;
                     }
 
-                    System.out.println(line + ":" + character + " " + reason);
+                    sb.append('\n').append(line).append(':').append(character).append(' ').append(reason);
                 }
             }
+
+            return sb.length() == fileName.length() ? null : sb.toString();
         }
+
+        return null;
     }
 
     private static int toInt(Object obj) {
@@ -177,7 +215,7 @@ public final class RhinoUtils {
         try {
             runFileWithRhino(getKotlinLibFile(version), context, scope);
             runFileWithRhino(KOTLIN_JS_LIB_COMMON, context, scope);
-            runFileWithRhino(JSLINT_LIB, context, scope);
+            runFileWithRhino(JSHINT_LIB, context, scope);
         }
         catch (Exception e) {
             throw rethrow(e);

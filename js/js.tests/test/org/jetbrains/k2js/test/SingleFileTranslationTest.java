@@ -32,6 +32,8 @@ import static org.jetbrains.k2js.test.utils.JsTestUtils.readFile;
  */
 @SuppressWarnings("JUnitTestCaseWithNonTrivialConstructors")
 public abstract class SingleFileTranslationTest extends BasicTest {
+    private static final EnumSet<EcmaVersion> DEFAULT_ECMA_VERSIONS = EcmaVersion.all();
+    //private static final EnumSet<EcmaVersion> DEFAULT_ECMA_VERSIONS = EnumSet.of(EcmaVersion.v5);
 
     public SingleFileTranslationTest(@NotNull String main) {
         super(main);
@@ -39,10 +41,10 @@ public abstract class SingleFileTranslationTest extends BasicTest {
 
     public void runFunctionOutputTest(@NotNull String kotlinFilename, @NotNull String namespaceName,
             @NotNull String functionName, @NotNull Object expectedResult) throws Exception {
-        runFunctionOutputTest(EcmaVersion.all(), kotlinFilename, namespaceName, functionName, expectedResult);
+        runFunctionOutputTest(DEFAULT_ECMA_VERSIONS, kotlinFilename, namespaceName, functionName, expectedResult);
     }
 
-    protected void runFunctionOutputTest(@NotNull EnumSet<EcmaVersion> ecmaVersions, @NotNull String kotlinFilename,
+    protected void runFunctionOutputTest(@NotNull Iterable<EcmaVersion> ecmaVersions, @NotNull String kotlinFilename,
             @NotNull String namespaceName,
             @NotNull String functionName,
             @NotNull Object expectedResult) throws Exception {
@@ -50,8 +52,12 @@ public abstract class SingleFileTranslationTest extends BasicTest {
         runRhinoTests(kotlinFilename, ecmaVersions, new RhinoFunctionResultChecker(namespaceName, functionName, expectedResult));
     }
 
-    public void checkFooBoxIsTrue(@NotNull String filename, @NotNull EnumSet<EcmaVersion> ecmaVersions) throws Exception {
+    public void checkFooBoxIsTrue(@NotNull String filename, @NotNull Iterable<EcmaVersion> ecmaVersions) throws Exception {
         runFunctionOutputTest(ecmaVersions, filename, "foo", "box", true);
+    }
+
+    public void checkFooBoxIsTrue(@NotNull String filename) throws Exception {
+        runFunctionOutputTest(DEFAULT_ECMA_VERSIONS, filename, "foo", "box", true);
     }
 
     public void checkFooBoxIsValue(@NotNull String filename, @NotNull EnumSet<EcmaVersion> ecmaVersions, Object expected) throws Exception {
@@ -59,19 +65,19 @@ public abstract class SingleFileTranslationTest extends BasicTest {
     }
 
     protected void fooBoxTest() throws Exception {
-        checkFooBoxIsTrue(getTestName(true) + ".kt", EcmaVersion.all());
+        checkFooBoxIsTrue(getTestName(true) + ".kt", DEFAULT_ECMA_VERSIONS);
     }
 
     protected void fooBoxIsValue(Object expected) throws Exception {
-        checkFooBoxIsValue(getTestName(true) + ".kt", EcmaVersion.all(), expected);
+        checkFooBoxIsValue(getTestName(true) + ".kt", DEFAULT_ECMA_VERSIONS, expected);
     }
 
-    protected void fooBoxTest(@NotNull EnumSet<EcmaVersion> ecmaVersions) throws Exception {
+    protected void fooBoxTest(@NotNull Iterable<EcmaVersion> ecmaVersions) throws Exception {
         checkFooBoxIsTrue(getTestName(true) + ".kt", ecmaVersions);
     }
 
     protected void checkFooBoxIsOk(@NotNull String filename) throws Exception {
-        checkFooBoxIsOk(EcmaVersion.all(), filename);
+        checkFooBoxIsOk(DEFAULT_ECMA_VERSIONS, filename);
     }
 
     protected void checkFooBoxIsOk(@NotNull EnumSet<EcmaVersion> versions, @NotNull String filename) throws Exception {
@@ -81,7 +87,7 @@ public abstract class SingleFileTranslationTest extends BasicTest {
     protected void checkOutput(@NotNull String kotlinFilename,
             @NotNull String expectedResult,
             @NotNull String... args) throws Exception {
-        checkOutput(kotlinFilename, expectedResult, EcmaVersion.all(), args);
+        checkOutput(kotlinFilename, expectedResult, DEFAULT_ECMA_VERSIONS, args);
     }
 
     protected void checkOutput(@NotNull String kotlinFilename,
@@ -92,7 +98,7 @@ public abstract class SingleFileTranslationTest extends BasicTest {
         runRhinoTests(kotlinFilename, ecmaVersions, new RhinoSystemOutputChecker(expectedResult));
     }
 
-    protected void performTestWithMain(@NotNull EnumSet<EcmaVersion> ecmaVersions,
+    protected void performTestWithMain(@NotNull Iterable<EcmaVersion> ecmaVersions,
             @NotNull String testName,
             @NotNull String testId,
             @NotNull String... args) throws Exception {
@@ -100,6 +106,6 @@ public abstract class SingleFileTranslationTest extends BasicTest {
     }
 
     protected void performTestWithMain(@NotNull String testName, @NotNull String testId, @NotNull String... args) throws Exception {
-        performTestWithMain(EcmaVersion.all(), testName, testId, args);
+        performTestWithMain(DEFAULT_ECMA_VERSIONS, testName, testId, args);
     }
 }

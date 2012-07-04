@@ -291,14 +291,14 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsInvocation encloseFunction(@NotNull JsFunction function) {
+    public static JsInvocation encloseFunction(@NotNull JsExpression function) {
         return new JsInvocation(EMPTY_REF, function);
     }
 
     @NotNull
     public static JsFunction createPackage(@NotNull List<JsStatement> to, @NotNull JsScope scope) {
         JsFunction packageBlockFunction = createFunctionWithEmptyBody(scope);
-        to.add(new JsInvocation(encloseFunction(packageBlockFunction)).makeStmt());
+        to.add(encloseFunction(new JsInvocation(packageBlockFunction)).makeStmt());
         return packageBlockFunction;
     }
 }
