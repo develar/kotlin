@@ -80,6 +80,10 @@ public final class TranslationContext {
         aliasingContext = context;
     }
 
+    public DynamicContext dynamicContext() {
+        return dynamicContext;
+    }
+
     @NotNull
     public TranslationContext contextWithScope(@NotNull NamingScope newScope, @NotNull JsBlock block) {
         return contextWithScope(newScope, block, aliasingContext);

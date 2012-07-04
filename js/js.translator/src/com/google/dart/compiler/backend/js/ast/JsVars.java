@@ -74,6 +74,11 @@ public class JsVars extends JsStatement implements Iterable<JsVars.JsVar> {
         }
     }
 
+    public JsVar get() {
+        assert vars.size() == 1;
+        return vars.get(0);
+    }
+
     public JsVars() {
         vars = new SmartList<JsVar>();
     }

@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.*;
@@ -37,7 +36,6 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
  * @author Pavel Talanov
  */
 public final class WhenTranslator extends AbstractTranslator {
-
     @NotNull
     public static JsNode translateWhenExpression(@NotNull JetWhenExpression expression, @NotNull TranslationContext context) {
         WhenTranslator translator = new WhenTranslator(expression, context);
@@ -49,7 +47,9 @@ public final class WhenTranslator extends AbstractTranslator {
     @Nullable
     private final JsExpression expressionToMatch;
     @NotNull
-    private final TemporaryVariable dummyCounter;
+    private final JsVars dummyCounter;
+    @NotNull
+    private final JsNameRef dummyCounterRef;
     @NotNull
     private final TemporaryVariable result;
 
@@ -59,7 +59,10 @@ public final class WhenTranslator extends AbstractTranslator {
         super(context);
         this.whenExpression = expression;
         this.expressionToMatch = translateExpressionToMatch(whenExpression);
-        this.dummyCounter = context.declareTemporary(program().getNumberLiteral(0));
+
+        dummyCounter = context.dynamicContext().createTemporary(program().getNumberLiteral(0));
+        dummyCounterRef = dummyCounter.get().getName().makeRef();
+
         this.result = context.declareTemporary(program().getNullLiteral());
     }
 
@@ -84,25 +87,25 @@ public final class WhenTranslator extends AbstractTranslator {
     @NotNull
     private JsStatement surroundWithDummyIf(@NotNull JsStatement entryStatement) {
         JsNumberLiteral jsEntryNumber = program().getNumberLiteral(this.currentEntryNumber);
-        JsExpression stepNumberEqualsCurrentEntryNumber = equality(dummyCounter.reference(), jsEntryNumber);
+        JsExpression stepNumberEqualsCurrentEntryNumber = equality(dummyCounterRef, jsEntryNumber);
         currentEntryNumber++;
-        return new JsIf(stepNumberEqualsCurrentEntryNumber, entryStatement, null);
+        return new JsIf(stepNumberEqualsCurrentEntryNumber, entryStatement);
     }
 
     @NotNull
     private JsFor generateDummyFor() {
-        return new JsFor(dummyCounter.assignmentExpression(), generateConditionStatement(), generateIncrementStatement());
+        return new JsFor(dummyCounter, generateConditionStatement(), generateIncrementStatement());
     }
 
     @NotNull
     private JsBinaryOperation generateConditionStatement() {
         JsNumberLiteral entriesNumber = program().getNumberLiteral(whenExpression.getEntries().size());
-        return new JsBinaryOperation(JsBinaryOperator.LT, dummyCounter.reference(), entriesNumber);
+        return new JsBinaryOperation(JsBinaryOperator.LT, dummyCounterRef, entriesNumber);
     }
 
     @NotNull
     private JsUnaryOperation generateIncrementStatement() {
-        return new JsPostfixOperation(JsUnaryOperator.INC, dummyCounter.reference());
+        return new JsPostfixOperation(JsUnaryOperator.INC, dummyCounterRef);
     }
 
     @NotNull
@@ -112,7 +115,7 @@ public final class WhenTranslator extends AbstractTranslator {
             return statementToExecute;
         }
         JsExpression condition = translateConditions(entry);
-        return new JsIf(condition, addDummyBreakIfNeed(statementToExecute), null);
+        return new JsIf(condition, addDummyBreakIfNeed(statementToExecute));
     }
 
     @NotNull
@@ -168,7 +171,7 @@ public final class WhenTranslator extends AbstractTranslator {
 
     @NotNull
     private static JsStatement addDummyBreakIfNeed(@NotNull JsStatement statement) {
-        return statement instanceof JsReturn ? statement : AstUtil.newBlock(statement, new JsBreak());
+        return statement instanceof JsReturn ? statement : new JsBlock(statement, new JsBreak());
     }
 
     @NotNull

@@ -38,7 +38,6 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyForDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newNamedMethod;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.setParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBackingField;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.backingFieldReference;
 

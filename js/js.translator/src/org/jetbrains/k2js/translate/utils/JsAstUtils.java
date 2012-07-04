@@ -25,7 +25,10 @@ import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Pavel Talanov
@@ -176,18 +179,6 @@ public final class JsAstUtils {
     @NotNull
     public static JsVars newVar(@NotNull JsName name, @Nullable JsExpression expr) {
         return new JsVars(new JsVars.JsVar(name, expr));
-    }
-
-    public static void addVarDeclaration(@NotNull JsBlock block, @NotNull JsVars vars) {
-        LinkedList<JsStatement> statementLinkedList = Lists.newLinkedList(block.getStatements());
-        statementLinkedList.offer(vars);
-        setStatements(block, statementLinkedList);
-    }
-
-    private static void setStatements(@NotNull JsBlock block, @NotNull List<JsStatement> statements) {
-        List<JsStatement> statementList = block.getStatements();
-        statementList.clear();
-        statementList.addAll(statements);
     }
 
     public static void setArguments(@NotNull JsInvocation invocation, @NotNull List<JsExpression> newArgs) {

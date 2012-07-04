@@ -25,8 +25,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author Pavel Talanov
  */
-public final class TemporaryVariable {
-
+public class TemporaryVariable {
     @NotNull
     private final JsExpression assignmentExpression;
     @NotNull

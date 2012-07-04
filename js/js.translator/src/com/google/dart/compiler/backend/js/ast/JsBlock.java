@@ -6,45 +6,50 @@ package com.google.dart.compiler.backend.js.ast;
 
 import com.intellij.util.SmartList;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Represents a JavaScript block statement.
  */
 public class JsBlock extends JsStatement {
-  private final List<JsStatement> statements;
+    private final List<JsStatement> statements;
 
-  public JsBlock() {
-      statements = new SmartList<JsStatement>();
-  }
-
-  public JsBlock(JsStatement stmt) {
-    this();
-    statements.add(stmt);
-  }
-
-  public JsBlock(List<JsStatement> statements) {
-    this.statements = statements;
-  }
-
-  public List<JsStatement> getStatements() {
-    return statements;
-  }
-
-  public boolean isGlobalBlock() {
-    return false;
-  }
-
-  @Override
-  public void traverse(JsVisitor v, JsContext ctx) {
-    if (v.visit(this, ctx)) {
-      v.acceptWithInsertRemove(statements);
+    public JsBlock() {
+        this(new SmartList<JsStatement>());
     }
-    v.endVisit(this, ctx);
-  }
 
-  @Override
-  public NodeKind getKind() {
-    return NodeKind.BLOCK;
-  }
+    public JsBlock(JsStatement statement) {
+        this(Collections.singletonList(statement));
+    }
+
+    public JsBlock(JsStatement... statements) {
+        this(Arrays.asList(statements));
+    }
+
+    public JsBlock(List<JsStatement> statements) {
+        this.statements = statements;
+    }
+
+    public List<JsStatement> getStatements() {
+        return statements;
+    }
+
+    public boolean isGlobalBlock() {
+        return false;
+    }
+
+    @Override
+    public void traverse(JsVisitor v, JsContext ctx) {
+        if (v.visit(this, ctx)) {
+            v.acceptWithInsertRemove(statements);
+        }
+        v.endVisit(this, ctx);
+    }
+
+    @Override
+    public NodeKind getKind() {
+        return NodeKind.BLOCK;
+    }
 }

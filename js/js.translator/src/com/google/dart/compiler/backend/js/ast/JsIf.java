@@ -22,6 +22,11 @@ public final class JsIf extends JsStatement {
     this.elseStmt = elseStmt;
   }
 
+  public JsIf(JsExpression ifExpr, JsStatement thenStmt) {
+    this.ifExpr = ifExpr;
+    this.thenStmt = thenStmt;
+  }
+
   public JsStatement getElseStmt() {
     return elseStmt;
   }

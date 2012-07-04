@@ -18,8 +18,9 @@ package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.addVarDeclaration;
+import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
 
 //TODO: consider renaming to scoping context
@@ -40,6 +41,9 @@ public final class DynamicContext {
     @NotNull
     private final JsBlock currentBlock;
 
+    @Nullable
+    private JsVars vars;
+
     private DynamicContext(@NotNull NamingScope scope, @NotNull JsBlock block) {
         this.currentScope = scope;
         this.currentBlock = block;
@@ -57,10 +61,19 @@ public final class DynamicContext {
 
     @NotNull
     public TemporaryVariable declareTemporary(@NotNull JsExpression initExpression, boolean initialize) {
+        if (vars == null) {
+            vars = new JsVars();
+            currentBlock.getStatements().add(vars);
+        }
+
         JsName temporaryName = currentScope.declareTemporary();
-        JsVars temporaryDeclaration = newVar(temporaryName, initialize ? initExpression : null);
-        addVarDeclaration(jsBlock(), temporaryDeclaration);
+        vars.add(new JsVar(temporaryName, initialize ? initExpression : null));
         return new TemporaryVariable(temporaryName, initExpression);
+    }
+
+    @NotNull
+    public JsVars createTemporary(@NotNull JsExpression initExpression) {
+        return newVar(currentScope.declareTemporary(), initExpression);
     }
 
     @NotNull

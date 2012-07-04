@@ -22,7 +22,6 @@ import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
 import org.jetbrains.k2js.test.utils.JsTestUtils;
 
-import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -74,7 +73,7 @@ public final class PropertyAccessTest extends SingleFileTranslationTest {
     }
 
     public void testInitInstanceProperties() throws Exception {
-        fooBoxTest(EnumSet.of(EcmaVersion.v5));
+        fooBoxTest(JsTestUtils.successOnEcmaV5());
     }
 
     public void testEnumerable() throws Exception {

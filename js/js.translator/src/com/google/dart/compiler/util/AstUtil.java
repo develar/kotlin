@@ -52,14 +52,6 @@ public final class AstUtil {
         return arr;
     }
 
-    public static JsBlock newBlock(JsStatement... statements) {
-        JsBlock jsBlock = new JsBlock();
-        for (JsStatement statement : statements) {
-            jsBlock.getStatements().add(statement);
-        }
-        return jsBlock;
-    }
-
     /**
      * Returns a sequence of expressions (using the binary sequence operator).
      *
