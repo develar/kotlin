@@ -64,21 +64,13 @@ public final class JsAstUtils {
         if (jsNode instanceof JsBlock) {
             return (JsBlock) jsNode;
         }
-        JsStatement jsStatement = convertToStatement(jsNode);
-        return new JsBlock(jsStatement);
+        return new JsBlock(convertToStatement(jsNode));
     }
 
     @NotNull
     public static JsExpression convertToExpression(@NotNull JsNode jsNode) {
         assert jsNode instanceof JsExpression : "Unexpected node of type: " + jsNode.getClass().toString();
         return (JsExpression) jsNode;
-    }
-
-    @NotNull
-    public static JsBlock newBlock(List<JsStatement> statements) {
-        JsBlock result = new JsBlock();
-        setStatements(result, statements);
-        return result;
     }
 
     @NotNull
@@ -166,10 +158,7 @@ public final class JsAstUtils {
             @NotNull JsExpression condition,
             @NotNull JsExpression incrExpression,
             @NotNull JsStatement body) {
-        JsFor result = new JsFor();
-        result.setInitVars(initExpression);
-        result.setCondition(condition);
-        result.setIncrExpr(incrExpression);
+        JsFor result = new JsFor(initExpression, condition, incrExpression);
         result.setBody(body);
         return result;
     }

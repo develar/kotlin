@@ -67,7 +67,7 @@ public final class WhenTranslator extends AbstractTranslator {
     JsNode translate() {
         JsFor resultingFor = generateDummyFor();
         List<JsStatement> entries = translateEntries();
-        resultingFor.setBody(newBlock(entries));
+        resultingFor.setBody(new JsBlock(entries));
         context().addStatementToCurrentBlock(resultingFor);
         return result.reference();
     }
@@ -91,11 +91,7 @@ public final class WhenTranslator extends AbstractTranslator {
 
     @NotNull
     private JsFor generateDummyFor() {
-        JsFor result = new JsFor();
-        result.setInitExpr(dummyCounter.assignmentExpression());
-        result.setIncrExpr(generateIncrementStatement());
-        result.setCondition(generateConditionStatement());
-        return result;
+        return new JsFor(dummyCounter.assignmentExpression(), generateConditionStatement(), generateIncrementStatement());
     }
 
     @NotNull
@@ -105,8 +101,8 @@ public final class WhenTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private JsPrefixOperation generateIncrementStatement() {
-        return new JsPrefixOperation(JsUnaryOperator.INC, dummyCounter.reference());
+    private JsUnaryOperation generateIncrementStatement() {
+        return new JsPostfixOperation(JsUnaryOperator.INC, dummyCounter.reference());
     }
 
     @NotNull

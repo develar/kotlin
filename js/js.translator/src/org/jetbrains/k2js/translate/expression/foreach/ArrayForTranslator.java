@@ -83,9 +83,8 @@ public final class ArrayForTranslator extends ForTranslator {
         List<JsStatement> blockStatements = Lists.newArrayList();
         blockStatements.add(temporariesInitialization(loopRange, end).makeStmt());
         blockStatements.add(generateForExpression(getInitExpression(), getCondition(), getIncrementExpression(), getBody()));
-        return newBlock(blockStatements);
+        return new JsBlock(blockStatements);
     }
-
 
     @NotNull
     private JsStatement getBody() {
@@ -107,6 +106,6 @@ public final class ArrayForTranslator extends ForTranslator {
 
     @NotNull
     private JsExpression getIncrementExpression() {
-        return new JsPrefixOperation(JsUnaryOperator.INC, index.reference());
+        return new JsPostfixOperation(JsUnaryOperator.INC, index.reference());
     }
 }

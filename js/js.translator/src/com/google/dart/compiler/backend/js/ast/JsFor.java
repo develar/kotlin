@@ -12,94 +12,88 @@ import com.google.dart.compiler.common.SourceInfo;
  * {@link #getInitVars()} is used, or an expression, in which case
  * {@link #getInitExpr()} is used. In the latter case, the comma operator is
  * often used to create a compound expression.
- *
- * <p>
+ * <p/>
+ * <p/>
  * Note that any of the parts of the <code>for</code> loop header can be
  * <code>null</code>, although the body will never be null.
  */
 public class JsFor extends JsStatement {
+    private JsStatement body;
+    private JsExpression condition;
+    private JsExpression incrExpr;
+    private JsExpression initExpr;
+    private JsVars initVars;
 
-  private JsStatement body;
-  private JsExpression condition;
-  private JsExpression incrExpr;
-  private JsExpression initExpr;
-  private JsVars initVars;
-
-  public JsFor() {
-    super();
-  }
-
-  public JsStatement getBody() {
-    return body;
-  }
-
-  public JsExpression getCondition() {
-    return condition;
-  }
-
-  public JsExpression getIncrExpr() {
-    return incrExpr;
-  }
-
-  public JsExpression getInitExpr() {
-    return initExpr;
-  }
-
-  public JsVars getInitVars() {
-    return initVars;
-  }
-
-  public void setBody(JsStatement body) {
-    this.body = body;
-  }
-
-  public void setCondition(JsExpression condition) {
-    this.condition = condition;
-  }
-
-  public void setIncrExpr(JsExpression incrExpr) {
-    this.incrExpr = incrExpr;
-  }
-
-  public void setInitExpr(JsExpression initExpr) {
-    this.initExpr = initExpr;
-  }
-
-  public void setInitVars(JsVars initVars) {
-    this.initVars = initVars;
-  }
-
-  @Override
-  public void traverse(JsVisitor v, JsContext ctx) {
-    if (v.visit(this, ctx)) {
-      assert (!(initExpr != null && initVars != null));
-
-      if (initExpr != null) {
-        initExpr = v.accept(initExpr);
-      } else if (initVars != null) {
-        initVars = v.accept(initVars);
-      }
-
-      if (condition != null) {
-        condition = v.accept(condition);
-      }
-
-      if (incrExpr != null) {
-        incrExpr = v.accept(incrExpr);
-      }
-      body = v.accept(body);
+    public JsFor(JsVars initVars, JsExpression condition, JsExpression incrExpr) {
+        this.initVars = initVars;
+        this.incrExpr = incrExpr;
+        this.condition = condition;
+        initExpr = null;
     }
-    v.endVisit(this, ctx);
-  }
 
-  @Override
-  public JsFor setSourceRef(SourceInfo info) {
-    super.setSourceRef(info);
-    return this;
-  }
+    public JsFor(JsExpression initExpr, JsExpression condition, JsExpression incrExpr) {
+        this.initExpr = initExpr;
+        this.incrExpr = incrExpr;
+        this.condition = condition;
+        initVars = null;
+    }
 
-  @Override
-  public NodeKind getKind() {
-    return NodeKind.FOR;
-  }
+    public JsStatement getBody() {
+        return body;
+    }
+
+    public JsExpression getCondition() {
+        return condition;
+    }
+
+    public JsExpression getIncrExpr() {
+        return incrExpr;
+    }
+
+    public JsExpression getInitExpr() {
+        return initExpr;
+    }
+
+    public JsVars getInitVars() {
+        return initVars;
+    }
+
+    public void setBody(JsStatement body) {
+        this.body = body;
+    }
+
+    @Override
+    public void traverse(JsVisitor v, JsContext ctx) {
+        if (v.visit(this, ctx)) {
+            assert (!(initExpr != null && initVars != null));
+
+            if (initExpr != null) {
+                initExpr = v.accept(initExpr);
+            }
+            else if (initVars != null) {
+                initVars = v.accept(initVars);
+            }
+
+            if (condition != null) {
+                condition = v.accept(condition);
+            }
+
+            if (incrExpr != null) {
+                incrExpr = v.accept(incrExpr);
+            }
+            body = v.accept(body);
+        }
+        v.endVisit(this, ctx);
+    }
+
+    @Override
+    public JsFor setSourceRef(SourceInfo info) {
+        super.setSourceRef(info);
+        return this;
+    }
+
+    @Override
+    public NodeKind getKind() {
+        return NodeKind.FOR;
+    }
 }

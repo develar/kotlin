@@ -38,7 +38,6 @@ import java.util.List;
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.general.Translation.translateClassDeclaration;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.newBlock;
 
 /**
  * @author Pavel Talanov
@@ -142,7 +141,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         List<JsStatement> result = new ArrayList<JsStatement>();
         result.add(vars);
         result.add(new JsReturn(valueLiteral));
-        dummyFunction.setBody(newBlock(result));
+        dummyFunction.setBody(new JsBlock(result));
         classesVar.setInitExpr(new JsInvocation(dummyFunction));
     }
 
