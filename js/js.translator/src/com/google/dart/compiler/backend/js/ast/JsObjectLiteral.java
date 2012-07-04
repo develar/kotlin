@@ -4,7 +4,8 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-import java.util.ArrayList;
+import com.intellij.util.SmartList;
+
 import java.util.List;
 
 /**
@@ -14,7 +15,7 @@ public final class JsObjectLiteral extends JsLiteral {
   private final List<JsPropertyInitializer> props;
 
   public JsObjectLiteral() {
-    props = new ArrayList<JsPropertyInitializer>();
+    props = new SmartList<JsPropertyInitializer>();
   }
 
   public JsObjectLiteral(List<JsPropertyInitializer> props) {

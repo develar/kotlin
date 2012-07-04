@@ -4,12 +4,10 @@ import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
-import org.jetbrains.jet.lang.descriptors.SimpleFunctionDescriptor;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetProperty;
 import org.jetbrains.k2js.translate.LabelGenerator;
-import org.jetbrains.k2js.translate.context.NamingScope;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 
@@ -27,14 +25,10 @@ public class LiteralFunctionTranslator {
 
     private TranslationContext rootContext;
 
-    public LiteralFunctionTranslator() {
-
-    }
-
     public void setRootContext(TranslationContext rootContext) {
         assert this.rootContext == null;
         this.rootContext = rootContext;
-        JsName containingVarName = rootContext.jsScope().declareName(containingVarRef.getIdent());
+        JsName containingVarName = rootContext.scope().declareName(containingVarRef.getIdent());
         containingVarRef.resolve(containingVarName);
     }
 
@@ -45,13 +39,12 @@ public class LiteralFunctionTranslator {
     public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration) {
         FunctionDescriptor descriptor = getFunctionDescriptor(rootContext.bindingContext(), declaration);
 
-        NamingScope namingScope = rootContext.scope().innerScope();
+        JsScope namingScope = rootContext.scope().innerScope();
         JsBlock body = new JsBlock();
         TranslationContext funContext = rootContext.contextWithScope(namingScope, body);
 
-        JsFunction fun = new JsFunction(funContext.jsScope());
+        JsFunction fun = new JsFunction(funContext.scope());
         fun.setBody(body);
-
 
         body.getStatements().addAll(translateFunctionBody(descriptor, declaration, funContext).getStatements());
 
@@ -70,15 +63,15 @@ public class LiteralFunctionTranslator {
     public JsExpression translate(@NotNull ClassDescriptor containingClass,
             JetClassOrObject declaration,
             ClassTranslator classTranslator) {
-        NamingScope namingScope = rootContext.scope().innerScope();
+        JsScope namingScope = rootContext.scope().innerScope();
 
-        JsName outerThisName = namingScope.jsScope().declareName("$this");
+        JsName outerThisName = namingScope.declareName("$this");
 
         JsBlock body = new JsBlock();
         TranslationContext funContext = rootContext.contextWithScope(namingScope, body, rootContext.aliasingContext()
                 .withThisAliased(containingClass, outerThisName));
 
-        JsFunction fun = new JsFunction(funContext.jsScope());
+        JsFunction fun = new JsFunction(funContext.scope());
         fun.setBody(body);
 
         body.getStatements().add(new JsReturn(classTranslator.translateClassOrObjectCreation(funContext)));

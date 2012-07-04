@@ -56,10 +56,9 @@ public final class StaticContext {
         JsProgram program = new JsProgram("main");
         JsRootScope jsRootScope = program.getRootScope();
         Namer namer = Namer.newInstance(jsRootScope);
-        NamingScope scope = NamingScope.rootScope(jsRootScope);
         Intrinsics intrinsics = Intrinsics.standardLibraryIntrinsics(library);
         StandardClasses standardClasses = StandardClasses.bindImplementations(namer.getKotlinScope());
-        return new StaticContext(program, bindingContext, namer, intrinsics, standardClasses, scope, ecmaVersion);
+        return new StaticContext(program, bindingContext, namer, intrinsics, standardClasses, jsRootScope, ecmaVersion);
     }
 
     @NotNull
@@ -77,18 +76,18 @@ public final class StaticContext {
     private final StandardClasses standardClasses;
 
     @NotNull
-    private final NamingScope rootScope;
+    private final JsScope rootScope;
 
     @NotNull
     private final Generator<JsName> names = new NameGenerator();
     @NotNull
-    private final Generator<NamingScope> scopes = new ScopeGenerator();
+    private final Generator<JsScope> scopes = new ScopeGenerator();
     @NotNull
     private final Generator<JsNameRef> qualifiers = new QualifierGenerator();
     @NotNull
     private final Generator<Boolean> qualifierIsNull = new QualifierIsNullGenerator();
     @NotNull
-    private final Map<NamingScope, JsFunction> scopeToFunction = Maps.newHashMap();
+    private final Map<JsScope, JsFunction> scopeToFunction = Maps.newHashMap();
 
     @NotNull
     private final EcmaVersion ecmaVersion;
@@ -98,7 +97,7 @@ public final class StaticContext {
     //TODO: too many parameters in constructor
     private StaticContext(@NotNull JsProgram program, @NotNull BindingContext bindingContext,
             @NotNull Namer namer, @NotNull Intrinsics intrinsics,
-            @NotNull StandardClasses standardClasses, @NotNull NamingScope rootScope, @NotNull EcmaVersion ecmaVersion) {
+            @NotNull StandardClasses standardClasses, @NotNull JsScope rootScope, @NotNull EcmaVersion ecmaVersion) {
         this.program = program;
         this.bindingContext = bindingContext;
         this.namer = namer;
@@ -142,22 +141,22 @@ public final class StaticContext {
     }
 
     @NotNull
-    public NamingScope getRootScope() {
+    public JsScope getRootScope() {
         return rootScope;
     }
 
     @NotNull
-    public NamingScope getScopeForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-        NamingScope namingScope = scopes.get(descriptor.getOriginal());
+    public JsScope getScopeForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+        JsScope namingScope = scopes.get(descriptor.getOriginal());
         assert namingScope != null : "Must have a scope for descriptor";
         return namingScope;
     }
 
     @NotNull
     public JsFunction getFunctionWithScope(@NotNull CallableDescriptor descriptor) {
-        NamingScope scope = getScopeForDescriptor(descriptor);
+        JsScope scope = getScopeForDescriptor(descriptor);
         JsFunction function = scopeToFunction.get(scope);
-        assert scope.jsScope().equals(function.getScope()) : "Inconsistency.";
+        assert scope.equals(function.getScope()) : "Inconsistency.";
         return function;
     }
 
@@ -170,7 +169,7 @@ public final class StaticContext {
 
     private final class NameGenerator extends Generator<JsName> {
         private JsName declareName(DeclarationDescriptor descriptor, String name) {
-            NamingScope scope = getEnclosingScope(descriptor);
+            JsScope scope = getEnclosingScope(descriptor);
             // ecma 5 property name never declares as obfuscatable:
             // 1) property cannot be overloaded, so, name collision is not possible
             // 2) main reason: if property doesn't have any custom accessor, value holder will have the same name as accessor, so, the same name will be declared more than once
@@ -211,7 +210,7 @@ public final class StaticContext {
                 @Override
                 @Nullable
                 public JsName apply(@NotNull DeclarationDescriptor descriptor) {
-                    NamingScope namingScope = getEnclosingScope(descriptor);
+                    JsScope namingScope = getEnclosingScope(descriptor);
                     return namingScope.declareObfuscatableName(descriptor.getName().getName());
                 }
             };
@@ -299,7 +298,7 @@ public final class StaticContext {
                         return null;
                     }
 
-                    NamingScope namingScope = getEnclosingScope(descriptor);
+                    JsScope namingScope = getEnclosingScope(descriptor);
                     JsName result = getNameForDescriptor(overriddenDescriptor);
                     namingScope.declareUnobfuscatableName(result.getIdent());
                     return result;
@@ -318,17 +317,17 @@ public final class StaticContext {
     }
 
     @NotNull
-    private NamingScope getEnclosingScope(@NotNull DeclarationDescriptor descriptor) {
+    private JsScope getEnclosingScope(@NotNull DeclarationDescriptor descriptor) {
         DeclarationDescriptor containingDeclaration = getContainingDeclaration(descriptor);
         return getScopeForDescriptor(containingDeclaration.getOriginal());
     }
 
-    private final class ScopeGenerator extends Generator<NamingScope> {
+    private final class ScopeGenerator extends Generator<JsScope> {
 
         public ScopeGenerator() {
-            Rule<NamingScope> generateNewScopesForClassesWithNoAncestors = new Rule<NamingScope>() {
+            Rule<JsScope> generateNewScopesForClassesWithNoAncestors = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
                     if (!(descriptor instanceof ClassDescriptor)) {
                         return null;
                     }
@@ -338,9 +337,9 @@ public final class StaticContext {
                     return null;
                 }
             };
-            Rule<NamingScope> generateInnerScopesForDerivedClasses = new Rule<NamingScope>() {
+            Rule<JsScope> generateInnerScopesForDerivedClasses = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
                     if (!(descriptor instanceof ClassDescriptor)) {
                         return null;
                     }
@@ -351,9 +350,9 @@ public final class StaticContext {
                     return getScopeForDescriptor(superclass).innerScope("Scope for class " + descriptor.getName());
                 }
             };
-            Rule<NamingScope> generateNewScopesForNamespaceDescriptors = new Rule<NamingScope>() {
+            Rule<JsScope> generateNewScopesForNamespaceDescriptors = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
                     if (!(descriptor instanceof NamespaceDescriptor)) {
                         return null;
                     }
@@ -361,32 +360,25 @@ public final class StaticContext {
                 }
             };
             //TODO: never get there
-            Rule<NamingScope> generateInnerScopesForMembers = new Rule<NamingScope>() {
+            Rule<JsScope> generateInnerScopesForMembers = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
-                    NamingScope enclosingScope = getEnclosingScope(descriptor);
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
+                    JsScope enclosingScope = getEnclosingScope(descriptor);
                     return enclosingScope.innerScope("Scope for member " + descriptor.getName());
                 }
             };
-            Rule<NamingScope> createFunctionObjectsForCallableDescriptors = new Rule<NamingScope>() {
+            Rule<JsScope> createFunctionObjectsForCallableDescriptors = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
                     if (!(descriptor instanceof CallableDescriptor)) {
                         return null;
                     }
-                    NamingScope enclosingScope = getEnclosingScope(descriptor);
+                    JsScope enclosingScope = getEnclosingScope(descriptor);
 
-                    //if (descriptor.getContainingDeclaration() instanceof FunctionDescriptor) {
-                    //    JsFunction.createInner(enclosingScope.jsScope());
-                    //    return
-                    //}
-                    //else {
-                        JsFunction correspondingFunction = JsAstUtils.createFunctionWithEmptyBody(enclosingScope.jsScope());
-                        NamingScope newScope = enclosingScope.innerScope(correspondingFunction.getScope());
-                        assert (!scopeToFunction.containsKey(newScope)) : "Scope to function value overridden for " + descriptor;
-                        scopeToFunction.put(newScope, correspondingFunction);
-                        return newScope;
-                    //}
+                    JsFunction correspondingFunction = JsAstUtils.createFunctionWithEmptyBody(enclosingScope);
+                    assert (!scopeToFunction.containsKey(correspondingFunction.getScope())) : "Scope to function value overridden for " + descriptor;
+                    scopeToFunction.put(correspondingFunction.getScope(), correspondingFunction);
+                    return correspondingFunction.getScope();
                 }
             };
             addRule(createFunctionObjectsForCallableDescriptors);

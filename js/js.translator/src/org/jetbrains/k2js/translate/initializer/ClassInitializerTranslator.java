@@ -91,7 +91,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     private void addCallToSuperMethod(@NotNull JetDelegatorToSuperCall superCall, JsFunction initializer) {
         List<JsExpression> arguments = translateArguments(superCall);
         if (context().isEcma5()) {
-            JsName ref = context().jsScope().declareName("$initializer");
+            JsName ref = context().scope().declareName("$initializer");
             initializer.setName(ref);
             JsInvocation call = new JsInvocation(AstUtil.newNameRef(AstUtil.newNameRef(ref.makeRef(), "baseInitializer"), "call"));
             call.getArguments().add(context().program().getThisLiteral());
@@ -99,7 +99,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
             initializerStatements.add(call.makeStmt());
         }
         else {
-            JsName superMethodName = context().jsScope().declareName(Namer.superMethodName());
+            JsName superMethodName = context().scope().declareName(Namer.superMethodName());
             initializerStatements.add(convertToStatement(new JsInvocation(new JsNameRef(superMethodName, context().program().getThisLiteral()), arguments)));
         }
     }

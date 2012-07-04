@@ -38,8 +38,7 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
 public final class WhenTranslator extends AbstractTranslator {
     @NotNull
     public static JsNode translateWhenExpression(@NotNull JetWhenExpression expression, @NotNull TranslationContext context) {
-        WhenTranslator translator = new WhenTranslator(expression, context);
-        return translator.translate();
+        return new WhenTranslator(expression, context).translate();
     }
 
     @NotNull
@@ -69,8 +68,7 @@ public final class WhenTranslator extends AbstractTranslator {
     @NotNull
     JsNode translate() {
         JsFor resultingFor = generateDummyFor();
-        List<JsStatement> entries = translateEntries();
-        resultingFor.setBody(new JsBlock(entries));
+        resultingFor.setBody(new JsBlock(translateEntries()));
         context().addStatementToCurrentBlock(resultingFor);
         return result.reference();
     }
@@ -86,9 +84,8 @@ public final class WhenTranslator extends AbstractTranslator {
 
     @NotNull
     private JsStatement surroundWithDummyIf(@NotNull JsStatement entryStatement) {
-        JsNumberLiteral jsEntryNumber = program().getNumberLiteral(this.currentEntryNumber);
+        JsNumberLiteral jsEntryNumber = program().getNumberLiteral(currentEntryNumber++);
         JsExpression stepNumberEqualsCurrentEntryNumber = equality(dummyCounterRef, jsEntryNumber);
-        currentEntryNumber++;
         return new JsIf(stepNumberEqualsCurrentEntryNumber, entryStatement);
     }
 
@@ -114,8 +111,7 @@ public final class WhenTranslator extends AbstractTranslator {
         if (entry.isElse()) {
             return statementToExecute;
         }
-        JsExpression condition = translateConditions(entry);
-        return new JsIf(condition, addDummyBreakIfNeed(statementToExecute));
+        return new JsIf(translateConditions(entry), addDummyBreakIfNeed(statementToExecute));
     }
 
     @NotNull

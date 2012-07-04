@@ -11,48 +11,24 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/**
- * Represents a JavaScript function expression.
- */
 public final class JsFunction extends JsLiteral implements HasName {
     private JsBlock body;
-    private final List<JsParameter> params = new SmartList<JsParameter>();
+    private List<JsParameter> params;
     private final JsScope scope;
     private JsName name;
 
-    public JsFunction(JsScope parent) {
-        this(parent, null, false);
+    public JsFunction(JsScope parentScope) {
+        this(parentScope, (JsName) null);
     }
 
-    public JsFunction(JsScope parent, boolean isDummy) {
-        this(parent, null, isDummy);
-    }
-
-    public JsFunction(JsScope parent, JsBlock body) {
-        this(parent, null, false);
+    public JsFunction(JsScope parentScope, JsBlock body) {
+        this(parentScope, (JsName) null);
         this.body = body;
     }
 
-    /**
-     * Creates a function that is not derived from Dart source.
-     */
-    public JsFunction(JsScope parent, JsName name) {
-        this(parent, name, false);
-    }
-
-    private JsFunction(JsScope parent, @Nullable JsName name, boolean isDummy) {
-        this(name, new JsScope(parent, "function " + ((name == null) ? "<anonymous>" : name.getIdent())));
-    }
-
-    private JsFunction(@Nullable JsName name, JsScope scope) {
-        setName(name);
-        this.scope = scope;
-    }
-
-    public static JsFunction createWithScope(JsScope parent) {
-        JsFunction function = new JsFunction(null, parent);
-        function.setBody(new JsBlock());
-        return function;
+    private JsFunction(JsScope parentScope, @Nullable JsName name) {
+        this.name = name;
+        this.scope = new JsScope(parentScope, name == null ? null : name.getIdent());
     }
 
     public JsBlock getBody() {
@@ -70,6 +46,9 @@ public final class JsFunction extends JsLiteral implements HasName {
     }
 
     public List<JsParameter> getParameters() {
+        if (params == null) {
+            params = new SmartList<JsParameter>();
+        }
         return params;
     }
 
@@ -118,15 +97,6 @@ public final class JsFunction extends JsLiteral implements HasName {
             body = v.accept(body);
         }
         v.endVisit(this, ctx);
-    }
-
-    /**
-     * Rebase the function to a new scope.
-     *
-     * @param newScopeParent The scope to add the function to.
-     */
-    public void rebaseScope(JsScope newScopeParent) {
-        this.scope.rebase(newScopeParent);
     }
 
     @Override

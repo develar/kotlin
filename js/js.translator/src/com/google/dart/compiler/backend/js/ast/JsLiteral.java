@@ -8,7 +8,6 @@ package com.google.dart.compiler.backend.js.ast;
  * A JavaScript string literal expression.
  */
 public abstract class JsLiteral extends JsExpression implements CanBooleanEval {
-
   protected JsLiteral() {
   }
 }

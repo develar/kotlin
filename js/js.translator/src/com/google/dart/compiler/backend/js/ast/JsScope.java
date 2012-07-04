@@ -6,27 +6,27 @@ package com.google.dart.compiler.backend.js.ast;
 
 import com.google.dart.compiler.util.Lists;
 import com.google.dart.compiler.util.Maps;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
  * A scope is a factory for creating and allocating
- * {@link com.google.dart.compiler.backend.js.ast.JsName}s. A JavaScript AST is
+ * {@link JsName}s. A JavaScript AST is
  * built in terms of abstract name objects without worrying about obfuscation,
  * keyword/identifier blacklisting, and so on.
  * <p/>
  * <p/>
  * <p/>
  * Scopes are associated with
- * {@link com.google.dart.compiler.backend.js.ast.JsFunction}s, but the two are
+ * {@link JsFunction}s, but the two are
  * not equivalent. Functions <i>have</i> scopes, but a scope does not
  * necessarily have an associated Function. Examples of this include the
- * {@link com.google.dart.compiler.backend.js.ast.JsRootScope} and synthetic
+ * {@link JsRootScope} and synthetic
  * scopes that might be created by a client.
  * <p/>
  * <p/>
@@ -35,13 +35,12 @@ import java.util.Map;
  * identifiers for names. Specifically, names in child scopes are chosen such
  * that they do not conflict with names in their parent scopes. The ultimate
  * parent is usually the global scope (see
- * {@link com.google.dart.compiler.backend.js.ast.JsProgram#getRootScope()}),
+ * {@link JsProgram#getRootScope()}),
  * but parentless scopes are useful for managing names that are always accessed
  * with a qualifier and could therefore never be confused with the global scope
  * hierarchy.
  */
 public class JsScope implements Serializable {
-
     private List<JsScope> children = Collections.emptyList();
     @Nullable
     private final String description;
@@ -50,8 +49,12 @@ public class JsScope implements Serializable {
     protected int tempIndex = 0;
     private final String scopeId;
 
-    public JsScope(JsScope parent, String description) {
+    public JsScope(JsScope parent, @Nullable String description) {
         this(parent, description, null);
+    }
+
+    public JsScope(JsScope parent) {
+        this(parent, null);
     }
 
     public JsScope(JsScope parent, @Nullable String description, @Nullable String scopeId) {
@@ -60,6 +63,16 @@ public class JsScope implements Serializable {
         this.description = description;
         this.parent = parent;
         parent.children = Lists.add(parent.children, this);
+    }
+
+    @NotNull
+    public JsScope innerScope(@Nullable String scopeName) {
+        return new JsScope(this, scopeName);
+    }
+
+    @NotNull
+    public JsScope innerScope() {
+        return new JsScope(this);
     }
 
     /**
@@ -141,7 +154,7 @@ public class JsScope implements Serializable {
     }
 
     String getNextTempName() {
-        // introduced by the compiler.
+        // introduced by the compiler
         return "tmp$" + (scopeId != null ? scopeId + "$" : "") + tempIndex++;
     }
 
@@ -162,7 +175,6 @@ public class JsScope implements Serializable {
      * name stored in the JsName is equal to the (unmangled) specified originalName.
      *
      * @param ident        An identifier that is unique within this scope.
-     * @param shortIdent   A "pretty" name that does not have to be unique.
      * @param originalName The original name in the source.
      * @throws IllegalArgumentException if ident already exists in this scope but
      *                                  the requested short name does not match the existing short name,
@@ -187,11 +199,12 @@ public class JsScope implements Serializable {
         return name;
     }
 
-    /**
-     * Returns an iterator for all the names defined by this scope.
-     */
-    public Iterator<JsName> getAllNames() {
-        return names.values().iterator();
+    protected boolean hasOwnName(@NotNull JsName name) {
+        return names.containsValue(name);
+    }
+
+    protected boolean hasOwnName(@NotNull String name) {
+        return names.get(name) != null;
     }
 
     /**
@@ -244,5 +257,25 @@ public class JsScope implements Serializable {
      */
     protected JsName findExistingNameNoRecurse(String ident) {
         return names.get(ident);
+    }
+
+    @NotNull
+    public JsName declareUnobfuscatableName(@NotNull String name) {
+        return declareName(name);
+    }
+
+    @NotNull
+    public JsName declareObfuscatableName(@NotNull String name) {
+        return declareName(obfuscateName(name));
+    }
+
+    @NotNull
+    private String obfuscateName(@NotNull String name) {
+        int obfuscate = 0;
+        String result = name;
+        while (hasOwnName(result)) {
+            result = name + "$" + obfuscate++;
+        }
+        return result;
     }
 }

@@ -196,7 +196,7 @@ public final class Translation {
             @NotNull Config config) {
         statements.add(AstUtil.newInvocation(context.namer().kotlin("defineModule"),
                                              context.program().getStringLiteral(config.getModuleId()),
-                                             context.jsScope().declareName("_").makeRef()).makeStmt());
+                                             context.scope().declareName("_").makeRef()).makeStmt());
     }
 
     @Nullable

@@ -4,43 +4,44 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents the JavaScript continue statement.
  */
-public final class JsContinue extends JsStatement {
+public class JsContinue extends JsStatement {
+    protected final JsNameRef label;
 
-  private final JsNameRef label;
-
-  public JsContinue() {
-    this(null);
-  }
-
-  public JsContinue(JsNameRef label) {
-    super();
-    this.label = label;
-  }
-
-  public JsNameRef getLabel() {
-    return label;
-  }
-
-  @Override
-  public void traverse(JsVisitor v, JsContext ctx) {
-    if (v.visit(this, ctx)) {
-      if (label != null) {
-        v.accept(label);
-      }
+    public JsContinue() {
+        this(null);
     }
-    v.endVisit(this, ctx);
-  }
 
-  @Override
-  public boolean unconditionalControlBreak() {
-    return true;
-  }
+    public JsContinue(@Nullable JsNameRef label) {
+        super();
+        this.label = label;
+    }
 
-  @Override
-  public NodeKind getKind() {
-    return NodeKind.CONTINUE;
-  }
+    public JsNameRef getLabel() {
+        return label;
+    }
+
+    @Override
+    public void traverse(JsVisitor v, JsContext ctx) {
+        if (v.visit(this, ctx)) {
+            if (label != null) {
+                v.accept(label);
+            }
+        }
+        v.endVisit(this, ctx);
+    }
+
+    @Override
+    public boolean unconditionalControlBreak() {
+        return true;
+    }
+
+    @Override
+    public NodeKind getKind() {
+        return NodeKind.CONTINUE;
+    }
 }

@@ -59,7 +59,7 @@ public final class TranslationContext {
     @NotNull
     public static TranslationContext rootFunctionContext(@NotNull StaticContext staticContext, JsFunction rootFunction) {
         DynamicContext rootDynamicContext =
-                DynamicContext.rootContext(NamingScope.rootScope(rootFunction.getScope()), rootFunction.getBody());
+                DynamicContext.rootContext(rootFunction.getScope(), rootFunction.getBody());
         AliasingContext rootAliasingContext = AliasingContext.getCleanContext();
         return new TranslationContext(staticContext, rootDynamicContext, rootAliasingContext);
     }
@@ -85,12 +85,12 @@ public final class TranslationContext {
     }
 
     @NotNull
-    public TranslationContext contextWithScope(@NotNull NamingScope newScope, @NotNull JsBlock block) {
+    public TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block) {
         return contextWithScope(newScope, block, aliasingContext);
     }
 
     @NotNull
-    public TranslationContext contextWithScope(@NotNull NamingScope newScope, @NotNull JsBlock block, @NotNull AliasingContext aliasingContext) {
+    public TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block, @NotNull AliasingContext aliasingContext) {
         return new TranslationContext(staticContext, DynamicContext.newContext(newScope, block), aliasingContext);
     }
 
@@ -102,12 +102,6 @@ public final class TranslationContext {
     @NotNull
     public TranslationContext newDeclaration(@NotNull DeclarationDescriptor descriptor) {
         return contextWithScope(getScopeForDescriptor(descriptor), getBlockForDescriptor(descriptor));
-    }
-
-    //TODO: consider passing a function here
-    @NotNull
-    public TranslationContext innerContextWithGivenScopeAndBlock(@NotNull JsScope scope, @NotNull JsBlock block) {
-        return contextWithScope(dynamicContext.getScope().innerScope(scope), block);
     }
 
     @NotNull
@@ -146,7 +140,7 @@ public final class TranslationContext {
     }
 
     @NotNull
-    public NamingScope getScopeForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+    public JsScope getScopeForDescriptor(@NotNull DeclarationDescriptor descriptor) {
         return staticContext.getScopeForDescriptor(descriptor);
     }
 
@@ -196,12 +190,7 @@ public final class TranslationContext {
     }
 
     @NotNull
-    public JsScope jsScope() {
-        return dynamicContext.jsScope();
-    }
-
-    @NotNull
-    public NamingScope scope() {
+    public JsScope scope() {
         return dynamicContext.getScope();
     }
 

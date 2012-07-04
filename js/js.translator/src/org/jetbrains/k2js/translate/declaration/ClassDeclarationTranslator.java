@@ -62,8 +62,8 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     public ClassDeclarationTranslator(@NotNull TranslationContext context) {
         super(context);
 
-        dummyFunction = new JsFunction(context.jsScope(), true);
-        declarationsObject = context().jsScope().declareName(Namer.nameForClassesVariable());
+        dummyFunction = new JsFunction(context.scope());
+        declarationsObject = context().scope().declareName(Namer.nameForClassesVariable());
         classesVar = new JsVars.JsVar(declarationsObject);
     }
 

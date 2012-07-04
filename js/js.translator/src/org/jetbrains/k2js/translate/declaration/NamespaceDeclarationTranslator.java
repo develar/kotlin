@@ -83,7 +83,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
     private void declarationStatements(@NotNull List<NamespaceTranslator> namespaceTranslators,
             @NotNull List<JsStatement> statements) {
         JsObjectLiteral objectLiteral = new JsObjectLiteral();
-        JsNameRef packageMapNameRef = context().jsScope().declareName("_").makeRef();
+        JsNameRef packageMapNameRef = context().scope().declareName("_").makeRef();
         JsExpression packageMapValue;
         if (context().isNotEcma3()) {
             packageMapValue = AstUtil.newInvocation(JsAstUtils.CREATE_OBJECT, context().program().getNullLiteral(), objectLiteral);

@@ -4,21 +4,21 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-import java.util.ArrayList;
+import com.intellij.util.SmartList;
+
 import java.util.List;
 
 /**
  * A member/case in a JavaScript switch object.
  */
 public abstract class JsSwitchMember extends JsNode {
+    protected final List<JsStatement> statements = new SmartList<JsStatement>();
 
-  protected final List<JsStatement> stmts = new ArrayList<JsStatement>();
+    protected JsSwitchMember() {
+        super();
+    }
 
-  protected JsSwitchMember() {
-    super();
-  }
-
-  public List<JsStatement> getStmts() {
-    return stmts;
-  }
+    public List<JsStatement> getStatements() {
+        return statements;
+    }
 }

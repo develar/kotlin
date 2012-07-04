@@ -11,7 +11,6 @@ import java.util.List;
 /**
  * Implemented by nodes that will visit child nodes.
  */
-@SuppressWarnings("unused")
 public class JsVisitor {
 
   protected static final JsContext LVALUE_CONTEXT = new JsContext() {

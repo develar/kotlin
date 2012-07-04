@@ -22,12 +22,12 @@ public final class JsBooleanLiteral extends JsValueLiteral {
 
   @Override
   public boolean isBooleanFalse() {
-    return value == false;
+    return !value;
   }
 
   @Override
   public boolean isBooleanTrue() {
-    return value == true;
+    return value;
   }
 
   @Override

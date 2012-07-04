@@ -38,14 +38,12 @@ import static org.jetbrains.k2js.translate.utils.mutator.LastExpressionMutator.m
  * @author Pavel Talanov
  */
 public final class FunctionBodyTranslator extends AbstractTranslator {
-
     @NotNull
     public static JsBlock translateFunctionBody(@NotNull FunctionDescriptor descriptor,
                                                 @NotNull JetDeclarationWithBody declarationWithBody,
                                                 @NotNull TranslationContext functionBodyContext) {
-        return (new FunctionBodyTranslator(descriptor, declarationWithBody, functionBodyContext)).translate();
+        return new FunctionBodyTranslator(descriptor, declarationWithBody, functionBodyContext).translate();
     }
-
 
     @NotNull
     private final FunctionDescriptor descriptor;
@@ -78,7 +76,7 @@ public final class FunctionBodyTranslator extends AbstractTranslator {
     private boolean mustAddReturnToGeneratedFunctionBody() {
         JetType functionReturnType = descriptor.getReturnType();
         assert functionReturnType != null : "Function return typed type must be resolved.";
-        return (!declaration.hasBlockBody()) && (!JetStandardClasses.isUnit(functionReturnType));
+        return !declaration.hasBlockBody() && !JetStandardClasses.isUnit(functionReturnType);
     }
 
     @NotNull

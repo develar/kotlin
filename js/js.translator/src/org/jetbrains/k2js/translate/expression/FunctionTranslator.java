@@ -43,7 +43,6 @@ import static org.jetbrains.k2js.translate.utils.FunctionBodyTranslator.translat
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setParameters;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
-
 /**
  * @author Pavel Talanov
  */
@@ -91,7 +90,7 @@ public final class FunctionTranslator extends AbstractTranslator {
     @NotNull
     private TranslationContext getFunctionBodyContextForExtensionFunction() {
         TranslationContext contextWithFunctionBodyBlock = getContextWithFunctionBodyBlock();
-        extensionFunctionReceiverName = contextWithFunctionBodyBlock.jsScope().declareName(Namer.getReceiverParameterName());
+        extensionFunctionReceiverName = contextWithFunctionBodyBlock.scope().declareName(Namer.getReceiverParameterName());
         DeclarationDescriptor expectedReceiverDescriptor = getExpectedReceiverDescriptor(descriptor);
         assert expectedReceiverDescriptor != null;
         return contextWithFunctionBodyBlock.innerContextWithThisAliased(expectedReceiverDescriptor, extensionFunctionReceiverName);

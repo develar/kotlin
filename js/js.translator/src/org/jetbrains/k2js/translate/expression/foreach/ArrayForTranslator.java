@@ -44,7 +44,7 @@ public final class ArrayForTranslator extends ForTranslator {
     @NotNull
     public static JsStatement doTranslate(@NotNull JetForExpression expression,
                                           @NotNull TranslationContext context) {
-        return (new ArrayForTranslator(expression, context).translate());
+        return new ArrayForTranslator(expression, context).translate();
     }
 
     public static boolean isApplicable(@NotNull JetForExpression expression,

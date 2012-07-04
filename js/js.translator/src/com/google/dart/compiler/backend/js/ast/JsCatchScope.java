@@ -4,61 +4,43 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A special scope used only for catch blocks. It only holds a single symbol:
  * the catch argument's name.
  */
 public class JsCatchScope extends JsScope {
-  private final JsName name;
+    private final JsName name;
 
-  public JsCatchScope(JsScope parent, String ident) {
-    super(parent, "Catch scope");
-    this.name = new JsName(this, ident, ident);
-  }
+    public JsCatchScope(JsScope parent, String ident) {
+        super(parent, "Catch scope");
+        this.name = new JsName(this, ident, ident);
+    }
 
-  @Override
-  public JsName declareName(String identifier) {
-    // Declare into parent scope!
-    return getParent().declareName(identifier);
-  }
+    @Override
+    public JsName declareName(String identifier) {
+        // Declare into parent scope!
+        return getParent().declareName(identifier);
+    }
 
-  @Override
-  public Iterator<JsName> getAllNames() {
-    return new Iterator<JsName>() {
-      private boolean didIterate = false;
+    @Override
+    public boolean hasOwnName(@NotNull JsName name) {
+        return name == this.name;
+    }
 
-      @Override
-      public boolean hasNext() {
-        return !didIterate;
-      }
+    @Override
+    public boolean hasOwnName(@NotNull String name) {
+        return this.name.getIdent().equals(name);
+    }
 
-      @Override
-      public JsName next() {
-        if (didIterate) {
-          throw new NoSuchElementException();
-        }
-        didIterate = true;
-        return name;
-      }
+    @Override
+    protected JsName doCreateName(String ident, String originalName) {
+        throw new UnsupportedOperationException("Cannot create a name in a catch scope");
+    }
 
-      @Override
-      public void remove() {
-        throw new UnsupportedOperationException();
-      }
-
-    };
-  }
-
-  @Override
-  protected JsName doCreateName(String ident, String originalName) {
-    throw new UnsupportedOperationException("Cannot create a name in a catch scope");
-  }
-
-  @Override
-  protected JsName findExistingNameNoRecurse(String ident) {
-      return name.getIdent().equals(ident) ? name : null;
-  }
+    @Override
+    protected JsName findExistingNameNoRecurse(String ident) {
+        return name.getIdent().equals(ident) ? name : null;
+    }
 }

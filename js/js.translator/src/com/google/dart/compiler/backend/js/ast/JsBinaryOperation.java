@@ -8,7 +8,6 @@ package com.google.dart.compiler.backend.js.ast;
  * Represents a JavaScript binary operation.
  */
 public final class JsBinaryOperation extends JsExpression {
-
   private JsExpression arg1;
   private JsExpression arg2;
   private final JsBinaryOperator op;

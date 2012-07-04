@@ -147,7 +147,7 @@ public final class PropertyTranslator extends AbstractTranslator {
 
     @NotNull
     private JsFunction generateDefaultGetterFunction(@NotNull PropertyGetterDescriptor descriptor) {
-        JsFunction fun = new JsFunction(context().getScopeForDescriptor(descriptor.getContainingDeclaration()).jsScope());
+        JsFunction fun = new JsFunction(context().getScopeForDescriptor(descriptor.getContainingDeclaration()));
         fun.setBody(new JsBlock(new JsReturn(backingFieldReference(context(), property))));
         return fun;
     }
@@ -161,8 +161,8 @@ public final class PropertyTranslator extends AbstractTranslator {
 
     @NotNull
     private JsFunction generateDefaultSetterFunction(@NotNull PropertySetterDescriptor descriptor) {
-        JsFunction fun = new JsFunction(context().getScopeForDescriptor(descriptor.getContainingDeclaration()).jsScope());
-        JsParameter defaultParameter = new JsParameter(propertyAccessContext(descriptor).jsScope().declareTemporary());
+        JsFunction fun = new JsFunction(context().getScopeForDescriptor(descriptor.getContainingDeclaration()));
+        JsParameter defaultParameter = new JsParameter(propertyAccessContext(descriptor).scope().declareTemporary());
         fun.getParameters().add(defaultParameter);
         fun.setBody(new JsBlock(assignmentToBackingField(context(), property, defaultParameter.getName().makeRef()).makeStmt()));
         return fun;

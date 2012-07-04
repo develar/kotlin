@@ -9,6 +9,7 @@
       <w>nomen</w>
       <w>obfuscatable</w>
       <w>overridable</w>
+      <w>paren</w>
       <w>parentless</w>
       <w>recurse</w>
       <w>unobfuscatable</w>

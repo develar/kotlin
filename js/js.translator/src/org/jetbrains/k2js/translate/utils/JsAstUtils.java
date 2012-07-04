@@ -27,7 +27,6 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -57,7 +56,7 @@ public final class JsAstUtils {
         assert (jsNode instanceof JsExpression) || (jsNode instanceof JsStatement)
                 : "Unexpected node of type: " + jsNode.getClass().toString();
         if (jsNode instanceof JsExpression) {
-            return new JsExprStmt((JsExpression) jsNode);
+            return ((JsExpression) jsNode).makeStmt();
         }
         return (JsStatement) jsNode;
     }
@@ -164,16 +163,6 @@ public final class JsAstUtils {
         JsFor result = new JsFor(initExpression, condition, incrExpression);
         result.setBody(body);
         return result;
-    }
-
-    public static boolean ownsName(@NotNull JsScope scope, @NotNull JsName name) {
-        Iterator<JsName> nameIterator = scope.getAllNames();
-        while (nameIterator.hasNext()) {
-            if (nameIterator.next() == name) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @NotNull

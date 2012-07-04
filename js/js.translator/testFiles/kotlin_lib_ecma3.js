@@ -54,9 +54,29 @@ var Kotlin = {};
         });
     })();
 
-    Object.extend(Function.prototype, (function () {
-        var slice = Array.prototype.slice;
+    if (!Function.prototype.bind) {
+        Function.prototype.bind = function (oThis) {
+            if (typeof this !== "function") {
+                // closest thing possible to the ECMAScript 5 internal IsCallable function
+                throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable");
+            }
 
+            var aArgs = Array.prototype.slice.call(arguments, 1),
+                fToBind = this,
+                fNOP = function () {
+                },
+                fBound = function () {
+                    return fToBind.apply(this instanceof fNOP ? this : oThis, aArgs.concat(Array.prototype.slice.call(arguments)));
+                };
+
+            fNOP.prototype = this.prototype;
+            fBound.prototype = new fNOP();
+
+            return fBound;
+        };
+    }
+
+    Object.extend(Function.prototype, (function () {
         function update(array, args) {
             var arrayLength = array.length, length = args.length;
             while (length--) array[arrayLength + length] = args[length];
@@ -71,7 +91,7 @@ var Kotlin = {};
         }
 
         function bindAsEventListener(context) {
-            var __method = this, args = slice.call(arguments, 1);
+            var __method = this, args = Array.prototype.slice.call(arguments, 1);
             return function (event) {
                 var a = update([event || window.event], args);
                 return __method.apply(context, a);

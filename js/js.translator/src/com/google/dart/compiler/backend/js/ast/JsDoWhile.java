@@ -7,48 +7,25 @@ package com.google.dart.compiler.backend.js.ast;
 /**
  * Represents a JavaScript do..while statement.
  */
-public class JsDoWhile extends JsStatement {
-
-  private JsStatement body;
-  private JsExpression condition;
-
-  public JsDoWhile() {
-    super();
-  }
-
-  public JsDoWhile(JsExpression condition, JsStatement body) {
-    super();
-    this.condition = condition;
-    this.body = body;
-  }
-
-  public JsStatement getBody() {
-    return body;
-  }
-
-  public JsExpression getCondition() {
-    return condition;
-  }
-
-  public void setBody(JsStatement body) {
-    this.body = body;
-  }
-
-  public void setCondition(JsExpression condition) {
-    this.condition = condition;
-  }
-
-  @Override
-  public void traverse(JsVisitor v, JsContext ctx) {
-    if (v.visit(this, ctx)) {
-      body = v.accept(body);
-      condition = v.accept(condition);
+public class JsDoWhile extends JsWhile {
+    public JsDoWhile() {
     }
-    v.endVisit(this, ctx);
-  }
 
-  @Override
-  public NodeKind getKind() {
-    return NodeKind.DO;
-  }
+    public JsDoWhile(JsExpression condition, JsStatement body) {
+        super(condition, body);
+    }
+
+    @Override
+    public NodeKind getKind() {
+        return NodeKind.DO;
+    }
+
+    @Override
+    public void traverse(JsVisitor v, JsContext ctx) {
+        if (v.visit(this, ctx)) {
+            condition = v.accept(condition);
+            body = v.accept(body);
+        }
+        v.endVisit(this, ctx);
+    }
 }
