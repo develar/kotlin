@@ -298,7 +298,11 @@ public final class StaticContext {
                     if (overriddenDescriptor == null) {
                         return null;
                     }
-                    return getNameForDescriptor(overriddenDescriptor);
+
+                    NamingScope namingScope = getEnclosingScope(descriptor);
+                    JsName result = getNameForDescriptor(overriddenDescriptor);
+                    namingScope.declareUnobfuscatableName(result.getIdent());
+                    return result;
                 }
             };
             addRule(namesForStandardClasses);
@@ -318,7 +322,6 @@ public final class StaticContext {
         DeclarationDescriptor containingDeclaration = getContainingDeclaration(descriptor);
         return getScopeForDescriptor(containingDeclaration.getOriginal());
     }
-
 
     private final class ScopeGenerator extends Generator<NamingScope> {
 

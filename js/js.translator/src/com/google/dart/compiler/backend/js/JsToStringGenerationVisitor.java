@@ -739,7 +739,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         if (v instanceof JsFunction) {
             return item.getLabelExpr() != valueName;
         }
-        else if (v instanceof JsInvocation) {
+        else if (v instanceof JsInvocation && item.getLabelExpr() != valueName) {
             List<JsExpression> args = ((JsInvocation) v).getArguments();
             return !args.isEmpty() && args.get(0) instanceof JsObjectLiteral;
         }

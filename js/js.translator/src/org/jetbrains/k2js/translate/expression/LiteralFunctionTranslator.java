@@ -45,7 +45,6 @@ public class LiteralFunctionTranslator {
     public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration) {
         FunctionDescriptor descriptor = getFunctionDescriptor(rootContext.bindingContext(), declaration);
 
-
         NamingScope namingScope = rootContext.scope().innerScope();
         JsBlock body = new JsBlock();
         TranslationContext funContext = rootContext.contextWithScope(namingScope, body);
