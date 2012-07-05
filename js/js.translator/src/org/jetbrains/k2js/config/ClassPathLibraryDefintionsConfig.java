@@ -16,11 +16,11 @@
 
 package org.jetbrains.k2js.config;
 
-import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetFile;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * A Config implementation which is configured with a directory to find the standard library names from

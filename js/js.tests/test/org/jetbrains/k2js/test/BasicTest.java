@@ -45,6 +45,8 @@ public abstract class BasicTest extends TestWithEnvironment {
     private static final String CASES = "cases/";
     private static final String OUT = "out/";
     private static final String EXPECTED = "expected/";
+    
+    public static final String JSLINT_LIB = pathToTestFilesRoot() + "jslint.js";    
 
     @NotNull
     private String mainDirectory = "";
@@ -103,7 +105,7 @@ public abstract class BasicTest extends TestWithEnvironment {
             @NotNull MainCallParameters mainCallParameters, @NotNull Iterable<EcmaVersion> ecmaVersions)
             throws Exception {
         for (EcmaVersion version : ecmaVersions) {
-            TranslationUtils.translateFiles(getProject(), files, getOutputFilePath(testName, version), mainCallParameters, version, null);
+            TranslationUtils.translateFiles(getProject(), files, getOutputFilePath(testName, version), mainCallParameters, version);
         }
     }
 
