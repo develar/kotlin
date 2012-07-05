@@ -110,7 +110,6 @@
 
             <copy file="ideaSDK/lib/asm4-all.jar" todir="${core}"/>
             <copy file="ideaSDK/lib/jdom.jar" todir="${core}"/>
-            <copy file="ideaSDK/lib/jdom.jar" todir="${core}"/>
             <copy file="ideaSDK/lib/jna.jar" todir="${core}"/>
             <copy file="ideaSDK/lib/log4j.jar" todir="${core}"/>
             <copy file="ideaSDK/lib/xstream.jar" todir="${core}"/>

@@ -39,7 +39,7 @@ public enum CallType {
                                    @NotNull TranslationContext context) {
             assert receiver != null;
             TemporaryVariable temporaryVariable = context.declareTemporary(receiver);
-            JsBinaryOperation notNullCheck = TranslationUtils.notNullCheck(context, temporaryVariable.reference());
+            JsBinaryOperation notNullCheck = TranslationUtils.notNullCheck(temporaryVariable.reference());
             JsNullLiteral nullLiteral = JsLiteral.NULL;
             JsExpression methodCall = constructor.construct(temporaryVariable.reference());
             JsConditional callMethodIfNotNullElseNull = new JsConditional(notNullCheck, methodCall, nullLiteral);

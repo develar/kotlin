@@ -7,23 +7,23 @@ public fun max<T>(col : Collection<T>, comp : Comparator<T>) : T = js.noImpl
 
 library
 public trait Comparator<T> {
-    public fun compare(obj1 : T, obj2 : T) : Int
+    fun compare(obj1 : T, obj2 : T) : Int;
 }
 
 library
 public trait Iterator<T> {
-    open fun next() : T = js.noImpl
-    open fun hasNext() : Boolean = js.noImpl
-    open fun remove() : Unit = js.noImpl
+    open public fun next() : T = js.noImpl
+    open public fun hasNext() : Boolean = js.noImpl
+    open public fun remove() : Unit = js.noImpl
 }
 
-val Collections = object {
+public object Collections {
     library("collectionsMax")
     public fun max<T>(col : Collection<T>, comp : Comparator<T>) : T = js.noImpl
 
     // TODO should be immutable!
-    private val emptyList = ArrayList<Any>()
-    private val emptyMap = HashMap<Any,Any>()
+    public val emptyList: List<Any> = ArrayList<Any>()
+    public val emptyMap: Map<Any, Any> = HashMap<Any,Any>()
 
     public val <T> EMPTY_LIST: List<T>
     get() = emptyList<T>()
@@ -55,36 +55,36 @@ val Collections = object {
 
 library
 public trait Collection<E>: Iterable<E> {
-    public open fun size(): Int
-    public open fun isEmpty(): Boolean
-    public open fun contains(o: Any?): Boolean
-    public override fun iterator(): Iterator<E>
+    open public fun size(): Int
+    open public fun isEmpty(): Boolean
+    open public fun contains(o: Any?): Boolean
+    override public fun iterator(): Iterator<E>
     public fun toArray(): Array<E>
-    // open fun toArray<T>(a : Array<out T>) : Array<T>
-    public open fun add(e: E): Boolean
-    public open fun remove(o: Any?): Boolean
-    //open fun containsAll(c : java.util.Collection<*>) : Boolean
-    public open fun addAll(c: Collection<out E>): Boolean
-    //open fun removeAll(c : java.util.Collection<*>) : Boolean
-    //open fun retainAll(c : java.util.Collection<*>) : Boolean
-    public open fun clear(): Unit
+    // open public fun toArray<T>(a : Array<out T>) : Array<T>
+    open public fun add(e: E): Boolean
+    open public fun remove(o: Any?): Boolean
+    //open public fun containsAll(c : java.util.Collection<*>) : Boolean
+    open public fun addAll(c: Collection<out E>): Boolean
+    //open public fun removeAll(c : java.util.Collection<*>) : Boolean
+    //open public fun retainAll(c : java.util.Collection<*>) : Boolean
+    open public fun clear(): Unit
 }
 
 library
 public abstract class AbstractCollection<E>() : Collection<E> {
-    override fun toArray(): Array<E> = js.noImpl
+    override public fun toArray(): Array<E> = js.noImpl
 
-    override fun isEmpty(): Boolean = js.noImpl
-    override fun contains(o: Any?): Boolean = js.noImpl
-    override fun iterator(): Iterator<E> = js.noImpl
+    override public fun isEmpty(): Boolean = js.noImpl
+    override public fun contains(o: Any?): Boolean = js.noImpl
+    override public fun iterator(): Iterator<E> = js.noImpl
 
-    override fun add(e: E): Boolean = js.noImpl
-    override fun remove(o: Any?): Boolean = js.noImpl
+    override public fun add(e: E): Boolean = js.noImpl
+    override public fun remove(o: Any?): Boolean = js.noImpl
 
-    override fun addAll(c: Collection<out E>): Boolean = js.noImpl
+    override public fun addAll(c: Collection<out E>): Boolean = js.noImpl
 
-    override fun clear(): Unit = js.noImpl
-    override fun size(): Int = js.noImpl
+    override public fun clear(): Unit = js.noImpl
+    override public fun size(): Int = js.noImpl
 }
 
 library
@@ -100,16 +100,16 @@ public trait List<E>: Collection<E> {
 
 library
 public abstract class AbstractList<E>(): AbstractCollection<E>(), List<E> {
-    override fun get(index: Int): E = js.noImpl
-    override fun set(index: Int, element: E): E = js.noImpl
+    override public  fun get(index: Int): E = js.noImpl
+    override public  fun set(index: Int, element: E): E = js.noImpl
 
     library("addAt")
-    override fun add(index: Int, element: E): Unit = js.noImpl
+    override public fun add(index: Int, element: E): Unit = js.noImpl
 
     library("removeAt")
-    override fun remove(index: Int): E = js.noImpl
+    override public fun remove(index: Int): E = js.noImpl
 
-    override fun indexOf(o: E?): Int = js.noImpl
+    override public fun indexOf(o: E?): Int = js.noImpl
 }
 
 library
@@ -126,24 +126,28 @@ public open class HashSet<E>(): AbstractCollection<E>(), java.util.Set<E> {
 
 library
 public trait Map<K, V> {
-    public open fun size(): Int
-    public open fun isEmpty(): Boolean
-    public open fun containsKey(key: Any?): Boolean
-    public open fun containsValue(value: Any?): Boolean
-    public open fun get(key: Any?): V?
-    public open fun put(key: K, value: V): V?
-    public open fun remove(key: Any?): V?
-    public open fun putAll(m: java.util.Map<out K, out V>): Unit
-    public open fun clear(): Unit
-    public open fun keySet(): java.util.Set<K>
-    public open fun values(): java.util.Collection<V>
+    open public fun size() : Int
+    open public fun isEmpty() : Boolean
+    open public fun containsKey(key : Any?) : Boolean
+    open public fun containsValue(value : Any?) : Boolean
+    open public fun get(key : Any?) : V?
+    open public fun put(key : K, value : V) : V?
+    open public fun remove(key : Any?) : V?
+    open public fun putAll(m : java.util.Map<out K, out V>) : Unit
+    open public fun clear() : Unit
+    open public fun keySet() : java.util.Set<K>
+    open public fun values() : java.util.Collection<V>
 
-    public open fun entrySet(): java.util.Set<Entry<K, V>>
+    open public fun entrySet() : java.util.Set<Entry<K, V>>
+// open public fun equals(o : Any?) : Boolean
+// open public fun hashCode() : Int
 
-    trait Entry<K, V> {
-        open fun getKey(): K
-        open fun getValue(): V
-        open fun setValue(value: V): V
+    public trait Entry<K, V> {
+        open public fun getKey() : K
+        open public fun getValue() : V
+        open public fun setValue(value : V) : V
+// open public fun equals(o : Any?) : Boolean
+// open public fun hashCode() : Int
     }
 }
 
@@ -175,17 +179,18 @@ public open class LinkedList<E>(): AbstractList<E>() {
 
 library
 public class StringBuilder() : Appendable {
-    override fun append(c: Char): Appendable? = js.noImpl
-    override fun append(csq: CharSequence?): Appendable? = js.noImpl
-    override fun append(csq: CharSequence?, start: Int, end: Int): Appendable? = js.noImpl
+    override public fun append(c: Char): Appendable? = js.noImpl
+    override public fun append(csq: CharSequence?): Appendable? = js.noImpl
+    override public fun append(csq: CharSequence?, start: Int, end: Int): Appendable? = js.noImpl
     public fun append(obj : Any?) : StringBuilder = js.noImpl
     public fun toString() : String = js.noImpl
 }
 
 library
-class NoSuchElementException() : Exception() {}
+public class NoSuchElementException() : Exception() {}
 
+library
 public trait Enumeration<E> {
-    open fun hasMoreElements(): Boolean
-    open fun nextElement(): E?
+    open public fun hasMoreElements() : Boolean
+    open public fun nextElement() : E
 }

@@ -42,6 +42,7 @@ import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageLocation.NO_LOCATION;
@@ -147,10 +148,12 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments, K2JSCompile
     private static Config getConfig(@NotNull K2JSCompilerArguments arguments, @NotNull Project project) {
         EcmaVersion ecmaVersion = EcmaVersion.fromString(arguments.target);
         String moduleId = FileUtil.getNameWithoutExtension(new File(arguments.outputFile));
-        if (arguments.libraryFiles == null) {
+        if (arguments.libraryFiles != null) {
+            return new LibrarySourcesConfig(project, moduleId, Arrays.asList(arguments.libraryFiles), ecmaVersion);
+        }
+        else {
             // lets discover the JS library definitions on the classpath
             return new ClassPathLibraryDefintionsConfig(project, moduleId, ecmaVersion);
         }
-        return new LibrarySourcesConfig(project, moduleId, arguments.libraryFiles, ecmaVersion);
     }
 }

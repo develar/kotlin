@@ -64,8 +64,7 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    public static JsBinaryOperation notNullCheck(@NotNull TranslationContext context,
-            @NotNull JsExpression expressionToCheck) {
+    public static JsBinaryOperation notNullCheck(@NotNull JsExpression expressionToCheck) {
         JsNullLiteral nullLiteral = JsLiteral.NULL;
         JsBinaryOperation notNull = inequality(expressionToCheck, nullLiteral);
         JsBinaryOperation notUndefined = inequality(expressionToCheck, JsLiteral.UNDEFINED);
@@ -73,8 +72,7 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    public static JsBinaryOperation isNullCheck(@NotNull TranslationContext context,
-            @NotNull JsExpression expressionToCheck) {
+    public static JsBinaryOperation isNullCheck(@NotNull JsExpression expressionToCheck) {
         JsNullLiteral nullLiteral = JsLiteral.NULL;
         JsBinaryOperation isNull = equality(expressionToCheck, nullLiteral);
         JsBinaryOperation isUndefined = equality(expressionToCheck, JsLiteral.UNDEFINED);
@@ -82,13 +80,12 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    public static JsBinaryOperation nullCheck(@NotNull TranslationContext context,
-            @NotNull JsExpression expressionToCheck, boolean shouldBeNull) {
+    public static JsBinaryOperation nullCheck(@NotNull JsExpression expressionToCheck, boolean shouldBeNull) {
         if (shouldBeNull) {
-            return isNullCheck(context, expressionToCheck);
+            return isNullCheck(expressionToCheck);
         }
         else {
-            return notNullCheck(context, expressionToCheck);
+            return notNullCheck(expressionToCheck);
         }
     }
 
@@ -214,7 +211,12 @@ public final class TranslationUtils {
         return intrinsic.apply(left, Collections.singletonList(right), context);
     }
 
-    public static boolean isNullLiteral(@NotNull TranslationContext context, @NotNull JsExpression expression) {
+    public static boolean isNullLiteral(@NotNull JsExpression expression) {
         return expression.equals(JsLiteral.NULL);
+    }
+
+    public static void defineModule(@NotNull TranslationContext context, @NotNull List<JsStatement> statements, @NotNull String moduleId) {
+        statements.add(new JsInvocation(context.namer().kotlin("defineModule"), context.program().getStringLiteral(moduleId),
+                                        context.scope().declareName("_").makeRef()).makeStmt());
     }
 }

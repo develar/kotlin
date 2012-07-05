@@ -28,6 +28,7 @@ import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -38,17 +39,17 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getAllNonNativeNam
  */
 public final class NamespaceDeclarationTranslator extends AbstractTranslator {
 
-    public static List<JsStatement> translateFiles(@NotNull List<JetFile> files, @NotNull TranslationContext context) {
+    public static List<JsStatement> translateFiles(@NotNull Collection<JetFile> files, @NotNull TranslationContext context) {
         Set<NamespaceDescriptor> namespaceDescriptorSet = getAllNonNativeNamespaceDescriptors(context.bindingContext(), files);
-        return (new NamespaceDeclarationTranslator(namespaceDescriptorSet, context)).translate();
+        return (new NamespaceDeclarationTranslator(Lists.newArrayList(namespaceDescriptorSet), context)).translate();
     }
 
     @NotNull
     private final ClassDeclarationTranslator classDeclarationTranslator;
     @NotNull
-    private final Iterable<NamespaceDescriptor> namespaceDescriptors;
+    private final List<NamespaceDescriptor> namespaceDescriptors;
 
-    private NamespaceDeclarationTranslator(@NotNull Iterable<NamespaceDescriptor> namespaceDescriptors,
+    private NamespaceDeclarationTranslator(@NotNull List<NamespaceDescriptor> namespaceDescriptors,
                                            @NotNull TranslationContext context) {
         super(context);
         this.namespaceDescriptors = namespaceDescriptors;
@@ -107,7 +108,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private static List<NamespaceDescriptor> filterTopLevelAndRootNamespaces(@NotNull Iterable<NamespaceDescriptor> namespaceDescriptors) {
+    private static List<NamespaceDescriptor> filterTopLevelAndRootNamespaces(@NotNull List<NamespaceDescriptor> namespaceDescriptors) {
         List<NamespaceDescriptor> result = Lists.newArrayList();
         for (NamespaceDescriptor descriptor : namespaceDescriptors) {
             if (DescriptorUtils.isTopLevelNamespace(descriptor) || DescriptorUtils.isRootNamespace(descriptor)) {

@@ -49,11 +49,11 @@ public final class PrimitiveEqualsIntrinsic extends EqualsIntrinsic {
         assert arguments.size() == 1 : "Equals operation should have one argument";
         assert receiver != null;
         JsExpression argument = arguments.get(0);
-        if (isNullLiteral(context, argument)) {
-            return nullCheck(context, receiver, !isNegated());
+        if (isNullLiteral(argument)) {
+            return nullCheck(receiver, !isNegated());
         }
-        if (isNullLiteral(context, receiver)) {
-            return nullCheck(context, argument, !isNegated());
+        if (isNullLiteral(receiver)) {
+            return nullCheck(argument, !isNegated());
         }
         if (isNegated()) {
             return inequality(receiver, argument);

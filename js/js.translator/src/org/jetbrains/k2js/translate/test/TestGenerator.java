@@ -31,8 +31,6 @@ import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 import java.util.Collection;
 import java.util.List;
 
-import static com.google.dart.compiler.util.AstUtil.newBlock;
-
 /**
  * @author Pavel Talanov
  */
@@ -60,12 +58,11 @@ public final class TestGenerator {
             JsExpression functionToTestCall =
                     CallBuilder.build(context).descriptor(functionDescriptor).receiver(constructClassExpr).translate();
             JsNameRef qUnitTestFunRef = AstUtil.newQualifiedNameRef("QUnit.test");
-            JsFunction functionToTest = new JsFunction(context.jsScope());
-            functionToTest.setBody(newBlock(functionToTestCall.makeStmt()));
+            JsFunction functionToTest = new JsFunction(context.scope());
             String testName = classDescriptor.getName() + "." + functionDescriptor.getName();
-            block.getStatements()
-                    .add(AstUtil.newInvocation(qUnitTestFunRef, context.program().getStringLiteral(testName), functionToTest)
-                                 .makeStmt());
+            functionToTest.setBody(new JsBlock(functionToTestCall.makeStmt(),
+                                               new JsInvocation(qUnitTestFunRef, context.program().getStringLiteral(testName),
+                                                                functionToTest).makeStmt()));
         }
     }
 }

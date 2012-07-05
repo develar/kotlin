@@ -17,11 +17,11 @@
 package org.jetbrains.k2js.config;
 
 import com.google.common.collect.Lists;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.k2js.utils.JetFileUtils;
 
@@ -42,12 +42,14 @@ public class LibrarySourcesConfig extends Config {
     public static final Key<String> EXTERNAL_MODULE_NAME = new Key<String>("externalModule");
     public static final String UNKNOWN_EXTERNAL_MODULE_NAME = "<unknown>";
 
-    @Nullable
-    private final String[] files;
+    private static final Logger LOG = Logger.getInstance("#org.jetbrains.jet.asJava.JetLightClass");
+
+    @NotNull
+    private final List<String> files;
 
     public LibrarySourcesConfig(@NotNull Project project,
             @NotNull String moduleId,
-            @Nullable String[] files,
+            @NotNull List<String> files,
             @NotNull EcmaVersion ecmaVersion) {
         super(project, moduleId, ecmaVersion);
         this.files = files;
@@ -56,7 +58,7 @@ public class LibrarySourcesConfig extends Config {
     @NotNull
     @Override
     public List<JetFile> generateLibFiles() {
-        if (files == null) {
+        if (files.isEmpty()) {
             return Collections.emptyList();
         }
 
@@ -81,7 +83,7 @@ public class LibrarySourcesConfig extends Config {
                 }
             }
             catch (IOException e) {
-                throw new RuntimeException(e);
+                LOG.error(e);
             }
         }
 

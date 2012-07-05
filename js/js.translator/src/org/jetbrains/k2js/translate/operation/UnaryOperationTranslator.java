@@ -23,7 +23,6 @@ import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetUnaryExpression;
 import org.jetbrains.jet.lexer.JetTokens;
-import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.reference.CallBuilder;
 import org.jetbrains.k2js.translate.reference.CallType;
@@ -65,7 +64,7 @@ public final class UnaryOperationTranslator {
     @NotNull
     private static JsExpression translateExclExclOperator(@NotNull JetUnaryExpression expression, @NotNull TranslationContext context) {
         JsNameRef cachedValue = context.declareTemporary(translateAsExpression(getBaseExpression(expression), context), true).reference();
-        JsBinaryOperation notNullCheck = notNullCheck(context, cachedValue);
+        JsBinaryOperation notNullCheck = notNullCheck(cachedValue);
         return new JsConditional(notNullCheck, cachedValue, context.namer().throwNPEFunctionCall());
     }
 
