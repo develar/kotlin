@@ -146,22 +146,16 @@ public class AliasingContext {
 
     @NotNull
     public AliasingContext withAliasesForExpressions(@NotNull Map<JetExpression, JsName> aliasesForExpressions) {
-        AliasingContext newContext = new AliasingContext(this, this.thisAliasProvider);
+        AliasingContext newContext = new AliasingContext(this, thisAliasProvider);
         newContext.aliasesForExpressions.putAll(aliasesForExpressions);
         return newContext;
     }
 
     @NotNull
     public AliasingContext withDescriptorsAliased(@NotNull Map<DeclarationDescriptor, JsName> aliases) {
-        AliasingContext newContext = new AliasingContext(this, this.thisAliasProvider);
+        AliasingContext newContext = new AliasingContext(this, thisAliasProvider);
         newContext.aliasesForDescriptors.putAll(aliases);
         return newContext;
-    }
-
-    @NotNull
-    private AliasingContext getParent() {
-        assert parent != null;
-        return parent;
     }
 
     @Nullable
@@ -170,7 +164,7 @@ public class AliasingContext {
         if (alias != null) {
             return alias;
         }
-        return getParent().getAliasForDescriptor(descriptor);
+        return parent.getAliasForDescriptor(descriptor);
     }
 
     @Nullable
@@ -179,6 +173,6 @@ public class AliasingContext {
         if (alias != null) {
             return alias;
         }
-        return getParent().getAliasForExpression(element);
+        return parent.getAliasForExpression(element);
     }
 }
