@@ -44,15 +44,18 @@ public class CompileMavenGeneratedJSLibrary extends SingleFileTranslationTest {
         super("kotlin-js-library/");
     }
 
-
-    public void testDisabled() throws Exception {
+    public static void main(String[] args) throws Exception {
+        CompileMavenGeneratedJSLibrary test = new CompileMavenGeneratedJSLibrary();
+        test.DISABLED_testGenerateTestCase();
     }
 
-    public void TODO_testGenerateTestCase() throws Exception {
+    public void testDummy() {
+    }
+
+    public void DISABLED_testGenerateTestCase() throws Exception {
         if (generatedJsLibraryDir.exists() && generatedJsLibraryDir.isDirectory()) {
             generateJavaScriptFiles(DEFAULT_ECMA_VERSIONS,
                                     "libraries/stdlib/test",
-                                    /*
                                     "dom/DomTest.kt",
                                     "js/MapTest.kt",
                                     "js/JsDomTest.kt",
@@ -61,7 +64,6 @@ public class CompileMavenGeneratedJSLibrary extends SingleFileTranslationTest {
                                     "GetOrElseTest.kt",
                                     "ListTest.kt",
                                     "SetTest.kt",
-                                    */
                                     "StringTest.kt");
 
         } else {
@@ -108,7 +110,7 @@ public class CompileMavenGeneratedJSLibrary extends SingleFileTranslationTest {
                 } else {
                     String name = child.getName();
                     if (name.toLowerCase().endsWith(".kt")) {
-                        files.add(child.getParent());
+                        files.add(child.getPath());
                     }
                 }
             }

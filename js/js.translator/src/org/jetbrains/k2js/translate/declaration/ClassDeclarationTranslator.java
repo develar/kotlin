@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.Modality;
+import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
 import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
@@ -153,7 +154,11 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         }
         // second pass: generate
         for (ListItem item : openList) {
-            generate(item, propertyInitializers, item.translatedDeclaration, vars);
+            JsExpression translatedDeclaration = item.translatedDeclaration;
+            if (translatedDeclaration == null) {
+                throw new IllegalStateException("Could not translate class declaration at " + DiagnosticUtils.atLocation(item.declaration));
+            }
+            generate(item, propertyInitializers, translatedDeclaration, vars);
         }
     }
 
