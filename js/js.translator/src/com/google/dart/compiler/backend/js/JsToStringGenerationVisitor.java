@@ -47,8 +47,6 @@ public class JsToStringGenerationVisitor extends JsVisitor {
      */
     private static final int JSBLOCK_LINES_TO_PRINT = 3;
 
-    protected JsStringLiteral valueName;
-
     public static CharSequence javaScriptString(String value) {
         return javaScriptString(value, false);
     }
@@ -241,7 +239,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         }
         else {
             parenPop(x, arg1, !op.isLeftAssociative());
-            _spaceOpt();
+            spaceOpt();
         }
         p.print(op.getSymbol());
         JsExpression arg2 = x.getArg2();
@@ -249,7 +247,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             _parenPushOrSpace(x, arg2, op.isLeftAssociative());
         }
         else {
-            _spaceOpt();
+            spaceOpt();
             _parenPush(x, arg2, op.isLeftAssociative());
         }
         accept(arg2);
@@ -302,7 +300,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         _space();
         accept(x.getCaseExpr());
         _colon();
-        _newlineOpt();
+        newlineOpt();
 
         printSwitchMemberStatements(x);
         return false;
@@ -316,7 +314,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             if (needSemi) {
                 _semi();
             }
-            _newlineOpt();
+            newlineOpt();
         }
         outdent();
         needSemi = false;
@@ -324,9 +322,9 @@ public class JsToStringGenerationVisitor extends JsVisitor {
 
     @Override
     public boolean visit(JsCatch x, JsContext ctx) {
-        _spaceOpt();
+        spaceOpt();
         _catch();
-        _spaceOpt();
+        spaceOpt();
         _lparen();
         _nameDef(x.getParameter().getName());
 
@@ -341,7 +339,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         }
 
         _rparen();
-        _spaceOpt();
+        spaceOpt();
         accept(x.getBody());
 
         return false;
@@ -399,7 +397,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsWhile x, JsContext ctx) {
         _while();
-        _spaceOpt();
+        spaceOpt();
         _lparen();
         accept(x.getCondition());
         _rparen();
@@ -417,14 +415,14 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         _nestedPop(x.getBody());
         if (needSemi) {
             _semi();
-            _newlineOpt();
+            newlineOpt();
         }
         else {
-            _spaceOpt();
+            spaceOpt();
             needSemi = true;
         }
         _while();
-        _spaceOpt();
+        spaceOpt();
         _lparen();
         accept(x.getCondition());
         _rparen();
@@ -453,7 +451,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsFor x, JsContext ctx) {
         _for();
-        _spaceOpt();
+        spaceOpt();
         _lparen();
 
         // The init expressions or var decl.
@@ -470,7 +468,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         // The loop test.
         //
         if (x.getCondition() != null) {
-            _spaceOpt();
+            spaceOpt();
             accept(x.getCondition());
         }
 
@@ -479,7 +477,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         // The incr expression.
         //
         if (x.getIncrExpr() != null) {
-            _spaceOpt();
+            spaceOpt();
             accept(x.getIncrExpr());
         }
 
@@ -493,7 +491,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsForIn x, JsContext ctx) {
         _for();
-        _spaceOpt();
+        spaceOpt();
         _lparen();
 
         if (x.getIterVarName() != null) {
@@ -502,9 +500,9 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             _nameDef(x.getIterVarName());
 
             if (x.getIterExpr() != null) {
-                _spaceOpt();
+                spaceOpt();
                 _assignment();
-                _spaceOpt();
+                spaceOpt();
                 accept(x.getIterExpr());
             }
         }
@@ -553,7 +551,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsIf x, JsContext ctx) {
         _if();
-        _spaceOpt();
+        spaceOpt();
         _lparen();
         accept(x.getIfExpr());
         _rparen();
@@ -565,10 +563,10 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         if (elseStmt != null) {
             if (needSemi) {
                 _semi();
-                _newlineOpt();
+                newlineOpt();
             }
             else {
-                _spaceOpt();
+                spaceOpt();
                 needSemi = true;
             }
             _else();
@@ -602,7 +600,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     public boolean visit(JsLabel x, JsContext ctx) {
         _nameOf(x);
         _colon();
-        _spaceOpt();
+        spaceOpt();
         accept(x.getStmt());
         return false;
     }
@@ -673,26 +671,24 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsObjectLiteral objectLiteral, JsContext context) {
         _lbrace();
+        if (objectLiteral.isMultiline()) {
+            p.indentIn();
+        }
+
         boolean isNotFirst = false;
-        boolean wasIndented = false;
         for (JsPropertyInitializer item : objectLiteral.getPropertyInitializers()) {
             if (isNotFirst) {
                 p.print(',');
             }
 
-            wasIndented = false;
-            if (isRequireNewLine(item)) {
-                _newlineOpt();
-                p.indentIn();
-                wasIndented = true;
+            if (objectLiteral.isMultiline()) {
+                newlineOpt();
+            }
+            else if (isNotFirst) {
+                spaceOpt();
             }
 
-            if (!isNotFirst) {
-                isNotFirst = true;
-            }
-            else if (!wasIndented) {
-                _spaceOpt();
-            }
+            isNotFirst = true;
 
             JsExpression labelExpr = item.getLabelExpr();
             // labels can be either string, integral, or decimal literals
@@ -712,31 +708,14 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             _parenPushIfCommaExpr(valueExpr);
             accept(valueExpr);
             parenPopIfCommaExpr(valueExpr);
-
-            if (wasIndented) {
-                p.indentOut();
-            }
         }
 
-        if (wasIndented) {
-            // new line after last function
-            _newlineOpt();
+        if (objectLiteral.isMultiline()) {
+            p.indentOut();
+            newlineOpt();
         }
 
         _rbrace();
-        return false;
-    }
-
-    private boolean isRequireNewLine(JsPropertyInitializer item) {
-        JsExpression v = item.getValueExpr();
-        if (v instanceof JsFunction) {
-            return item.getLabelExpr() != valueName;
-        }
-        else if (v instanceof JsInvocation && item.getLabelExpr() != valueName) {
-            List<JsExpression> args = ((JsInvocation) v).getArguments();
-            return !args.isEmpty() && args.get(0) instanceof JsObjectLiteral;
-        }
-
         return false;
     }
 
@@ -821,11 +800,11 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsSwitch x, JsContext ctx) {
         _switch();
-        _spaceOpt();
+        spaceOpt();
         _lparen();
         accept(x.getExpr());
         _rparen();
-        _spaceOpt();
+        spaceOpt();
         _blockOpen();
         acceptList(x.getCases());
         _blockClose();
@@ -849,16 +828,16 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsTry x, JsContext ctx) {
         _try();
-        _spaceOpt();
+        spaceOpt();
         accept(x.getTryBlock());
 
         acceptList(x.getCatches());
 
         JsBlock finallyBlock = x.getFinallyBlock();
         if (finallyBlock != null) {
-            _spaceOpt();
+            spaceOpt();
             _finally();
-            _spaceOpt();
+            spaceOpt();
             accept(finallyBlock);
         }
 
@@ -870,9 +849,9 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         _nameOf(x);
         JsExpression initExpr = x.getInitExpr();
         if (initExpr != null) {
-            _spaceOpt();
+            spaceOpt();
             _assignment();
-            _spaceOpt();
+            spaceOpt();
             _parenPushIfCommaExpr(initExpr);
             accept(initExpr);
             parenPopIfCommaExpr(initExpr);
@@ -896,7 +875,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         p.newline();
     }
 
-    protected void _newlineOpt() {
+    protected void newlineOpt() {
         p.newlineOpt();
     }
 
@@ -909,8 +888,6 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         boolean needBraces = !x.isGlobalBlock();
 
         if (needBraces) {
-            // Open braces.
-            //
             _blockOpen();
         }
 
@@ -921,7 +898,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
 
             if (truncate && count > JSBLOCK_LINES_TO_PRINT) {
                 p.print("[...]");
-                _newlineOpt();
+                newlineOpt();
                 break;
             }
             JsStatement statement = iterator.next();
@@ -958,7 +935,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
                 boolean lastStatement = !iterator.hasNext() && needBraces && !JsRequiresSemiVisitor.exec(statement);
                 if (functionStmt) {
                     if (lastStatement) {
-                        _newlineOpt();
+                        newlineOpt();
                     }
                     else {
                         _newline();
@@ -971,7 +948,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
                     else {
                         _semi();
                     }
-                    _newlineOpt();
+                    newlineOpt();
                 }
             }
             if (shouldRecordPositions) {
@@ -986,7 +963,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             p.indentOut();
             p.print('}');
             if (finalNewline) {
-                _newlineOpt();
+                newlineOpt();
             }
         }
         needSemi = false;
@@ -999,13 +976,13 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     private void _blockClose() {
         p.indentOut();
         p.print('}');
-        _newlineOpt();
+        newlineOpt();
     }
 
     private void _blockOpen() {
         p.print('{');
         p.indentIn();
-        _newlineOpt();
+        newlineOpt();
     }
 
     private void _break() {
@@ -1107,11 +1084,11 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     private boolean _nestedPush(JsStatement statement) {
         boolean push = !(statement instanceof JsBlock);
         if (push) {
-            _newlineOpt();
+            newlineOpt();
             p.indentIn();
         }
         else {
-            _spaceOpt();
+            spaceOpt();
         }
         return push;
     }
@@ -1219,7 +1196,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     private boolean _sepCommaOptSpace(boolean sep) {
         if (sep) {
             p.print(',');
-            _spaceOpt();
+            spaceOpt();
         }
         return true;
     }
@@ -1266,7 +1243,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         return false;
     }
 
-    private void _spaceOpt() {
+    private void spaceOpt() {
         p.printOpt(' ');
     }
 

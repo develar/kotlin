@@ -116,7 +116,7 @@ public final class NamespaceTranslator extends AbstractTranslator {
             expressions.add(new JsObjectLiteral(declarations));
         }
         else if (context().isNotEcma3()) {
-            expressions.add(context().program().getNullLiteral());
+            expressions.add(JsLiteral.NULL);
         }
     }
 

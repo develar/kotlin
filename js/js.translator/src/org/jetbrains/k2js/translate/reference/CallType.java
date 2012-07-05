@@ -16,10 +16,7 @@
 
 package org.jetbrains.k2js.translate.reference;
 
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
-import com.google.dart.compiler.backend.js.ast.JsConditional;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsNullLiteral;
+import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetDotQualifiedExpression;
@@ -43,7 +40,7 @@ public enum CallType {
             assert receiver != null;
             TemporaryVariable temporaryVariable = context.declareTemporary(receiver);
             JsBinaryOperation notNullCheck = TranslationUtils.notNullCheck(context, temporaryVariable.reference());
-            JsNullLiteral nullLiteral = context.program().getNullLiteral();
+            JsNullLiteral nullLiteral = JsLiteral.NULL;
             JsExpression methodCall = constructor.construct(temporaryVariable.reference());
             JsConditional callMethodIfNotNullElseNull = new JsConditional(notNullCheck, methodCall, nullLiteral);
             return newSequence(temporaryVariable.assignmentExpression(), callMethodIfNotNullElseNull);

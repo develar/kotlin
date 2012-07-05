@@ -11,18 +11,9 @@ import com.google.dart.compiler.common.SourceInfo;
  * @author johnlenz@google.com (John Lenz)
  */
 public final class AstUtil {
-    public static JsInvocation newInvocation(
-            JsExpression target, JsExpression... params) {
-        JsInvocation invoke = new JsInvocation(target);
-        for (JsExpression expr : params) {
-            invoke.getArguments().add(expr);
-        }
-        return invoke;
-    }
-
     public static JsNameRef newQualifiedNameRef(String name) {
         JsNameRef node = null;
-        int endPos = -1;
+        int endPos;
         int startPos = 0;
         do {
             endPos = name.indexOf('.', startPos);
@@ -78,10 +69,6 @@ public final class AstUtil {
     public static JsBinaryOperation newAssignment(
             JsArrayAccess target, JsExpression expr) {
         return new JsBinaryOperation(JsBinaryOperator.ASG, target, expr);
-    }
-
-    public static JsInvocation call(SourceInfo src, JsExpression target, JsExpression... params) {
-        return (JsInvocation) newInvocation(target, params).setSourceRef(src);
     }
 
     public static JsBinaryOperation comma(SourceInfo src, JsExpression op1, JsExpression op2) {

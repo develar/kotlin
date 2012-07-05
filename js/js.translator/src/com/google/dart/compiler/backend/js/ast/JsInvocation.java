@@ -6,6 +6,7 @@ package com.google.dart.compiler.backend.js.ast;
 
 import com.intellij.util.SmartList;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,20 +14,24 @@ import java.util.List;
  * Represents a JavaScript invocation.
  */
 public final class JsInvocation extends JsExpression implements HasArguments {
-    private final List<JsExpression> args;
+    private final List<JsExpression> arguments;
     private JsExpression qualifier;
 
     public JsInvocation() {
-        args = new SmartList<JsExpression>();
+        arguments = new SmartList<JsExpression>();
     }
 
-    public JsInvocation(JsExpression qualifier, List<JsExpression> args) {
+    public JsInvocation(JsExpression qualifier, List<JsExpression> arguments) {
         this.qualifier = qualifier;
-        this.args = args;
+        this.arguments = arguments;
     }
 
     public JsInvocation(JsExpression qualifier, JsExpression arg) {
         this(qualifier, Collections.singletonList(arg));
+    }
+
+    public JsInvocation(JsExpression qualifier, JsExpression... arguments) {
+        this(qualifier, Arrays.asList(arguments));
     }
 
     public JsInvocation(JsExpression qualifier) {
@@ -36,7 +41,7 @@ public final class JsInvocation extends JsExpression implements HasArguments {
 
     @Override
     public List<JsExpression> getArguments() {
-        return args;
+        return arguments;
     }
 
     public JsExpression getQualifier() {
@@ -66,7 +71,7 @@ public final class JsInvocation extends JsExpression implements HasArguments {
     public void traverse(JsVisitor v, JsContext ctx) {
         if (v.visit(this, ctx)) {
             qualifier = v.accept(qualifier);
-            v.acceptList(args);
+            v.acceptList(arguments);
         }
         v.endVisit(this, ctx);
     }

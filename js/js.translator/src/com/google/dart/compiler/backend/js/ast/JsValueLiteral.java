@@ -9,16 +9,16 @@ package com.google.dart.compiler.backend.js.ast;
  */
 public abstract class JsValueLiteral extends JsLiteral {
 
-  protected JsValueLiteral() {
-  }
+    protected JsValueLiteral() {
+    }
 
-  @Override
-  public final boolean hasSideEffects() {
-    return false;
-  }
+    @Override
+    public final boolean hasSideEffects() {
+        return false;
+    }
 
-  @Override
-  public final boolean isLeaf() {
-    return true;
-  }
+    @Override
+    public final boolean isLeaf() {
+        return true;
+    }
 }

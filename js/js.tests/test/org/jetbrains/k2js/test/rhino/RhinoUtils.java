@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static junit.framework.Assert.fail;
 import static org.jetbrains.jet.utils.ExceptionUtils.rethrow;
 import static org.jetbrains.k2js.test.BasicTest.pathToTestFilesRoot;
 

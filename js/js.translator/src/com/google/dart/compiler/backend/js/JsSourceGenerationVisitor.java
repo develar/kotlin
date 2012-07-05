@@ -20,7 +20,6 @@ public class JsSourceGenerationVisitor extends JsToStringGenerationVisitor {
 
     @Override
     public boolean visit(JsProgram program, JsContext ctx) {
-        valueName = program.getValueName();
         return true;
     }
 

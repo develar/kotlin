@@ -62,7 +62,7 @@ public final class WhenTranslator extends AbstractTranslator {
         dummyCounter = context.dynamicContext().createTemporary(program().getNumberLiteral(0));
         dummyCounterRef = dummyCounter.get().getName().makeRef();
 
-        this.result = context.declareTemporary(program().getNullLiteral());
+        this.result = context.declareTemporary(JsLiteral.NULL);
     }
 
     @NotNull

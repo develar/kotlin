@@ -8,8 +8,6 @@ package com.google.dart.compiler.backend.js.ast;
  * An interface that describes the boolean evaluation of an expression.
  */
 public interface CanBooleanEval {
-
-  boolean isBooleanFalse();
-
-  boolean isBooleanTrue();
+    boolean isBooleanFalse();
+    boolean isBooleanTrue();
 }

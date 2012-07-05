@@ -224,7 +224,7 @@ public final class JsAstUtils {
             @NotNull JsExpression value,
             @NotNull TranslationContext context) {
         JsInvocation invocation = new JsInvocation(DEFINE_PROPERTY);
-        invocation.getArguments().add(context.program().getThisLiteral());
+        invocation.getArguments().add(JsLiteral.THIS);
         invocation.getArguments().add(context.program().getStringLiteral(context.getNameForDescriptor(descriptor).getIdent()));
         invocation.getArguments().add(createPropertyDataDescriptor(descriptor.isVar(), descriptor, value, context));
         return invocation;

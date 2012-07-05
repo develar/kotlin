@@ -469,7 +469,6 @@ public final class StaticContext {
                 }
             };
             Rule<JsNameRef> libraryObjectsHaveKotlinQualifier = new Rule<JsNameRef>() {
-
                 @Override
                 public JsNameRef apply(@NotNull DeclarationDescriptor descriptor) {
                     if (isLibraryObject(descriptor)) {

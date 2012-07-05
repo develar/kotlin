@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.general;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -194,9 +193,8 @@ public final class Translation {
     private static void defineModule(@NotNull List<JsStatement> statements,
             @NotNull TranslationContext context,
             @NotNull Config config) {
-        statements.add(AstUtil.newInvocation(context.namer().kotlin("defineModule"),
-                                             context.program().getStringLiteral(config.getModuleId()),
-                                             context.scope().declareName("_").makeRef()).makeStmt());
+        statements.add(new JsInvocation(context.namer().kotlin("defineModule"), context.program().getStringLiteral(config.getModuleId()),
+                                        context.scope().declareName("_").makeRef()).makeStmt());
     }
 
     @Nullable

@@ -112,22 +112,16 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
     private JsExpression invokeCall() {
-        // ecma 5 uses function as property (getter), so, "this" is defined
-        // but ecma 4 uses function as result of call get_ function, so, "this" is undefined and we must pass it
-        //if (context().isEcma5()) {
-        //    return new JsInvocation(callParameters.getFunctionReference(), arguments);
-        //}
-        //else {
-            // todo ecma3
-            return generateCall(callParameters.getThisObject());
-        //}
-    }
-
-    private JsInvocation generateCall(@Nullable JsExpression thisExpression) {
-        JsInvocation call = new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()));
-        call.getArguments().add(thisExpression == null ? context().program().getNullLiteral() : thisExpression);
-        call.getArguments().addAll(arguments);
-        return call;
+        JsExpression thisExpression = callParameters.getThisObject();
+        if (thisExpression == null) {
+            return new JsInvocation(callParameters.getFunctionReference(), arguments);
+        }
+        else {
+            JsInvocation call = new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()));
+            call.getArguments().add(thisExpression);
+            call.getArguments().addAll(arguments);
+            return call;
+        }
     }
 
     private boolean isExpressionAsFunction() {
@@ -228,10 +222,8 @@ public final class CallTranslator extends AbstractTranslator {
         return new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()), callArguments);
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     private boolean isExtensionFunction() {
-        boolean hasReceiver = resolvedCall.getReceiverArgument().exists();
-        return hasReceiver;
+        return resolvedCall.getReceiverArgument().exists();
     }
 
     @NotNull

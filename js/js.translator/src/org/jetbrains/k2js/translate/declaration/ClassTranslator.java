@@ -148,14 +148,14 @@ public final class ClassTranslator extends AbstractTranslator {
     }
 
     private void addClassOwnDeclarations(@NotNull JsInvocation jsClassDeclaration, @NotNull TranslationContext classDeclarationContext) {
-        JsObjectLiteral properties = new JsObjectLiteral();
+        JsObjectLiteral properties = new JsObjectLiteral(true);
         List<JsPropertyInitializer> propertyList = properties.getPropertyInitializers();
         if (!isTrait()) {
             JsFunction initializer = Translation.generateClassInitializerMethod(classDeclaration, classDeclarationContext);
             if (context().isEcma5()) {
                 JsExpression expression;
                 if (isObject() && initializer.getBody().getStatements().isEmpty()) {
-                    expression = context().program().getNullLiteral();
+                    expression = JsLiteral.NULL;
                 }
                 else if (initializer.getName() != null) {
                     expression = JsAstUtils.encloseFunction(initializer);
@@ -171,7 +171,7 @@ public final class ClassTranslator extends AbstractTranslator {
             }
         }
         else if (context().isEcma5()) {
-            jsClassDeclaration.getArguments().add(context().program().getNullLiteral());
+            jsClassDeclaration.getArguments().add(JsLiteral.NULL);
         }
 
         propertyList.addAll(translatePropertiesAsConstructorParameters(classDeclarationContext));
@@ -187,7 +187,7 @@ public final class ClassTranslator extends AbstractTranslator {
         List<JsExpression> expressions = jsClassDeclaration.getArguments();
         if (context().isEcma5()) {
             if (superClassReferences.isEmpty()) {
-                jsClassDeclaration.getArguments().add(context().program().getNullLiteral());
+                jsClassDeclaration.getArguments().add(JsLiteral.NULL);
                 return;
             }
             else if (superClassReferences.size() > 1) {

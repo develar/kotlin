@@ -8,64 +8,72 @@ import com.intellij.util.SmartList;
 
 import java.util.List;
 
-/**
- * A JavaScript object literal.
- */
 public final class JsObjectLiteral extends JsLiteral {
-  private final List<JsPropertyInitializer> props;
+    private final List<JsPropertyInitializer> properties;
 
-  public JsObjectLiteral() {
-    props = new SmartList<JsPropertyInitializer>();
-  }
+    private boolean multiline;
 
-  public JsObjectLiteral(List<JsPropertyInitializer> props) {
-    this.props = props;
-  }
+    public JsObjectLiteral() {
+        this(new SmartList<JsPropertyInitializer>());
+    }
 
-  public List<JsPropertyInitializer> getPropertyInitializers() {
-    return props;
-  }
+    public JsObjectLiteral(boolean multiline) {
+        this();
+        this.multiline = multiline;
+    }
 
-  @Override
-  public boolean hasSideEffects() {
-    for (JsPropertyInitializer prop : props) {
-      if (prop.hasSideEffects()) {
+    public boolean isMultiline() {
+        return multiline;
+    }
+
+    public JsObjectLiteral(List<JsPropertyInitializer> properties) {
+        this.properties = properties;
+    }
+
+    public List<JsPropertyInitializer> getPropertyInitializers() {
+        return properties;
+    }
+
+    @Override
+    public boolean hasSideEffects() {
+        for (JsPropertyInitializer prop : properties) {
+            if (prop.hasSideEffects()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isBooleanFalse() {
+        return false;
+    }
+
+    @Override
+    public boolean isBooleanTrue() {
         return true;
-      }
     }
-    return false;
-  }
 
-  @Override
-  public boolean isBooleanFalse() {
-    return false;
-  }
-
-  @Override
-  public boolean isBooleanTrue() {
-    return true;
-  }
-
-  @Override
-  public boolean isDefinitelyNotNull() {
-    return true;
-  }
-
-  @Override
-  public boolean isDefinitelyNull() {
-    return false;
-  }
-
-  @Override
-  public void traverse(JsVisitor v, JsContext ctx) {
-    if (v.visit(this, ctx)) {
-      v.acceptWithInsertRemove(props);
+    @Override
+    public boolean isDefinitelyNotNull() {
+        return true;
     }
-    v.endVisit(this, ctx);
-  }
 
-  @Override
-  public NodeKind getKind() {
-    return NodeKind.OBJECT;
-  }
+    @Override
+    public boolean isDefinitelyNull() {
+        return false;
+    }
+
+    @Override
+    public void traverse(JsVisitor v, JsContext ctx) {
+        if (v.visit(this, ctx)) {
+            v.acceptWithInsertRemove(properties);
+        }
+        v.endVisit(this, ctx);
+    }
+
+    @Override
+    public NodeKind getKind() {
+        return NodeKind.OBJECT;
+    }
 }

@@ -130,7 +130,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
 
         if (vars.isEmpty()) {
             if (propertyInitializers.isEmpty()) {
-                classesVar.setInitExpr(context().program().getNullLiteral());
+                classesVar.setInitExpr(JsLiteral.NULL);
             }
             else {
                 classesVar.setInitExpr(valueLiteral);

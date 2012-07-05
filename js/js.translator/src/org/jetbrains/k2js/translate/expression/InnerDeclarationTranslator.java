@@ -1,6 +1,7 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
@@ -17,7 +18,7 @@ abstract class InnerDeclarationTranslator {
     protected final TranslationContext context;
     protected final JsFunction fun;
 
-    public InnerDeclarationTranslator(JetElement declaration, TranslationContext context, JsFunction fun) {
+    public InnerDeclarationTranslator(@NotNull JetElement declaration, @NotNull TranslationContext context, @NotNull JsFunction fun) {
         this.context = context;
         closureContext = ClosureUtils.captureClosure(this.context.bindingContext(), declaration);
         this.fun = fun;
@@ -27,8 +28,8 @@ abstract class InnerDeclarationTranslator {
         return Collections.emptyList();
     }
 
-    public JsExpression translate(JsNameRef nameRef, @Nullable JsExpression self) {
-        if (closureContext.getDescriptors().isEmpty() && self == context.program().getNullLiteral()) {
+    protected JsExpression translate(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
+        if (closureContext.getDescriptors().isEmpty() && self == JsLiteral.NULL) {
             return createExpression(nameRef, self);
         }
         else {

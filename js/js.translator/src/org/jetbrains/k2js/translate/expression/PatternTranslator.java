@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
@@ -85,8 +84,7 @@ public final class PatternTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression translateAsIsCheck(@NotNull JsExpression expressionToMatch,
                                             @NotNull JetTypePattern pattern) {
-        JsInvocation isCheck = AstUtil.newInvocation(context().namer().isOperationReference(),
-                                                     expressionToMatch, getClassReference(pattern));
+        JsInvocation isCheck = new JsInvocation(context().namer().isOperationReference(), expressionToMatch, getClassReference(pattern));
         if (isNullable(pattern)) {
             return addNullCheck(expressionToMatch, isCheck);
         }

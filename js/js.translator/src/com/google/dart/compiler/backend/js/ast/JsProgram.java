@@ -14,22 +14,13 @@ import java.util.Map;
  * A JavaScript program.
  */
 public final class JsProgram extends JsNode {
-    private final JsStatement debuggerStmt;
     private final JsEmpty emptyStmt;
 
     private JsProgramFragment[] fragments;
     private final TDoubleObjectHashMap<JsNumberLiteral> numberLiteralMap = new TDoubleObjectHashMap<JsNumberLiteral>();
-    private final JsScope objectScope;
     private final JsRootScope rootScope;
     private final Map<String, JsStringLiteral> stringLiteralMap = new THashMap<String, JsStringLiteral>();
     private final JsScope topScope;
-
-    private final JsNullLiteral nullLiteral = new JsNullLiteral();
-    private final JsNameRef undefinedLiteral = new JsNameRef("undefined");
-    private final JsThisRef thisLiteral = new JsThisRef();
-
-    private final JsBooleanLiteral falseLiteral = new JsBooleanLiteral(false);
-    private final JsBooleanLiteral trueLiteral = new JsBooleanLiteral(true);
 
     private final JsStringLiteral valueName = new JsStringLiteral("value");
 
@@ -39,34 +30,13 @@ public final class JsProgram extends JsNode {
     public JsProgram(String unitId) {
         rootScope = new JsRootScope(this);
         topScope = new JsScope(rootScope, "Global", unitId);
-        objectScope = new JsScope(rootScope, "Object");
         setFragmentCount(1);
 
-        debuggerStmt = new JsDebugger();
         emptyStmt = new JsEmpty();
-    }
-
-    public JsBooleanLiteral getBooleanLiteral(boolean truth) {
-        if (truth) {
-            return getTrueLiteral();
-        }
-        return getFalseLiteral();
-    }
-
-    /**
-     * Gets the {@link JsStatement} to use whenever parsed source include a
-     * <code>debugger</code> statement.
-     */
-    public JsStatement getDebuggerStmt() {
-        return debuggerStmt;
     }
 
     public JsEmpty getEmptyStmt() {
         return emptyStmt;
-    }
-
-    public JsBooleanLiteral getFalseLiteral() {
-        return falseLiteral;
     }
 
     public JsBlock getFragmentBlock(int fragment) {
@@ -87,10 +57,6 @@ public final class JsProgram extends JsNode {
         return getFragmentBlock(0);
     }
 
-    public JsNullLiteral getNullLiteral() {
-        return nullLiteral;
-    }
-
     public JsNumberLiteral getNumberLiteral(double value) {
         JsNumberLiteral literal = numberLiteralMap.get(value);
         if (literal == null) {
@@ -103,10 +69,6 @@ public final class JsProgram extends JsNode {
 
     public JsStringLiteral getValueName() {
         return valueName;
-    }
-
-    public JsScope getObjectScope() {
-        return objectScope;
     }
 
     /**
@@ -136,18 +98,6 @@ public final class JsProgram extends JsNode {
             stringLiteralMap.put(value, literal);
         }
         return literal;
-    }
-
-    public JsBooleanLiteral getTrueLiteral() {
-        return trueLiteral;
-    }
-
-    public JsThisRef getThisLiteral() {
-        return thisLiteral;
-    }
-
-    public JsNameRef getUndefinedLiteral() {
-        return undefinedLiteral;
     }
 
     public void setFragmentCount(int fragments) {

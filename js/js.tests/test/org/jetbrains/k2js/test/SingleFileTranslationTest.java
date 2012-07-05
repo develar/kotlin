@@ -23,8 +23,6 @@ import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.test.rhino.RhinoFunctionResultChecker;
 import org.jetbrains.k2js.test.rhino.RhinoSystemOutputChecker;
 
-import java.util.EnumSet;
-
 import static org.jetbrains.k2js.test.utils.JsTestUtils.readFile;
 
 /**
@@ -32,9 +30,6 @@ import static org.jetbrains.k2js.test.utils.JsTestUtils.readFile;
  */
 @SuppressWarnings("JUnitTestCaseWithNonTrivialConstructors")
 public abstract class SingleFileTranslationTest extends BasicTest {
-    private static final EnumSet<EcmaVersion> DEFAULT_ECMA_VERSIONS = EcmaVersion.all();
-    //private static final EnumSet<EcmaVersion> DEFAULT_ECMA_VERSIONS = EnumSet.of(EcmaVersion.v5);
-
     public SingleFileTranslationTest(@NotNull String main) {
         super(main);
     }
@@ -60,7 +55,7 @@ public abstract class SingleFileTranslationTest extends BasicTest {
         runFunctionOutputTest(DEFAULT_ECMA_VERSIONS, filename, "foo", "box", true);
     }
 
-    public void checkFooBoxIsValue(@NotNull String filename, @NotNull EnumSet<EcmaVersion> ecmaVersions, Object expected) throws Exception {
+    public void checkFooBoxIsValue(@NotNull String filename, @NotNull Iterable<EcmaVersion> ecmaVersions, Object expected) throws Exception {
         runFunctionOutputTest(ecmaVersions, filename, "foo", "box", expected);
     }
 
@@ -80,7 +75,7 @@ public abstract class SingleFileTranslationTest extends BasicTest {
         checkFooBoxIsOk(DEFAULT_ECMA_VERSIONS, filename);
     }
 
-    protected void checkFooBoxIsOk(@NotNull EnumSet<EcmaVersion> versions, @NotNull String filename) throws Exception {
+    protected void checkFooBoxIsOk(@NotNull Iterable<EcmaVersion> versions, @NotNull String filename) throws Exception {
         runFunctionOutputTest(versions, filename, "foo", "box", "OK");
     }
 

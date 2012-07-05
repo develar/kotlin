@@ -38,7 +38,6 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForEl
  *         All the info about the state of the translation process.
  */
 public final class TranslationContext {
-
     @NotNull
     private final DynamicContext dynamicContext;
     @NotNull
@@ -106,7 +105,7 @@ public final class TranslationContext {
 
     @NotNull
     public TranslationContext innerContextWithThisAliased(@NotNull DeclarationDescriptor correspondingDescriptor, @NotNull JsName alias) {
-        return new TranslationContext(staticContext, dynamicContext, aliasingContext.withThisAliased(correspondingDescriptor, alias));
+        return new TranslationContext(staticContext, dynamicContext, aliasingContext.inner(correspondingDescriptor, alias));
     }
 
     @NotNull
@@ -211,5 +210,16 @@ public final class TranslationContext {
 
     public void addStatementToCurrentBlock(@NotNull JsStatement statement) {
         dynamicContext.jsBlock().getStatements().add(statement);
+    }
+
+    @NotNull
+    public AliasingContext.ThisAliasProvider thisAliasProvider() {
+        return aliasingContext().thisAliasProvider;
+    }
+
+    @NotNull
+    public JsExpression getThisObject(@NotNull DeclarationDescriptor descriptor) {
+        JsNameRef ref = thisAliasProvider().get(descriptor);
+        return ref == null ? JsLiteral.THIS : ref;
     }
 }

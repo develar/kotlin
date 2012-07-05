@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
@@ -55,7 +54,7 @@ public final class Namer {
 
     @NotNull
     public static JsNameRef initializeMethodReference() {
-        return AstUtil.newQualifiedNameRef(INITIALIZE_METHOD_NAME);
+        return new JsNameRef(INITIALIZE_METHOD_NAME);
     }
 
     @NotNull
@@ -137,8 +136,8 @@ public final class Namer {
         isTypeName = kotlinScope.declareName("isType");
 
         JsProgram program = rootScope.getProgram();
-        writablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("writable"), program.getTrueLiteral());
-        enumerablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("enumerable"), program.getTrueLiteral());
+        writablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("writable"), JsLiteral.TRUE);
+        enumerablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("enumerable"), JsLiteral.TRUE);
     }
 
     @NotNull

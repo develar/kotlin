@@ -94,13 +94,13 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
             JsName ref = context().scope().declareName("$initializer");
             initializer.setName(ref);
             JsInvocation call = new JsInvocation(AstUtil.newNameRef(AstUtil.newNameRef(ref.makeRef(), "baseInitializer"), "call"));
-            call.getArguments().add(context().program().getThisLiteral());
+            call.getArguments().add(JsLiteral.THIS);
             call.getArguments().addAll(arguments);
             initializerStatements.add(call.makeStmt());
         }
         else {
             JsName superMethodName = context().scope().declareName(Namer.superMethodName());
-            initializerStatements.add(convertToStatement(new JsInvocation(new JsNameRef(superMethodName, context().program().getThisLiteral()), arguments)));
+            initializerStatements.add(convertToStatement(new JsInvocation(new JsNameRef(superMethodName, JsLiteral.THIS), arguments)));
         }
     }
 

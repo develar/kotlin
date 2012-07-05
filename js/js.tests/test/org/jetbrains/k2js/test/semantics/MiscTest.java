@@ -38,7 +38,6 @@ public final class MiscTest extends AbstractExpressionTest {
         fooBoxTest();
     }
 
-
     public void testSafecallComputesExpressionOnlyOnce() throws Exception {
         fooBoxTest();
     }

@@ -29,7 +29,6 @@ import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
 
 import java.io.File;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -39,7 +38,7 @@ abstract class StdLibTestSupport extends SingleFileTranslationTest {
         super("stdlib/");
     }
 
-    protected void generateJavaScriptFiles(@NotNull EnumSet<EcmaVersion> ecmaVersions,
+    protected void generateJavaScriptFiles(@NotNull Iterable<EcmaVersion> ecmaVersions,
             @NotNull String sourceDir, @NotNull String... stdLibFiles) throws Exception {
         List<String> files = Lists.newArrayList();
 

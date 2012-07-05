@@ -48,9 +48,6 @@ public class JsName implements Symbol, Serializable {
     return new JsNameRef(this);
   }
 
-  public void setObfuscatable(boolean isObfuscatable) {
-  }
-
   /**
    * Should never be called except on immutable stuff.
    */

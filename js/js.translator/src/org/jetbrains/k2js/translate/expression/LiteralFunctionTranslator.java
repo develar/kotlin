@@ -68,8 +68,8 @@ public class LiteralFunctionTranslator {
         JsName outerThisName = namingScope.declareName("$this");
 
         JsBlock body = new JsBlock();
-        TranslationContext funContext = rootContext.contextWithScope(namingScope, body, rootContext.aliasingContext()
-                .withThisAliased(containingClass, outerThisName));
+        TranslationContext funContext = rootContext.contextWithScope(namingScope, body, rootContext.aliasingContext().inner(
+                new InnerObjectTranslator.MyThisAliasProvider(containingClass, outerThisName)));
 
         JsFunction fun = new JsFunction(funContext.scope());
         fun.setBody(body);
@@ -79,8 +79,7 @@ public class LiteralFunctionTranslator {
         JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
         properties.add(new JsPropertyInitializer(nameRef, fun));
 
-        InnerObjectTranslator translator = new InnerObjectTranslator(declaration, funContext, fun);
-        return translator.translate(nameRef, funContext.aliasingContext().wasOuterThisCaptured() ? outerThisName.makeRef() : null);
+        return new InnerObjectTranslator(declaration, funContext, fun).translate(nameRef);
     }
 }
 

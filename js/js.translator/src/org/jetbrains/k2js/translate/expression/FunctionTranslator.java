@@ -58,14 +58,11 @@ public final class FunctionTranslator extends AbstractTranslator {
     @NotNull
     private final JetDeclarationWithBody functionDeclaration;
     @Nullable
-    private JsName extensionFunctionReceiverName = null;
+    private JsName extensionFunctionReceiverName;
     @NotNull
     private final JsFunction functionObject;
     @NotNull
     private final FunctionDescriptor descriptor;
-    // function body needs to be explicitly created here to include it in the context
-    @NotNull
-    private final JsBlock functionBody;
 
     private FunctionTranslator(@NotNull JetDeclarationWithBody functionDeclaration,
             @NotNull TranslationContext context) {
@@ -74,7 +71,6 @@ public final class FunctionTranslator extends AbstractTranslator {
         this.functionDeclaration = functionDeclaration;
         this.functionObject = context().getFunctionObject(descriptor);
         assert this.functionObject.getParameters().isEmpty() : DiagnosticUtils.atLocation(BindingContextUtils.descriptorToDeclaration(context.bindingContext(), descriptor));
-        this.functionBody = functionObject.getBody();
         //NOTE: it's important we compute the context before we start the computation
         this.functionBodyContext = getFunctionBodyContext();
     }
@@ -98,7 +94,7 @@ public final class FunctionTranslator extends AbstractTranslator {
 
     @NotNull
     private TranslationContext getContextWithFunctionBodyBlock() {
-        return context().newDeclaration(functionDeclaration).innerBlock(functionBody);
+        return context().newDeclaration(functionDeclaration).innerBlock(functionObject.getBody());
     }
 
     @NotNull
@@ -133,7 +129,7 @@ public final class FunctionTranslator extends AbstractTranslator {
             assert descriptor.getModality().equals(Modality.ABSTRACT);
             return;
         }
-        functionBody.getStatements().addAll(translateFunctionBody(descriptor, functionDeclaration, functionBodyContext).getStatements());
+        functionObject.getBody().getStatements().addAll(translateFunctionBody(descriptor, functionDeclaration, functionBodyContext).getStatements());
     }
 
     @NotNull

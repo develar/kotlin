@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.declaration;
 
 import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
@@ -82,11 +81,11 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
 
     private void declarationStatements(@NotNull List<NamespaceTranslator> namespaceTranslators,
             @NotNull List<JsStatement> statements) {
-        JsObjectLiteral objectLiteral = new JsObjectLiteral();
+        JsObjectLiteral objectLiteral = new JsObjectLiteral(true);
         JsNameRef packageMapNameRef = context().scope().declareName("_").makeRef();
         JsExpression packageMapValue;
         if (context().isNotEcma3()) {
-            packageMapValue = AstUtil.newInvocation(JsAstUtils.CREATE_OBJECT, context().program().getNullLiteral(), objectLiteral);
+            packageMapValue = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL, objectLiteral);
         }
         else {
             packageMapValue = objectLiteral;
