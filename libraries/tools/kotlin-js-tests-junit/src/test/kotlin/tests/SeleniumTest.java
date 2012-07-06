@@ -36,9 +36,12 @@ import java.util.List;
 @RunWith(Parameterized.class)
 public class SeleniumTest {
 
+    protected static String testQueryString = "";
+    //protected static String testQueryString = "?testNumber=6";
+
     protected static WebDriver driver = createDriver();
 
-    public static HtmlUnitDriver createDriver() {
+    public static WebDriver createDriver() {
         HtmlUnitDriver answer = new HtmlUnitDriver(true);
         answer.setJavascriptEnabled(true);
         return answer;
@@ -68,7 +71,8 @@ public class SeleniumTest {
 
     @Parameterized.Parameters
     public static List<Object[]> findTestElements() throws IOException, InterruptedException {
-        File file = new File("../kotlin-js-tests/src/test/web/index.html");
+        String uri = "../kotlin-js-tests/src/test/web/index.html" + testQueryString;
+        File file = new File(uri);
         driver.get("file://" + file.getCanonicalPath());
         Thread.sleep(500);
         List<WebElement> tests = tester.findTests();

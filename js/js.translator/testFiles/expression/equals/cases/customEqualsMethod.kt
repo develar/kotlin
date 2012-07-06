@@ -1,9 +1,16 @@
 package foo
 
 class Foo(val name: String) {
-  public fun equals(that: Foo): Boolean {
-    return this.name == that.name
-  }
+    public fun equals(that: Any?): Boolean {
+        if (that !is Foo) {
+            return false
+        }
+        return this.name == that.name
+    }
+}
+
+fun callEqualsMethod(v1: Foo?, v2: Foo?): Boolean {
+  return v1 == v2
 }
 
 fun box() : Boolean {
@@ -11,8 +18,7 @@ fun box() : Boolean {
     val b = Foo("abc")
     val c = Foo("def")
 
-    if (a != b) return false
-    if (a == c) return false
-
+    if (!callEqualsMethod(a, b)) return false
+    if (callEqualsMethod(a, c)) return false
     return true
 }

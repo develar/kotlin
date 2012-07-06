@@ -44,6 +44,20 @@ var kotlin = {set:function (receiver, key, value) {
         return obj1 === obj2;
     };
 
+    Kotlin.array = function (args) {
+        var answer = [];
+        if (args !== null && args !== undefined) {
+            for (var i = 0, n = args.length; i < n; ++i) {
+                answer[i] = args[i]
+            }
+        }
+        return answer;
+    };
+
+    Kotlin.upto = function (from, limit, reversed) {
+        return Kotlin.$new(Kotlin.NumberRange)(from, limit - from, reversed).iterator();
+    };
+
     Kotlin.modules = {};
     Kotlin.Exceptions = {};
     Kotlin.Exception = Kotlin.$createClass();

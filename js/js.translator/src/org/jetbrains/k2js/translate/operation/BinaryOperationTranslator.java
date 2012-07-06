@@ -36,8 +36,8 @@ import static org.jetbrains.k2js.translate.operation.AssignmentTranslator.isAssi
 import static org.jetbrains.k2js.translate.operation.CompareToTranslator.isCompareToCall;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptorForOperationExpression;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getResolvedCall;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.isEquals;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.not;
+import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.isEquals;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.*;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.*;
 
@@ -49,13 +49,13 @@ public final class BinaryOperationTranslator extends AbstractTranslator {
 
     @NotNull
     public static JsExpression translate(@NotNull JetBinaryExpression expression,
-                                         @NotNull TranslationContext context) {
+            @NotNull TranslationContext context) {
         return (new BinaryOperationTranslator(expression, context).translate());
     }
 
     @NotNull
     /*package*/ static JsExpression translateAsOverloadedCall(@NotNull JetBinaryExpression expression,
-                                                              @NotNull TranslationContext context) {
+            @NotNull TranslationContext context) {
         return (new BinaryOperationTranslator(expression, context)).translateAsOverloadedBinaryOperation();
     }
 
@@ -66,11 +66,11 @@ public final class BinaryOperationTranslator extends AbstractTranslator {
     private final FunctionDescriptor operationDescriptor;
 
     private BinaryOperationTranslator(@NotNull JetBinaryExpression expression,
-                                      @NotNull TranslationContext context) {
+            @NotNull TranslationContext context) {
         super(context);
         this.expression = expression;
         this.operationDescriptor =
-            getFunctionDescriptorForOperationExpression(bindingContext(), expression);
+                getFunctionDescriptorForOperationExpression(bindingContext(), expression);
     }
 
     @NotNull
@@ -88,9 +88,9 @@ public final class BinaryOperationTranslator extends AbstractTranslator {
             return CompareToTranslator.translate(expression, context());
         }
         assert operationDescriptor != null :
-            "Overloadable operations must have not null descriptor";
-        if (isEquals(operationDescriptor)) {
-            return translateAsEqualsCall();
+                "Overloadable operations must have not null descriptor";
+        if (isEquals(operationDescriptor) && context().intrinsics().isIntrinsic(operationDescriptor)) {
+            return translateAsEqualsIntrinsic();
         }
         return translateAsOverloadedBinaryOperation();
     }
@@ -113,7 +113,7 @@ public final class BinaryOperationTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private JsExpression translateAsEqualsCall() {
+    private JsExpression translateAsEqualsIntrinsic() {
         assert operationDescriptor != null : "Equals operation must resolve to descriptor.";
         EqualsIntrinsic intrinsic = context().intrinsics().getEqualsIntrinsic(operationDescriptor);
         intrinsic.setNegated(expression.getOperationToken().equals(JetTokens.EXCLEQ));
@@ -134,10 +134,8 @@ public final class BinaryOperationTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression translateAsOverloadedBinaryOperation() {
         CallBuilder callBuilder = setReceiverAndArguments();
-        ResolvedCall<?> resolvedCall1 =
-            getResolvedCall(bindingContext(), expression.getOperationReference());
-        JsExpression result = callBuilder.resolvedCall(resolvedCall1)
-            .type(CallType.NORMAL).translate();
+        ResolvedCall<?> resolvedCall = getResolvedCall(bindingContext(), expression.getOperationReference());
+        JsExpression result = callBuilder.resolvedCall(resolvedCall).type(CallType.NORMAL).translate();
         return mayBeWrapWithNegation(result);
     }
 
@@ -158,7 +156,7 @@ public final class BinaryOperationTranslator extends AbstractTranslator {
 
     @NotNull
     private JsExpression mayBeWrapWithNegation(@NotNull JsExpression result) {
-        if (isNotInOperation(expression)) {
+        if (isNegatedOperation(expression)) {
             return not(result);
         }
         else {

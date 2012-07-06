@@ -36,9 +36,9 @@ import java.util.List;
  */
 public class CompileMavenGeneratedJSLibrary extends SingleFileTranslationTest {
 
-    private final String generatedJsDir = "libraries/tools/kotlin-js-library/target/";
-    private String generatedJsDefinitionsDir = generatedJsDir + "generated-js-definitions";
-    private File generatedJsLibraryDir = new File( generatedJsDir + "generated-js-library");
+    protected final String generatedJsDir = "libraries/tools/kotlin-js-library/target/";
+    protected String generatedJsDefinitionsDir = generatedJsDir + "generated-js-definitions";
+    protected File generatedJsLibraryDir = new File( generatedJsDir + "generated-js-library");
 
     public CompileMavenGeneratedJSLibrary() {
         super("kotlin-js-library/");
@@ -56,6 +56,7 @@ public class CompileMavenGeneratedJSLibrary extends SingleFileTranslationTest {
         if (generatedJsLibraryDir.exists() && generatedJsLibraryDir.isDirectory()) {
             generateJavaScriptFiles(DEFAULT_ECMA_VERSIONS,
                                     "libraries/stdlib/test",
+                                    "ArraysTest.kt",
                                     "dom/DomTest.kt",
                                     "js/MapTest.kt",
                                     "js/JsDomTest.kt",
