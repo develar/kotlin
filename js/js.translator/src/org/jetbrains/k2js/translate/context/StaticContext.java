@@ -18,15 +18,20 @@ package org.jetbrains.k2js.translate.context;
 
 import com.google.common.collect.Maps;
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
 import org.jetbrains.k2js.config.EcmaVersion;
+import org.jetbrains.k2js.config.LibrarySourcesConfig;
 import org.jetbrains.k2js.translate.context.generator.Generator;
 import org.jetbrains.k2js.translate.context.generator.Rule;
+import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
@@ -51,10 +56,9 @@ public final class StaticContext {
         JsProgram program = new JsProgram("main");
         JsRootScope jsRootScope = program.getRootScope();
         Namer namer = Namer.newInstance(jsRootScope);
-        NamingScope scope = NamingScope.rootScope(jsRootScope);
         Intrinsics intrinsics = Intrinsics.standardLibraryIntrinsics(library);
         StandardClasses standardClasses = StandardClasses.bindImplementations(namer.getKotlinScope());
-        return new StaticContext(program, bindingContext, namer, intrinsics, standardClasses, scope, ecmaVersion);
+        return new StaticContext(program, bindingContext, namer, intrinsics, standardClasses, jsRootScope, ecmaVersion);
     }
 
     @NotNull
@@ -72,26 +76,28 @@ public final class StaticContext {
     private final StandardClasses standardClasses;
 
     @NotNull
-    private final NamingScope rootScope;
+    private final JsScope rootScope;
 
     @NotNull
     private final Generator<JsName> names = new NameGenerator();
     @NotNull
-    private final Generator<NamingScope> scopes = new ScopeGenerator();
+    private final Generator<JsScope> scopes = new ScopeGenerator();
     @NotNull
     private final Generator<JsNameRef> qualifiers = new QualifierGenerator();
     @NotNull
     private final Generator<Boolean> qualifierIsNull = new QualifierIsNullGenerator();
     @NotNull
-    private final Map<NamingScope, JsFunction> scopeToFunction = Maps.newHashMap();
+    private final Map<JsScope, JsFunction> scopeToFunction = Maps.newHashMap();
 
     @NotNull
     private final EcmaVersion ecmaVersion;
 
+    private final LiteralFunctionTranslator literalFunctionTranslator = new LiteralFunctionTranslator();
+
     //TODO: too many parameters in constructor
     private StaticContext(@NotNull JsProgram program, @NotNull BindingContext bindingContext,
             @NotNull Namer namer, @NotNull Intrinsics intrinsics,
-            @NotNull StandardClasses standardClasses, @NotNull NamingScope rootScope, @NotNull EcmaVersion ecmaVersion) {
+            @NotNull StandardClasses standardClasses, @NotNull JsScope rootScope, @NotNull EcmaVersion ecmaVersion) {
         this.program = program;
         this.bindingContext = bindingContext;
         this.namer = namer;
@@ -99,6 +105,10 @@ public final class StaticContext {
         this.rootScope = rootScope;
         this.standardClasses = standardClasses;
         this.ecmaVersion = ecmaVersion;
+    }
+
+    public LiteralFunctionTranslator getLiteralFunctionTranslator() {
+        return literalFunctionTranslator;
     }
 
     public boolean isEcma5() {
@@ -131,22 +141,22 @@ public final class StaticContext {
     }
 
     @NotNull
-    public NamingScope getRootScope() {
+    public JsScope getRootScope() {
         return rootScope;
     }
 
     @NotNull
-    public NamingScope getScopeForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-        NamingScope namingScope = scopes.get(descriptor.getOriginal());
+    public JsScope getScopeForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+        JsScope namingScope = scopes.get(descriptor.getOriginal());
         assert namingScope != null : "Must have a scope for descriptor";
         return namingScope;
     }
 
     @NotNull
     public JsFunction getFunctionWithScope(@NotNull CallableDescriptor descriptor) {
-        NamingScope scope = getScopeForDescriptor(descriptor);
+        JsScope scope = getScopeForDescriptor(descriptor);
         JsFunction function = scopeToFunction.get(scope);
-        assert scope.jsScope().equals(function.getScope()) : "Inconsistency.";
+        assert scope.equals(function.getScope()) : "Inconsistency.";
         return function;
     }
 
@@ -159,7 +169,7 @@ public final class StaticContext {
 
     private final class NameGenerator extends Generator<JsName> {
         private JsName declareName(DeclarationDescriptor descriptor, String name) {
-            NamingScope scope = getEnclosingScope(descriptor);
+            JsScope scope = getEnclosingScope(descriptor);
             // ecma 5 property name never declares as obfuscatable:
             // 1) property cannot be overloaded, so, name collision is not possible
             // 2) main reason: if property doesn't have any custom accessor, value holder will have the same name as accessor, so, the same name will be declared more than once
@@ -193,10 +203,7 @@ public final class StaticContext {
                 @Override
                 @Nullable
                 public JsName apply(@NotNull DeclarationDescriptor descriptor) {
-                    NamingScope namingScope = getEnclosingScope(descriptor);
-                    if (descriptor instanceof ClassDescriptor) {
-                        return namingScope.declareUnobfuscatableName(descriptor.getName().getName());
-                    }
+                    JsScope namingScope = getEnclosingScope(descriptor);
                     return namingScope.declareObfuscatableName(descriptor.getName().getName());
                 }
             };
@@ -283,7 +290,11 @@ public final class StaticContext {
                     if (overriddenDescriptor == null) {
                         return null;
                     }
-                    return getNameForDescriptor(overriddenDescriptor);
+
+                    JsScope namingScope = getEnclosingScope(descriptor);
+                    JsName result = getNameForDescriptor(overriddenDescriptor);
+                    namingScope.declareUnobfuscatableName(result.getIdent());
+                    return result;
                 }
             };
             addRule(namesForStandardClasses);
@@ -299,18 +310,17 @@ public final class StaticContext {
     }
 
     @NotNull
-    private NamingScope getEnclosingScope(@NotNull DeclarationDescriptor descriptor) {
+    private JsScope getEnclosingScope(@NotNull DeclarationDescriptor descriptor) {
         DeclarationDescriptor containingDeclaration = getContainingDeclaration(descriptor);
         return getScopeForDescriptor(containingDeclaration.getOriginal());
     }
 
-
-    private final class ScopeGenerator extends Generator<NamingScope> {
+    private final class ScopeGenerator extends Generator<JsScope> {
 
         public ScopeGenerator() {
-            Rule<NamingScope> generateNewScopesForClassesWithNoAncestors = new Rule<NamingScope>() {
+            Rule<JsScope> generateNewScopesForClassesWithNoAncestors = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
                     if (!(descriptor instanceof ClassDescriptor)) {
                         return null;
                     }
@@ -320,9 +330,9 @@ public final class StaticContext {
                     return null;
                 }
             };
-            Rule<NamingScope> generateInnerScopesForDerivedClasses = new Rule<NamingScope>() {
+            Rule<JsScope> generateInnerScopesForDerivedClasses = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
                     if (!(descriptor instanceof ClassDescriptor)) {
                         return null;
                     }
@@ -333,9 +343,9 @@ public final class StaticContext {
                     return getScopeForDescriptor(superclass).innerScope("Scope for class " + descriptor.getName());
                 }
             };
-            Rule<NamingScope> generateNewScopesForNamespaceDescriptors = new Rule<NamingScope>() {
+            Rule<JsScope> generateNewScopesForNamespaceDescriptors = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
                     if (!(descriptor instanceof NamespaceDescriptor)) {
                         return null;
                     }
@@ -343,25 +353,25 @@ public final class StaticContext {
                 }
             };
             //TODO: never get there
-            Rule<NamingScope> generateInnerScopesForMembers = new Rule<NamingScope>() {
+            Rule<JsScope> generateInnerScopesForMembers = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
-                    NamingScope enclosingScope = getEnclosingScope(descriptor);
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
+                    JsScope enclosingScope = getEnclosingScope(descriptor);
                     return enclosingScope.innerScope("Scope for member " + descriptor.getName());
                 }
             };
-            Rule<NamingScope> createFunctionObjectsForCallableDescriptors = new Rule<NamingScope>() {
+            Rule<JsScope> createFunctionObjectsForCallableDescriptors = new Rule<JsScope>() {
                 @Override
-                public NamingScope apply(@NotNull DeclarationDescriptor descriptor) {
+                public JsScope apply(@NotNull DeclarationDescriptor descriptor) {
                     if (!(descriptor instanceof CallableDescriptor)) {
                         return null;
                     }
-                    NamingScope enclosingScope = getEnclosingScope(descriptor);
-                    JsFunction correspondingFunction = JsAstUtils.createFunctionWithEmptyBody(enclosingScope.jsScope());
-                    NamingScope newScope = enclosingScope.innerScope(correspondingFunction.getScope());
-                    assert (!scopeToFunction.containsKey(newScope)) : "Scope to function value overridden for " + descriptor;
-                    scopeToFunction.put(newScope, correspondingFunction);
-                    return newScope;
+                    JsScope enclosingScope = getEnclosingScope(descriptor);
+
+                    JsFunction correspondingFunction = JsAstUtils.createFunctionWithEmptyBody(enclosingScope);
+                    assert (!scopeToFunction.containsKey(correspondingFunction.getScope())) : "Scope to function value overridden for " + descriptor;
+                    scopeToFunction.put(correspondingFunction.getScope(), correspondingFunction);
+                    return correspondingFunction.getScope();
                 }
             };
             addRule(createFunctionObjectsForCallableDescriptors);
@@ -394,14 +404,50 @@ public final class StaticContext {
             Rule<JsNameRef> namespaceLevelDeclarationsHaveEnclosingNamespacesNamesAsQualifier = new Rule<JsNameRef>() {
                 @Override
                 public JsNameRef apply(@NotNull DeclarationDescriptor descriptor) {
-                    DeclarationDescriptor containingDeclaration = getContainingDeclaration(descriptor);
-                    if (!(containingDeclaration instanceof NamespaceDescriptor)) {
+                    DeclarationDescriptor containingDescriptor = getContainingDeclaration(descriptor);
+                    if (!(containingDescriptor instanceof NamespaceDescriptor)) {
                         return null;
                     }
-                    JsName containingDeclarationName = getNameForDescriptor(containingDeclaration);
-                    JsNameRef qualifier = containingDeclarationName.makeRef();
-                    qualifier.setQualifier(getQualifierForDescriptor(containingDeclaration));
-                    return qualifier;
+
+                    final JsNameRef result = new JsNameRef(getNameForDescriptor(containingDescriptor));
+                    if (DescriptorUtils.isRootNamespace((NamespaceDescriptor) containingDescriptor)) {
+                        return result;
+                    }
+
+                    JsNameRef qualifier = result;
+                    while ((containingDescriptor = getContainingDeclaration(containingDescriptor)) instanceof NamespaceDescriptor &&
+                           !DescriptorUtils.isRootNamespace((NamespaceDescriptor) containingDescriptor)) {
+                        JsNameRef ref = getNameForDescriptor(containingDescriptor).makeRef();
+                        qualifier.setQualifier(ref);
+                        qualifier = ref;
+                    }
+
+                    PsiElement element = BindingContextUtils.descriptorToDeclaration(bindingContext, descriptor);
+                    if (element == null && descriptor instanceof PropertyAccessorDescriptor) {
+                        element = BindingContextUtils.descriptorToDeclaration(bindingContext, ((PropertyAccessorDescriptor) descriptor)
+                                .getCorrespondingProperty());
+                    }
+
+                    if (element != null) {
+                        PsiFile file = element.getContainingFile();
+                        String moduleName = file.getUserData(LibrarySourcesConfig.EXTERNAL_MODULE_NAME);
+                        if (LibrarySourcesConfig.UNKNOWN_EXTERNAL_MODULE_NAME.equals(moduleName)) {
+                            return null;
+                        }
+                        else if (moduleName != null) {
+                            qualifier.setQualifier(new JsArrayAccess(namer.kotlin("modules"), program.getStringLiteral(moduleName)));
+                        }
+                        else if (result == qualifier && result.getIdent().equals("kotlin")) {
+                            // todo WebDemoExamples2Test#testBuilder, package "kotlin" from kotlin/js/js.libraries/src/stdlib/JUMaps.kt must be inlined
+                            return qualifier;
+                        }
+                    }
+
+                    if (qualifier.getQualifier() == null) {
+                        qualifier.setQualifier(new JsNameRef(Namer.getRootNamespaceName()));
+                    }
+
+                    return result;
                 }
             };
             Rule<JsNameRef> constructorHaveTheSameQualifierAsTheClass = new Rule<JsNameRef>() {
@@ -416,7 +462,6 @@ public final class StaticContext {
                 }
             };
             Rule<JsNameRef> libraryObjectsHaveKotlinQualifier = new Rule<JsNameRef>() {
-
                 @Override
                 public JsNameRef apply(@NotNull DeclarationDescriptor descriptor) {
                     if (isLibraryObject(descriptor)) {

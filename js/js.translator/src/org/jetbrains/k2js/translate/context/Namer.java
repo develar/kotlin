@@ -58,7 +58,7 @@ public final class Namer {
 
     @NotNull
     public static JsNameRef initializeMethodReference() {
-        return AstUtil.newQualifiedNameRef(INITIALIZE_METHOD_NAME);
+        return new JsNameRef(INITIALIZE_METHOD_NAME);
     }
 
     @NotNull
@@ -140,8 +140,8 @@ public final class Namer {
         isTypeName = kotlinScope.declareName("isType");
 
         JsProgram program = rootScope.getProgram();
-        writablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("writable"), program.getTrueLiteral());
-        enumerablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("enumerable"), program.getTrueLiteral());
+        writablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("writable"), JsLiteral.TRUE);
+        enumerablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("enumerable"), JsLiteral.TRUE);
     }
 
     @NotNull
@@ -166,9 +166,7 @@ public final class Namer {
 
     @NotNull
     public JsExpression throwNPEFunctionCall() {
-        JsNameRef reference = AstUtil.newQualifiedNameRef(THROW_NPE_FUN_NAME);
-        JsInvocation invocation = AstUtil.newInvocation(reference);
-        return kotlin(invocation);
+        return new JsInvocation(new JsNameRef(THROW_NPE_FUN_NAME, kotlinObject()));
     }
 
     @NotNull

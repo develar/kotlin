@@ -47,9 +47,9 @@
   }
   ();
   var foo = Kotlin.definePackage(classes, {box:function(){
-    return (new foo.C).get_order() === 'ABC' && (new foo.B).get_order() === 'AB' && (new foo.A).get_order() === 'A';
-  }
-  });
+      return (new foo.C).get_order() === 'ABC' && (new foo.B).get_order() === 'AB' && (new foo.A).get_order() === 'A';
+    }
+    });
 }
 
 function test() {

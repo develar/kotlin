@@ -69,6 +69,4 @@ public abstract class ForTranslator extends AbstractTranslator {
     protected JsStatement translateOriginalBodyExpression() {
         return Translation.translateAsStatement(getLoopBody(expression), context());
     }
-
-
 }

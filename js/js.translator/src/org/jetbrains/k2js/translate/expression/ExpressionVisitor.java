@@ -34,7 +34,6 @@ import org.jetbrains.k2js.translate.operation.BinaryOperationTranslator;
 import org.jetbrains.k2js.translate.operation.UnaryOperationTranslator;
 import org.jetbrains.k2js.translate.reference.*;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
-import org.jetbrains.k2js.translate.utils.TranslationUtils;
 import org.jetbrains.k2js.translate.utils.mutator.AssignToExpressionMutator;
 
 import java.util.List;
@@ -57,16 +56,23 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
                                           @NotNull TranslationContext context) {
         CompileTimeConstant<?> compileTimeValue =
             context.bindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
+
+        // todo try to compile idea project
+        if (compileTimeValue == null && expression.getText().equals("null")) {
+            return JsLiteral.NULL;
+        }
+
         assert compileTimeValue != null;
+
         if (compileTimeValue instanceof NullValue) {
-            return context.program().getNullLiteral();
+            return JsLiteral.NULL;
         }
         Object value = compileTimeValue.getValue();
         if (value instanceof Integer) {
             return context.program().getNumberLiteral((Integer)value);
         }
         if (value instanceof Boolean) {
-            return context.program().getBooleanLiteral((Boolean)value);
+            return JsLiteral.getBoolean((Boolean) value);
         }
 
         //TODO: test
@@ -107,8 +113,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
                                         @NotNull TranslationContext context) {
         JetExpression returnedExpression = jetReturnExpression.getReturnedExpression();
         if (returnedExpression != null) {
-            JsExpression jsExpression = translateAsExpression(returnedExpression, context);
-            return new JsReturn(jsExpression);
+            return new JsReturn(translateAsExpression(returnedExpression, context));
         }
         return new JsReturn();
     }
@@ -155,7 +160,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         if (BindingUtils.isStatement(context.bindingContext(), expression)) {
             return ifStatement;
         }
-        TemporaryVariable result = context.declareTemporary(context.program().getNullLiteral());
+        TemporaryVariable result = context.declareTemporary(JsLiteral.NULL);
         AssignToExpressionMutator saveResultToTemporaryMutator =
             new AssignToExpressionMutator(result.reference());
         JsNode mutatedIfStatement = mutateLastExpression(ifStatement, saveResultToTemporaryMutator);
@@ -308,7 +313,6 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         return Translation.translateWhenExpression(expression, context);
     }
 
-
     @Override
     @NotNull
     public JsNode visitBinaryWithTypeRHSExpression(@NotNull JetBinaryExpressionWithTypeRHS expression,
@@ -335,16 +339,14 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitFunctionLiteralExpression(@NotNull JetFunctionLiteralExpression expression,
                                                  @NotNull TranslationContext context) {
-        return Translation.functionTranslator(expression, context).translateAsLiteral();
+        return context.literalFunctionTranslator().translate(expression);
     }
 
     @Override
     @NotNull
     public JsNode visitThisExpression(@NotNull JetThisExpression expression,
                                       @NotNull TranslationContext context) {
-        DeclarationDescriptor descriptor =
-            getDescriptorForReferenceExpression(context.bindingContext(), expression.getInstanceReference());
-        return TranslationUtils.getThisObject(context, descriptor);
+        return context.getThisObject(getDescriptorForReferenceExpression(context.bindingContext(), expression.getInstanceReference()));
     }
 
     @Override

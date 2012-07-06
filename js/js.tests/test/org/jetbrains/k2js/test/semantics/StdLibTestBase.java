@@ -26,7 +26,6 @@ import org.jetbrains.k2js.test.SingleFileTranslationTest;
 import org.jetbrains.k2js.test.utils.TranslationUtils;
 
 import java.io.File;
-import java.util.EnumSet;
 import java.util.List;
 
 abstract class StdLibTestBase extends SingleFileTranslationTest {
@@ -35,7 +34,7 @@ abstract class StdLibTestBase extends SingleFileTranslationTest {
         super("stdlib/");
     }
 
-    protected void performStdLibTest(@NotNull EnumSet<EcmaVersion> ecmaVersions,
+    protected void performStdLibTest(@NotNull Iterable<EcmaVersion> ecmaVersions,
             @NotNull String sourceDir, @NotNull String... stdLibFiles) throws Exception {
         List<String> files = Lists.newArrayList();
 

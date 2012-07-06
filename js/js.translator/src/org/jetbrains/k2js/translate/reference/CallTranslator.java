@@ -16,9 +16,7 @@
 
 package org.jetbrains.k2js.translate.reference;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.reference.CallParametersResolver.resolveCallParameters;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.isConstructorDescriptor;
 
 /**
@@ -73,6 +72,15 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
         /*package*/ JsExpression translate() {
+        // todo: temp hack, wait
+        final JsExpression a = callParameters.getThisObject();
+        if (a instanceof JsNameRef) {
+            JsNameRef ref = (JsNameRef) a;
+            if (ref.getIdent().equals("classes") && ref.getQualifier() instanceof JsNameRef && ((JsNameRef) ref.getQualifier()).getIdent().equals("Components")) {
+                return new JsArrayAccess(a, arguments.get(0));
+            }
+        }
+
         if (isIntrinsic()) {
             return intrinsicInvocation();
         }
@@ -104,11 +112,16 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
     private JsExpression invokeCall() {
-        JsInvocation callMethodInvocation = generateCallMethodInvocation();
-        List<JsExpression> parameters = Lists.<JsExpression>newArrayList(context().program().getNullLiteral());
-        parameters.addAll(arguments);
-        setArguments(callMethodInvocation, parameters);
-        return callMethodInvocation;
+        JsExpression thisExpression = callParameters.getThisObject();
+        if (thisExpression == null) {
+            return new JsInvocation(callParameters.getFunctionReference(), arguments);
+        }
+        else {
+            JsInvocation call = new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()));
+            call.getArguments().add(thisExpression);
+            call.getArguments().addAll(arguments);
+            return call;
+        }
     }
 
     private boolean isExpressionAsFunction() {
@@ -164,7 +177,7 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression createConstructorCallExpression(@NotNull JsExpression constructorReference) {
         if (context().isEcma5() && !AnnotationsUtils.isNativeObject(resolvedCall.getCandidateDescriptor())) {
-            return AstUtil.newInvocation(constructorReference);
+            return new JsInvocation(constructorReference);
         }
         else {
             return new JsNew(constructorReference);
@@ -206,24 +219,11 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression constructExtensionLiteralCall(@NotNull JsExpression realReceiver) {
         List<JsExpression> callArguments = generateExtensionCallArgumentList(realReceiver);
-        JsInvocation callMethodInvocation = generateCallMethodInvocation();
-        setArguments(callMethodInvocation, callArguments);
-        return callMethodInvocation;
+        return new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()), callArguments);
     }
 
-    @NotNull
-    private JsInvocation generateCallMethodInvocation() {
-        JsNameRef callMethodNameRef = new JsNameRef("call");
-        JsInvocation callMethodInvocation = new JsInvocation();
-        callMethodInvocation.setQualifier(callMethodNameRef);
-        setQualifier(callMethodInvocation, callParameters.getFunctionReference());
-        return callMethodInvocation;
-    }
-
-    @SuppressWarnings("UnnecessaryLocalVariable")
     private boolean isExtensionFunction() {
-        boolean hasReceiver = resolvedCall.getReceiverArgument().exists();
-        return hasReceiver;
+        return resolvedCall.getReceiverArgument().exists();
     }
 
     @NotNull
@@ -243,7 +243,7 @@ public final class CallTranslator extends AbstractTranslator {
         List<JsExpression> argumentList = generateExtensionCallArgumentList(receiver);
         JsExpression functionReference = callParameters.getFunctionReference();
         setQualifier(functionReference, getThisObjectOrQualifier());
-        return newInvocation(functionReference, argumentList);
+        return new JsInvocation(functionReference, argumentList);
     }
 
     @NotNull
@@ -261,12 +261,11 @@ public final class CallTranslator extends AbstractTranslator {
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
                 JsExpression qualifiedCallee = getQualifiedCallee(receiver);
-
                 if (isEcma5PropertyAccess()) {
                     return ecma5PropertyAccess(qualifiedCallee);
                 }
 
-                return newInvocation(qualifiedCallee, arguments);
+                return new JsInvocation(qualifiedCallee, arguments);
             }
         }, context());
     }

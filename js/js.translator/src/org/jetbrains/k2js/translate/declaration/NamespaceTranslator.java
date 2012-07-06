@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.declaration;
 
 import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
@@ -31,8 +30,6 @@ import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.newObjectLiteral;
 
 /**
  * @author Pavel.Talanov
@@ -98,10 +95,7 @@ public final class NamespaceTranslator extends AbstractTranslator {
     private void addNamespaceInitializer() {
         JsFunction initializer = Translation.generateNamespaceInitializerMethod(descriptor, context());
         if (!initializer.getBody().getStatements().isEmpty()) {
-            JsNameRef call = new JsNameRef("call");
-            call.setQualifier(initializer);
-            JsInvocation invocation = new JsInvocation();
-            invocation.setQualifier(call);
+            JsInvocation invocation = new JsInvocation(new JsNameRef("call", initializer));
             invocation.getArguments().add(TranslationUtils.getQualifiedReference(context(), descriptor));
             initializers.add(invocation);
         }
@@ -113,16 +107,16 @@ public final class NamespaceTranslator extends AbstractTranslator {
 
     @NotNull
     private JsInvocation namespaceCreateMethodInvocation() {
-        return AstUtil.newInvocation(context().namer().packageDefinitionMethodReference());
+        return new JsInvocation(context().namer().packageDefinitionMethodReference());
     }
 
     private void addIfNeed(@NotNull List<JsPropertyInitializer> declarations, @NotNull List<JsExpression> expressions) {
         // ecma5 expects strict number of arguments, but ecma3 doesn't
         if (!declarations.isEmpty()) {
-            expressions.add(newObjectLiteral(declarations));
+            expressions.add(new JsObjectLiteral(declarations));
         }
         else if (context().isNotEcma3()) {
-            expressions.add(context().program().getNullLiteral());
+            expressions.add(JsLiteral.NULL);
         }
     }
 

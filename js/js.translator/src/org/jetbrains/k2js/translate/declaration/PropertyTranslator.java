@@ -38,7 +38,6 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyForDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newNamedMethod;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.setParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBackingField;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.backingFieldReference;
 
@@ -68,7 +67,7 @@ public final class PropertyTranslator extends AbstractTranslator {
     private static List<JsPropertyInitializer> translateAsEcma5Accessors(@NotNull PropertyDescriptor descriptor,
             @NotNull List<JsPropertyInitializer> propertyInitializers,
             @NotNull TranslationContext context) {
-        JsObjectLiteral objectLiteral = new JsObjectLiteral();
+        JsObjectLiteral objectLiteral = new JsObjectLiteral(true);
         objectLiteral.getPropertyInitializers().addAll(propertyInitializers);
         JsStringLiteral propertyNameLiteral = context.program().getStringLiteral(descriptor.getName().getName());
         return Collections.singletonList(new JsPropertyInitializer(propertyNameLiteral, objectLiteral));
@@ -148,10 +147,9 @@ public final class PropertyTranslator extends AbstractTranslator {
 
     @NotNull
     private JsFunction generateDefaultGetterFunction(@NotNull PropertyGetterDescriptor descriptor) {
-        JsReturn returnExpression = new JsReturn(backingFieldReference(context(), property));
-        JsFunction getterFunction = context().getFunctionObject(descriptor);
-        getterFunction.getBody().getStatements().add(returnExpression);
-        return getterFunction;
+        JsFunction fun = new JsFunction(context().getScopeForDescriptor(descriptor.getContainingDeclaration()));
+        fun.setBody(new JsBlock(new JsReturn(backingFieldReference(context(), property))));
+        return fun;
     }
 
     @NotNull
@@ -162,14 +160,12 @@ public final class PropertyTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private JsFunction generateDefaultSetterFunction(@NotNull PropertySetterDescriptor propertySetterDescriptor) {
-        JsFunction result = context().getFunctionObject(propertySetterDescriptor);
-        JsParameter defaultParameter =
-                new JsParameter(propertyAccessContext(propertySetterDescriptor).jsScope().declareTemporary());
-        JsStatement assignment = assignmentToBackingField(context(), property, defaultParameter.getName().makeRef()).makeStmt();
-        setParameters(result, defaultParameter);
-        result.getBody().getStatements().add(assignment);
-        return result;
+    private JsFunction generateDefaultSetterFunction(@NotNull PropertySetterDescriptor descriptor) {
+        JsFunction fun = new JsFunction(context().getScopeForDescriptor(descriptor.getContainingDeclaration()));
+        JsParameter defaultParameter = new JsParameter(propertyAccessContext(descriptor).scope().declareTemporary());
+        fun.getParameters().add(defaultParameter);
+        fun.setBody(new JsBlock(assignmentToBackingField(context(), property, defaultParameter.getName().makeRef()).makeStmt()));
+        return fun;
     }
 
     @NotNull

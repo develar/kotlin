@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.expression.foreach;
 
 import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetForExpression;
@@ -32,8 +31,8 @@ import org.jetbrains.k2js.translate.utils.BindingUtils;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getClassDescriptorForType;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
+import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getClassDescriptorForType;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopRange;
 import static org.jetbrains.k2js.translate.utils.TemporariesUtils.temporariesInitialization;
 
@@ -45,7 +44,7 @@ public final class ArrayForTranslator extends ForTranslator {
     @NotNull
     public static JsStatement doTranslate(@NotNull JetForExpression expression,
                                           @NotNull TranslationContext context) {
-        return (new ArrayForTranslator(expression, context).translate());
+        return new ArrayForTranslator(expression, context).translate();
     }
 
     public static boolean isApplicable(@NotNull JetForExpression expression,
@@ -83,16 +82,15 @@ public final class ArrayForTranslator extends ForTranslator {
         List<JsStatement> blockStatements = Lists.newArrayList();
         blockStatements.add(temporariesInitialization(loopRange, end).makeStmt());
         blockStatements.add(generateForExpression(getInitExpression(), getCondition(), getIncrementExpression(), getBody()));
-        return newBlock(blockStatements);
+        return new JsBlock(blockStatements);
     }
-
 
     @NotNull
     private JsStatement getBody() {
         JsArrayAccess arrayAccess = new JsArrayAccess(loopRange.reference(), index.reference());
         JsStatement currentVar = newVar(parameterName, arrayAccess);
         JsStatement realBody = translateOriginalBodyExpression();
-        return AstUtil.newBlock(currentVar, realBody);
+        return new JsBlock(currentVar, realBody);
     }
 
     @NotNull
@@ -107,6 +105,6 @@ public final class ArrayForTranslator extends ForTranslator {
 
     @NotNull
     private JsExpression getIncrementExpression() {
-        return new JsPrefixOperation(JsUnaryOperator.INC, index.reference());
+        return new JsPostfixOperation(JsUnaryOperator.INC, index.reference());
     }
 }

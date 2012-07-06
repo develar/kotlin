@@ -17,34 +17,29 @@
 package org.jetbrains.k2js.translate.utils;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
+import org.jetbrains.jet.lang.descriptors.PropertyGetterDescriptor;
 import org.jetbrains.jet.lang.psi.*;
-import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.google.dart.compiler.util.AstUtil.newAssignment;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptorForOperationExpression;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getDeclarationDescriptorForReceiver;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
 /**
  * @author Pavel Talanov
  */
 public final class TranslationUtils {
-
-    private static final JsNameRef UNDEFINED_LITERAL = AstUtil.newQualifiedNameRef("undefined");
-
     private TranslationUtils() {
     }
 
@@ -53,7 +48,7 @@ public final class TranslationUtils {
             @NotNull FunctionDescriptor descriptor,
             @NotNull TranslationContext context) {
         if (JsDescriptorUtils.isExtension(descriptor)) {
-            return translateExtensionFunctionAsEcma5PropertyDescriptor(function, descriptor, context);
+            return translateExtensionFunctionAsEcma5DataDescriptor(function, descriptor, context);
         }
         else {
             JsStringLiteral getOrSet = context.program().getStringLiteral(descriptor instanceof PropertyGetterDescriptor ? "get" : "set");
@@ -62,38 +57,35 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    private static JsPropertyInitializer translateExtensionFunctionAsEcma5PropertyDescriptor(@NotNull JsFunction function,
+    private static JsPropertyInitializer translateExtensionFunctionAsEcma5DataDescriptor(@NotNull JsFunction function,
             @NotNull FunctionDescriptor descriptor, @NotNull TranslationContext context) {
         JsObjectLiteral meta = JsAstUtils.createDataDescriptor(function, descriptor.getModality().isOverridable(), context);
         return new JsPropertyInitializer(context.getNameForDescriptor(descriptor).makeRef(), meta);
     }
 
     @NotNull
-    public static JsBinaryOperation notNullCheck(@NotNull TranslationContext context,
-            @NotNull JsExpression expressionToCheck) {
-        JsNullLiteral nullLiteral = context.program().getNullLiteral();
+    public static JsBinaryOperation notNullCheck(@NotNull JsExpression expressionToCheck) {
+        JsNullLiteral nullLiteral = JsLiteral.NULL;
         JsBinaryOperation notNull = inequality(expressionToCheck, nullLiteral);
-        JsBinaryOperation notUndefined = inequality(expressionToCheck, UNDEFINED_LITERAL);
+        JsBinaryOperation notUndefined = inequality(expressionToCheck, JsLiteral.UNDEFINED);
         return and(notNull, notUndefined);
     }
 
     @NotNull
-    public static JsBinaryOperation isNullCheck(@NotNull TranslationContext context,
-            @NotNull JsExpression expressionToCheck) {
-        JsNullLiteral nullLiteral = context.program().getNullLiteral();
+    public static JsBinaryOperation isNullCheck(@NotNull JsExpression expressionToCheck) {
+        JsNullLiteral nullLiteral = JsLiteral.NULL;
         JsBinaryOperation isNull = equality(expressionToCheck, nullLiteral);
-        JsBinaryOperation isUndefined = equality(expressionToCheck, UNDEFINED_LITERAL);
+        JsBinaryOperation isUndefined = equality(expressionToCheck, JsLiteral.UNDEFINED);
         return or(isNull, isUndefined);
     }
 
     @NotNull
-    public static JsBinaryOperation nullCheck(@NotNull TranslationContext context,
-            @NotNull JsExpression expressionToCheck, boolean shouldBeNull) {
+    public static JsBinaryOperation nullCheck(@NotNull JsExpression expressionToCheck, boolean shouldBeNull) {
         if (shouldBeNull) {
-            return isNullCheck(context, expressionToCheck);
+            return isNullCheck(expressionToCheck);
         }
         else {
-            return notNullCheck(context, expressionToCheck);
+            return notNullCheck(expressionToCheck);
         }
     }
 
@@ -118,7 +110,7 @@ public final class TranslationUtils {
     public static JsNameRef backingFieldReference(@NotNull TranslationContext context,
             @NotNull PropertyDescriptor descriptor) {
         JsName backingFieldName = context.getNameForDescriptor(descriptor);
-        return qualified(backingFieldName, new JsThisRef());
+        return qualified(backingFieldName, JsLiteral.THIS);
     }
 
     @NotNull
@@ -150,28 +142,6 @@ public final class TranslationUtils {
             setQualifier(reference, qualifier);
         }
         return reference;
-    }
-
-    //TODO: refactor
-    @NotNull
-    public static JsExpression getThisObject(@NotNull TranslationContext context,
-            @NotNull DeclarationDescriptor correspondingDeclaration) {
-        if (correspondingDeclaration instanceof ClassDescriptor) {
-            JsName alias = context.aliasingContext().getAliasForThis(correspondingDeclaration);
-            if (alias != null) {
-                return alias.makeRef();
-            }
-        }
-        if (correspondingDeclaration instanceof CallableDescriptor) {
-            DeclarationDescriptor receiverDescriptor =
-                    getExpectedReceiverDescriptor((CallableDescriptor) correspondingDeclaration);
-            assert receiverDescriptor != null;
-            JsName alias = context.aliasingContext().getAliasForThis(receiverDescriptor);
-            if (alias != null) {
-                return alias.makeRef();
-            }
-        }
-        return new JsThisRef();
     }
 
     @NotNull
@@ -238,28 +208,15 @@ public final class TranslationUtils {
             @NotNull JetBinaryExpression binaryExpression) {
         JsExpression left = translateLeftExpression(context, binaryExpression);
         JsExpression right = translateRightExpression(context, binaryExpression);
-        return intrinsic.apply(left, Arrays.asList(right), context);
+        return intrinsic.apply(left, Collections.singletonList(right), context);
     }
 
-    @Nullable
-    public static JsExpression resolveThisObjectForResolvedCall(@NotNull ResolvedCall<?> call,
-            @NotNull TranslationContext context) {
-        ReceiverDescriptor thisObject = call.getThisObject();
-        if (!thisObject.exists()) {
-            return null;
-        }
-        DeclarationDescriptor expectedThisDescriptor = getDeclarationDescriptorForReceiver(thisObject);
-        return getThisObject(context, expectedThisDescriptor);
+    public static boolean isNullLiteral(@NotNull JsExpression expression) {
+        return expression.equals(JsLiteral.NULL);
     }
 
-    public static boolean isNullLiteral(@NotNull TranslationContext context, @NotNull JsExpression expression) {
-        return expression.equals(context.program().getNullLiteral());
-    }
-
-    public static void defineModule(@NotNull TranslationContext context, @NotNull List<JsStatement> statements,
-            String moduleId) {
-        statements.add(AstUtil.newInvocation(context.namer().kotlin("defineModule"),
-                                             context.program().getStringLiteral(moduleId),
-                                             context.jsScope().declareName("_").makeRef()).makeStmt());
+    public static void defineModule(@NotNull TranslationContext context, @NotNull List<JsStatement> statements, @NotNull String moduleId) {
+        statements.add(new JsInvocation(context.namer().kotlin("defineModule"), context.program().getStringLiteral(moduleId),
+                                        context.scope().declareName("_").makeRef()).makeStmt());
     }
 }

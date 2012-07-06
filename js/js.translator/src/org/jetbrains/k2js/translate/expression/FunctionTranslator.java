@@ -18,26 +18,22 @@ package org.jetbrains.k2js.translate.expression;
 
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.Modality;
+import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
 import org.jetbrains.jet.lang.psi.JetDeclarationWithBody;
-import org.jetbrains.jet.lang.psi.JetElement;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.context.Namer;
-import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
-import org.jetbrains.k2js.translate.reference.ReferenceTranslator;
-import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
-import org.jetbrains.k2js.translate.utils.closure.ClosureContext;
-import org.jetbrains.k2js.translate.utils.closure.ClosureUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,14 +41,12 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 import static org.jetbrains.k2js.translate.utils.FunctionBodyTranslator.translateFunctionBody;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setParameters;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.*;
-
+import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
 /**
  * @author Pavel Talanov
  */
 public final class FunctionTranslator extends AbstractTranslator {
-
     @NotNull
     public static FunctionTranslator newInstance(@NotNull JetDeclarationWithBody function,
             @NotNull TranslationContext context) {
@@ -61,19 +55,14 @@ public final class FunctionTranslator extends AbstractTranslator {
 
     @NotNull
     private final TranslationContext functionBodyContext;
-    @Nullable
-    private TemporaryVariable aliasForContainingClassThis = null;
     @NotNull
     private final JetDeclarationWithBody functionDeclaration;
     @Nullable
-    private JsName extensionFunctionReceiverName = null;
+    private JsName extensionFunctionReceiverName;
     @NotNull
     private final JsFunction functionObject;
     @NotNull
     private final FunctionDescriptor descriptor;
-    // function body needs to be explicitly created here to include it in the context
-    @NotNull
-    private final JsBlock functionBody;
 
     private FunctionTranslator(@NotNull JetDeclarationWithBody functionDeclaration,
             @NotNull TranslationContext context) {
@@ -82,16 +71,12 @@ public final class FunctionTranslator extends AbstractTranslator {
         this.functionDeclaration = functionDeclaration;
         this.functionObject = context().getFunctionObject(descriptor);
         assert this.functionObject.getParameters().isEmpty() : DiagnosticUtils.atLocation(BindingContextUtils.descriptorToDeclaration(context.bindingContext(), descriptor));
-        this.functionBody = functionObject.getBody();
         //NOTE: it's important we compute the context before we start the computation
         this.functionBodyContext = getFunctionBodyContext();
     }
 
     @NotNull
     private TranslationContext getFunctionBodyContext() {
-        if (isLiteral()) {
-            return getFunctionBodyContextForLiteral();
-        }
         if (isExtensionFunction()) {
             return getFunctionBodyContextForExtensionFunction();
         }
@@ -99,20 +84,9 @@ public final class FunctionTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private TranslationContext getFunctionBodyContextForLiteral() {
-        ClassDescriptor containingClass = getContainingClass(descriptor);
-        if (containingClass == null) {
-            return getContextWithFunctionBodyBlock();
-        }
-        JsExpression thisQualifier = TranslationUtils.getThisObject(context(), containingClass);
-        aliasForContainingClassThis = context().declareTemporary(thisQualifier);
-        return getContextWithFunctionBodyBlock().innerContextWithThisAliased(containingClass, aliasForContainingClassThis.name());
-    }
-
-    @NotNull
     private TranslationContext getFunctionBodyContextForExtensionFunction() {
         TranslationContext contextWithFunctionBodyBlock = getContextWithFunctionBodyBlock();
-        extensionFunctionReceiverName = contextWithFunctionBodyBlock.jsScope().declareName(Namer.getReceiverParameterName());
+        extensionFunctionReceiverName = contextWithFunctionBodyBlock.scope().declareName(Namer.getReceiverParameterName());
         DeclarationDescriptor expectedReceiverDescriptor = getExpectedReceiverDescriptor(descriptor);
         assert expectedReceiverDescriptor != null;
         return contextWithFunctionBodyBlock.innerContextWithThisAliased(expectedReceiverDescriptor, extensionFunctionReceiverName);
@@ -120,9 +94,8 @@ public final class FunctionTranslator extends AbstractTranslator {
 
     @NotNull
     private TranslationContext getContextWithFunctionBodyBlock() {
-        return context().newDeclaration(functionDeclaration).innerBlock(functionBody);
+        return context().newDeclaration(functionDeclaration).innerBlock(functionObject.getBody());
     }
-
 
     @NotNull
     public JsFunction translateAsLocalFunction() {
@@ -145,51 +118,6 @@ public final class FunctionTranslator extends AbstractTranslator {
         return new JsPropertyInitializer(functionName.makeRef(), functionObject);
     }
 
-    @NotNull
-    public JsExpression translateAsLiteral() {
-        assert getExpectedThisDescriptor(descriptor) == null;
-        generateFunctionObject();
-        ClosureContext closureContext = ClosureUtils.captureClosure(context(), (JetElement) functionDeclaration);
-        if (closureContext.getDescriptors().isEmpty()) {
-            return mayBeWrapWithThisAlias();
-        }
-        return wrapInClosureCaptureExpression(functionObject, closureContext);
-    }
-
-    @NotNull
-    private JsExpression mayBeWrapWithThisAlias() {
-        if (!shouldAliasThisObject()) {
-            return functionObject;
-        }
-        assert aliasForContainingClassThis != null;
-        return AstUtil.newSequence(aliasForContainingClassThis.assignmentExpression(), functionObject);
-    }
-
-    private boolean shouldAliasThisObject() {
-        if (!isLiteral()) {
-            return false;
-        }
-        ClassDescriptor containingClass = getContainingClass(descriptor);
-        return containingClass != null;
-    }
-
-    @NotNull
-    private JsExpression wrapInClosureCaptureExpression(@NotNull JsExpression wrappedExpression,
-            @NotNull ClosureContext closureContext) {
-        JsFunction dummyFunction = new JsFunction(context().jsScope());
-        JsInvocation dummyFunctionInvocation = AstUtil.newInvocation(dummyFunction);
-        for (VariableDescriptor variableDescriptor : closureContext.getDescriptors()) {
-            dummyFunction.getParameters().add(new JsParameter(context().getNameForDescriptor(variableDescriptor)));
-            dummyFunctionInvocation.getArguments().add(ReferenceTranslator.translateAsLocalNameReference(variableDescriptor, context()));
-            if (aliasForContainingClassThis != null) {
-                dummyFunction.getParameters().add(new JsParameter(aliasForContainingClassThis.name()));
-                dummyFunctionInvocation.getArguments().add(aliasForContainingClassThis.initExpression());
-            }
-        }
-        dummyFunction.setBody(AstUtil.newBlock(new JsReturn(wrappedExpression)));
-        return dummyFunctionInvocation;
-    }
-
     private void generateFunctionObject() {
         setParameters(functionObject, translateParameters());
         translateBody();
@@ -201,24 +129,21 @@ public final class FunctionTranslator extends AbstractTranslator {
             assert descriptor.getModality().equals(Modality.ABSTRACT);
             return;
         }
-        functionBody.getStatements().add(translateFunctionBody(descriptor, functionDeclaration, functionBodyContext));
+        functionObject.getBody().getStatements().addAll(translateFunctionBody(descriptor, functionDeclaration, functionBodyContext).getStatements());
     }
-
 
     @NotNull
     private List<JsParameter> translateParameters() {
         List<JsParameter> jsParameters = new ArrayList<JsParameter>();
         mayBeAddThisParameterForExtensionFunction(jsParameters);
-        for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
-            JsName parameterName = declareParameter(valueParameter);
-            jsParameters.add(new JsParameter(parameterName));
-        }
+        addParameters(jsParameters, descriptor, context());
         return jsParameters;
     }
 
-    @NotNull
-    private JsName declareParameter(@NotNull ValueParameterDescriptor valueParameter) {
-        return context().getNameForDescriptor(valueParameter);
+    public static void addParameters(List<JsParameter> list, FunctionDescriptor descriptor, TranslationContext context) {
+        for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
+            list.add(new JsParameter(context.getNameForDescriptor(valueParameter)));
+        }
     }
 
     private void mayBeAddThisParameterForExtensionFunction(@NotNull List<JsParameter> jsParameters) {
@@ -229,10 +154,6 @@ public final class FunctionTranslator extends AbstractTranslator {
     }
 
     private boolean isExtensionFunction() {
-        return JsDescriptorUtils.isExtension(descriptor) && !isLiteral();
-    }
-
-    private boolean isLiteral() {
-        return functionDeclaration instanceof JetFunctionLiteralExpression;
+        return JsDescriptorUtils.isExtension(descriptor) && !(functionDeclaration instanceof JetFunctionLiteralExpression);
     }
 }

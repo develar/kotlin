@@ -25,6 +25,7 @@ import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.config.EcmaVersion;
+import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 
 import java.util.Map;
@@ -37,7 +38,6 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForEl
  *         All the info about the state of the translation process.
  */
 public final class TranslationContext {
-
     @NotNull
     private final DynamicContext dynamicContext;
     @NotNull
@@ -53,6 +53,14 @@ public final class TranslationContext {
         AliasingContext rootAliasingContext = AliasingContext.getCleanContext();
         return new TranslationContext(staticContext,
                                       rootDynamicContext, rootAliasingContext);
+    }
+
+    @NotNull
+    public static TranslationContext rootFunctionContext(@NotNull StaticContext staticContext, JsFunction rootFunction) {
+        DynamicContext rootDynamicContext =
+                DynamicContext.rootContext(rootFunction.getScope(), rootFunction.getBody());
+        AliasingContext rootAliasingContext = AliasingContext.getCleanContext();
+        return new TranslationContext(staticContext, rootDynamicContext, rootAliasingContext);
     }
 
     public boolean isEcma5() {
@@ -71,8 +79,17 @@ public final class TranslationContext {
         aliasingContext = context;
     }
 
+    public DynamicContext dynamicContext() {
+        return dynamicContext;
+    }
+
     @NotNull
-    public TranslationContext contextWithScope(@NotNull NamingScope newScope, @NotNull JsBlock block) {
+    public TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block) {
+        return contextWithScope(newScope, block, aliasingContext);
+    }
+
+    @NotNull
+    public TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block, @NotNull AliasingContext aliasingContext) {
         return new TranslationContext(staticContext, DynamicContext.newContext(newScope, block), aliasingContext);
     }
 
@@ -86,15 +103,9 @@ public final class TranslationContext {
         return contextWithScope(getScopeForDescriptor(descriptor), getBlockForDescriptor(descriptor));
     }
 
-    //TODO: consider passing a function here
-    @NotNull
-    public TranslationContext innerContextWithGivenScopeAndBlock(@NotNull JsScope scope, @NotNull JsBlock block) {
-        return contextWithScope(dynamicContext.getScope().innerScope(scope), block);
-    }
-
     @NotNull
     public TranslationContext innerContextWithThisAliased(@NotNull DeclarationDescriptor correspondingDescriptor, @NotNull JsName alias) {
-        return new TranslationContext(staticContext, dynamicContext, aliasingContext.withThisAliased(correspondingDescriptor, alias));
+        return new TranslationContext(staticContext, dynamicContext, aliasingContext.inner(correspondingDescriptor, alias));
     }
 
     @NotNull
@@ -128,7 +139,7 @@ public final class TranslationContext {
     }
 
     @NotNull
-    public NamingScope getScopeForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+    public JsScope getScopeForDescriptor(@NotNull DeclarationDescriptor descriptor) {
         return staticContext.getScopeForDescriptor(descriptor);
     }
 
@@ -178,13 +189,18 @@ public final class TranslationContext {
     }
 
     @NotNull
-    public JsScope jsScope() {
-        return dynamicContext.jsScope();
+    public JsScope scope() {
+        return dynamicContext.getScope();
     }
 
     @NotNull
     public AliasingContext aliasingContext() {
         return aliasingContext;
+    }
+
+    @NotNull
+    public LiteralFunctionTranslator literalFunctionTranslator() {
+        return staticContext.getLiteralFunctionTranslator();
     }
 
     @NotNull
@@ -194,5 +210,16 @@ public final class TranslationContext {
 
     public void addStatementToCurrentBlock(@NotNull JsStatement statement) {
         dynamicContext.jsBlock().getStatements().add(statement);
+    }
+
+    @NotNull
+    public AliasingContext.ThisAliasProvider thisAliasProvider() {
+        return aliasingContext().thisAliasProvider;
+    }
+
+    @NotNull
+    public JsExpression getThisObject(@NotNull DeclarationDescriptor descriptor) {
+        JsNameRef ref = thisAliasProvider().get(descriptor);
+        return ref == null ? JsLiteral.THIS : ref;
     }
 }

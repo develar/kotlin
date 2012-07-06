@@ -32,16 +32,12 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBa
  * @author Pavel Talanov
  */
 public final class InitializerUtils {
-
     private InitializerUtils() {
     }
 
     @NotNull
     public static JsPropertyInitializer generateInitializeMethod(@NotNull JsFunction initializerFunction) {
-        JsPropertyInitializer initializer = new JsPropertyInitializer();
-        initializer.setLabelExpr(Namer.initializeMethodReference());
-        initializer.setValueExpr(initializerFunction);
-        return initializer;
+        return new JsPropertyInitializer(Namer.initializeMethodReference(), initializerFunction);
     }
 
     @NotNull

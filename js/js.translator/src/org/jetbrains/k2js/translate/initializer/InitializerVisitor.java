@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.initializer;
 
 import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsInvocation;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;

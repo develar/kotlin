@@ -17,18 +17,15 @@
 package org.jetbrains.k2js.test.rhino;
 
 import closurecompiler.internal.com.google.common.collect.Maps;
-import com.google.common.base.Supplier;
 import com.google.common.collect.Sets;
 import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.facade.K2JSTranslator;
-import org.jetbrains.k2js.test.BasicTest;
 import org.mozilla.javascript.*;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -41,56 +38,76 @@ import static org.jetbrains.k2js.test.BasicTest.pathToTestFilesRoot;
  * @author Pavel Talanov
  */
 public final class RhinoUtils {
-    @NotNull
-    private static final Set<String> IGNORED_JSLINT_WARNINGS = Sets.newHashSet();
-
-    static {
-        // todo dart ast bug
-        IGNORED_JSLINT_WARNINGS.add("Unexpected space between '}' and '('.");
-        // don't read JS, use kotlin and idea debugger ;)
-        IGNORED_JSLINT_WARNINGS
-                .add("Wrap an immediate function invocation in parentheses to assist the reader in understanding that the expression is the result of a function, and not the function itself.");
-    }
-
-    @NotNull
-    private static final RhinoFunctionManager functionManager = new RhinoFunctionManager(
-            new Supplier<String>() {
-                @Override
-                public String get() {
-                    return fileToString(BasicTest.JSLINT_LIB);
-                }
-            },
-            "JSLINT"
-    );
-
-
     public static final String KOTLIN_JS_LIB_COMMON = pathToTestFilesRoot() + "kotlin_lib.js";
     private static final String KOTLIN_JS_LIB_ECMA_3 = pathToTestFilesRoot() + "kotlin_lib_ecma3.js";
     private static final String KOTLIN_JS_LIB_ECMA_5 = pathToTestFilesRoot() + "kotlin_lib_ecma5.js";
+
+    private static final String JSHINT_LIB = pathToTestFilesRoot() + "jshint.js";
+
+    private static final Set<String> IGNORED_JSHINT_WARNINGS = Sets.newHashSet();
+
+    private static final NativeObject JSHINT_OPTIONS = new NativeObject();
+
+    @NotNull
+    private static final Map<EcmaVersion, ScriptableObject> versionToScope = Maps.newHashMap();
+
+    static {
+        // don't read JS, use kotlin and idea debugger ;)
+        //IGNORED_JSHINT_WARNINGS.add(
+        //        "Wrap an immediate function invocation in parentheses to assist the reader in understanding that the expression is the result of a function, and not the function itself.");
+        //IGNORED_JSHINT_WARNINGS.add("Expected exactly one space between ';' and 'else'.");
+        //// stupid jslint, see $initializer fun
+        //IGNORED_JSHINT_WARNINGS.add("Do not wrap function literals in parens unless they are to be immediately invoked.");
+        //// stupid jslint
+        //IGNORED_JSHINT_WARNINGS.add("'_' was used before it was defined.");
+        //IGNORED_JSHINT_WARNINGS.add("Empty block.");
+        IGNORED_JSHINT_WARNINGS.add("Expected to see a statement and instead saw a block.");
+        //IGNORED_JSHINT_WARNINGS.add("Unexpected '.'.");
+        //// todo
+        //IGNORED_JSHINT_WARNINGS.add("Strange loop.");
+        //IGNORED_JSHINT_WARNINGS.add("Weird relation.");
+        //IGNORED_JSHINT_WARNINGS.add("Weird condition.");
+        //IGNORED_JSHINT_WARNINGS.add("Expected ';' and instead saw ','.");
+        //IGNORED_JSHINT_WARNINGS.add("Expected an identifier and instead saw ','.");
+        //// it is normal,
+        //IGNORED_JSHINT_WARNINGS.add("Unexpected 'else' after 'return'.");
+        IGNORED_JSHINT_WARNINGS.add("Expected ')' and instead saw 'return'.");
+
+        //IGNORED_JSHINT_WARNINGS.add()
+
+        // todo fix dart ast?
+        //JSHINT_OPTIONS.defineProperty("white", true, ScriptableObject.READONLY);
+        // vars, http://uxebu.com/blog/2010/04/02/one-var-statement-for-one-varia
+        // ble/
+        //JSHINT_OPTIONS.defineProperty("vars", true, ScriptableObject.READONLY);
+        NativeArray globals = new NativeArray(new Object[] {"Kotlin"});
+        JSHINT_OPTIONS.defineProperty("predef", globals, ScriptableObject.READONLY);
+        // todo
+        JSHINT_OPTIONS.defineProperty("expr", true, ScriptableObject.READONLY);
+        JSHINT_OPTIONS.defineProperty("asi", true, ScriptableObject.READONLY);
+        //JSHINT_OPTIONS.defineProperty("nomen", true, ScriptableObject.READONLY);
+        //JSHINT_OPTIONS.defineProperty("continue", true, ScriptableObject.READONLY);
+        //JSHINT_OPTIONS.defineProperty("plusplus", true, ScriptableObject.READONLY);
+        //JSHINT_OPTIONS.defineProperty("evil", true, ScriptableObject.READONLY);
+
+        //JSHINT_OPTIONS.defineProperty("indent", 2, ScriptableObject.READONLY);
+    }
 
     private RhinoUtils() {
 
     }
 
-    private static String fileToString(String file) {
+    private static void runFileWithRhino(@NotNull String inputFile,
+            @NotNull Context context,
+            @NotNull Scriptable scope) throws Exception {
+        String result;
         try {
-            return FileUtil.loadFile(new File(file));
+            result = FileUtil.loadFile(new File(inputFile));
         }
         catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static void runFileWithRhino(@NotNull String inputFile,
-            @NotNull Context context,
-            @NotNull Scriptable scope) throws Exception {
-        FileReader reader = new FileReader(inputFile);
-        try {
-            context.evaluateReader(scope, reader, inputFile, 1, null);
-        }
-        finally {
-            reader.close();
-        }
+        context.evaluateString(scope, result, inputFile, 1, null);
     }
 
     public static void runRhinoTest(@NotNull List<String> fileNames,
@@ -104,14 +121,18 @@ public final class RhinoUtils {
             @NotNull EcmaVersion ecmaVersion) throws Exception {
         Context context = createContext(ecmaVersion);
         try {
-            Scriptable scope = getScope(ecmaVersion, context);
+            ScriptableObject scope = getScope(ecmaVersion, context);
             putGlobalVariablesIntoScope(scope, variables);
             for (String filename : fileNames) {
                 runFileWithRhino(filename, context, scope);
+                String problems = lintIt(context, filename, scope);
+                if (problems != null) {
+                    //fail(problems);
+                    //noinspection UseOfSystemOutOrSystemErr
+                    System.out.print(problems);
+                }
             }
             checker.runChecks(context, scope);
-
-            lintIt(context, fileNames.get(fileNames.size() - 1));
         }
         finally {
             Context.exit();
@@ -119,7 +140,7 @@ public final class RhinoUtils {
     }
 
     @NotNull
-    private static Scriptable getScope(@NotNull EcmaVersion version, @NotNull Context context) {
+    private static ScriptableObject getScope(@NotNull EcmaVersion version, @NotNull Context context) {
         ScriptableObject scope = context.initStandardObjects(null, false);
         scope.setParentScope(getParentScope(version, context));
         return scope;
@@ -127,20 +148,25 @@ public final class RhinoUtils {
 
     @NotNull
     private static Scriptable getParentScope(@NotNull EcmaVersion version, @NotNull Context context) {
-        Scriptable parentScope = versionToScope.get(version);
+        ScriptableObject parentScope = versionToScope.get(version);
         if (parentScope == null) {
             parentScope = initScope(version, context);
             versionToScope.put(version, parentScope);
+        }
+        else {
+            NativeObject kotlin = (NativeObject) parentScope.get("Kotlin");
+            kotlin.put("modules", kotlin, new NativeObject());
         }
         return parentScope;
     }
 
     @NotNull
-    private static Scriptable initScope(@NotNull EcmaVersion version, @NotNull Context context) {
+    private static ScriptableObject initScope(@NotNull EcmaVersion version, @NotNull Context context) {
         ScriptableObject scope = context.initStandardObjects();
         try {
             runFileWithRhino(getKotlinLibFile(version), context, scope);
             runFileWithRhino(KOTLIN_JS_LIB_COMMON, context, scope);
+            runFileWithRhino(JSHINT_LIB, context, scope);
         }
         catch (Exception e) {
             throw rethrow(e);
@@ -174,9 +200,6 @@ public final class RhinoUtils {
     }
 
     @NotNull
-    private static final Map<EcmaVersion, Scriptable> versionToScope = Maps.newHashMap();
-
-    @NotNull
     public static String getKotlinLibFile(@NotNull EcmaVersion ecmaVersion) {
         return ecmaVersion == EcmaVersion.v5 ? KOTLIN_JS_LIB_ECMA_5 : KOTLIN_JS_LIB_ECMA_3;
     }
@@ -185,34 +208,20 @@ public final class RhinoUtils {
         context.evaluateString(scope, K2JSTranslator.FLUSH_SYSTEM_OUT, "test", 0, null);
     }
 
-    private static void lintIt(Context context, String fileName) throws IOException {
+    @Nullable
+    private static String lintIt(Context context, String fileName, ScriptableObject scope) throws IOException {
         if (Boolean.valueOf(System.getProperty("test.lint.skip"))) {
-            return;
+            return null;
         }
 
-        NativeObject options = new NativeObject();
-        // todo fix dart ast?
-        options.defineProperty("white", true, ScriptableObject.READONLY);
-        // vars, http://uxebu.com/blog/2010/04/02/one-var-statement-for-one-variable/
-        options.defineProperty("vars", true, ScriptableObject.READONLY);
-        NativeArray globals = new NativeArray(new Object[] {"Kotlin"});
-        options.defineProperty("predef", globals, ScriptableObject.READONLY);
-
-        Object[] args = {FileUtil.loadFile(new File(fileName)), options};
-        FunctionWithScope functionWithScope = functionManager.getFunctionWithScope();
-        Function function = functionWithScope.getFunction();
-        Scriptable scope = functionWithScope.getScope();
-        Object status = function.call(context, scope, scope, args);
-        Boolean noErrors = (Boolean) Context.jsToJava(status, Boolean.class);
-        if (!noErrors) {
+        Object[] args = {FileUtil.loadFile(new File(fileName)), JSHINT_OPTIONS};
+        Function function = (Function) ScriptableObject.getProperty(scope.getParentScope(), "JSHINT");
+        Object status = function.call(context, scope.getParentScope(), scope.getParentScope(), args);
+        if (!(Boolean) Context.jsToJava(status, Boolean.class)) {
             Object errors = function.get("errors", scope);
-            if (errors == null) {
-                return;
-            }
-
-            System.out.println(fileName);
+            StringBuilder sb = new StringBuilder(fileName);
             for (Object errorObj : ((NativeArray) errors)) {
-                if (!(errorObj instanceof NativeObject)) {
+                if (errorObj == null) {
                     continue;
                 }
 
@@ -225,14 +234,21 @@ public final class RhinoUtils {
                 Object reasonObj = e.get("reason");
                 if (reasonObj instanceof String) {
                     String reason = (String) reasonObj;
-                    if (IGNORED_JSLINT_WARNINGS.contains(reason)) {
+                    if (IGNORED_JSHINT_WARNINGS.contains(reason) ||
+                        reason.startsWith("Expected exactly one space between ')' and ") ||
+                        reason.startsWith("Expected '}' to match '{' from line ") ||
+                        reason.startsWith("Expected '{' and instead saw ")) {
                         continue;
                     }
 
-                    System.out.println(line + ":" + character + " " + reason);
+                    sb.append('\n').append(line).append(':').append(character).append(' ').append(reason);
                 }
             }
+
+            return sb.length() == fileName.length() ? null : sb.toString();
         }
+
+        return null;
     }
 
     private static int toInt(Object obj) {

@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import gnu.trove.THashMap;
 import gnu.trove.TLinkable;
 import gnu.trove.TLinkableAdaptor;
@@ -28,6 +27,7 @@ import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.Modality;
 import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
 import org.jetbrains.jet.lang.psi.JetClass;
+import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
@@ -39,7 +39,6 @@ import java.util.List;
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.general.Translation.translateClassDeclaration;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.newBlock;
 
 /**
  * @author Pavel Talanov
@@ -47,7 +46,7 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.newBlock;
  *         Generates a big block where are all the classes(objects representing them) are created.
  */
 public final class ClassDeclarationTranslator extends AbstractTranslator {
-    private int localNameCounter;
+    private final LabelGenerator localLabelGenerator = new LabelGenerator('c');
 
     @NotNull
     private final THashMap<JetClass, ListItem> openClassToItem = new THashMap<JetClass, ListItem>();
@@ -64,8 +63,8 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     public ClassDeclarationTranslator(@NotNull TranslationContext context) {
         super(context);
 
-        dummyFunction = new JsFunction(context.jsScope());
-        declarationsObject = context().jsScope().declareName(Namer.nameForClassesVariable());
+        dummyFunction = new JsFunction(context.scope());
+        declarationsObject = context().scope().declareName(Namer.nameForClassesVariable());
         classesVar = new JsVars.JsVar(declarationsObject);
     }
 
@@ -131,15 +130,20 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         generateFinalClassDeclarations(vars, propertyInitializers);
 
         if (vars.isEmpty()) {
-            classesVar.setInitExpr(valueLiteral);
+            if (propertyInitializers.isEmpty()) {
+                classesVar.setInitExpr(JsLiteral.NULL);
+            }
+            else {
+                classesVar.setInitExpr(valueLiteral);
+            }
             return;
         }
 
         List<JsStatement> result = new ArrayList<JsStatement>();
         result.add(vars);
         result.add(new JsReturn(valueLiteral));
-        dummyFunction.setBody(newBlock(result));
-        classesVar.setInitExpr(AstUtil.newInvocation(dummyFunction));
+        dummyFunction.setBody(new JsBlock(result));
+        classesVar.setInitExpr(new JsInvocation(dummyFunction));
     }
 
     private void generateOpenClassDeclarations(@NotNull JsVars vars, @NotNull List<JsPropertyInitializer> propertyInitializers) {
@@ -187,7 +191,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         ClassDescriptor descriptor = getClassDescriptor(context().bindingContext(), declaration);
 
         JsNameRef labelRef;
-        String label = 'c' + Integer.toString(localNameCounter++, 36);
+        String label = localLabelGenerator.generate();
         boolean isFinal = descriptor.getModality() == Modality.FINAL;
         if (isFinal) {
             labelRef = new JsNameRef(label);

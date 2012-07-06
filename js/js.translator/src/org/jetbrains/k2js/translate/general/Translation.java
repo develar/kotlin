@@ -16,8 +16,6 @@
 
 package org.jetbrains.k2js.translate.general;
 
-import com.google.dart.compiler.backend.js.JsNamer;
-import com.google.dart.compiler.backend.js.JsPrettyNamer;
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -134,8 +132,7 @@ public final class Translation {
     @NotNull
     public static JsFunction generateClassInitializerMethod(@NotNull JetClassOrObject classDeclaration,
             @NotNull TranslationContext context) {
-        final ClassInitializerTranslator classInitializerTranslator = new ClassInitializerTranslator(classDeclaration, context);
-        return classInitializerTranslator.generateInitializeMethod();
+        return new ClassInitializerTranslator(classDeclaration, context).generateInitializeMethod();
     }
 
     @NotNull
@@ -172,11 +169,12 @@ public final class Translation {
         JsBlock block = program.getGlobalBlock();
 
         JsFunction rootFunction = JsAstUtils.createPackage(block.getStatements(), program.getScope());
-        JsBlock rootBlock = rootFunction.getBody();
-        List<JsStatement> statements = rootBlock.getStatements();
+        List<JsStatement> statements = rootFunction.getBody().getStatements();
         statements.add(program.getStringLiteral("use strict").makeStmt());
 
-        TranslationContext context = TranslationContext.rootContext(staticContext);
+        TranslationContext context = TranslationContext.rootFunctionContext(staticContext, rootFunction);
+        staticContext.getLiteralFunctionTranslator().setRootContext(context);
+        statements.add(staticContext.getLiteralFunctionTranslator().toJsStatement());
         statements.addAll(translateFiles(files, context));
         TranslationUtils.defineModule(context, statements, config.getModuleId());
 
@@ -186,14 +184,8 @@ public final class Translation {
                 statements.add(statement);
             }
         }
-        TestGenerator.generateTestCalls(context, files, rootBlock);
-        performSimpleNameMangling(context.program());
+        TestGenerator.generateTestCalls(context, files, rootFunction.getBody());
         return context.program();
-    }
-
-    private static void performSimpleNameMangling(@NotNull JsProgram program) {
-        JsNamer namer = new JsPrettyNamer();
-        namer.exec(program);
     }
 
     @Nullable

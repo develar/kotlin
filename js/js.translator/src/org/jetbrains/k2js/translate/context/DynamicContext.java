@@ -18,30 +18,33 @@ package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.addVarDeclaration;
+import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
 
 //TODO: consider renaming to scoping context
 public final class DynamicContext {
-
     @NotNull
-    public static DynamicContext rootContext(@NotNull NamingScope rootScope, @NotNull JsBlock globalBlock) {
+    public static DynamicContext rootContext(@NotNull JsScope rootScope, @NotNull JsBlock globalBlock) {
         return new DynamicContext(rootScope, globalBlock);
     }
 
     @NotNull
-    public static DynamicContext newContext(@NotNull NamingScope scope, @NotNull JsBlock block) {
+    public static DynamicContext newContext(@NotNull JsScope scope, @NotNull JsBlock block) {
         return new DynamicContext(scope, block);
     }
 
     @NotNull
-    private final NamingScope currentScope;
+    private final JsScope currentScope;
 
     @NotNull
     private final JsBlock currentBlock;
 
-    private DynamicContext(@NotNull NamingScope scope, @NotNull JsBlock block) {
+    @Nullable
+    private JsVars vars;
+
+    private DynamicContext(@NotNull JsScope scope, @NotNull JsBlock block) {
         this.currentScope = scope;
         this.currentBlock = block;
     }
@@ -58,19 +61,23 @@ public final class DynamicContext {
 
     @NotNull
     public TemporaryVariable declareTemporary(@NotNull JsExpression initExpression, boolean initialize) {
+        if (vars == null) {
+            vars = new JsVars();
+            currentBlock.getStatements().add(vars);
+        }
+
         JsName temporaryName = currentScope.declareTemporary();
-        JsVars temporaryDeclaration = newVar(temporaryName, initialize ? initExpression : null);
-        addVarDeclaration(jsBlock(), temporaryDeclaration);
+        vars.add(new JsVar(temporaryName, initialize ? initExpression : null));
         return new TemporaryVariable(temporaryName, initExpression);
     }
 
     @NotNull
-    public JsScope jsScope() {
-        return currentScope.jsScope();
+    public JsVars createTemporary(@NotNull JsExpression initExpression) {
+        return newVar(currentScope.declareTemporary(), initExpression);
     }
 
     @NotNull
-    public NamingScope getScope() {
+    public JsScope getScope() {
         return currentScope;
     }
 

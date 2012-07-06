@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.expression.foreach;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
@@ -45,7 +44,7 @@ public final class IteratorForTranslator extends ForTranslator {
     @NotNull
     public static JsStatement doTranslate(@NotNull JetForExpression expression,
                                           @NotNull TranslationContext context) {
-        return (new IteratorForTranslator(expression, context).translate());
+        return new IteratorForTranslator(expression, context).translate();
     }
 
     @NotNull
@@ -60,7 +59,7 @@ public final class IteratorForTranslator extends ForTranslator {
     private JsBlock translate() {
         JsBlock bodyBlock = generateCycleBody();
         JsWhile cycle = new JsWhile(hasNextMethodInvocation(), bodyBlock);
-        return AstUtil.newBlock(iterator.assignmentExpression().makeStmt(), cycle);
+        return new JsBlock(iterator.assignmentExpression().makeStmt(), cycle);
     }
 
     //TODO: check whether complex logic with blocks is needed
@@ -94,16 +93,14 @@ public final class IteratorForTranslator extends ForTranslator {
             return hasNext;
         }
         else {
-            JsInvocation invocation = new JsInvocation();
-            invocation.setQualifier(hasNext);
-            return invocation;
+            return new JsInvocation(hasNext);
         }
     }
 
     // kotlin iterator define hasNext as property, but java util as function, our js side expects as property
     private static boolean isJavaUtilIterator(CallableDescriptor descriptor) {
         DeclarationDescriptor declaration = descriptor.getContainingDeclaration();
-        return declaration != null && declaration.getName().getName().equals("Iterator");
+        return declaration.getName().getName().equals("Iterator");
     }
 
     @NotNull

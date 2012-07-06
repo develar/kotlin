@@ -5,6 +5,11 @@ var Kotlin = {};
 (function () {
     "use strict";
 
+    // ecma5 is still sucks — concat doesn't accept arguments, but apply does, so, we just return arguments
+    Kotlin.argumentsToArrayLike = function (args) {
+      return args;
+    };
+
     Kotlin.isType = function (object, klass) {
         if (object === null) {
             return false;
@@ -92,7 +97,9 @@ var Kotlin = {};
 
     Kotlin.createObject = function (initializer, properties) {
         var o = Object.create(null, properties || undefined);
-        initializer.call(o);
+        if (initializer != null) {
+            initializer.call(o);
+        }
         return o;
     };
 
@@ -154,12 +161,11 @@ var Kotlin = {};
     };
 
     Kotlin.defineModule = function (id, module) {
-        var isTestMode = id === "JS_TESTS";
-        if ((id in Kotlin.modules) && (!isTestMode)) {
+        if (id in Kotlin.modules) {
             throw Kotlin.$new(Kotlin.Exceptions.IllegalArgumentException)();
         }
 
         Object.freeze(module);
-        Object.defineProperty(Kotlin.modules, id, {value: module, writable: isTestMode});
+        Object.defineProperty(Kotlin.modules, id, {value: module});
     };
 })();
