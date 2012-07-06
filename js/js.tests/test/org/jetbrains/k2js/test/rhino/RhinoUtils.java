@@ -16,9 +16,9 @@
 
 package org.jetbrains.k2js.test.rhino;
 
+import closurecompiler.internal.com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.intellij.openapi.util.io.FileUtil;
-import gnu.trove.THashMap;
-import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.config.EcmaVersion;
@@ -38,16 +38,18 @@ import static org.jetbrains.k2js.test.BasicTest.pathToTestFilesRoot;
  * @author Pavel Talanov
  */
 public final class RhinoUtils {
-    public static final String JSHINT_LIB = pathToTestFilesRoot() + "jshint.js";
-
     public static final String KOTLIN_JS_LIB_COMMON = pathToTestFilesRoot() + "kotlin_lib.js";
     private static final String KOTLIN_JS_LIB_ECMA_3 = pathToTestFilesRoot() + "kotlin_lib_ecma3.js";
     private static final String KOTLIN_JS_LIB_ECMA_5 = pathToTestFilesRoot() + "kotlin_lib_ecma5.js";
+    
+    private static final String JSHINT_LIB = pathToTestFilesRoot() + "jshint.js";
 
-    private static final Set<String> IGNORED_JSHINT_WARNINGS = new THashSet<String>();
-    private static final Map<EcmaVersion, ScriptableObject> versionToScope = new THashMap<EcmaVersion, ScriptableObject>();
-
+    private static final Set<String> IGNORED_JSHINT_WARNINGS = Sets.newHashSet();
+    
     private static final NativeObject JSHINT_OPTIONS = new NativeObject();
+    
+    @NotNull
+    private static final Map<EcmaVersion, ScriptableObject> versionToScope = Maps.newHashMap();    
 
     static {
         // don't read JS, use kotlin and idea debugger ;)
@@ -137,6 +139,75 @@ public final class RhinoUtils {
         }
     }
 
+    @NotNull
+    private static ScriptableObject getScope(@NotNull EcmaVersion version, @NotNull Context context) {
+        ScriptableObject scope = context.initStandardObjects(null, false);
+        scope.setParentScope(getParentScope(version, context));
+        return scope;
+    }
+
+    @NotNull
+    private static Scriptable getParentScope(@NotNull EcmaVersion version, @NotNull Context context) {
+        ScriptableObject parentScope = versionToScope.get(version);
+        if (parentScope == null) {
+            parentScope = initScope(version, context);
+            versionToScope.put(version, parentScope);
+        }
+        else {
+            NativeObject kotlin = (NativeObject) parentScope.get("Kotlin");
+            kotlin.put("modules", kotlin, new NativeObject());
+        }
+        return parentScope;
+    }
+
+    @NotNull
+    private static ScriptableObject initScope(@NotNull EcmaVersion version, @NotNull Context context) {
+        ScriptableObject scope = context.initStandardObjects();
+        try {
+            runFileWithRhino(getKotlinLibFile(version), context, scope);
+            runFileWithRhino(KOTLIN_JS_LIB_COMMON, context, scope);
+            runFileWithRhino(JSHINT_LIB, context, scope);
+        }
+        catch (Exception e) {
+            throw rethrow(e);
+        }
+        scope.sealObject();
+        return scope;
+    }
+
+
+    //TODO:
+    @NotNull
+    private static Context createContext(@NotNull EcmaVersion ecmaVersion) {
+        Context context = Context.enter();
+        if (ecmaVersion == EcmaVersion.v5) {
+            // actually, currently, doesn't matter because dart doesn't produce js 1.8 code (expression closures)
+            context.setLanguageVersion(Context.VERSION_1_8);
+        }
+        return context;
+    }
+
+    private static void putGlobalVariablesIntoScope(@NotNull Scriptable scope, @Nullable Map<String, Object> variables) {
+        if (variables == null) {
+            return;
+        }
+        Set<Map.Entry<String, Object>> entries = variables.entrySet();
+        for (Map.Entry<String, Object> entry : entries) {
+            String name = entry.getKey();
+            Object value = entry.getValue();
+            scope.put(name, scope, value);
+        }
+    }
+
+    @NotNull
+    public static String getKotlinLibFile(@NotNull EcmaVersion ecmaVersion) {
+        return ecmaVersion == EcmaVersion.v5 ? KOTLIN_JS_LIB_ECMA_5 : KOTLIN_JS_LIB_ECMA_3;
+    }
+
+    static void flushSystemOut(@NotNull Context context, @NotNull Scriptable scope) {
+        context.evaluateString(scope, K2JSTranslator.FLUSH_SYSTEM_OUT, "test", 0, null);
+    }
+
     @Nullable
     private static String lintIt(Context context, String fileName, ScriptableObject scope) throws IOException {
         if (Boolean.valueOf(System.getProperty("test.lint.skip"))) {
@@ -185,72 +256,5 @@ public final class RhinoUtils {
             return ((Number) obj).intValue();
         }
         return -1;
-    }
-
-    @NotNull
-    private static ScriptableObject getScope(@NotNull EcmaVersion version, @NotNull Context context) {
-        ScriptableObject scope = context.initStandardObjects(null, false);
-        scope.setParentScope(getParentScope(version, context));
-        return scope;
-    }
-
-    @NotNull
-    private static Scriptable getParentScope(@NotNull EcmaVersion version, @NotNull Context context) {
-        ScriptableObject parentScope = versionToScope.get(version);
-        if (parentScope == null) {
-            parentScope = initScope(version, context);
-            versionToScope.put(version, parentScope);
-        }
-        else {
-            NativeObject kotlin = (NativeObject) parentScope.get("Kotlin");
-            kotlin.put("modules", kotlin, new NativeObject());
-        }
-        return parentScope;
-    }
-
-    @NotNull
-    private static ScriptableObject initScope(@NotNull EcmaVersion version, @NotNull Context context) {
-        ScriptableObject scope = context.initStandardObjects();
-        try {
-            runFileWithRhino(getKotlinLibFile(version), context, scope);
-            runFileWithRhino(KOTLIN_JS_LIB_COMMON, context, scope);
-            runFileWithRhino(JSHINT_LIB, context, scope);
-        }
-        catch (Exception e) {
-            throw rethrow(e);
-        }
-        scope.sealObject();
-        return scope;
-    }
-
-    @NotNull
-    private static Context createContext(@NotNull EcmaVersion ecmaVersion) {
-        Context context = Context.enter();
-        if (ecmaVersion == EcmaVersion.v5) {
-            // actually, currently, doesn't matter because dart doesn't produce js 1.8 code (expression closures)
-            context.setLanguageVersion(Context.VERSION_1_8);
-        }
-        return context;
-    }
-
-    private static void putGlobalVariablesIntoScope(@NotNull Scriptable scope, @Nullable Map<String, Object> variables) {
-        if (variables == null) {
-            return;
-        }
-        Set<Map.Entry<String, Object>> entries = variables.entrySet();
-        for (Map.Entry<String, Object> entry : entries) {
-            String name = entry.getKey();
-            Object value = entry.getValue();
-            scope.put(name, scope, value);
-        }
-    }
-
-    @NotNull
-    public static String getKotlinLibFile(@NotNull EcmaVersion ecmaVersion) {
-        return ecmaVersion == EcmaVersion.v5 ? KOTLIN_JS_LIB_ECMA_5 : KOTLIN_JS_LIB_ECMA_3;
-    }
-
-    static void flushSystemOut(@NotNull Context context, @NotNull Scriptable scope) {
-        context.evaluateString(scope, K2JSTranslator.FLUSH_SYSTEM_OUT, "test", 0, null);
     }
 }

@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.test.rhino;
 
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.k2js.test.config.TestConfig;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -64,7 +65,7 @@ public class RhinoFunctionResultChecker implements RhinoResultChecker {
     private String functionCallString() {
         StringBuilder sb = new StringBuilder();
         if (namespaceName != null) {
-            sb.append("Kotlin.modules.main");
+            sb.append("Kotlin.modules." + TestConfig.TEST_MODULE_NAME);
             if (namespaceName != Namer.getRootNamespaceName()) {
                 sb.append('.').append(namespaceName);
             }

@@ -28,8 +28,9 @@ import java.util.List;
 /**
  * @author Pavel Talanov
  */
-public class TestConfig extends Config {
-
+public final class TestConfig extends Config {
+    @NotNull
+    public static final String TEST_MODULE_NAME = "JS_TESTS";
     @NotNull
     private final List<JetFile> jsLibFiles;
     @NotNull
@@ -37,7 +38,7 @@ public class TestConfig extends Config {
 
     public TestConfig(@NotNull Project project, @NotNull EcmaVersion version,
             @NotNull List<JetFile> files, @NotNull BindingContext context) {
-        super(project, "main", version);
+        super(project, TEST_MODULE_NAME, version);
         jsLibFiles = files;
         libraryContext = context;
     }
