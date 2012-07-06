@@ -45,7 +45,7 @@ abstract class StdLibTestBase extends SingleFileTranslationTest {
         compileFiles(ecmaVersions, files);
     }
 
-    private void compileFiles(@NotNull EnumSet<EcmaVersion> ecmaVersions, @NotNull List<String> files) throws Exception {
+    private void compileFiles(@NotNull Iterable<EcmaVersion> ecmaVersions, @NotNull List<String> files) throws Exception {
         List<String> libFiles = createLibFilesList();
         for (EcmaVersion version : ecmaVersions) {
             String outputFilePath = getOutputFilePath(getTestName(false) + ".compiler.kt", version);
@@ -60,7 +60,7 @@ abstract class StdLibTestBase extends SingleFileTranslationTest {
     protected void performChecksOnGeneratedJavaScript(String path, EcmaVersion version) throws Exception {
     }
 
-    protected String moduleIdFromOutputFile(String path) {
+    protected static String moduleIdFromOutputFile(String path) {
         String moduleId = new File(path).getName();
         if (moduleId.endsWith(".js")) {
             moduleId = moduleId.substring(0, moduleId.length() - 3);

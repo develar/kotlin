@@ -27,6 +27,7 @@ import org.mozilla.javascript.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -94,7 +95,6 @@ public final class RhinoUtils {
     }
 
     private RhinoUtils() {
-
     }
 
     private static void runFileWithRhino(@NotNull String inputFile,
@@ -110,18 +110,31 @@ public final class RhinoUtils {
         context.evaluateString(scope, result, inputFile, 1, null);
     }
 
-    public static void runRhinoTest(@NotNull List<String> fileNames,
-            @NotNull RhinoResultChecker checker) throws Exception {
-        runRhinoTest(fileNames, checker, null, EcmaVersion.defaultVersion());
+    public static void runRhinoTest(@NotNull List<String> fileNames, @NotNull RhinoResultChecker checker) throws Exception {
+        runRhinoTest(fileNames, checker, EcmaVersion.defaultVersion());
+    }
+
+    public static void runRhinoTest(@NotNull List<String> fileNames, @NotNull RhinoResultChecker checker, @NotNull EcmaVersion ecmaVersion)
+            throws Exception {
+        runRhinoTest(fileNames, checker, null, ecmaVersion);
     }
 
     public static void runRhinoTest(@NotNull List<String> fileNames,
             @NotNull RhinoResultChecker checker,
             @Nullable Map<String, Object> variables,
-            @NotNull EcmaVersion ecmaVersion) throws Exception {
+            @NotNull EcmaVersion ecmaVersion)
+            throws Exception {
+        runRhinoTest(fileNames, checker, variables, ecmaVersion, Collections.<String>emptyList());
+    }
+
+    public static void runRhinoTest(@NotNull List<String> fileNames,
+            @NotNull RhinoResultChecker checker,
+            @Nullable Map<String, Object> variables,
+            @NotNull EcmaVersion ecmaVersion,
+            @NotNull List<String> jsLibraries) throws Exception {
         Context context = createContext(ecmaVersion);
         try {
-            ScriptableObject scope = getScope(ecmaVersion, context);
+            ScriptableObject scope = getScope(ecmaVersion, context, jsLibraries);
             putGlobalVariablesIntoScope(scope, variables);
             for (String filename : fileNames) {
                 runFileWithRhino(filename, context, scope);
@@ -140,17 +153,17 @@ public final class RhinoUtils {
     }
 
     @NotNull
-    private static ScriptableObject getScope(@NotNull EcmaVersion version, @NotNull Context context) {
+    private static ScriptableObject getScope(@NotNull EcmaVersion version, @NotNull Context context, @NotNull List<String> jsLibraries) {
         ScriptableObject scope = context.initStandardObjects(null, false);
-        scope.setParentScope(getParentScope(version, context));
+        scope.setParentScope(getParentScope(version, context, jsLibraries));
         return scope;
     }
 
     @NotNull
-    private static Scriptable getParentScope(@NotNull EcmaVersion version, @NotNull Context context) {
+    private static Scriptable getParentScope(@NotNull EcmaVersion version, @NotNull Context context, @NotNull List<String> jsLibraries) {
         ScriptableObject parentScope = versionToScope.get(version);
         if (parentScope == null) {
-            parentScope = initScope(version, context);
+            parentScope = initScope(version, context, jsLibraries);
             versionToScope.put(version, parentScope);
         }
         else {
@@ -161,12 +174,15 @@ public final class RhinoUtils {
     }
 
     @NotNull
-    private static ScriptableObject initScope(@NotNull EcmaVersion version, @NotNull Context context) {
+    private static ScriptableObject initScope(@NotNull EcmaVersion version, @NotNull Context context, @NotNull List<String> jsLibraries) {
         ScriptableObject scope = context.initStandardObjects();
         try {
             runFileWithRhino(getKotlinLibFile(version), context, scope);
             runFileWithRhino(KOTLIN_JS_LIB_COMMON, context, scope);
             runFileWithRhino(JSHINT_LIB, context, scope);
+            for (String jsLibrary : jsLibraries) {
+                runFileWithRhino(jsLibrary, context, scope);
+            }
         }
         catch (Exception e) {
             throw rethrow(e);
