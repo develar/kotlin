@@ -19,6 +19,7 @@ package org.jetbrains.k2js.translate.expression;
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.JetNodeTypes;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
@@ -55,34 +56,27 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitConstantExpression(@NotNull JetConstantExpression expression,
             @NotNull TranslationContext context) {
-        CompileTimeConstant<?> compileTimeValue =
-                context.bindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
-
         // todo try to compile idea project
-        if (compileTimeValue == null && expression.getText().equals("null")) {
+        if (expression.getNode().getElementType() == JetNodeTypes.NULL) {
             return JsLiteral.NULL;
         }
 
+        CompileTimeConstant<?> compileTimeValue = context.bindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
         assert compileTimeValue != null;
 
         if (compileTimeValue instanceof NullValue) {
             return JsLiteral.NULL;
         }
+
         Object value = compileTimeValue.getValue();
-        if (value instanceof Integer) {
-            return context.program().getNumberLiteral((Integer) value);
+        if (value instanceof Number) {
+            return context.program().getNumberLiteral(((Number) value).doubleValue());
         }
-        if (value instanceof Boolean) {
+        else if (value instanceof Boolean) {
             return JsLiteral.getBoolean((Boolean) value);
         }
 
         //TODO: test
-        if (value instanceof Float) {
-            return context.program().getNumberLiteral((Float) value);
-        }
-        if (value instanceof Double) {
-            return context.program().getNumberLiteral((Double) value);
-        }
         if (value instanceof String) {
             return context.program().getStringLiteral((String) value);
         }
