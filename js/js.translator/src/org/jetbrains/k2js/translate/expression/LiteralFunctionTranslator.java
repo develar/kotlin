@@ -33,48 +33,45 @@ public class LiteralFunctionTranslator {
     }
 
     public JsStatement toJsStatement() {
+        if (properties.isEmpty()) {
+            return rootContext.program().getEmptyStmt();
+        }
+
         return new JsVars(new JsVars.JsVar(containingVarRef.getName(), new JsObjectLiteral(properties, true)));
     }
 
     public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration) {
         FunctionDescriptor descriptor = getFunctionDescriptor(rootContext.bindingContext(), declaration);
 
-        JsScope namingScope = rootContext.scope().innerScope();
-        JsBlock body = new JsBlock();
-        TranslationContext funContext = rootContext.contextWithScope(namingScope, body);
+        JsFunction fun = createFunction();
+        TranslationContext funContext = rootContext.contextWithScope(fun);
 
-        JsFunction fun = new JsFunction(funContext.scope());
-        fun.setBody(body);
-
-        body.getStatements().addAll(translateFunctionBody(descriptor, declaration, funContext).getStatements());
+        fun.getBody().getStatements().addAll(translateFunctionBody(descriptor, declaration, funContext).getStatements());
 
         JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
-        properties.add(new JsPropertyInitializer(nameRef, fun));
 
         if (declaration.getParent() instanceof JetProperty && !(((JetProperty) declaration.getParent()).isLocal())) {
             FunctionTranslator.addParameters(fun.getParameters(), descriptor, funContext);
             return fun;
         }
 
-        InnerFunctionTranslator translator = new InnerFunctionTranslator(declaration, descriptor, funContext, fun);
-        return translator.translate(nameRef);
+        properties.add(new JsPropertyInitializer(nameRef, fun));
+        return new InnerFunctionTranslator(declaration, descriptor, funContext, fun).translate(nameRef);
+    }
+
+    private JsFunction createFunction() {
+        return new JsFunction(rootContext.scope(), new JsBlock());
     }
 
     public JsExpression translate(@NotNull ClassDescriptor containingClass,
             JetClassOrObject declaration,
             ClassTranslator classTranslator) {
-        JsScope namingScope = rootContext.scope().innerScope();
+        JsFunction fun = createFunction();
+        JsName outerThisName = fun.getScope().declareName("$this");
+        TranslationContext funContext = rootContext.contextWithScope(fun, rootContext.aliasingContext()
+                .inner(new InnerObjectTranslator.MyThisAliasProvider(containingClass, outerThisName)));
 
-        JsName outerThisName = namingScope.declareName("$this");
-
-        JsBlock body = new JsBlock();
-        TranslationContext funContext = rootContext.contextWithScope(namingScope, body, rootContext.aliasingContext().inner(
-                new InnerObjectTranslator.MyThisAliasProvider(containingClass, outerThisName)));
-
-        JsFunction fun = new JsFunction(funContext.scope());
-        fun.setBody(body);
-
-        body.getStatements().add(new JsReturn(classTranslator.translateClassOrObjectCreation(funContext)));
+        fun.getBody().getStatements().add(new JsReturn(classTranslator.translateClassOrObjectCreation(funContext)));
 
         JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
         properties.add(new JsPropertyInitializer(nameRef, fun));

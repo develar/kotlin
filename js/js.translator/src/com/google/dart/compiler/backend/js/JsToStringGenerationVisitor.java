@@ -312,7 +312,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             needSemi = true;
             accept(stmt);
             if (needSemi) {
-                _semi();
+                semi();
             }
             newlineOpt();
         }
@@ -414,7 +414,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         accept(x.getBody());
         _nestedPop(x.getBody());
         if (needSemi) {
-            _semi();
+            semi();
             newlineOpt();
         }
         else {
@@ -463,7 +463,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             accept(x.getInitVars());
         }
 
-        _semi();
+        semi();
 
         // The loop test.
         //
@@ -472,7 +472,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             accept(x.getCondition());
         }
 
-        _semi();
+        semi();
 
         // The incr expression.
         //
@@ -562,7 +562,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         JsStatement elseStmt = x.getElseStmt();
         if (elseStmt != null) {
             if (needSemi) {
-                _semi();
+                semi();
                 newlineOpt();
             }
             else {
@@ -902,6 +902,10 @@ public class JsToStringGenerationVisitor extends JsVisitor {
                 break;
             }
             JsStatement statement = iterator.next();
+            if (statement instanceof JsEmpty) {
+                continue;
+            }
+
             needSemi = true;
             boolean shouldRecordPositions = isGlobal && !(statement instanceof JsBlock);
             boolean stmtIsGlobalBlock = false;
@@ -922,7 +926,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             }
             if (needSemi) {
                 /*
-                * Special treatment of function decls: If they are the only item in a
+                * Special treatment of function declarations: If they are the only item in a
                 * statement (i.e. not part of an assignment operation), just give them
                 * a newline instead of a semi.
                 */
@@ -943,10 +947,10 @@ public class JsToStringGenerationVisitor extends JsVisitor {
                 }
                 else {
                     if (lastStatement) {
-                        _semiOpt();
+                        semiOpt();
                     }
                     else {
-                        _semi();
+                        semi();
                     }
                     newlineOpt();
                 }
@@ -1185,11 +1189,11 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         p.print(']');
     }
 
-    private void _semi() {
+    private void semi() {
         p.print(';');
     }
 
-    private void _semiOpt() {
+    private void semiOpt() {
         p.printOpt(';');
     }
 

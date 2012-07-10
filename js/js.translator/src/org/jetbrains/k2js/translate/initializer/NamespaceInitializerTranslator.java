@@ -40,7 +40,7 @@ public final class NamespaceInitializerTranslator {
     @NotNull
     public JsFunction generateInitializeMethod() {
         JsFunction result = JsAstUtils.createFunctionWithEmptyBody(namespaceContext.scope());
-        TranslationContext namespaceInitializerContext = namespaceContext.contextWithScope(result.getScope(), result.getBody());
+        TranslationContext namespaceInitializerContext = namespaceContext.contextWithScope(result);
         result.getBody().getStatements().addAll(new InitializerVisitor().traverseNamespace(namespace, namespaceInitializerContext));
         return result;
     }

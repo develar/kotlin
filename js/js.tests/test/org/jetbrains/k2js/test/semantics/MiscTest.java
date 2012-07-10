@@ -25,7 +25,6 @@ import org.mozilla.javascript.JavaScriptException;
  *         A messy class where all new tests go before they are sorted which never happens.
  */
 public final class MiscTest extends AbstractExpressionTest {
-
     public MiscTest() {
         super("misc/");
     }

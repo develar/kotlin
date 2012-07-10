@@ -70,11 +70,6 @@ public class JsScope implements Serializable {
         return new JsScope(this, scopeName);
     }
 
-    @NotNull
-    public JsScope innerScope() {
-        return new JsScope(this);
-    }
-
     /**
      * Rebase the function to a new scope.
      *

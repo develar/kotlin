@@ -46,16 +46,6 @@ public final class TranslationContext {
     private final AliasingContext aliasingContext;
 
     @NotNull
-    public static TranslationContext rootContext(@NotNull StaticContext staticContext) {
-        JsProgram program = staticContext.getProgram();
-        JsBlock globalBlock = program.getGlobalBlock();
-        DynamicContext rootDynamicContext = DynamicContext.rootContext(staticContext.getRootScope(), globalBlock);
-        AliasingContext rootAliasingContext = AliasingContext.getCleanContext();
-        return new TranslationContext(staticContext,
-                                      rootDynamicContext, rootAliasingContext);
-    }
-
-    @NotNull
     public static TranslationContext rootFunctionContext(@NotNull StaticContext staticContext, JsFunction rootFunction) {
         DynamicContext rootDynamicContext =
                 DynamicContext.rootContext(rootFunction.getScope(), rootFunction.getBody());
@@ -84,13 +74,23 @@ public final class TranslationContext {
     }
 
     @NotNull
-    public TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block) {
+    private TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block) {
         return contextWithScope(newScope, block, aliasingContext);
     }
 
     @NotNull
-    public TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block, @NotNull AliasingContext aliasingContext) {
+    public TranslationContext contextWithScope(@NotNull JsFunction fun) {
+        return contextWithScope(fun, aliasingContext);
+    }
+
+    @NotNull
+    private TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block, @NotNull AliasingContext aliasingContext) {
         return new TranslationContext(staticContext, DynamicContext.newContext(newScope, block), aliasingContext);
+    }
+
+    @NotNull
+    public TranslationContext contextWithScope(@NotNull JsFunction fun, @NotNull AliasingContext aliasingContext) {
+        return contextWithScope(fun.getScope(), fun.getBody(), aliasingContext);
     }
 
     @NotNull

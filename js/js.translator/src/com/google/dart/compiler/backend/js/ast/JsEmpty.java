@@ -8,7 +8,6 @@ package com.google.dart.compiler.backend.js.ast;
  * Represents an empty statement in JavaScript.
  */
 public class JsEmpty extends JsStatement {
-
   // Interned by JsProgram
   JsEmpty() {
   }
