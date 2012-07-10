@@ -115,7 +115,11 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    public JsVars getDeclarationsStatement() {
+    public JsStatement getDeclarationsStatement() {
+        if (classesVar.getInitExpr() == null) {
+            return context().program().getEmptyStmt();
+        }
+
         JsVars vars = new JsVars();
         vars.add(classesVar);
         return vars;
@@ -130,19 +134,13 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         generateFinalClassDeclarations(vars, propertyInitializers);
 
         if (vars.isEmpty()) {
-            if (propertyInitializers.isEmpty()) {
-                classesVar.setInitExpr(JsLiteral.NULL);
-            }
-            else {
+            if (!propertyInitializers.isEmpty()) {
                 classesVar.setInitExpr(valueLiteral);
             }
             return;
         }
 
-        List<JsStatement> result = new ArrayList<JsStatement>();
-        result.add(vars);
-        result.add(new JsReturn(valueLiteral));
-        dummyFunction.setBody(new JsBlock(result));
+        dummyFunction.setBody(new JsBlock(vars, new JsReturn(valueLiteral)));
         classesVar.setInitExpr(new JsInvocation(dummyFunction));
     }
 
