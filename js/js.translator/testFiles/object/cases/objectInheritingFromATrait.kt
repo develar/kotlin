@@ -1,17 +1,25 @@
 package foo
 
 trait Foo {
-    fun execute(): Boolean {
-        return execute(false)
+    fun execute(handler: ()->Unit) {
+        execute(false, handler)
     }
 
-    fun execute(use: Boolean): Boolean
+    fun execute(onlyIfAttached: Boolean, handler: ()->Unit)
 }
 
 object foo : Foo {
-    override fun execute(use: Boolean) = true
+    override fun execute(onlyIfAttached: Boolean, handler: ()->Unit) {
+        handler()
+    }
 }
 
+private var result = false
+
 fun box(): Boolean {
-    return foo.execute()
+    foo.execute() {
+        result = true
+    }
+
+    return result
 }

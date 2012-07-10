@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.declaration;
 
 import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
@@ -28,7 +29,6 @@ import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,7 +37,6 @@ import java.util.List;
  *         Genereate code for a single descriptor.
  */
 public final class NamespaceTranslator extends AbstractTranslator {
-
     @NotNull
     private final NamespaceDescriptor descriptor;
     @NotNull
@@ -46,7 +45,7 @@ public final class NamespaceTranslator extends AbstractTranslator {
     private final ClassDeclarationTranslator classDeclarationTranslator;
 
     @NotNull
-    private final List<JsExpression> initializers = new ArrayList<JsExpression>();
+    private final List<JsExpression> initializers = new SmartList<JsExpression>();
 
     /*package*/ NamespaceTranslator(@NotNull NamespaceDescriptor descriptor,
                                     @NotNull ClassDeclarationTranslator classDeclarationTranslator,
@@ -95,9 +94,8 @@ public final class NamespaceTranslator extends AbstractTranslator {
     private void addNamespaceInitializer() {
         JsFunction initializer = Translation.generateNamespaceInitializerMethod(descriptor, context());
         if (!initializer.getBody().getStatements().isEmpty()) {
-            JsInvocation invocation = new JsInvocation(new JsNameRef("call", initializer));
-            invocation.getArguments().add(TranslationUtils.getQualifiedReference(context(), descriptor));
-            initializers.add(invocation);
+            initializers.add(new JsInvocation(new JsNameRef("call", initializer),
+                                              TranslationUtils.getQualifiedReference(context(), descriptor)));
         }
     }
 
