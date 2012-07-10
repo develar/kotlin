@@ -57,6 +57,12 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
             @NotNull TranslationContext context) {
         CompileTimeConstant<?> compileTimeValue =
                 context.bindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
+
+        // todo try to compile idea project
+        if (compileTimeValue == null && expression.getText().equals("null")) {
+            return JsLiteral.NULL;
+        }
+
         assert compileTimeValue != null;
 
         if (compileTimeValue instanceof NullValue) {
@@ -334,16 +340,14 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitFunctionLiteralExpression(@NotNull JetFunctionLiteralExpression expression,
                                                  @NotNull TranslationContext context) {
-        return Translation.functionTranslator(expression, context).translateAsLiteral();
+        return context.literalFunctionTranslator().translate(expression);
     }
 
     @Override
     @NotNull
     public JsNode visitThisExpression(@NotNull JetThisExpression expression,
                                       @NotNull TranslationContext context) {
-        DeclarationDescriptor descriptor =
-            getDescriptorForReferenceExpression(context.bindingContext(), expression.getInstanceReference());
-        return TranslationUtils.getThisObject(context, descriptor);
+        return context.getThisObject(getDescriptorForReferenceExpression(context.bindingContext(), expression.getInstanceReference()));
     }
 
     @Override
