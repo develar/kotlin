@@ -92,7 +92,7 @@ var Kotlin = {};
     })());
 
     Kotlin.isType = function (object, klass) {
-        if (object === null) {
+        if (object === null || object === undefined) {
             return false;
         }
 

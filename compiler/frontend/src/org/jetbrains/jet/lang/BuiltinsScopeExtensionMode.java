@@ -14,35 +14,13 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.resolve.java;
+package org.jetbrains.jet.lang;
 
 /**
-* @author Stepan Koltsov
-*/
-public enum CompilerSpecialMode {
-    REGULAR,
-    BUILTINS,
-    JDK_HEADERS,
-    STDLIB,
-    IDEA,
-    JS,
-    ;
-
-    public boolean includeJdkAnnotations() {
-        return false;
-        //return this == REGULAR || this == STDLIB || this == IDEA;
-    }
-
-    public boolean includeKotlinRuntime() {
-        return false;
-        //return this == REGULAR;
-    }
-
-    public boolean includeJdk() {
-        return this != IDEA;
-    }
-
-    public boolean isStubs() {
-        return this == BUILTINS || this == JDK_HEADERS;
-    }
+ * @author Evgeny Gerashchenko
+ * @since 7/5/12
+ */
+public enum BuiltinsScopeExtensionMode {
+    ALL,
+    ONLY_STANDARD_CLASSES
 }

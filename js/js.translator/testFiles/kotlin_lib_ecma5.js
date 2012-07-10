@@ -11,7 +11,7 @@ var Kotlin = {};
     };
 
     Kotlin.isType = function (object, klass) {
-        if (object === null) {
+        if (object === null || object === undefined) {
             return false;
         }
 
@@ -43,11 +43,11 @@ var Kotlin = {};
         for (var i = 0, n = bases.length; i < n; i++) {
             var base = bases[i];
             var baseProto = base.proto;
-            if (baseProto == null || base.properties == null) {
+            if (baseProto === null || base.properties === null) {
                 continue;
             }
 
-            if (!proto) {
+            if (proto === null) {
                 proto = Object.create(baseProto, properties || undefined);
                 continue;
             }
@@ -62,8 +62,8 @@ var Kotlin = {};
     Kotlin.createClass = function (bases, initializer, properties) {
         var proto;
         var baseInitializer = null;
-        var isTrait = initializer == null;
-        if (!bases) {
+        var isTrait = initializer === null;
+        if (bases === null) {
             proto = !properties && isTrait ? null : Object.create(null, properties || undefined);
         }
         else if (!Array.isArray(bases)) {
@@ -75,7 +75,7 @@ var Kotlin = {};
             // first is superclass, other are traits
             baseInitializer = bases[0].initializer;
             // all bases are traits without properties
-            if (proto == null && !isTrait) {
+            if (proto === null && !isTrait) {
                 proto = Object.create(null, properties || undefined);
             }
         }
@@ -95,14 +95,9 @@ var Kotlin = {};
         return constructor;
     };
 
-    Kotlin.createObject = function (initializer, properties) {
-        var o = Object.create(null, properties || undefined);
-        if (initializer != null) {
-            initializer.call(o);
-        }
-        return o;
+    Kotlin.createObject = function (bases, initializer, properties) {
+        return Kotlin.createClass(bases, initializer, properties)();
     };
-
 
     Kotlin.definePackage = function (functionsAndClasses, nestedNamespaces) {
         var p = Object.create(null, functionsAndClasses || undefined);
@@ -110,7 +105,7 @@ var Kotlin = {};
             var keys = Object.keys(nestedNamespaces);
             for (var i = 0, n = keys.length; i < n; i++) {
                 var name = keys[i];
-                Object.defineProperty(p, name, {value:nestedNamespaces[name]});
+                Object.defineProperty(p, name, {value: nestedNamespaces[name]});
             }
         }
 

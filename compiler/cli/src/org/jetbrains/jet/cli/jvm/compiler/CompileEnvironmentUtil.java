@@ -27,11 +27,13 @@ import jet.modules.Module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
+import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
+import org.jetbrains.jet.codegen.BuiltinToJavaTypesMapping;
 import org.jetbrains.jet.codegen.ClassFileFactory;
 import org.jetbrains.jet.codegen.GeneratedClassLoader;
 import org.jetbrains.jet.codegen.GenerationState;
-import org.jetbrains.jet.lang.resolve.java.CompilerDependencies;
-import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
+import org.jetbrains.jet.config.CompilerConfiguration;
+import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.utils.PathUtil;
@@ -139,17 +141,20 @@ public class CompileEnvironmentUtil {
 
             }
         };
-        CompilerDependencies dependencies = CompilerDependencies.compilerDependenciesForProduction(CompilerSpecialMode.REGULAR);
-        JetCoreEnvironment scriptEnvironment = JetCoreEnvironment.createCoreEnvironmentForJVM(disposable, dependencies);
+        CompilerConfiguration configuration = new CompilerConfiguration();
+        configuration.putUserData(JVMConfigurationKeys.CLASSPATH_KEY, new File[]{PathUtil.getDefaultRuntimePath()});
+        JetCoreEnvironment scriptEnvironment = JetCoreEnvironment.createCoreEnvironmentForJVM(disposable, configuration);
         scriptEnvironment.addSources(moduleScriptFile);
 
         GenerationState generationState = KotlinToJVMBytecodeCompiler
-                .analyzeAndGenerate(new K2JVMCompileEnvironmentConfiguration(scriptEnvironment, messageCollector, false), false);
+                .analyzeAndGenerate(new K2JVMCompileEnvironmentConfiguration(scriptEnvironment, messageCollector, false,
+                                                                             BuiltinsScopeExtensionMode.ALL, false,
+                                                                             BuiltinToJavaTypesMapping.ENABLED), false);
         if (generationState == null) {
             throw new CompileEnvironmentException("Module script " + moduleScriptFile + " analyze failed");
         }
 
-        List<Module> modules = runDefineModules(dependencies, moduleScriptFile, generationState.getFactory());
+        List<Module> modules = runDefineModules(moduleScriptFile, generationState.getFactory());
 
         Disposer.dispose(disposable);
 
@@ -163,8 +168,8 @@ public class CompileEnvironmentUtil {
         return modules;
     }
 
-    private static List<Module> runDefineModules(CompilerDependencies compilerDependencies, String moduleFile, ClassFileFactory factory) {
-        File stdlibJar = compilerDependencies.getRuntimeJar();
+    private static List<Module> runDefineModules(String moduleFile, ClassFileFactory factory) {
+        File stdlibJar = PathUtil.getDefaultRuntimePath();
         GeneratedClassLoader loader;
         if (stdlibJar != null) {
             try {

@@ -21,13 +21,12 @@ import com.intellij.openapi.util.io.FileUtil;
 import jline.console.ConsoleReader;
 import jline.console.history.FileHistory;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.resolve.java.CompilerDependencies;
+import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.utils.ExceptionUtils;
 
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -43,13 +42,12 @@ public class ReplFromTerminal {
 
     public ReplFromTerminal(
             @NotNull final Disposable disposable,
-            @NotNull final CompilerDependencies compilerDependencies,
-            @NotNull final List<File> extraClasspath) {
+            @NotNull final CompilerConfiguration compilerConfiguration) {
         new Thread("initialize-repl") {
             @Override
             public void run() {
                 try {
-                    replInterpreter = new ReplInterpreter(disposable, compilerDependencies, extraClasspath);
+                    replInterpreter = new ReplInterpreter(disposable, compilerConfiguration);
                 } catch (Throwable e) {
                     replInitializationFailed = e;
                 }
@@ -195,8 +193,8 @@ public class ReplFromTerminal {
         return Arrays.asList(command.split(" "));
     }
 
-    public static void run(@NotNull Disposable disposable, @NotNull CompilerDependencies compilerDependencies, @NotNull List<File> extraClasspath) {
-        new ReplFromTerminal(disposable, compilerDependencies, extraClasspath).doRun();
+    public static void run(@NotNull Disposable disposable, @NotNull CompilerConfiguration configuration) {
+        new ReplFromTerminal(disposable, configuration).doRun();
     }
 
 }

@@ -17,12 +17,20 @@
 package org.jetbrains.jet;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.codegen.forTestCompile.ForTestCompileBuiltins;
-import org.jetbrains.jet.codegen.forTestCompile.ForTestPackJdkAnnotations;
 import org.jetbrains.jet.codegen.forTestCompile.ForTestCompileRuntime;
-import org.jetbrains.jet.lang.resolve.java.CompilerDependencies;
-import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
+import org.jetbrains.jet.codegen.forTestCompile.ForTestPackJdkAnnotations;
+import org.jetbrains.jet.config.CompilerConfiguration;
+import org.jetbrains.jet.utils.PathUtil;
 import org.junit.Test;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.jetbrains.jet.ConfigurationKind.ALL;
+import static org.jetbrains.jet.ConfigurationKind.JDK_AND_ANNOTATIONS;
 
 /**
  * @author Stepan Koltsov
@@ -44,15 +52,21 @@ public class CompileCompilerDependenciesTest {
         ForTestCompileRuntime.runtimeJarForTests();
     }
 
-    /**
-     * @see CompilerDependencies#compilerDependenciesForProduction(org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode)
-     */
-    @NotNull
-    public static CompilerDependencies compilerDependenciesForTests(@NotNull CompilerSpecialMode compilerSpecialMode, boolean mockJdk) {
-        return new CompilerDependencies(
-                compilerSpecialMode,
-                compilerSpecialMode.includeJdk() ? (mockJdk ? JetTestUtils.findMockJdkRtJar() : CompilerDependencies.findRtJar()) : null,
-                compilerSpecialMode.includeJdkAnnotations() ? ForTestPackJdkAnnotations.jdkAnnotationsForTests() : null,
-                compilerSpecialMode.includeKotlinRuntime() ? ForTestCompileRuntime.runtimeJarForTests() : null);
+    public static CompilerConfiguration compilerConfigurationForTests(@NotNull ConfigurationKind configurationKind, boolean mockJdk) {
+        List<File> classpath = new ArrayList<File>();
+        classpath.add(mockJdk ? JetTestUtils.findMockJdkRtJar() : PathUtil.findRtJar());
+        if (configurationKind == ALL) {
+            classpath.add(ForTestCompileRuntime.runtimeJarForTests());
+        }
+
+        File[] annotationsPath = new File[0];
+        if (configurationKind == ALL || configurationKind == JDK_AND_ANNOTATIONS) {
+            annotationsPath = new File[]{ForTestPackJdkAnnotations.jdkAnnotationsForTests()};
+        }
+
+        CompilerConfiguration configuration = new CompilerConfiguration();
+        configuration.putUserData(JVMConfigurationKeys.CLASSPATH_KEY, classpath.toArray(new File[classpath.size()]));
+        configuration.putUserData(JVMConfigurationKeys.ANNOTATIONS_PATH_KEY, annotationsPath);
+        return configuration;
     }
 }

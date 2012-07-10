@@ -33,16 +33,16 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
-import org.jetbrains.jet.lang.diagnostics.UnresolvedReferenceDiagnosticFactory;
+import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.diagnostics.Diagnostic;
 import org.jetbrains.jet.lang.diagnostics.Severity;
+import org.jetbrains.jet.lang.diagnostics.UnresolvedReferenceDiagnosticFactory;
 import org.jetbrains.jet.lang.diagnostics.rendering.DefaultErrorMessages;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
-import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
 import org.jetbrains.jet.plugin.JetLanguage;
 import org.jetbrains.jet.util.slicedmap.ReadOnlySlice;
 import org.jetbrains.jet.util.slicedmap.SlicedMap;
@@ -170,18 +170,19 @@ public class JetTestUtils {
     private JetTestUtils() {
     }
 
-    public static AnalyzeExhaust analyzeFile(@NotNull JetFile namespace, @NotNull CompilerSpecialMode compilerSpecialMode) {
+    public static AnalyzeExhaust analyzeFile(@NotNull JetFile namespace, @NotNull BuiltinsScopeExtensionMode builtinsScopeExtensionMode) {
         return AnalyzerFacadeForJVM.analyzeOneFileWithJavaIntegration(namespace, Collections.<AnalyzerScriptParameter>emptyList(),
-                CompileCompilerDependenciesTest.compilerDependenciesForTests(compilerSpecialMode, true));
+                                                                      builtinsScopeExtensionMode);
     }
 
     public static JetCoreEnvironment createEnvironmentWithMockJdkAndIdeaAnnotations(Disposable disposable) {
-        return createEnvironmentWithMockJdkAndIdeaAnnotations(disposable, CompilerSpecialMode.REGULAR);
+        return createEnvironmentWithMockJdkAndIdeaAnnotations(disposable, ConfigurationKind.ALL);
     }
 
-    public static JetCoreEnvironment createEnvironmentWithMockJdkAndIdeaAnnotations(Disposable disposable, @NotNull CompilerSpecialMode compilerSpecialMode) {
-        JetCoreEnvironment environment =
-                new JetCoreEnvironment(disposable, CompileCompilerDependenciesTest.compilerDependenciesForTests(compilerSpecialMode, true));
+    public static JetCoreEnvironment createEnvironmentWithMockJdkAndIdeaAnnotations(Disposable disposable, @NotNull ConfigurationKind configurationKind) {
+        JetCoreEnvironment environment = new JetCoreEnvironment(disposable,
+                CompileCompilerDependenciesTest.compilerConfigurationForTests(configurationKind, true)
+        );
         environment.addJarToClassPath(getAnnotationsJar());
         return environment;
     }
@@ -253,7 +254,8 @@ public class JetTestUtils {
 
     public static JetCoreEnvironment createEnvironmentWithFullJdk(Disposable disposable) {
         return new JetCoreEnvironment(disposable,
-                CompileCompilerDependenciesTest.compilerDependenciesForTests(CompilerSpecialMode.REGULAR, false));
+                CompileCompilerDependenciesTest.compilerConfigurationForTests(ConfigurationKind.ALL, false)
+        );
     }
 
     public static PsiFile createFile(@NonNls String name, String text, @NotNull Project project) {

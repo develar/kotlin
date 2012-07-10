@@ -18,26 +18,25 @@ package org.jetbrains.jet.codegen;
 
 import org.jetbrains.jet.ConfigurationKind;
 
-public class SafeRefTest extends CodegenTestCase {
+/**
+ * Test correct code is generated for descriptors loaded with alt jdk annotations
+ *
+ * @author Stepan Koltsov
+ */
+public class JdkAnnotationsTest extends CodegenTestCase {
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_AND_ANNOTATIONS);
     }
 
-    public void test247 () throws Exception {
-        blackBoxFile("regressions/kt247.jet");
+    public void testArrayList() {
+        blackBoxFile("jdk-annotations/arrayList.kt");
     }
 
-    public void test245 () throws Exception {
-        blackBoxFile("regressions/kt245.jet");
+    public void testHashMap() {
+        blackBoxFile("jdk-annotations/hashMap.kt");
     }
 
-    public void test232 () throws Exception {
-        blackBoxFile("regressions/kt232.jet");
-    }
-
-    public void test1572 () throws Exception {
-        blackBoxFile("regressions/kt1572.jet");
-    }
 }

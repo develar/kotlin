@@ -25,14 +25,15 @@ import com.intellij.openapi.util.text.StringUtil;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.JetLiteFixture;
 import org.jetbrains.jet.JetTestCaseBuilder;
 import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
+import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.cfg.pseudocode.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -56,7 +57,7 @@ public class JetControlFlowTest extends JetLiteFixture {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        createEnvironmentWithMockJdkAndIdeaAnnotations(CompilerSpecialMode.JDK_HEADERS);
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
     }
 
     @Override
@@ -73,7 +74,7 @@ public class JetControlFlowTest extends JetLiteFixture {
         JetFile file = loadPsiFile(myName + ".jet");
 
         final Map<JetElement, Pseudocode> data = new LinkedHashMap<JetElement, Pseudocode>();
-        AnalyzeExhaust analyzeExhaust = JetTestUtils.analyzeFile(file, CompilerSpecialMode.JDK_HEADERS);
+        AnalyzeExhaust analyzeExhaust = JetTestUtils.analyzeFile(file, BuiltinsScopeExtensionMode.ALL);
         List<JetDeclaration> declarations = file.getDeclarations();
         BindingContext bindingContext = analyzeExhaust.getBindingContext();
         for (JetDeclaration declaration : declarations) {

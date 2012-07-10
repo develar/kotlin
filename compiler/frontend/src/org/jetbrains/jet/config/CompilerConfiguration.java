@@ -14,29 +14,13 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.codegen;
+package org.jetbrains.jet.config;
 
-import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
+import com.intellij.openapi.util.UserDataHolderBase;
 
 /**
- * Test correct code is generated for descriptors loaded as alt jdk headers
- *
- * @author Stepan Koltsov
+ * @author Evgeny Gerashchenko
+ * @since 7/3/12
  */
-public class JdkHeadersTest extends CodegenTestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        createEnvironmentWithMockJdkAndIdeaAnnotations(CompilerSpecialMode.STDLIB);
-    }
-
-    public void testArrayList() {
-        blackBoxFile("jdk-headers/arrayList.kt");
-    }
-
-    public void testHashMap() {
-        blackBoxFile("jdk-headers/hashMap.kt");
-    }
-
+public class CompilerConfiguration extends UserDataHolderBase {
 }

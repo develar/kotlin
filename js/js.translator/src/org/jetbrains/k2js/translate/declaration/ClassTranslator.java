@@ -116,9 +116,7 @@ public final class ClassTranslator extends AbstractTranslator {
     @NotNull
     public JsExpression translateClassOrObjectCreation(@NotNull TranslationContext classDeclarationContext) {
         JsInvocation jsClassDeclaration = classCreateMethodInvocation();
-        if (!isObject()) {
-            addSuperclassReferences(jsClassDeclaration);
-        }
+        addSuperclassReferences(jsClassDeclaration);
         addClassOwnDeclarations(jsClassDeclaration, classDeclarationContext);
         return jsClassDeclaration;
     }

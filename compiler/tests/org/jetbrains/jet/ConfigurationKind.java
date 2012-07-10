@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.codegen;
+package org.jetbrains.jet;
 
-import org.jetbrains.jet.ConfigurationKind;
-
-public class TupleGenTest extends CodegenTestCase {
-    public void testBasic() {
-        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
-        blackBoxFile("/tuples/basic.jet");
-//        System.out.println(generateToText());
-    }
+public enum ConfigurationKind {
+    JDK_ONLY,
+    JDK_AND_ANNOTATIONS,
+    ALL,
 }

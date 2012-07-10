@@ -61,7 +61,7 @@ public class ForTestCompileRuntime {
         ExitCode exitCode = new K2JVMCompiler().exec(System.err,
                 "-output", destdir.getPath(),
                 "-src", "./libraries/stdlib/src",
-                "-mode", "stdlib",
+                "-noStdlib",
                 "-classpath", "out/production/runtime");
         if (exitCode != ExitCode.OK) {
             throw new IllegalStateException("stdlib for test compilation failed: " + exitCode);

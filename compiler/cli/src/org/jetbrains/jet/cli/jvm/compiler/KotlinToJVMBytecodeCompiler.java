@@ -30,16 +30,16 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.cli.common.CompilerPlugin;
 import org.jetbrains.jet.cli.common.CompilerPluginContext;
-import org.jetbrains.jet.codegen.*;
 import org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
+import org.jetbrains.jet.codegen.*;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
-import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
+import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.plugin.JetLanguage;
 import org.jetbrains.jet.plugin.JetMainDetector;
@@ -100,11 +100,6 @@ public class KotlinToJVMBytecodeCompiler {
             boolean jarRuntime) {
 
         for (Module moduleBuilder : modules) {
-            // TODO: this should be done only once for the environment
-            if (configuration.getEnvironment().getCompilerDependencies().getRuntimeJar() != null) {
-                CompileEnvironmentUtil
-                        .addToClasspath(configuration.getEnvironment(), configuration.getEnvironment().getCompilerDependencies().getRuntimeJar());
-            }
             ClassFileFactory moduleFactory = compileModule(configuration, moduleBuilder, directory);
             if (moduleFactory == null) {
                 return false;
@@ -210,7 +205,7 @@ public class KotlinToJVMBytecodeCompiler {
             try {
                 GeneratedClassLoader classLoader = new GeneratedClassLoader(factory, new URLClassLoader(new URL[]{
                         // TODO: add all classpath
-                        configuration.getEnvironment().getCompilerDependencies().getRuntimeJar().toURI().toURL()
+                        PathUtil.getDefaultRuntimePath().toURI().toURL()
                 },
                         AllModules.class.getClassLoader()));
                 Class<?> scriptClass = classLoader.loadClass(ScriptCodegen.SCRIPT_DEFAULT_CLASS_NAME.getFqName().getFqName());
@@ -263,7 +258,7 @@ public class KotlinToJVMBytecodeCompiler {
 
     @Nullable
     public static GenerationState analyzeAndGenerate(K2JVMCompileEnvironmentConfiguration configuration) {
-        return analyzeAndGenerate(configuration, configuration.getEnvironment().getCompilerDependencies().getCompilerSpecialMode().isStubs());
+        return analyzeAndGenerate(configuration, configuration.isStubs());
     }
 
     @Nullable
@@ -302,7 +297,7 @@ public class KotlinToJVMBytecodeCompiler {
                                 environment.getSourceFiles(),
                                 scriptParameters,
                                 filesToAnalyzeCompletely,
-                                configuration.getEnvironment().getCompilerDependencies());
+                                configuration.getBuiltinsScopeExtensionMode());
                     }
                 }, environment.getSourceFiles()
         );
@@ -325,7 +320,7 @@ public class KotlinToJVMBytecodeCompiler {
         };
         GenerationState generationState = new GenerationState(project, ClassBuilderFactories.binaries(stubs), backendProgress,
                                                               exhaust, environment.getSourceFiles(),
-                                                              configuration.getEnvironment().getCompilerDependencies().getCompilerSpecialMode());
+                                                              configuration.getBuiltinToJavaTypesMapping());
         generationState.compileCorrectFiles(CompilationErrorHandler.THROW_EXCEPTION);
 
         List<CompilerPlugin> plugins = configuration.getCompilerPlugins();

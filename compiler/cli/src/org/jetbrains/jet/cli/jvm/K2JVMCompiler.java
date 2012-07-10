@@ -17,7 +17,6 @@
 package org.jetbrains.jet.cli.jvm;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.Disposable;
 import jet.modules.Module;
@@ -30,9 +29,10 @@ import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.cli.jvm.compiler.K2JVMCompileEnvironmentConfiguration;
 import org.jetbrains.jet.cli.jvm.compiler.KotlinToJVMBytecodeCompiler;
 import org.jetbrains.jet.cli.jvm.repl.ReplFromTerminal;
+import org.jetbrains.jet.codegen.BuiltinToJavaTypesMapping;
 import org.jetbrains.jet.codegen.CompilationException;
-import org.jetbrains.jet.lang.resolve.java.CompilerDependencies;
-import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
+import org.jetbrains.jet.config.CompilerConfiguration;
+import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.utils.PathUtil;
 
 import java.io.File;
@@ -55,35 +55,7 @@ public class K2JVMCompiler extends CLICompiler<K2JVMCompilerArguments, K2JVMComp
     @Override
     @NotNull
     protected ExitCode doExecute(K2JVMCompilerArguments arguments, PrintingMessageCollector messageCollector, Disposable rootDisposable) {
-
-        CompilerSpecialMode mode = parseCompilerSpecialMode(arguments);
-        File jdkAnnotationsJar;
-        if (mode.includeJdkAnnotations()) {
-            if (arguments.jdkAnnotations != null) {
-                jdkAnnotationsJar = new File(arguments.jdkAnnotations);
-            }
-            else {
-                jdkAnnotationsJar = PathUtil.getJdkAnnotationsPath();
-            }
-        }
-        else {
-            jdkAnnotationsJar = null;
-        }
-        File runtimeJar;
-
-        if (mode.includeKotlinRuntime()) {
-            if (arguments.stdlib != null) {
-                runtimeJar = new File(arguments.stdlib);
-            }
-            else {
-                runtimeJar = PathUtil.getDefaultRuntimePath();
-            }
-        }
-        else {
-            runtimeJar = null;
-        }
-
-        CompilerDependencies dependencies = new CompilerDependencies(mode, CompilerDependencies.findRtJar(), jdkAnnotationsJar, runtimeJar);
+        CompilerConfiguration compilerConfiguration = createCompilerConfiguration(arguments);
 
         final List<String> argumentsSourceDirs = arguments.getSourceDirs();
         if (!arguments.script &&
@@ -92,12 +64,17 @@ public class K2JVMCompiler extends CLICompiler<K2JVMCompilerArguments, K2JVMComp
             arguments.freeArgs.isEmpty() &&
             (argumentsSourceDirs == null || argumentsSourceDirs.size() == 0)) {
 
-            ReplFromTerminal.run(rootDisposable, dependencies, getClasspath(arguments));
+            ReplFromTerminal.run(rootDisposable, compilerConfiguration);
             return ExitCode.OK;
         }
 
-        JetCoreEnvironment environment = JetCoreEnvironment.createCoreEnvironmentForJVM(rootDisposable, dependencies);
-        K2JVMCompileEnvironmentConfiguration configuration = new K2JVMCompileEnvironmentConfiguration(environment, messageCollector, arguments.script);
+        JetCoreEnvironment environment = JetCoreEnvironment.createCoreEnvironmentForJVM(rootDisposable, compilerConfiguration);
+        boolean builtins = arguments.builtins;
+        K2JVMCompileEnvironmentConfiguration configuration = new K2JVMCompileEnvironmentConfiguration(
+                environment, messageCollector, arguments.script,
+                builtins ? BuiltinsScopeExtensionMode.ONLY_STANDARD_CLASSES : BuiltinsScopeExtensionMode.ALL,
+                builtins,
+                builtins ? BuiltinToJavaTypesMapping.DISABLED : BuiltinToJavaTypesMapping.ENABLED);
 
         messageCollector.report(CompilerMessageSeverity.LOGGING, "Configuring the compilation environment",
                                 CompilerMessageLocation.NO_LOCATION);
@@ -156,22 +133,6 @@ public class K2JVMCompiler extends CLICompiler<K2JVMCompilerArguments, K2JVMComp
         }
     }
 
-    @NotNull
-    private static CompilerSpecialMode parseCompilerSpecialMode(@NotNull K2JVMCompilerArguments arguments) {
-        if (arguments.mode == null) {
-            return CompilerSpecialMode.REGULAR;
-        }
-        else {
-            for (CompilerSpecialMode variant : CompilerSpecialMode.values()) {
-                if (arguments.mode.equalsIgnoreCase(variant.name().replaceAll("_", ""))) {
-                    return variant;
-                }
-            }
-        }
-        // TODO: report properly
-        throw new IllegalArgumentException("unknown compiler mode: " + arguments.mode);
-    }
-
 
     /**
      * Allow derived classes to add additional command line arguments
@@ -196,31 +157,45 @@ public class K2JVMCompiler extends CLICompiler<K2JVMCompilerArguments, K2JVMComp
     protected void configureEnvironment(@NotNull K2JVMCompileEnvironmentConfiguration configuration, @NotNull K2JVMCompilerArguments arguments) {
         super.configureEnvironment(configuration, arguments);
 
-        if (configuration.getEnvironment().getCompilerDependencies().getRuntimeJar() != null) {
-            CompileEnvironmentUtil.addToClasspath(configuration.getEnvironment(),
-                                                  configuration.getEnvironment().getCompilerDependencies().getRuntimeJar());
-        }
+        configuration.getEnvironment().configure(createCompilerConfiguration(arguments));
+    }
 
-        if (arguments.classpath != null) {
-            List<File> classpath = getClasspath(arguments);
-            CompileEnvironmentUtil.addToClasspath(configuration.getEnvironment(), Iterables.toArray(classpath, File.class));
-        }
-
-        if (arguments.annotations != null) {
-            for (String root : Splitter.on(File.pathSeparatorChar).split(arguments.annotations)) {
-                configuration.getEnvironment().addExternalAnnotationsRoot(PathUtil.jarFileOrDirectoryToVirtualFile(new File(root)));
-            }
-        }
+    @NotNull
+    private static CompilerConfiguration createCompilerConfiguration(@NotNull K2JVMCompilerArguments arguments) {
+        CompilerConfiguration configuration = new CompilerConfiguration();
+        configuration.putUserData(JVMConfigurationKeys.CLASSPATH_KEY, getClasspath(arguments).toArray(new File[0]));
+        configuration.putUserData(JVMConfigurationKeys.ANNOTATIONS_PATH_KEY, getAnnotationsPath(arguments).toArray(new File[0]));
+        return configuration;
     }
 
     @NotNull
     private static List<File> getClasspath(@NotNull K2JVMCompilerArguments arguments) {
         List<File> classpath = Lists.newArrayList();
+        if (!arguments.noJdk) {
+            classpath.add(PathUtil.findRtJar());
+        }
+        if (!arguments.noStdlib) {
+            classpath.add(PathUtil.getDefaultRuntimePath());
+        }
         if (arguments.classpath != null) {
             for (String element : Splitter.on(File.pathSeparatorChar).split(arguments.classpath)) {
                 classpath.add(new File(element));
             }
         }
         return classpath;
+    }
+
+    @NotNull
+    private static List<File> getAnnotationsPath(@NotNull K2JVMCompilerArguments arguments) {
+        List<File> annotationsPath = Lists.newArrayList();
+        if (!arguments.noJdkAnnotations) {
+            annotationsPath.add(PathUtil.getJdkAnnotationsPath());
+        }
+        if (arguments.annotations != null) {
+            for (String element : Splitter.on(File.pathSeparatorChar).split(arguments.classpath)) {
+                annotationsPath.add(new File(element));
+            }
+        }
+        return annotationsPath;
     }
 }

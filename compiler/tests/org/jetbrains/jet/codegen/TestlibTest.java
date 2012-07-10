@@ -21,11 +21,11 @@ import gnu.trove.THashSet;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.jetbrains.jet.utils.ExceptionUtils;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.cli.jvm.compiler.K2JVMCompileEnvironmentConfiguration;
 import org.jetbrains.jet.cli.jvm.compiler.KotlinToJVMBytecodeCompiler;
 import org.jetbrains.jet.codegen.forTestCompile.ForTestCompileRuntime;
+import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.psi.JetDeclaration;
@@ -34,6 +34,7 @@ import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.parsing.JetParsingTest;
+import org.jetbrains.jet.utils.ExceptionUtils;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -77,14 +78,16 @@ public class TestlibTest extends CodegenTestCase {
 
             myEnvironment.addJarToClassPath(junitJar);
 
-            myEnvironment.addJarToClassPath(myEnvironment.getCompilerDependencies().getRuntimeJar());
+            myEnvironment.addJarToClassPath(ForTestCompileRuntime.runtimeJarForTests());
 
             CoreLocalFileSystem localFileSystem = myEnvironment.getEnvironment().getLocalFileSystem();
             myEnvironment.addSources(localFileSystem.findFileByPath(JetParsingTest.getTestDataDir() + "/../../libraries/stdlib/test"));
             myEnvironment.addSources(localFileSystem.findFileByPath(JetParsingTest.getTestDataDir() + "/../../libraries/kunit/src"));
 
             GenerationState generationState = KotlinToJVMBytecodeCompiler
-                    .analyzeAndGenerate(new K2JVMCompileEnvironmentConfiguration(myEnvironment, MessageCollector.PLAIN_TEXT_TO_SYSTEM_ERR, false), false);
+                    .analyzeAndGenerate(new K2JVMCompileEnvironmentConfiguration(myEnvironment, MessageCollector.PLAIN_TEXT_TO_SYSTEM_ERR,
+                                                                                 false, BuiltinsScopeExtensionMode.ALL, false,
+                                                                                 BuiltinToJavaTypesMapping.ENABLED), false);
 
             if (generationState == null) {
                 throw new RuntimeException("There were compilation errors");

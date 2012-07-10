@@ -21,13 +21,11 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiPackage;
-import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.search.DelegatingGlobalSearchScope;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.lang.resolve.java.alt.AltClassFinder;
 import org.jetbrains.jet.plugin.JetFileType;
 
 import javax.annotation.PostConstruct;
@@ -36,14 +34,11 @@ import javax.inject.Inject;
 /**
  * @author Stepan Koltsov
  */
-public class PsiClassFinderForJvm implements PsiClassFinder {
+public class PsiClassFinderImpl implements PsiClassFinder {
 
     @NotNull
     private Project project;
-    @NotNull
-    private CompilerDependencies compilerDependencies;
 
-    private AltClassFinder altClassFinder;
     private GlobalSearchScope javaSearchScope;
     private JavaPsiFacadeKotlinHacks javaFacade;
 
@@ -52,21 +47,15 @@ public class PsiClassFinderForJvm implements PsiClassFinder {
         this.project = project;
     }
 
-    @Inject
-    public void setCompilerDependencies(@NotNull CompilerDependencies compilerDependencies) {
-        this.compilerDependencies = compilerDependencies;
-    }
-
     @PostConstruct
     public void initialize() {
-        this.altClassFinder = new AltClassFinder(project, compilerDependencies.getJdkAnnotationsRoots());
-        this.javaSearchScope = new DelegatingGlobalSearchScope(GlobalSearchScope.allScope(project)) {
+        javaSearchScope = new DelegatingGlobalSearchScope(GlobalSearchScope.allScope(project)) {
             @Override
             public boolean contains(VirtualFile file) {
                 return myBaseScope.contains(file) && file.getFileType() != JetFileType.INSTANCE;
             }
         };
-        this.javaFacade = new JavaPsiFacadeKotlinHacks(project);
+        javaFacade = new JavaPsiFacadeKotlinHacks(project);
     }
 
 
@@ -74,38 +63,24 @@ public class PsiClassFinderForJvm implements PsiClassFinder {
     @Nullable
     public PsiClass findPsiClass(@NotNull FqName qualifiedName, @NotNull RuntimeClassesHandleMode runtimeClassesHandleMode) {
         PsiClass original = javaFacade.findClass(qualifiedName.getFqName(), javaSearchScope);
-        PsiClass altClass = altClassFinder.findClass(qualifiedName);
 
-        PsiClass result = original;
-        if (altClass != null) {
-            if (original == null) {
-                return null;
-            }
-
-            if (altClass instanceof ClsClassImpl) {
-                altClass.putUserData(ClsClassImpl.DELEGATE_KEY, original);
-            }
-
-            result = altClass;
-        }
-
-        if (result != null) {
-            FqName actualQualifiedName = new FqName(result.getQualifiedName());
+        if (original != null) {
+            FqName actualQualifiedName = new FqName(original.getQualifiedName());
             if (!actualQualifiedName.equals(qualifiedName)) {
                 throw new IllegalStateException("requested " + qualifiedName + ", got " + actualQualifiedName);
             }
         }
 
-        if (result instanceof JetJavaMirrorMarker) {
+        if (original instanceof JetJavaMirrorMarker) {
             throw new IllegalStateException("JetJavaMirrorMaker is not possible in resolve.java, resolving: " + qualifiedName);
         }
 
-        if (result == null) {
+        if (original == null) {
             return null;
         }
 
         PsiAnnotation assertInvisibleAnnotation = JavaDescriptorResolver
-                .findAnnotation(result, JvmStdlibNames.ASSERT_INVISIBLE_IN_RESOLVER.getFqName().getFqName());
+                .findAnnotation(original, JvmStdlibNames.ASSERT_INVISIBLE_IN_RESOLVER.getFqName().getFqName());
         if (assertInvisibleAnnotation != null) {
             if (runtimeClassesHandleMode == RuntimeClassesHandleMode.IGNORE) {
                 return null;
@@ -120,7 +95,7 @@ public class PsiClassFinderForJvm implements PsiClassFinder {
             }
         }
 
-        return result;
+        return original;
     }
 
     @Override

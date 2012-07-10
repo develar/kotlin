@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.codegen;
+package org.jetbrains.jet.cli.jvm;
 
-import org.jetbrains.jet.ConfigurationKind;
+import com.intellij.openapi.util.Key;
 
-public class MultiFileGenTest extends CodegenTestCase {
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
+import java.io.File;
+
+/**
+ * @author Evgeny Gerashchenko
+ * @since 7/3/12
+ */
+public class JVMConfigurationKeys {
+    private JVMConfigurationKeys() {
     }
 
-    public void testSimple() {
-        blackBoxMultiFile("/multi/simple/box.kt", "/multi/simple/ok.kt");
-        System.out.println(generateToText());
-    }
-
-    public void testInternalVisibility() {
-        blackBoxMultiFile("/multi/internalVisibility/box.kt", "/multi/internalVisibility/a.kt");
-    }
+    public static final Key<File[]> CLASSPATH_KEY = Key.create("classpath");
+    public static final Key<File[]> ANNOTATIONS_PATH_KEY = Key.create("annotations path");
 }

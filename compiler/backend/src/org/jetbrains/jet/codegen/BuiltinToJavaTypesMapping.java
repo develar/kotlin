@@ -16,21 +16,15 @@
 
 package org.jetbrains.jet.codegen;
 
-import org.jetbrains.jet.ConfigurationKind;
-
-public class MultiFileGenTest extends CodegenTestCase {
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
-    }
-
-    public void testSimple() {
-        blackBoxMultiFile("/multi/simple/box.kt", "/multi/simple/ok.kt");
-        System.out.println(generateToText());
-    }
-
-    public void testInternalVisibility() {
-        blackBoxMultiFile("/multi/internalVisibility/box.kt", "/multi/internalVisibility/a.kt");
-    }
+/**
+ * Marks if backend's JetTypeMapper should map built-in types to Java types (e.g., jet.String into java.lang.String).
+ * Disabling is needed for compiling builtins: we want types to be jet.* instead of java.util* to make it possible to load
+ * builtins without JDK.
+ *
+ * @author Evgeny Gerashchenko
+ * @since 7/5/12
+ */
+public enum BuiltinToJavaTypesMapping {
+    ENABLED,
+    DISABLED
 }

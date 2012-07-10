@@ -54,14 +54,17 @@ public class K2JVMCompilerArguments extends CompilerArguments {
     @Argument(value = "includeRuntime", description = "include Kotlin runtime in to resulting jar")
     public boolean includeRuntime;
 
-    @Argument(value = "stdlib", description = "Path to the stdlib.jar")
-    public String stdlib;
+    @Argument(value = "noJdk", description = "don't include Java runtime into classpath")
+    public boolean noJdk;
 
-    @Argument(value = "jdkAnnotations", description = "Path to the kotlin-jdk-annotations.jar")
-    public String jdkAnnotations;
+    @Argument(value = "noStdlib", description = "don't include Kotlin runtime into classpath")
+    public boolean noStdlib;
 
-    @Argument(value = "mode", description = "Special compiler modes: stubs or jdkHeaders")
-    public String mode;
+    @Argument(value = "noJdkAnnotations", description = "don't include JDK external annotations into classpath")
+    public boolean noJdkAnnotations;
+
+    @Argument(value = "builtins", description = "compile builtin classes (internal)")
+    public boolean builtins;
 
     @Argument(value = "output", description = "output directory")
     public String outputDir;
@@ -141,22 +144,6 @@ public class K2JVMCompilerArguments extends CompilerArguments {
         this.src = src;
     }
 
-    public String getStdlib() {
-        return stdlib;
-    }
-
-    public void setStdlib(String stdlib) {
-        this.stdlib = stdlib;
-    }
-
-    public String getMode() {
-        return mode;
-    }
-
-    public void setMode(String mode) {
-        this.mode = mode;
-    }
-
     @Override
     public boolean isTags() {
         return tags;
@@ -174,5 +161,9 @@ public class K2JVMCompilerArguments extends CompilerArguments {
 
     public void setTags(boolean tags) {
         this.tags = tags;
+    }
+
+    public void setNoStdlib(boolean noStdlib) {
+        this.noStdlib = noStdlib;
     }
 }

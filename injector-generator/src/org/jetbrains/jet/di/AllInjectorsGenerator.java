@@ -19,12 +19,16 @@ package org.jetbrains.jet.di;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.jet.codegen.*;
 import org.jetbrains.jet.codegen.intrinsics.IntrinsicMethods;
+import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.calls.CallResolver;
-import org.jetbrains.jet.lang.resolve.java.*;
+import org.jetbrains.jet.lang.resolve.java.JavaBridgeConfiguration;
+import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
+import org.jetbrains.jet.lang.resolve.java.JavaSemanticServices;
+import org.jetbrains.jet.lang.resolve.java.PsiClassFinderImpl;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.lazy.ScopeProvider;
 import org.jetbrains.jet.lang.types.DependencyClassByQualifiedNameResolverDummyImpl;
@@ -88,11 +92,10 @@ public class AllInjectorsGenerator {
     private static void generateInjectorForTopDownAnalyzerForJvm() throws IOException {
         DependencyInjectorGenerator generator = new DependencyInjectorGenerator(false);
         generateInjectorForTopDownAnalyzerCommon(generator);
-        generator.addParameter(CompilerDependencies.class);
-        generator.addField(false, CompilerSpecialMode.class, null, new GivenExpression("compilerDependencies.getCompilerSpecialMode()"));
+        generator.addParameter(BuiltinsScopeExtensionMode.class);
         generator.addPublicField(JavaBridgeConfiguration.class);
         generator.addField(JavaDescriptorResolver.class);
-        generator.addField(PsiClassFinderForJvm.class);
+        generator.addField(PsiClassFinderImpl.class);
         generator.addPublicField(NamespaceFactoryImpl.class);
         generator.generate("compiler/frontend.java/src", "org.jetbrains.jet.di", "InjectorForTopDownAnalyzerForJvm");
     }
@@ -150,11 +153,11 @@ public class AllInjectorsGenerator {
         generator.addField(true, BindingTrace.class, null,
                 new GivenExpression("new org.jetbrains.jet.lang.resolve.BindingTraceContext()"));
         generator.addField(JavaBridgeConfiguration.class);
-        generator.addPublicField(PsiClassFinderForJvm.class);
+        generator.addPublicField(PsiClassFinderImpl.class);
         generator.addField(false, ModuleDescriptor.class, null,
-                new GivenExpression("new org.jetbrains.jet.lang.descriptors.ModuleDescriptor(org.jetbrains.jet.lang.resolve.name.Name.special(\"<dummy>\"))"));
-        generator.addParameter(CompilerDependencies.class);
-        generator.addField(false, CompilerSpecialMode.class, null, new GivenExpression("compilerDependencies.getCompilerSpecialMode()"));
+                new GivenExpression("new org.jetbrains.jet.lang.descriptors.ModuleDescriptor(" +
+                                    "org.jetbrains.jet.lang.resolve.name.Name.special(\"<dummy>\"))"));
+        generator.addParameter(BuiltinsScopeExtensionMode.class);
 
         // Parameters
         generator.addPublicParameter(Project.class);
@@ -167,7 +170,7 @@ public class AllInjectorsGenerator {
         generator.addParameter(BindingContext.class);
         generator.addParameter(DiType.listOf(JetFile.class));
         generator.addParameter(Project.class);
-        generator.addParameter(CompilerSpecialMode.class);
+        generator.addParameter(BuiltinToJavaTypesMapping.class);
         generator.addParameter(ClassBuilderMode.class);
         generator.addPublicParameter(GenerationState.class);
         generator.addParameter(ClassBuilderFactory.class);
@@ -186,7 +189,7 @@ public class AllInjectorsGenerator {
         generator.addParameter(BindingContext.class);
         generator.addParameter(DiType.listOf(JetFile.class));
         generator.addPublicField(JetTypeMapper.class);
-        generator.addField(CompilerSpecialMode.REGULAR);
+        generator.addField(BuiltinToJavaTypesMapping.ENABLED);
         generator.addField(ClassBuilderMode.FULL);
         generator.generate("compiler/backend/src", "org.jetbrains.jet.di", "InjectorForJetTypeMapper");
     }

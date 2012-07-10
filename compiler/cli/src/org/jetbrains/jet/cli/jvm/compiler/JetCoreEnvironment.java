@@ -28,16 +28,17 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.asJava.JavaElementFinder;
+import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
+import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.parsing.JetParser;
 import org.jetbrains.jet.lang.parsing.JetParserDefinition;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.java.CompilerDependencies;
-import org.jetbrains.jet.lang.resolve.java.CompilerSpecialMode;
 import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
 import org.jetbrains.jet.lang.resolve.java.extAnnotations.CoreAnnotationsProvider;
 import org.jetbrains.jet.lang.resolve.java.extAnnotations.ExternalAnnotationsProvider;
 import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
 import org.jetbrains.jet.plugin.JetFileType;
+import org.jetbrains.jet.utils.PathUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -52,24 +53,18 @@ public class JetCoreEnvironment extends JavaCoreProjectEnvironment {
     private final List<JetFile> sourceFiles = new ArrayList<JetFile>();
     private final CoreAnnotationsProvider annotationsProvider;
 
-
     @NotNull
     public static JetCoreEnvironment createCoreEnvironmentForJS(Disposable disposable) {
-        return new JetCoreEnvironment(disposable, CompilerDependencies.compilerDependenciesForProduction(CompilerSpecialMode.JS));
+        return new JetCoreEnvironment(disposable, new CompilerConfiguration());
     }
 
     @NotNull
-    public static JetCoreEnvironment createCoreEnvironmentForJVM(Disposable disposable, @NotNull CompilerDependencies dependencies) {
-        return new JetCoreEnvironment(disposable, dependencies);
+    public static JetCoreEnvironment createCoreEnvironmentForJVM(Disposable disposable, @NotNull CompilerConfiguration configuration) {
+        return new JetCoreEnvironment(disposable, configuration);
     }
 
-    @NotNull
-    private final CompilerDependencies compilerDependencies;
-
-    public JetCoreEnvironment(Disposable parentDisposable, @NotNull CompilerDependencies compilerDependencies) {
+    public JetCoreEnvironment(Disposable parentDisposable, @NotNull CompilerConfiguration configuration) {
         super(parentDisposable, new CoreApplicationEnvironment(parentDisposable));
-
-        this.compilerDependencies = compilerDependencies;
 
         getEnvironment().registerFileType(JetFileType.INSTANCE, "kt");
         getEnvironment().registerFileType(JetFileType.INSTANCE, "kts");
@@ -85,24 +80,10 @@ public class JetCoreEnvironment extends JavaCoreProjectEnvironment {
                 .getExtensionPoint(PsiElementFinder.EP_NAME)
                 .registerExtension(new JavaElementFinder(myProject));
 
-        CompilerSpecialMode compilerSpecialMode = compilerDependencies.getCompilerSpecialMode();
-
-        if (compilerSpecialMode.includeJdk()) {
-            addJarToClassPath(compilerDependencies.getJdkJar());
-        }
-
         annotationsProvider = new CoreAnnotationsProvider();
-        if (compilerSpecialMode.includeJdkAnnotations()) {
-            for (VirtualFile root : compilerDependencies.getJdkAnnotationsRoots()) {
-                annotationsProvider.addExternalAnnotationsRoot(root);
-            }
-        }
-
         myProject.registerService(ExternalAnnotationsProvider.class, annotationsProvider);
 
-        if (compilerSpecialMode.includeKotlinRuntime()) {
-            addJarToClassPath(compilerDependencies.getRuntimeJar());
-        }
+        configure(configuration);
 
         JetStandardLibrary.initialize(getProject());
     }
@@ -187,8 +168,18 @@ public class JetCoreEnvironment extends JavaCoreProjectEnvironment {
         }
     }
 
-    @NotNull
-    public CompilerDependencies getCompilerDependencies() {
-        return compilerDependencies;
+    public void configure(@NotNull CompilerConfiguration compilerConfiguration) {
+        File[] classpath = compilerConfiguration.getUserData(JVMConfigurationKeys.CLASSPATH_KEY);
+        File[] annotationsPath = compilerConfiguration.getUserData(JVMConfigurationKeys.ANNOTATIONS_PATH_KEY);
+        if (classpath != null) {
+            for (File path : classpath) {
+                addJarToClassPath(path);
+            }
+        }
+        if (annotationsPath != null) {
+            for (File path : annotationsPath) {
+                addExternalAnnotationsRoot(PathUtil.jarFileOrDirectoryToVirtualFile(path));
+            }
+        }
     }
 }
