@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getAllNonNativeNamespaceDescriptors;
 
 /**
@@ -58,17 +59,20 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
 
     @NotNull
     private List<JsStatement> translate() {
-        List<JsStatement> result = new ArrayList<JsStatement>();
-        result.add(classDeclarationTranslator.getDeclarationsStatement());
-        namespacesDeclarations(result);
-        classDeclarationTranslator.generateDeclarations();
-        return result;
-    }
-
-    private void namespacesDeclarations(List<JsStatement> statements) {
         List<NamespaceTranslator> namespaceTranslators = getTranslatorsForNonEmptyNamespaces();
-        declarationStatements(namespaceTranslators, statements);
-        initializeStatements(namespaceTranslators, statements);
+        JsVar namespaces = declarationStatements(namespaceTranslators);
+
+        classDeclarationTranslator.generateDeclarations();
+
+        List<JsStatement> result = new ArrayList<JsStatement>();
+        JsVars vars = new JsVars();
+        vars.addIfHasInitializer(context().literalFunctionTranslator().getDeclaration());
+        vars.addIfHasInitializer(classDeclarationTranslator.getDeclaration());
+        vars.addIfHasInitializer(namespaces);
+        result.add(vars);
+
+        initializeStatements(namespaceTranslators, result);
+        return result;
     }
 
     @NotNull
@@ -80,10 +84,13 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         return namespaceTranslators;
     }
 
-    private void declarationStatements(@NotNull List<NamespaceTranslator> namespaceTranslators,
-            @NotNull List<JsStatement> statements) {
+    private JsVar declarationStatements(@NotNull List<NamespaceTranslator> namespaceTranslators) {
         JsObjectLiteral objectLiteral = new JsObjectLiteral(true);
         JsNameRef packageMapNameRef = context().scope().declareName("_").makeRef();
+        for (NamespaceTranslator translator : namespaceTranslators) {
+            translator.addNamespaceDeclaration(objectLiteral.getPropertyInitializers());
+        }
+
         JsExpression packageMapValue;
         if (context().isNotEcma3()) {
             packageMapValue = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL, objectLiteral);
@@ -91,11 +98,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         else {
             packageMapValue = objectLiteral;
         }
-        statements.add(new JsVars(new JsVars.JsVar(packageMapNameRef.getName(), packageMapValue)));
-
-        for (NamespaceTranslator translator : namespaceTranslators) {
-            translator.addNamespaceDeclaration(objectLiteral.getPropertyInitializers());
-        }
+        return new JsVar(packageMapNameRef.getName(), packageMapValue);
     }
 
     private static void initializeStatements(@NotNull List<NamespaceTranslator> namespaceTranslators,

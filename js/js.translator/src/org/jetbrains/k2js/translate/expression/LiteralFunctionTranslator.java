@@ -4,6 +4,7 @@ import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.psi.JetClassBody;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetProperty;
@@ -14,6 +15,7 @@ import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 import static org.jetbrains.k2js.translate.utils.FunctionBodyTranslator.translateFunctionBody;
 
@@ -32,12 +34,8 @@ public class LiteralFunctionTranslator {
         containingVarRef.resolve(containingVarName);
     }
 
-    public JsStatement toJsStatement() {
-        if (properties.isEmpty()) {
-            return rootContext.program().getEmptyStmt();
-        }
-
-        return new JsVars(new JsVars.JsVar(containingVarRef.getName(), new JsObjectLiteral(properties, true)));
+    public JsVar getDeclaration() {
+        return new JsVar(containingVarRef.getName(), properties.isEmpty() ? null : new JsObjectLiteral(properties, true));
     }
 
     public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration) {
@@ -48,13 +46,13 @@ public class LiteralFunctionTranslator {
 
         fun.getBody().getStatements().addAll(translateFunctionBody(descriptor, declaration, funContext).getStatements());
 
-        JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
-
-        if (declaration.getParent() instanceof JetProperty && !(((JetProperty) declaration.getParent()).isLocal())) {
+        if (declaration.getParent() instanceof JetProperty && declaration.getParent().getParent() instanceof JetClassBody) {
             FunctionTranslator.addParameters(fun.getParameters(), descriptor, funContext);
-            return fun;
+            // todo don't bind if function doesn't use "this"
+            return new JsInvocation(rootContext.namer().kotlin("b3"), fun, JsLiteral.THIS);
         }
 
+        JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
         properties.add(new JsPropertyInitializer(nameRef, fun));
         return new InnerFunctionTranslator(declaration, descriptor, funContext, fun).translate(nameRef);
     }

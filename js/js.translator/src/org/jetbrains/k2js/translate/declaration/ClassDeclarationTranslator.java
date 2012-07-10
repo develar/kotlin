@@ -115,14 +115,8 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    public JsStatement getDeclarationsStatement() {
-        if (classesVar.getInitExpr() == null) {
-            return context().program().getEmptyStmt();
-        }
-
-        JsVars vars = new JsVars();
-        vars.add(classesVar);
-        return vars;
+    public JsVars.JsVar getDeclaration() {
+        return classesVar;
     }
 
     public void generateDeclarations() {

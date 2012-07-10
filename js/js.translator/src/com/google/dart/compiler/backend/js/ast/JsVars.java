@@ -91,6 +91,12 @@ public class JsVars extends JsStatement implements Iterable<JsVars.JsVar> {
         vars.add(var);
     }
 
+    public void addIfHasInitializer(JsVar var) {
+        if (var.getInitExpr() != null) {
+            add(var);
+        }
+    }
+
     public boolean isEmpty() {
         return vars.isEmpty();
     }

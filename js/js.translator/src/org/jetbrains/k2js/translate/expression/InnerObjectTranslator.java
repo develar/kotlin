@@ -9,7 +9,7 @@ import org.jetbrains.jet.lang.psi.JetElement;
 import org.jetbrains.k2js.translate.context.AliasingContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
-public class InnerObjectTranslator extends InnerDeclarationTranslator {
+class InnerObjectTranslator extends InnerDeclarationTranslator {
     public InnerObjectTranslator(@NotNull JetElement declaration, @NotNull TranslationContext context, @NotNull JsFunction fun) {
         super(declaration, context, fun);
     }

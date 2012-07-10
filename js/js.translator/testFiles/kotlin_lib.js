@@ -59,9 +59,10 @@ var kotlin = {set:function (receiver, key, value) {
     };
 
     Kotlin.modules = {};
-    Kotlin.Exceptions = {};
     Kotlin.Exception = Kotlin.$createClass();
     Kotlin.RuntimeException = Kotlin.$createClass(Kotlin.Exception);
+
+    Kotlin.Exceptions = {};
     Kotlin.Exceptions.IndexOutOfBounds = Kotlin.$createClass(Kotlin.Exception);
     Kotlin.Exceptions.NullPointerException = Kotlin.$createClass(Kotlin.Exception);
     Kotlin.Exceptions.NoSuchElementException = Kotlin.$createClass(Kotlin.Exception);

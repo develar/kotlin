@@ -135,7 +135,7 @@ public final class PatternTranslator extends AbstractTranslator {
         if (context().isEcma5()) {
             if (expressionToMatchAgainst instanceof JsNumberLiteral ||
                 expressionToMatchAgainst instanceof JsStringLiteral ||
-                expressionToMatchAgainst instanceof JsBooleanLiteral) {
+                expressionToMatchAgainst instanceof JsLiteral.JsBooleanLiteral) {
                 JsNameRef valueOf = new JsNameRef("valueOf");
                 valueOf.setQualifier(expressionToMatch);
                 return and(valueOf, eq);

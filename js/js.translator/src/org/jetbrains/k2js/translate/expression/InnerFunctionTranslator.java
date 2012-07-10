@@ -10,7 +10,7 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 
 import java.util.List;
 
-public class InnerFunctionTranslator extends InnerDeclarationTranslator {
+class InnerFunctionTranslator extends InnerDeclarationTranslator {
     private final FunctionDescriptor descriptor;
 
     public InnerFunctionTranslator(@NotNull JetElement declaration,

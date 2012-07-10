@@ -121,7 +121,7 @@ public class JsVisitor {
   public void endVisit(JsBlock x, JsContext ctx) {
   }
 
-  public void endVisit(JsBooleanLiteral x, JsContext ctx) {
+  public void endVisit(JsLiteral.JsBooleanLiteral x, JsContext ctx) {
   }
 
   public void endVisit(JsBreak x, JsContext ctx) {
@@ -217,7 +217,7 @@ public class JsVisitor {
   public void endVisit(JsSwitch x, JsContext ctx) {
   }
 
-  public void endVisit(JsThisRef x, JsContext ctx) {
+  public void endVisit(JsLiteral.JsThisRef x, JsContext ctx) {
   }
 
   public void endVisit(JsThrow x, JsContext ctx) {
@@ -251,7 +251,7 @@ public class JsVisitor {
     return true;
   }
 
-  public boolean visit(JsBooleanLiteral x, JsContext ctx) {
+  public boolean visit(JsLiteral.JsBooleanLiteral x, JsContext ctx) {
     return true;
   }
 
@@ -379,7 +379,7 @@ public class JsVisitor {
     return true;
   }
 
-  public boolean visit(JsThisRef x, JsContext ctx) {
+  public boolean visit(JsLiteral.JsThisRef x, JsContext ctx) {
     return true;
   }
 

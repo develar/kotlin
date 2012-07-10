@@ -4,49 +4,7 @@
 
 package com.google.dart.compiler.backend.js;
 
-import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
-import com.google.dart.compiler.backend.js.ast.JsArrayLiteral;
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
-import com.google.dart.compiler.backend.js.ast.JsBlock;
-import com.google.dart.compiler.backend.js.ast.JsBooleanLiteral;
-import com.google.dart.compiler.backend.js.ast.JsBreak;
-import com.google.dart.compiler.backend.js.ast.JsCase;
-import com.google.dart.compiler.backend.js.ast.JsCatch;
-import com.google.dart.compiler.backend.js.ast.JsConditional;
-import com.google.dart.compiler.backend.js.ast.JsContext;
-import com.google.dart.compiler.backend.js.ast.JsContinue;
-import com.google.dart.compiler.backend.js.ast.JsDebugger;
-import com.google.dart.compiler.backend.js.ast.JsDefault;
-import com.google.dart.compiler.backend.js.ast.JsDoWhile;
-import com.google.dart.compiler.backend.js.ast.JsEmpty;
-import com.google.dart.compiler.backend.js.ast.JsExprStmt;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsFor;
-import com.google.dart.compiler.backend.js.ast.JsForIn;
-import com.google.dart.compiler.backend.js.ast.JsFunction;
-import com.google.dart.compiler.backend.js.ast.JsIf;
-import com.google.dart.compiler.backend.js.ast.JsInvocation;
-import com.google.dart.compiler.backend.js.ast.JsLabel;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
-import com.google.dart.compiler.backend.js.ast.JsNew;
-import com.google.dart.compiler.backend.js.ast.JsNullLiteral;
-import com.google.dart.compiler.backend.js.ast.JsNumberLiteral;
-import com.google.dart.compiler.backend.js.ast.JsObjectLiteral;
-import com.google.dart.compiler.backend.js.ast.JsParameter;
-import com.google.dart.compiler.backend.js.ast.JsPostfixOperation;
-import com.google.dart.compiler.backend.js.ast.JsPrefixOperation;
-import com.google.dart.compiler.backend.js.ast.JsProgram;
-import com.google.dart.compiler.backend.js.ast.JsPropertyInitializer;
-import com.google.dart.compiler.backend.js.ast.JsRegExp;
-import com.google.dart.compiler.backend.js.ast.JsReturn;
-import com.google.dart.compiler.backend.js.ast.JsStringLiteral;
-import com.google.dart.compiler.backend.js.ast.JsSwitch;
-import com.google.dart.compiler.backend.js.ast.JsThisRef;
-import com.google.dart.compiler.backend.js.ast.JsThrow;
-import com.google.dart.compiler.backend.js.ast.JsTry;
-import com.google.dart.compiler.backend.js.ast.JsVars;
-import com.google.dart.compiler.backend.js.ast.JsVisitor;
-import com.google.dart.compiler.backend.js.ast.JsWhile;
+import com.google.dart.compiler.backend.js.ast.*;
 import com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 
 /**
@@ -112,7 +70,7 @@ class JsPrecedenceVisitor extends JsVisitor {
   }
 
   @Override
-  public boolean visit(JsBooleanLiteral x, JsContext ctx) {
+  public boolean visit(JsLiteral.JsBooleanLiteral x, JsContext ctx) {
     answer = 17; // primary
     return false;
   }
@@ -285,7 +243,7 @@ class JsPrecedenceVisitor extends JsVisitor {
   }
 
   @Override
-  public boolean visit(JsThisRef x, JsContext ctx) {
+  public boolean visit(JsLiteral.JsThisRef x, JsContext ctx) {
     answer = 17; // primary
     return false;
   }

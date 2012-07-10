@@ -175,7 +175,6 @@ public final class Translation {
 
         TranslationContext context = TranslationContext.rootFunctionContext(staticContext, rootFunction);
         staticContext.getLiteralFunctionTranslator().setRootContext(context);
-        statements.add(staticContext.getLiteralFunctionTranslator().toJsStatement());
         statements.addAll(translateFiles(files, context));
         TranslationUtils.defineModule(context, statements, config.getModuleId());
 
