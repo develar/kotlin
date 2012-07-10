@@ -33,7 +33,7 @@ public class LiteralFunctionTranslator {
     }
 
     public JsStatement toJsStatement() {
-        return new JsVars(new JsVars.JsVar(containingVarRef.getName(), new JsObjectLiteral(properties)));
+        return new JsVars(new JsVars.JsVar(containingVarRef.getName(), new JsObjectLiteral(properties, true)));
     }
 
     public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration) {

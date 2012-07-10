@@ -11,15 +11,14 @@ import java.util.List;
 public final class JsObjectLiteral extends JsLiteral {
     private final List<JsPropertyInitializer> properties;
 
-    private boolean multiline;
+    private final boolean multiline;
 
     public JsObjectLiteral() {
         this(new SmartList<JsPropertyInitializer>());
     }
 
     public JsObjectLiteral(boolean multiline) {
-        this();
-        this.multiline = multiline;
+        this(new SmartList<JsPropertyInitializer>(), multiline);
     }
 
     public boolean isMultiline() {
@@ -27,7 +26,12 @@ public final class JsObjectLiteral extends JsLiteral {
     }
 
     public JsObjectLiteral(List<JsPropertyInitializer> properties) {
+        this(properties, false);
+    }
+
+    public JsObjectLiteral(List<JsPropertyInitializer> properties, boolean multiline) {
         this.properties = properties;
+        this.multiline = multiline;
     }
 
     public List<JsPropertyInitializer> getPropertyInitializers() {
