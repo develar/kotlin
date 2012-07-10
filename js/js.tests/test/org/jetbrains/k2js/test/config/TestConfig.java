@@ -28,7 +28,19 @@ import java.util.List;
 /**
  * @author Pavel Talanov
  */
-public final class TestConfig extends Config {
+public class TestConfig extends Config {
+
+    @NotNull
+    public static TestConfigFactory FACTORY = new TestConfigFactory() {
+        @Override
+        public TestConfig create(@NotNull Project project,
+                @NotNull EcmaVersion version,
+                @NotNull List<JetFile> files,
+                @NotNull BindingContext context) {
+            return new TestConfig(project, version, files, context);
+        }
+    };
+
     @NotNull
     public static final String TEST_MODULE_NAME = "JS_TESTS";
     @NotNull

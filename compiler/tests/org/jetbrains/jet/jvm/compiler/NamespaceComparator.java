@@ -24,6 +24,7 @@ import org.jetbrains.jet.codegen.PropertyCodegen;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
+import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExtensionReceiver;
@@ -197,7 +198,7 @@ public class NamespaceComparator {
         @NotNull
         private String normalize(String s) {
             return s.replaceFirst(
-                    "^ *(private|final|abstract|open|override|fun|val|var|/\\*.*?\\*/|((?!<init>)<.*?>)| )*",
+                    "^ *(private|protected|public|internal|final|abstract|open|override|fun|val|var|/\\*.*?\\*/|((?!<init>)<.*?>)| )*",
                     "")
                + s;
         }
@@ -464,6 +465,10 @@ public class NamespaceComparator {
         }
 
         public void serialize(String s) {
+            sb.append(s);
+        }
+
+        public void serialize(CompileTimeConstant s) {
             sb.append(s);
         }
 

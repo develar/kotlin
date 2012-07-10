@@ -47,6 +47,7 @@ public class AllInjectorsGenerator {
     public static void main(String[] args) throws IOException {
         generateInjectorForTopDownAnalyzerBasic();
         generateInjectorForTopDownAnalyzerForJvm();
+        generateInjectorForJavaDescriptorResolver();
         generateInjectorForTopDownAnalyzerForJs();
         generateMacroInjector();
         generateTestInjector();
@@ -91,13 +92,32 @@ public class AllInjectorsGenerator {
 
     private static void generateInjectorForTopDownAnalyzerForJvm() throws IOException {
         DependencyInjectorGenerator generator = new DependencyInjectorGenerator(false);
+        generator.implementInterface(InjectorForTopDownAnalyzer.class);
         generateInjectorForTopDownAnalyzerCommon(generator);
         generator.addParameter(BuiltinsScopeExtensionMode.class);
-        generator.addPublicField(JavaBridgeConfiguration.class);
+        generator.addField(true, ModuleConfiguration.class, null, new InstantiateType(JavaBridgeConfiguration.class));
         generator.addField(JavaDescriptorResolver.class);
         generator.addField(PsiClassFinderImpl.class);
         generator.addPublicField(NamespaceFactoryImpl.class);
         generator.generate("compiler/frontend.java/src", "org.jetbrains.jet.di", "InjectorForTopDownAnalyzerForJvm");
+    }
+
+    private static void generateInjectorForJavaDescriptorResolver() throws IOException {
+        DependencyInjectorGenerator generator = new DependencyInjectorGenerator(false);
+
+        // Parameters
+        generator.addPublicParameter(Project.class);
+        generator.addPublicParameter(BindingTrace.class);
+        generator.addPublicParameter(ModuleDescriptor.class);
+        generator.addParameter(BuiltinsScopeExtensionMode.class);
+
+        // Fields
+        generator.addField(JavaBridgeConfiguration.class);
+        generator.addPublicField(JavaSemanticServices.class);
+        generator.addPublicField(JavaDescriptorResolver.class);
+        generator.addPublicField(PsiClassFinderImpl.class);
+
+        generator.generate("compiler/frontend.java/src", "org.jetbrains.jet.di", "InjectorForJavaDescriptorResolver");
     }
 
     private static void generateInjectorForTopDownAnalyzerCommon(DependencyInjectorGenerator generator) {
@@ -155,8 +175,8 @@ public class AllInjectorsGenerator {
         generator.addField(JavaBridgeConfiguration.class);
         generator.addPublicField(PsiClassFinderImpl.class);
         generator.addField(false, ModuleDescriptor.class, null,
-                new GivenExpression("new org.jetbrains.jet.lang.descriptors.ModuleDescriptor(" +
-                                    "org.jetbrains.jet.lang.resolve.name.Name.special(\"<dummy>\"))"));
+                           new GivenExpression("new org.jetbrains.jet.lang.descriptors.ModuleDescriptor(" +
+                                               "org.jetbrains.jet.lang.resolve.name.Name.special(\"<dummy>\"))"));
         generator.addParameter(BuiltinsScopeExtensionMode.class);
 
         // Parameters

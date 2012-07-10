@@ -20,9 +20,11 @@ import com.google.common.base.Predicate;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.util.Function;
+import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.JetTestUtils;
+import org.jetbrains.jet.di.InjectorForTopDownAnalyzer;
 import org.jetbrains.jet.jvm.compiler.NamespaceComparator;
-import org.jetbrains.jet.di.InjectorForTopDownAnalyzerForJvm;
+import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
@@ -44,25 +46,13 @@ public abstract class AbstractLazyResolveNamespaceComparingTest extends Abstract
             Function<Pair<ModuleDescriptor, ModuleDescriptor>, Pair<NamespaceDescriptor, NamespaceDescriptor>> transform,
             boolean includeMembersOfObject
     ) throws IOException {
-        ModuleDescriptor module = new ModuleDescriptor(Name.special("<test module>"));
-        InjectorForTopDownAnalyzerForJvm injector = createInjectorForTDA(module);
-
         List<JetFile> files = JetTestUtils
                 .createTestFiles(testFileName, FileUtil.loadFile(new File(testFileName), true), new JetTestUtils.TestFileFactory<JetFile>() {
                     @Override
                     public JetFile create(String fileName, String text) {
-                        return JetPsiFactory.createFile(project, fileName, text);
+                        return JetPsiFactory.createFile(getProject(), fileName, text);
                     }
                 });
-
-        InjectorForTopDownAnalyzerForJvm tdaInjectorForLazy = getEagerInjectorForTopDownAnalyzer();
-
-        ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
-        ResolveSession session = new ResolveSession(project, lazyModule, tdaInjectorForLazy.getJavaBridgeConfiguration(), new FileBasedDeclarationProviderFactory(files));
-
-        injector.getTopDownAnalyzer().analyzeFiles(files, Collections.<AnalyzerScriptParameter>emptyList());
-
-        Pair<NamespaceDescriptor, NamespaceDescriptor> namespacesToCompare = transform.fun(Pair.create(module, lazyModule));
 
         Predicate<NamespaceDescriptor> filterJetNamespace = new Predicate<NamespaceDescriptor>() {
             @Override
@@ -70,8 +60,43 @@ public abstract class AbstractLazyResolveNamespaceComparingTest extends Abstract
                 return !namespaceDescriptor.getName().equals(Name.identifier("jet"));
             }
         };
+
+        File serializeResultsTo = new File(FileUtil.getNameWithoutExtension(testFileName) + ".txt");
+
+        doTestForGivenFiles(transform, includeMembersOfObject, files, filterJetNamespace, serializeResultsTo);
+    }
+
+    protected void doTestForGivenFiles(
+            Function<Pair<ModuleDescriptor, ModuleDescriptor>, Pair<NamespaceDescriptor, NamespaceDescriptor>> transform,
+            boolean includeMembersOfObject,
+            List<JetFile> files,
+            Predicate<NamespaceDescriptor> filterJetNamespace,
+            File serializeResultsTo
+    ) {
+        ModuleDescriptor module = resolveEagerly(files, ConfigurationKind.JDK_ONLY);
+        ModuleDescriptor lazyModule = resolveLazily(files, ConfigurationKind.JDK_ONLY);
+
+        Pair<NamespaceDescriptor, NamespaceDescriptor> namespacesToCompare = transform.fun(Pair.create(module, lazyModule));
+
         NamespaceComparator.compareNamespaces(namespacesToCompare.first, namespacesToCompare.second,
-                                              includeMembersOfObject, filterJetNamespace, new File(FileUtil.getNameWithoutExtension(testFileName) + ".txt"));
+                                              includeMembersOfObject, filterJetNamespace, serializeResultsTo);
+    }
+
+    private ModuleDescriptor resolveLazily(List<JetFile> files, ConfigurationKind configurationKind) {
+        ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
+        JetCoreEnvironmentWithDisposable environment = new JetCoreEnvironmentWithDisposable(configurationKind);
+        ModuleConfiguration moduleConfiguration = getEagerInjectorForTopDownAnalyzer(environment).getModuleConfiguration();
+        ResolveSession
+                session = new ResolveSession(getProject(), lazyModule, moduleConfiguration, new FileBasedDeclarationProviderFactory(files));
+        return lazyModule;
+    }
+
+    protected ModuleDescriptor resolveEagerly(List<JetFile> files, ConfigurationKind configurationKind) {
+        ModuleDescriptor module = new ModuleDescriptor(Name.special("<test module>"));
+        JetCoreEnvironmentWithDisposable environment = new JetCoreEnvironmentWithDisposable(configurationKind);
+        InjectorForTopDownAnalyzer injector = createInjectorForTDA(module, environment);
+        injector.getTopDownAnalyzer().analyzeFiles(files, Collections.<AnalyzerScriptParameter>emptyList());
+        return module;
     }
 
     protected void doTest(String testFileName) throws Exception {
@@ -93,8 +118,11 @@ public abstract class AbstractLazyResolveNamespaceComparingTest extends Abstract
             public Pair<NamespaceDescriptor, NamespaceDescriptor> fun(Pair<ModuleDescriptor, ModuleDescriptor> pair) {
                 ModuleDescriptor expectedModule = pair.first;
                 ModuleDescriptor actualModule = pair.second;
-                NamespaceDescriptor actual = theOnlySubPackage(actualModule.getRootNamespace());
-                NamespaceDescriptor expected = expectedModule.getRootNamespace().getMemberScope().getNamespace(actual.getName());
+                Name test = Name.identifier("test");
+                NamespaceDescriptor actual = actualModule.getRootNamespace().getMemberScope().getNamespace(test);
+                NamespaceDescriptor expected = expectedModule.getRootNamespace().getMemberScope().getNamespace(test);
+                //NamespaceDescriptor actual = theOnlySubPackage(actualModule.getRootNamespace());
+                //NamespaceDescriptor expected = expectedModule.getRootNamespace().getMemberScope().getNamespace(actual.getName());
                 return Pair.create(expected, actual);
             }
         }, includeMembersOfObject);

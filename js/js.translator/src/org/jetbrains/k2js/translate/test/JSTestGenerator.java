@@ -16,8 +16,9 @@
 
 package org.jetbrains.k2js.translate.test;
 
-import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.util.AstUtil;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsNew;
+import com.google.dart.compiler.backend.js.ast.JsStringLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
@@ -34,35 +35,35 @@ import java.util.List;
 /**
  * @author Pavel Talanov
  */
-public final class TestGenerator {
-    private TestGenerator() {
+//TODO: use method object instead of static functions
+public final class JSTestGenerator {
+    private JSTestGenerator() {
     }
 
     public static void generateTestCalls(@NotNull TranslationContext context,
-            @NotNull Collection<JetFile> files,
-            @NotNull JsBlock block) {
+            @NotNull Collection<JetFile> files, @NotNull JSTester tester) {
         List<FunctionDescriptor> functionDescriptors = JetTestFunctionDetector.getTestFunctionDescriptors(context.bindingContext(), files);
-        doGenerateTestCalls(functionDescriptors, block, context);
+        doGenerateTestCalls(functionDescriptors, context, tester);
     }
 
     private static void doGenerateTestCalls(@NotNull List<FunctionDescriptor> functionDescriptors,
-            @NotNull JsBlock block,
-            @NotNull TranslationContext context) {
+            @NotNull TranslationContext context, @NotNull JSTester jsTester) {
         for (FunctionDescriptor functionDescriptor : functionDescriptors) {
             ClassDescriptor classDescriptor = JsDescriptorUtils.getContainingClass(functionDescriptor);
             if (classDescriptor == null) {
                 return;
             }
-            JsExpression expression = ReferenceTranslator.translateAsFQReference(classDescriptor, context);
-            JsNew constructClassExpr = new JsNew(expression);
-            JsExpression functionToTestCall =
-                    CallBuilder.build(context).descriptor(functionDescriptor).receiver(constructClassExpr).translate();
-            JsNameRef qUnitTestFunRef = AstUtil.newQualifiedNameRef("QUnit.test");
-            JsFunction functionToTest = new JsFunction(context.scope());
-            String testName = classDescriptor.getName() + "." + functionDescriptor.getName();
-            functionToTest.setBody(new JsBlock(functionToTestCall.makeStmt(),
-                                               new JsInvocation(qUnitTestFunRef, context.program().getStringLiteral(testName),
-                                                                functionToTest).makeStmt()));
+            generateCodeForTestMethod(context, functionDescriptor, classDescriptor, jsTester);
         }
+    }
+
+    private static void generateCodeForTestMethod(@NotNull TranslationContext context,
+            @NotNull FunctionDescriptor functionDescriptor,
+            @NotNull ClassDescriptor classDescriptor, @NotNull JSTester tester) {
+        JsExpression expression = ReferenceTranslator.translateAsFQReference(classDescriptor, context);
+        JsNew testClass = new JsNew(expression);
+        JsExpression functionToTestCall = CallBuilder.build(context).descriptor(functionDescriptor).receiver(testClass).translate();
+        JsStringLiteral testName = context.program().getStringLiteral(classDescriptor.getName() + "." + functionDescriptor.getName());
+        tester.constructTestMethodInvocation(functionToTestCall, testName);
     }
 }

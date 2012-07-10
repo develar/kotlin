@@ -27,9 +27,11 @@ import org.jetbrains.jet.cli.js.K2JSCompilerArguments;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
+import org.jetbrains.k2js.test.utils.LibraryFilePathsUtil;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.EnumSet;
 import java.util.List;
 
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
@@ -39,14 +41,14 @@ abstract class StdLibTestBase extends SingleFileTranslationTest {
         super("stdlib/");
     }
 
-    protected void performStdLibTest(@NotNull Iterable<EcmaVersion> ecmaVersions,
+    protected void performStdLibTest(@NotNull EnumSet<EcmaVersion> ecmaVersions,
             @NotNull String sourceDir, @NotNull String... stdLibFiles) throws Exception {
         List<String> files = constructFilesToCompileList(sourceDir, stdLibFiles);
         compileFiles(ecmaVersions, files);
     }
 
-    private void compileFiles(@NotNull Iterable<EcmaVersion> ecmaVersions, @NotNull List<String> files) throws Exception {
-        List<String> libFiles = createLibFilesList();
+    private void compileFiles(@NotNull EnumSet<EcmaVersion> ecmaVersions, @NotNull List<String> files) throws Exception {
+        List<String> libFiles = LibraryFilePathsUtil.getBasicLibraryFiles();
         for (EcmaVersion version : ecmaVersions) {
             String outputFilePath = getOutputFilePath(getTestName(false) + ".compiler.kt", version);
             invokeCompiler(files, libFiles, version, outputFilePath);
@@ -60,7 +62,7 @@ abstract class StdLibTestBase extends SingleFileTranslationTest {
     protected void performChecksOnGeneratedJavaScript(String path, EcmaVersion version) throws Exception {
     }
 
-    protected static String moduleIdFromOutputFile(String path) {
+    protected String moduleIdFromOutputFile(String path) {
         String moduleId = new File(path).getName();
         if (moduleId.endsWith(".js")) {
             moduleId = moduleId.substring(0, moduleId.length() - 3);
@@ -83,36 +85,19 @@ abstract class StdLibTestBase extends SingleFileTranslationTest {
     }
 
     @NotNull
-    private static List<String> createLibFilesList() {
-        return Lists.transform(Config.LIB_FILE_NAMES, new Function<String, String>() {
-            @Override
-            public String apply(@Nullable String s) {
-                return Config.LIBRARIES_LOCATION + s;
-            }
-        });
+    private static List<String> constructFilesToCompileList(@NotNull String sourceDir, @NotNull String[] stdLibFiles) {
+        List<String> files = filesFromDir(sourceDir, stdLibFiles);
+        files.addAll(LibraryFilePathsUtil.getAdditionalLibraryFiles());
+        return files;
     }
 
     @NotNull
-    private static List<String> constructFilesToCompileList(@NotNull String sourceDir, @NotNull String[] stdLibFiles) {
+    private static List<String> filesFromDir(@NotNull String sourceDir, @NotNull String[] stdLibFiles) {
         List<String> files = Lists.newArrayList();
-
         File stdlibDir = new File(sourceDir);
         assertTrue("Cannot find stdlib source: " + stdlibDir, stdlibDir.exists());
         for (String file : stdLibFiles) {
             files.add(new File(stdlibDir, file).getPath());
-        }
-
-        // lets add the standard JS library files
-        Iterable<String> names = Config.LIB_FILE_NAMES_DEPENDENT_ON_STDLIB;
-        for (String libFileName : names) {
-            System.out.println("Compiling " + libFileName);
-            files.add(Config.LIBRARIES_LOCATION + libFileName);
-        }
-
-        // lets add the standard Kotlin library files
-        for (String libFileName : Config.STDLIB_FILE_NAMES) {
-            System.out.println("Compiling " + libFileName);
-            files.add(Config.STDLIB_LOCATION + libFileName);
         }
         return files;
     }

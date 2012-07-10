@@ -22,8 +22,6 @@ import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
-import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
-import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.calls.ExpressionAsFunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.VariableAsFunctionResolvedCall;
@@ -31,6 +29,7 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
 import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
+import org.jetbrains.k2js.translate.utils.ErrorReportingUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -142,22 +141,11 @@ public final class CallTranslator extends AbstractTranslator {
     private JsExpression intrinsicInvocation() {
         assert descriptor instanceof FunctionDescriptor;
         try {
-            Intrinsic intrinsic = context().intrinsics().getFunctionIntrinsic((FunctionDescriptor) descriptor);
+            Intrinsic intrinsic = context().intrinsics().getIntrinsic((FunctionDescriptor) descriptor);
             return intrinsic.apply(callParameters.getThisOrReceiverOrNull(), arguments, context());
-        } catch (RuntimeException e) {
-            PsiElement element = BindingContextUtils.descriptorToDeclaration(bindingContext(), descriptor);
-            if (element == null) {
-                element = BindingContextUtils.descriptorToDeclaration(bindingContext(), descriptor.getOriginal());
-            }
-            if (element == null && descriptor instanceof ASTNode) {
-                element = DiagnosticUtils.getClosestPsiElement((ASTNode) descriptor);
-            }
-            if (element != null) {
-                String location = DiagnosticUtils.atLocation(element);
-                throw new IllegalStateException(e.getMessage() + " at " + location, e);
-            } else {
-                throw e;
-            }
+        }
+        catch (RuntimeException e) {
+            throw ErrorReportingUtils.reportErrorWithLocation(e, descriptor, bindingContext());
         }
     }
 

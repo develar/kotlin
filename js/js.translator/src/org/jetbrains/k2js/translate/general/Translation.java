@@ -42,7 +42,8 @@ import org.jetbrains.k2js.translate.expression.WhenTranslator;
 import org.jetbrains.k2js.translate.initializer.ClassInitializerTranslator;
 import org.jetbrains.k2js.translate.initializer.NamespaceInitializerTranslator;
 import org.jetbrains.k2js.translate.reference.CallBuilder;
-import org.jetbrains.k2js.translate.test.TestGenerator;
+import org.jetbrains.k2js.translate.test.JSTestGenerator;
+import org.jetbrains.k2js.translate.test.JSTester;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 import org.jetbrains.k2js.translate.utils.dangerous.DangerousData;
@@ -184,8 +185,18 @@ public final class Translation {
                 statements.add(statement);
             }
         }
-        TestGenerator.generateTestCalls(context, files, rootFunction.getBody());
+        mayBeGenerateTests(files, config, rootFunction.getBody(), context);
         return context.program();
+    }
+
+    private static void mayBeGenerateTests(@NotNull Collection<JetFile> files, @NotNull Config config,
+            @NotNull JsBlock rootBlock, @NotNull TranslationContext context) {
+        JSTester tester = config.getTester();
+        if (tester != null) {
+            tester.initialize(context, rootBlock);
+            JSTestGenerator.generateTestCalls(context, files, tester);
+            tester.deinitialize();
+        }
     }
 
     @Nullable
