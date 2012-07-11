@@ -31,7 +31,6 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
-import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -127,7 +126,7 @@ public final class ClassTranslator extends AbstractTranslator {
         if (isObject()) {
             qualifier = context().namer().objectCreationMethodReference();
         }
-        else if (isTrait() && !context().isEcma5()) {
+        else if (isTrait()) {
             qualifier = context().namer().traitCreationMethodReference();
         }
         else {
@@ -151,25 +150,11 @@ public final class ClassTranslator extends AbstractTranslator {
         if (!isTrait()) {
             JsFunction initializer = Translation.generateClassInitializerMethod(classDeclaration, classDeclarationContext);
             if (context().isEcma5()) {
-                JsExpression expression;
-                if (isObject() && initializer.getBody().getStatements().isEmpty()) {
-                    expression = JsLiteral.NULL;
-                }
-                else if (initializer.getName() != null) {
-                    expression = JsAstUtils.encloseFunction(initializer);
-                }
-                else {
-                    expression = initializer;
-                }
-
-                jsClassDeclaration.getArguments().add(expression);
+                jsClassDeclaration.getArguments().add(initializer.getBody().getStatements().isEmpty() ? JsLiteral.NULL : initializer);
             }
             else {
                 propertyList.add(new JsPropertyInitializer(Namer.initializeMethodReference(), initializer));
             }
-        }
-        else if (context().isEcma5()) {
-            jsClassDeclaration.getArguments().add(JsLiteral.NULL);
         }
 
         propertyList.addAll(translatePropertiesAsConstructorParameters(classDeclarationContext));

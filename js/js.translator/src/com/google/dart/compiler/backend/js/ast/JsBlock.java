@@ -36,6 +36,10 @@ public class JsBlock extends JsStatement {
         return statements;
     }
 
+    public boolean isEmpty() {
+        return statements.isEmpty();
+    }
+
     public boolean isGlobalBlock() {
         return false;
     }

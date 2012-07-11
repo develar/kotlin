@@ -6,16 +6,12 @@ import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.psi.JetClassBody;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
-import org.jetbrains.jet.lang.psi.JetProperty;
 import org.jetbrains.k2js.translate.LabelGenerator;
-import org.jetbrains.k2js.translate.context.AliasingContext;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
-import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
 import java.util.List;
