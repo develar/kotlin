@@ -26,10 +26,10 @@ import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetObjectLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetParameter;
+import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
@@ -165,7 +165,7 @@ public final class ClassTranslator extends AbstractTranslator {
                 jsClassDeclaration.getArguments().add(expression);
             }
             else {
-                propertyList.add(InitializerUtils.generateInitializeMethod(initializer));
+                propertyList.add(new JsPropertyInitializer(Namer.initializeMethodReference(), initializer));
             }
         }
         else if (context().isEcma5()) {

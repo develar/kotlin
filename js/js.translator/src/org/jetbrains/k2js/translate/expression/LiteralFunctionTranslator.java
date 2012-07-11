@@ -3,19 +3,25 @@ package org.jetbrains.k2js.translate.expression;
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetClassBody;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetProperty;
 import org.jetbrains.k2js.translate.LabelGenerator;
+import org.jetbrains.k2js.translate.context.AliasingContext;
+import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
+import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
+import static org.jetbrains.k2js.translate.expression.InnerDeclarationTranslator.TraceableThisAliasProvider;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 import static org.jetbrains.k2js.translate.utils.FunctionBodyTranslator.translateFunctionBody;
 
@@ -42,14 +48,35 @@ public class LiteralFunctionTranslator {
         FunctionDescriptor descriptor = getFunctionDescriptor(rootContext.bindingContext(), declaration);
 
         JsFunction fun = createFunction();
-        TranslationContext funContext = rootContext.contextWithScope(fun);
+        TranslationContext funContext;
+        boolean asInner;
+        if (descriptor.getContainingDeclaration() instanceof ConstructorDescriptor) {
+            // KT-2388
+            asInner = true;
+            fun.setName(fun.getScope().declareName(Namer.CALLEE_NAME));
+            funContext = createThisTraceableContext((ClassDescriptor) descriptor.getContainingDeclaration().getContainingDeclaration(), fun,
+                                                    new JsNameRef("o", fun.getName().makeRef()));
+        }
+        else {
+            asInner = descriptor.getContainingDeclaration() instanceof NamespaceDescriptor;
+            funContext = rootContext.contextWithScope(fun);
+        }
 
         fun.getBody().getStatements().addAll(translateFunctionBody(descriptor, declaration, funContext).getStatements());
 
-        if (declaration.getParent() instanceof JetProperty && declaration.getParent().getParent() instanceof JetClassBody) {
+        if (asInner) {
             FunctionTranslator.addParameters(fun.getParameters(), descriptor, funContext);
-            // todo don't bind if function doesn't use "this"
-            return new JsInvocation(rootContext.namer().kotlin("b3"), fun, JsLiteral.THIS);
+            if (funContext.thisAliasProvider() instanceof TraceableThisAliasProvider) {
+                TraceableThisAliasProvider provider = (TraceableThisAliasProvider) funContext.thisAliasProvider();
+                if (provider.wasThisCaptured()) {
+                    return new JsInvocation(rootContext.namer().kotlin("assignOwner"), fun, JsLiteral.THIS);
+                }
+                else {
+                    fun.setName(null);
+                }
+            }
+
+            return fun;
         }
 
         JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
@@ -66,8 +93,7 @@ public class LiteralFunctionTranslator {
             ClassTranslator classTranslator) {
         JsFunction fun = createFunction();
         JsName outerThisName = fun.getScope().declareName("$this");
-        TranslationContext funContext = rootContext.contextWithScope(fun, rootContext.aliasingContext()
-                .inner(new InnerObjectTranslator.MyThisAliasProvider(containingClass, outerThisName)));
+        TranslationContext funContext = createThisTraceableContext(containingClass, fun, outerThisName.makeRef());
 
         fun.getBody().getStatements().add(new JsReturn(classTranslator.translateClassOrObjectCreation(funContext)));
 
@@ -75,6 +101,11 @@ public class LiteralFunctionTranslator {
         properties.add(new JsPropertyInitializer(nameRef, fun));
 
         return new InnerObjectTranslator(declaration, funContext, fun).translate(nameRef);
+    }
+
+    private TranslationContext createThisTraceableContext(ClassDescriptor containingClass, JsFunction fun, JsNameRef thisRef) {
+        return rootContext.contextWithScope(fun, rootContext.aliasingContext().inner(
+                new TraceableThisAliasProvider(containingClass, thisRef)));
     }
 }
 

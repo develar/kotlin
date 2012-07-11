@@ -20,20 +20,12 @@ public final class AstUtil {
             String part = (endPos == -1
                            ? name.substring(startPos)
                            : name.substring(startPos, endPos));
-            node = newNameRef(node, part);
+            node = new JsNameRef(part, node);
             startPos = endPos + 1;
         }
         while (endPos != -1);
 
         return node;
-    }
-
-    public static JsNameRef newNameRef(JsExpression qualifier, String prop) {
-        JsNameRef nameRef = new JsNameRef(prop);
-        if (qualifier != null) {
-            nameRef.setQualifier(qualifier);
-        }
-        return nameRef;
     }
 
     public static JsArrayAccess newArrayAccess(JsExpression target, JsExpression key) {

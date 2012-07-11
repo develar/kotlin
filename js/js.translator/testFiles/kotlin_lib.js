@@ -246,7 +246,7 @@ var kotlin = {set:function (receiver, key, value) {
     };
 
     Kotlin.safeParseDouble = function(str) {
-        var r = parseFloat(str, 10);
+        var r = parseFloat(str);
         return isNaN(r) ? null : r;
     };
 
@@ -955,6 +955,11 @@ var kotlin = {set:function (receiver, key, value) {
         return r;
     }
 })();
+
+Kotlin.assignOwner = function(f, o) {
+  f.o = o;
+  return f;
+};
 
 // we cannot use Function.bind, because if we bind with null self, but call with not null — fun must receive passed not null self
 // test case: WebDemoExamples2Test.testBuilder

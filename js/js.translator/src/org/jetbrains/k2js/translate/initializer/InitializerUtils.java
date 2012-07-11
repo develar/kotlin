@@ -17,12 +17,9 @@
 package org.jetbrains.k2js.translate.initializer;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsFunction;
-import com.google.dart.compiler.backend.js.ast.JsPropertyInitializer;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
-import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
@@ -33,11 +30,6 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBa
  */
 public final class InitializerUtils {
     private InitializerUtils() {
-    }
-
-    @NotNull
-    public static JsPropertyInitializer generateInitializeMethod(@NotNull JsFunction initializerFunction) {
-        return new JsPropertyInitializer(Namer.initializeMethodReference(), initializerFunction);
     }
 
     @NotNull

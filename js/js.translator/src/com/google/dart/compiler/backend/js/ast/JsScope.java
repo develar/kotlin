@@ -4,14 +4,12 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-import com.google.dart.compiler.util.Lists;
 import com.google.dart.compiler.util.Maps;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,11 +39,10 @@ import java.util.Map;
  * hierarchy.
  */
 public class JsScope implements Serializable {
-    private List<JsScope> children = Collections.emptyList();
     @Nullable
     private final String description;
     private Map<String, JsName> names = Collections.emptyMap();
-    private JsScope parent;
+    private final JsScope parent;
     protected int tempIndex = 0;
     private final String scopeId;
 
@@ -62,51 +59,11 @@ public class JsScope implements Serializable {
         this.scopeId = scopeId;
         this.description = description;
         this.parent = parent;
-        parent.children = Lists.add(parent.children, this);
     }
 
     @NotNull
     public JsScope innerScope(@Nullable String scopeName) {
         return new JsScope(this, scopeName);
-    }
-
-    /**
-     * Rebase the function to a new scope.
-     *
-     * @param newParent The scope to add the function to.
-     */
-    public void rebase(JsScope newParent) {
-        detachFromParent();
-        parent = newParent;
-        parent.children = Lists.add(parent.children, this);
-    }
-
-    /**
-     * Rebase the function's children to a new scope.
-     *
-     * @param newParent
-     */
-    public void rebaseChildScopes(JsScope newParent) {
-        if (newParent == this) {
-            return;
-        }
-        parent.children = Lists.addAll(parent.children, children);
-        for (JsScope child : children) {
-            child.parent = newParent;
-        }
-        children = Collections.emptyList();
-    }
-
-    /**
-     * Subclasses can detach and become parentless.
-     */
-    protected void detachFromParent() {
-        JsScope oldParent = parent;
-
-        oldParent.children = Lists.remove(
-                parent.children, oldParent.children.indexOf(this));
-
-        parent = null;
     }
 
     /**
@@ -194,19 +151,8 @@ public class JsScope implements Serializable {
         return name;
     }
 
-    protected boolean hasOwnName(@NotNull JsName name) {
-        return names.containsValue(name);
-    }
-
     protected boolean hasOwnName(@NotNull String name) {
         return names.get(name) != null;
-    }
-
-    /**
-     * Returns a list of this scope's child scopes.
-     */
-    public final List<JsScope> getChildren() {
-        return children;
     }
 
     /**

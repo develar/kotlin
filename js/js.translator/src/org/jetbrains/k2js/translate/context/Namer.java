@@ -31,6 +31,7 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
  *         Encapuslates different types of constants and naming conventions.
  */
 public final class Namer {
+    public static final String CALLEE_NAME = "$fun";
 
     private static final String INITIALIZE_METHOD_NAME = "initialize";
     private static final String CLASS_OBJECT_NAME = "createClass";

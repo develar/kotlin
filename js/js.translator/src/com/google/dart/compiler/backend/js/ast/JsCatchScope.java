@@ -25,11 +25,6 @@ public class JsCatchScope extends JsScope {
     }
 
     @Override
-    public boolean hasOwnName(@NotNull JsName name) {
-        return name == this.name;
-    }
-
-    @Override
     public boolean hasOwnName(@NotNull String name) {
         return this.name.getIdent().equals(name);
     }
