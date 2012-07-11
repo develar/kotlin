@@ -16,28 +16,20 @@
 
 package org.jetbrains.jet.test.generator;
 
-import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.util.text.StringUtil;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
+import java.util.Collection;
 
 /**
-* @author abreslav
-*/
-public class TestDataFile {
-    private final File file;
-    private final String doTestMethodName;
+ * @author abreslav
+ */
+public interface TestClassModel extends TestEntityModel {
 
-    public TestDataFile(File file, String doTestMethodName) {
-        this.file = file;
-        this.doTestMethodName = doTestMethodName;
-    }
+    @NotNull
+    Collection<TestClassModel> getInnerTestClasses();
 
-    public String getTestCall() {
-        return doTestMethodName + "(\"" + Printer.getFilePath(file) + "\");";
-    }
+    @NotNull
+    Collection<TestMethodModel> getTestMethods();
 
-    public String getTestMethodName() {
-        return "test" + FileUtil.getNameWithoutExtension(StringUtil.capitalize(file.getName()));
-    }
+    boolean isEmpty();
 }

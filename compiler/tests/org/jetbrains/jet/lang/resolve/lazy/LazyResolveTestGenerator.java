@@ -16,7 +16,7 @@
 
 package org.jetbrains.jet.lang.resolve.lazy;
 
-import org.jetbrains.jet.test.generator.TestDataSource;
+import org.jetbrains.jet.test.generator.SimpleTestClassModel;
 import org.jetbrains.jet.test.generator.TestGenerator;
 
 import java.io.File;
@@ -39,48 +39,44 @@ public class LazyResolveTestGenerator {
     private static void generateRendererTests() throws IOException {
         new TestGenerator(
             "compiler/tests/",
-            TEST_DATA_FILE_EXTENSION,
             TARGET_PACKAGE,
             "LazyResolveDescriptorRendererTestGenerated",
-            TARGET_PACKAGE,
-            "AbstractLazyResolveDescriptorRendererTest",
+            AbstractLazyResolveDescriptorRendererTest.class,
             Arrays.asList(
-                    new TestDataSource(new File("compiler/testData/renderer"),
+                    new SimpleTestClassModel(new File("compiler/testData/renderer"),
                                        true,
-                                       TestGenerator.filterFilesByExtension(TEST_DATA_FILE_EXTENSION),
+                                       TEST_DATA_FILE_EXTENSION,
                                        "doTest"),
-                    new TestDataSource(new File("compiler/testData/lazyResolve/descriptorRenderer"),
+                    new SimpleTestClassModel(new File("compiler/testData/lazyResolve/descriptorRenderer"),
                                        true,
-                                       TestGenerator.filterFilesByExtension(TEST_DATA_FILE_EXTENSION),
+                                       TEST_DATA_FILE_EXTENSION,
                                        "doTest")
             ),
-            LazyResolveTestGenerator.class.getSimpleName()
+            LazyResolveTestGenerator.class
         ).generateAndSave();
     }
 
     private static void generateNamespaceComparingTests() throws IOException {
         new TestGenerator(
             "compiler/tests/",
-            TEST_DATA_FILE_EXTENSION,
             TARGET_PACKAGE,
             "LazyResolveNamespaceComparingTestGenerated",
-            TARGET_PACKAGE,
-            "AbstractLazyResolveNamespaceComparingTest",
+            AbstractLazyResolveNamespaceComparingTest.class,
             Arrays.asList(
-                    new TestDataSource(new File("compiler/testData/readKotlinBinaryClass"),
+                    new SimpleTestClassModel(new File("compiler/testData/readKotlinBinaryClass"),
                                        true,
-                                       TestGenerator.filterFilesByExtension(TEST_DATA_FILE_EXTENSION),
+                                       TEST_DATA_FILE_EXTENSION,
                                        "doTestSinglePackage"),
-                    new TestDataSource(new File("compiler/testData/readJavaBinaryClass"),
+                    new SimpleTestClassModel(new File("compiler/testData/readJavaBinaryClass"),
                                        true,
-                                       TestGenerator.filterFilesByExtension(TEST_DATA_FILE_EXTENSION),
+                                       TEST_DATA_FILE_EXTENSION,
                                        "doTestSinglePackage"),
-                    new TestDataSource(new File("compiler/testData/lazyResolve/namespaceComparator"),
+                    new SimpleTestClassModel(new File("compiler/testData/lazyResolve/namespaceComparator"),
                                        true,
-                                       TestGenerator.filterFilesByExtension(TEST_DATA_FILE_EXTENSION),
+                                       TEST_DATA_FILE_EXTENSION,
                                        "doTest")
             ),
-            LazyResolveTestGenerator.class.getSimpleName()
+            LazyResolveTestGenerator.class
         ).generateAndSave();
     }
 

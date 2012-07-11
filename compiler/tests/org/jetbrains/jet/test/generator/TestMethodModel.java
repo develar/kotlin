@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.checkers;
+package org.jetbrains.jet.test.generator;
 
-import com.google.common.base.Supplier;
-import junit.framework.Test;
-import org.jetbrains.jet.test.TestForeverRunner;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * @author Stepan Koltsov
+ * @author abreslav
  */
-public class JetDiagnosticsTestForever {
-    public static void main(String[] args) {
-        TestForeverRunner.runTestForever(args, new Supplier<Test>() {
-            @Override
-            public Test get() {
-                return JetDiagnosticsTest.suite();
-            }
-        });
-    }
+public interface TestMethodModel extends TestEntityModel {
+    void generateBody(@NotNull Printer p, @NotNull String generatorClassFqName);
 }

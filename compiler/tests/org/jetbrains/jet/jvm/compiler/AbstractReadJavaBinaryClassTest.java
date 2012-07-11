@@ -38,10 +38,13 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.plugin.JetLanguage;
 import org.jetbrains.jet.test.TestCaseWithTmpdir;
+import org.jetbrains.jet.test.generator.SimpleTestClassModel;
+import org.jetbrains.jet.test.generator.TestGenerator;
 import org.junit.Assert;
 
 import javax.tools.*;
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -104,5 +107,20 @@ public abstract class AbstractReadJavaBinaryClassTest extends TestCaseWithTmpdir
                                                                                        jetCoreEnvironment.getProject());
         JavaDescriptorResolver javaDescriptorResolver = injector.getJavaDescriptorResolver();
         return javaDescriptorResolver.resolveNamespace(FqName.topLevel(Name.identifier("test")), DescriptorSearchRule.ERROR_IF_FOUND_IN_KOTLIN);
+    }
+
+    public static void main(String[] args) throws IOException {
+        String aPackage = "org.jetbrains.jet.jvm.compiler";
+        String extension = "java";
+        new TestGenerator(
+                "compiler/tests/",
+                aPackage,
+                "ReadJavaBinaryClassTestGenerated",
+                AbstractReadJavaBinaryClassTest.class,
+                Arrays.asList(
+                        new SimpleTestClassModel(new File("compiler/testData/readJavaBinaryClass"), true, extension, "doTest")
+                ),
+                AbstractReadJavaBinaryClassTest.class
+        ).generateAndSave();
     }
 }

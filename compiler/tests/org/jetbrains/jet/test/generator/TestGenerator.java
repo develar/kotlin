@@ -18,207 +18,109 @@ package org.jetbrains.jet.test.generator;
 
 import com.google.common.collect.Lists;
 import com.intellij.openapi.util.io.FileUtil;
+import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author abreslav
  */
 public class TestGenerator {
 
-    public interface TargetTestFramework {
-        List<String> getImports();
-
-        void generateSuiteClassAnnotations(@NotNull TestGenerator testGenerator, @NotNull Printer p);
-        void generateExtraSuiteClassMethods(@NotNull TestGenerator testGenerator, @NotNull Printer p);
-        void generateTestMethodAnnotations(@NotNull TestGenerator testGenerator, @NotNull Printer p);
-        String getIsTestMethodCondition(@NotNull String methodVariableName);
-    }
-
-    public enum TargetTestFrameworks implements TargetTestFramework {
-        JUNIT_3 {
-            @Override
-            public List<String> getImports() {
-                return Arrays.asList(
-                        "junit.framework.Assert",
-                        "junit.framework.Test",
-                        "junit.framework.TestSuite"
-                );
-            }
-
-            @Override
-            public void generateSuiteClassAnnotations(@NotNull TestGenerator testGenerator, @NotNull Printer p) {
-                // Do nothing
-            }
-
-            @Override
-            public void generateExtraSuiteClassMethods(@NotNull TestGenerator testGenerator, @NotNull Printer p) {
-                p.println("public static Test suite() {");
-                p.pushIndent();
-                p.println("TestSuite suite = new TestSuite();");
-
-                for (TestDataSource testDataSource : testGenerator.testDataSources) {
-                    p.println("suite.addTestSuite(", testDataSource.getTestClassName(), ".class);");
-                }
-
-                p.println("return suite;");
-                p.popIndent();
-                p.println("}");
-            }
-
-            @Override
-            public void generateTestMethodAnnotations(@NotNull TestGenerator testGenerator, @NotNull Printer p) {
-                // Do nothing
-            }
-
-            @Override
-            public String getIsTestMethodCondition(@NotNull String methodVariableName) {
-                return "method.getName().startsWith(\"test\")";
-            }
-        },
-        JUNIT_4 {
-            @Override
-            public List<String> getImports() {
-                return Arrays.asList(
-                        "org.junit.Assert",
-                        "org.junit.Test",
-                        "org.junit.runner.RunWith",
-                        "org.junit.runners.Suite"
-                );
-            }
-
-            @Override
-            public void generateSuiteClassAnnotations(@NotNull TestGenerator testGenerator, @NotNull Printer p) {
-                p.println("@RunWith(Suite.class)");
-                p.println("@Suite.SuiteClasses({");
-                p.pushIndent();
-                for (Iterator<TestDataSource> iterator = testGenerator.testDataSources.iterator(); iterator.hasNext(); ) {
-                    TestDataSource testDataSource = iterator.next();
-                    p.print(testGenerator.suiteClassName, ".", testDataSource.getTestClassName(), ".class");
-                    if (iterator.hasNext()) {
-                        p.printWithNoIndent(",");
-                    }
-                    p.println();
-                }
-                p.popIndent();
-                p.println("})");
-            }
-
-            @Override
-            public void generateExtraSuiteClassMethods(@NotNull TestGenerator testGenerator, @NotNull Printer p) {
-                // Do nothing
-            }
-
-            @Override
-            public void generateTestMethodAnnotations(@NotNull TestGenerator testGenerator, @NotNull Printer p) {
-                p.println("@Test");
-            }
-
-            @Override
-            public String getIsTestMethodCondition(@NotNull String methodVariableName) {
-                return "method.isAnnotationPresent(Test.class)";
-            }
-        }
-    }
-
-    public static FileFilter filterFilesByExtension(@NotNull final String extension) {
-        return new FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return file.isDirectory() || file.getName().endsWith("." + extension);
-            }
-        };
-    }
+    private static final List<String> JUNIT3_IMPORTS = Arrays.asList(
+            "junit.framework.Assert",
+            "junit.framework.Test",
+            "junit.framework.TestSuite"
+    );
 
     private final String baseDir;
-    private final String testDataFileExtension;
     private final String suiteClassPackage;
     private final String suiteClassName;
     private final String baseTestClassPackage;
     private final String baseTestClassName;
-    private final Collection<TestDataSource> testDataSources;
+    private final Collection<TestClassModel> testClassModels;
     private final String generatorName;
-    private final TargetTestFramework targetTestFramework;
-
-    public TestGenerator(
-        @NotNull String baseDir,
-        @NotNull String testDataFileExtension,
-        @NotNull String suiteClassPackage,
-        @NotNull String suiteClassName,
-        @NotNull String baseTestClassPackage,
-        @NotNull String baseTestClassName,
-        @NotNull Collection<TestDataSource> testDataSources,
-        @NotNull String generatorName
-) {
-        this(baseDir, testDataFileExtension, suiteClassPackage, suiteClassName, baseTestClassPackage, baseTestClassName, testDataSources,
-             generatorName, TargetTestFrameworks.JUNIT_4);
-    }
 
     public TestGenerator(
             @NotNull String baseDir,
-            @NotNull String testDataFileExtension,
             @NotNull String suiteClassPackage,
             @NotNull String suiteClassName,
-            @NotNull String baseTestClassPackage,
-            @NotNull String baseTestClassName,
-            @NotNull Collection<TestDataSource> testDataSources,
-            @NotNull String generatorName,
-            @NotNull TargetTestFramework targetTestFramework
+            @NotNull Class<? extends TestCase> baseTestClass,
+            @NotNull Collection<? extends TestClassModel> testClassModels,
+            @NotNull Class<?> generatorClass
     ) {
         this.baseDir = baseDir;
-        this.testDataFileExtension = testDataFileExtension;
         this.suiteClassPackage = suiteClassPackage;
         this.suiteClassName = suiteClassName;
-        this.baseTestClassPackage = baseTestClassPackage;
-        this.baseTestClassName = baseTestClassName;
-        this.testDataSources = testDataSources;
-        this.generatorName = generatorName;
-        this.targetTestFramework = targetTestFramework;
+        this.baseTestClassPackage = baseTestClass.getPackage().getName();
+        this.baseTestClassName = baseTestClass.getSimpleName();
+        this.testClassModels = Lists.newArrayList(testClassModels);
+        this.generatorName = generatorClass.getCanonicalName();
     }
 
     public void generateAndSave() throws IOException {
         StringBuilder out = new StringBuilder();
         Printer p = new Printer(out);
 
-        p.print(FileUtil.loadFile(new File("injector-generator/copyright.txt")));
+        p.print(FileUtil.loadFile(new File("injector-generator/copyright.txt"), true));
         p.println("package ", suiteClassPackage, ";");
         p.println();
-        for (String importedClassName : targetTestFramework.getImports()) {
+        for (String importedClassName : JUNIT3_IMPORTS) {
             p.println("import ", importedClassName, ";");
         }
         p.println();
 
         p.println("import java.io.File;");
-        p.println("import java.io.FileFilter;");
-        p.println("import java.lang.reflect.Method;");
-        p.println("import java.util.HashSet;");
-        p.println("import java.util.Set;");
+        p.println("import org.jetbrains.jet.JetTestUtils;");
+        p.println("import org.jetbrains.jet.test.TestMetadata;");
         p.println();
 
         p.println("import ", baseTestClassPackage, ".", baseTestClassName, ";");
         p.println();
 
-        p.println("/* This class is generated by ", generatorName, ". DO NOT MODIFY MANUALLY */");
-        targetTestFramework.generateSuiteClassAnnotations(this, p);
-        p.println("public class ", suiteClassName, " {");
-        p.pushIndent();
-
-        for (TestDataSource testDataSource : testDataSources) {
-            generateTestClass(p, testDataSource);
-            p.println();
+        p.println("/** This class is generated by {@link ", generatorName, "}. DO NOT MODIFY MANUALLY */");
+        if (testClassModels.size() == 1) {
+            TestClassModel theOnlyTestClass = testClassModels.iterator().next();
+            generateTestClass(p, new DelegatingTestClassModel(theOnlyTestClass) {
+                @Override
+                public String getName() {
+                    return suiteClassName;
+                }
+            }, false);
         }
+        else {
+            generateTestClass(p, new TestClassModel() {
+                @NotNull
+                @Override
+                public Collection<TestClassModel> getInnerTestClasses() {
+                    return testClassModels;
+                }
 
-        targetTestFramework.generateExtraSuiteClassMethods(this, p);
+                @NotNull
+                @Override
+                public Collection<TestMethodModel> getTestMethods() {
+                    return Collections.emptyList();
+                }
 
-        p.popIndent();
-        p.println("}");
+                @Override
+                public boolean isEmpty() {
+                    return false;
+                }
+
+                @Override
+                public String getName() {
+                    return suiteClassName;
+                }
+
+                @Override
+                public String getDataString() {
+                    return null;
+                }
+            }, false);
+        }
 
         String testSourceFilePath = baseDir + "/" + suiteClassPackage.replace(".", "/") + "/" + suiteClassName + ".java";
         File testSourceFile = new File(testSourceFilePath);
@@ -226,68 +128,76 @@ public class TestGenerator {
         System.out.println("Output written to file:\n" + testSourceFile.getAbsolutePath());
     }
 
-    private void generateTestClass(Printer p, TestDataSource testDataSource) {
-        p.println("public static class ", testDataSource.getTestClassName(), " extends ", baseTestClassName, " {");
+    private void generateTestClass(Printer p, TestClassModel testClassModel, boolean isStatic) {
+        String staticModifier = isStatic ? "static " : "";
+        generateMetadata(p, testClassModel);
+        p.println("public " + staticModifier + "class ", testClassModel.getName(), " extends ", baseTestClassName, " {");
         p.pushIndent();
 
-        Collection<TestDataFile> files = Lists.newArrayList();
-        files.addAll(testDataSource.getFiles());
+        Collection<TestMethodModel> testMethods = testClassModel.getTestMethods();
 
-        targetTestFramework.generateTestMethodAnnotations(this, p);
-        p.println("public void " + testDataSource.getAllTestsPresentMethodName() + "() throws Exception {");
-        p.pushIndent();
-
-        testDataSource.getAllTestsPresentCheck(p);
-
-        p.popIndent();
-        p.println("}");
-        p.println();
-
-        for (TestDataFile file : files) {
-            targetTestFramework.generateTestMethodAnnotations(this, p);
-            p.println("public void ", file.getTestMethodName(), "() throws Exception {");
-            p.pushIndent();
-
-            p.println(file.getTestCall());
-
-            p.popIndent();
-            p.println("}");
+        for (TestMethodModel testMethodModel : testMethods) {
+            generateTestMethod(p, testMethodModel);
             p.println();
         }
 
-        generateAllTestsPresent(p);
+        Collection<TestClassModel> innerTestClasses = testClassModel.getInnerTestClasses();
+        for (TestClassModel innerTestClass : innerTestClasses) {
+            if (innerTestClass.isEmpty()) {
+                continue;
+            }
+            generateTestClass(p, innerTestClass, true);
+            p.println();
+        }
+
+        if (!innerTestClasses.isEmpty()) {
+            generateSuiteMethod(p, testClassModel);
+        }
 
         p.popIndent();
         p.println("}");
     }
 
-    private void generateAllTestsPresent(Printer p) {
-        String isTestMethod = targetTestFramework.getIsTestMethodCondition("method");
-        String[] methodText = new String[] {
-                "public static void allTestsPresent(Class<?> clazz, File testDataDir, boolean recursive) {",
-                "    Set<String> methodNames = new HashSet<String>();",
-                "    for (Method method : clazz.getDeclaredMethods()) {",
-                "        if (" + isTestMethod + ") {",
-                "            methodNames.add(method.getName().toLowerCase() + \"." + testDataFileExtension + "\");",
-                "        }",
-                "    }",
-                "    for (File file : testDataDir.listFiles()) {",
-                "        if (file.isDirectory()) {",
-                "            if (recursive) {",
-                "                allTestsPresent(clazz, file, recursive);",
-                "            }",
-                "        }",
-                "        else {",
-                "            String name = file.getName();",
-                "            if (name.endsWith(\"." + testDataFileExtension + "\") && !methodNames.contains(\"test\" + name.toLowerCase())) {",
-                "                Assert.fail(\"Test data file missing from the generated test class: \" + file + \"\\nPlease re-run the generator: " + generatorName + "\");",
-                "            }",
-                "        }",
-                "    }",
-                "}"};
+    private static void generateSuiteMethod(Printer p, TestClassModel testClassModel) {
+        p.println("public static Test suite() {");
+        p.pushIndent();
 
-        for (String s : methodText) {
-            p.println(s);
+        p.println("TestSuite suite = new TestSuite(\"", testClassModel.getName(), "\");");
+        if (!testClassModel.getTestMethods().isEmpty()) {
+            p.println("suite.addTestSuite(", testClassModel.getName(), ".class);");
+        }
+        for (TestClassModel innerTestClass : testClassModel.getInnerTestClasses()) {
+            if (innerTestClass.isEmpty()) {
+                continue;
+            }
+            if (innerTestClass.getInnerTestClasses().isEmpty()) {
+                p.println("suite.addTestSuite(", innerTestClass.getName(), ".class);");
+            }
+            else {
+                p.println("suite.addTest(", innerTestClass.getName(), ".suite());");
+            }
+        }
+        p.println("return suite;");
+
+        p.popIndent();
+        p.println("}");
+    }
+
+    private void generateTestMethod(Printer p, TestMethodModel testMethodModel) {
+        generateMetadata(p, testMethodModel);
+        p.println("public void ", testMethodModel.getName(), "() throws Exception {");
+        p.pushIndent();
+
+        testMethodModel.generateBody(p, generatorName);
+
+        p.popIndent();
+        p.println("}");
+    }
+
+    private void generateMetadata(Printer p, TestEntityModel testDataSource) {
+        String dataString = testDataSource.getDataString();
+        if (dataString != null) {
+            p.println("@TestMetadata(\"", dataString, "\")");
         }
     }
 }
