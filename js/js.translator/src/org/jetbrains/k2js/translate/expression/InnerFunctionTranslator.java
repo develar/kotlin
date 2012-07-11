@@ -26,7 +26,9 @@ class InnerFunctionTranslator extends InnerDeclarationTranslator {
         return descriptor.getValueParameters();
     }
 
-    public JsExpression translate(JsNameRef nameRef) {
+    @Override
+    @NotNull
+    public JsExpression translate(@NotNull JsNameRef nameRef) {
         JsExpression result = translate(nameRef, getThis());
         FunctionTranslator.addParameters(fun.getParameters(), descriptor, context);
         return result;
@@ -39,8 +41,7 @@ class InnerFunctionTranslator extends InnerDeclarationTranslator {
 
     @Override
     protected JsInvocation createInvocation(JsNameRef nameRef, JsExpression self) {
-        String bindMethodName = getBindMethodName();
-        JsInvocation bind = new JsInvocation(context.namer().kotlin(bindMethodName));
+        JsInvocation bind = new JsInvocation(context.namer().kotlin(getBindMethodName()));
         bind.getArguments().add(nameRef);
         bind.getArguments().add(self);
         return bind;

@@ -31,6 +31,9 @@ abstract class InnerDeclarationTranslator {
         return Collections.emptyList();
     }
 
+    @NotNull
+    public abstract JsExpression translate(@NotNull JsNameRef nameRef);
+
     protected JsExpression translate(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
         if (closureContext.getDescriptors().isEmpty() && self == JsLiteral.NULL) {
             return createExpression(nameRef, self);

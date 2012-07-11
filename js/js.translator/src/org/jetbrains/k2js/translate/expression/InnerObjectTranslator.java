@@ -15,6 +15,7 @@ class InnerObjectTranslator extends InnerDeclarationTranslator {
         return createInvocation(nameRef, self);
     }
 
+    @Override
     @NotNull
     public JsExpression translate(@NotNull JsNameRef nameRef) {
         return super.translate(nameRef, thisAliasProvider().getRefIfWasCaptured());
