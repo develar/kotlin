@@ -45,13 +45,7 @@ var kotlin = {set:function (receiver, key, value) {
     };
 
     Kotlin.array = function (args) {
-        var answer = [];
-        if (args !== null && args !== undefined) {
-            for (var i = 0, n = args.length; i < n; ++i) {
-                answer[i] = args[i]
-            }
-        }
-        return answer;
+        return args === null || args === undefined ? [] : args.slice();
     };
 
     Kotlin.upto = function (from, limit, reversed) {
@@ -59,21 +53,22 @@ var kotlin = {set:function (receiver, key, value) {
     };
 
     Kotlin.modules = {};
-    Kotlin.Exception = Kotlin.$createClass();
-    Kotlin.RuntimeException = Kotlin.$createClass(Kotlin.Exception);
 
-    Kotlin.Exceptions = {};
-    Kotlin.Exceptions.IndexOutOfBounds = Kotlin.$createClass(Kotlin.Exception);
-    Kotlin.Exceptions.NullPointerException = Kotlin.$createClass(Kotlin.Exception);
-    Kotlin.Exceptions.NoSuchElementException = Kotlin.$createClass(Kotlin.Exception);
-    Kotlin.Exceptions.IllegalArgumentException = Kotlin.$createClass(Kotlin.Exception);
-    Kotlin.Exceptions.IllegalStateException = Kotlin.$createClass(Kotlin.Exception);
-    Kotlin.Exceptions.IndexOutOfBoundsException = Kotlin.$createClass(Kotlin.Exception);
-    Kotlin.Exceptions.UnsupportedOperationException = Kotlin.$createClass(Kotlin.Exception);
-    Kotlin.Exceptions.IOException = Kotlin.$createClass(Kotlin.Exception);
+    Kotlin.Exception = Kotlin.$createClass();
+    Kotlin.exceptions = {
+        RuntimeException: Kotlin.$createClass(Kotlin.Exception),
+        IndexOutOfBounds: Kotlin.$createClass(Kotlin.Exception),
+        NullPointerException: Kotlin.$createClass(Kotlin.Exception),
+        NoSuchElementException: Kotlin.$createClass(Kotlin.Exception),
+        IllegalArgumentException: Kotlin.$createClass(Kotlin.Exception),
+        IllegalStateException: Kotlin.$createClass(Kotlin.Exception),
+        IndexOutOfBoundsException: Kotlin.$createClass(Kotlin.Exception),
+        UnsupportedOperationException: Kotlin.$createClass(Kotlin.Exception),
+        IOException: Kotlin.$createClass(Kotlin.Exception)
+    };
 
     Kotlin.throwNPE = function () {
-        throw Kotlin.$new(Kotlin.Exceptions.NullPointerException)();
+        throw Kotlin.$new(Kotlin.exceptions.NullPointerException)();
     };
 
     function throwAbstractFunctionInvocationError() {
@@ -179,13 +174,13 @@ var kotlin = {set:function (receiver, key, value) {
         },
         get: function (index) {
             if (index < 0 || index >= this.$size) {
-                throw Kotlin.Exceptions.IndexOutOfBounds;
+                throw Kotlin.exceptions.IndexOutOfBounds;
             }
             return this.array[index];
         },
         set: function (index, value) {
             if (index < 0 || index >= this.$size) {
-                throw Kotlin.Exceptions.IndexOutOfBounds;
+                throw Kotlin.exceptions.IndexOutOfBounds;
             }
             this.array[index] = value;
         },
