@@ -12,6 +12,7 @@
       <w>paren</w>
       <w>parentless</w>
       <w>recurse</w>
+      <w>unmangled</w>
       <w>unobfuscatable</w>
       <w>unsupplied</w>
     </words>
