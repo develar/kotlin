@@ -351,20 +351,15 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         // another
         // ternary expression, but if the test expression is a ternary, it should
         // get parentheses around it.
-        {
-            JsExpression testExpression = x.getTestExpression();
-            printPair(x, testExpression);
-        }
-        _questionMark();
-        {
-            JsExpression thenExpression = x.getThenExpression();
-            printPair(x, thenExpression);
-        }
+        printPair(x, x.getTestExpression());
+        spaceOpt();
+        questionMark();
+        spaceOpt();
+        printPair(x, x.getThenExpression());
+        spaceOpt();
         _colon();
-        {
-            JsExpression elseExpression = x.getElseExpression();
-            printPair(x, elseExpression);
-        }
+        spaceOpt();
+        printPair(x, x.getElseExpression());
         return false;
     }
 
@@ -1169,7 +1164,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         return doPush;
     }
 
-    private void _questionMark() {
+    private void questionMark() {
         p.print('?');
     }
 
