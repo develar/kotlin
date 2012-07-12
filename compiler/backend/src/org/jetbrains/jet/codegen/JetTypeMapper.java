@@ -953,7 +953,7 @@ public class JetTypeMapper {
 
         for (ScriptDescriptor importedScript : importedScripts) {
             signatureWriter.writeParameterType(JvmMethodParameterKind.VALUE);
-            mapType(closureAnnotator.classDescriptorForScrpitDescriptor(importedScript).getDefaultType(), signatureWriter, MapTypeMode.VALUE);
+            mapType(closureAnnotator.classDescriptorForScriptDescriptor(importedScript).getDefaultType(), signatureWriter, MapTypeMode.VALUE);
             signatureWriter.writeParameterTypeEnd();
         }
 
@@ -1051,7 +1051,8 @@ public class JetTypeMapper {
         return JvmPrimitiveType.getByWrapperClass(className) != null
                 || className.getFqName().getFqName().equals("java.lang.String")
                 || className.getFqName().getFqName().equals("java.lang.CharSequence")
-                || className.getFqName().getFqName().equals("java.lang.Object");
+                || className.getFqName().getFqName().equals("java.lang.Object")
+                || className.getFqName().getFqName().equals("java.lang.Number");
     }
 
     public boolean isGenericsArray(JetType type) {

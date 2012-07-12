@@ -54,6 +54,7 @@ public class SpecialFiles {
         filesCompiledWithoutStdLib.add("kt773.jet"); // OVERLOAD_RESOLUTION_AMBIGUITY
         filesCompiledWithoutStdLib.add("kt796_797.jet"); // OVERLOAD_RESOLUTION_AMBIGUITY
         filesCompiledWithoutStdLib.add("kt950.jet"); // OVERLOAD_RESOLUTION_AMBIGUITY
+        filesCompiledWithoutStdLib.add("kt2395.kt"); // With MOCK_JDK
     }
 
     private static void fillExcludedFiles() {
@@ -81,7 +82,8 @@ public class SpecialFiles {
         excludedFiles.add("classObjectMethod.jet"); // Commented
         excludedFiles.add("kt1592.kt"); // Codegen don't execute blackBoxFile() on it
 
-        excludedFiles.add("box.kt"); // MultiFileTest
+        excludedFiles.add("box.kt"); // MultiFileTest not supported yet
+        excludedFiles.add("kt2060_1.kt"); // MultiFileTest not supported yet
 
         excludedFiles.add("kt684.jet"); // StackOverflow with StringBuilder (escape())
 
