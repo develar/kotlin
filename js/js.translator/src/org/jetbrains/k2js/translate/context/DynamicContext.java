@@ -17,11 +17,11 @@
 package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
 
 //TODO: consider renaming to scoping context
 public final class DynamicContext {
@@ -72,8 +72,9 @@ public final class DynamicContext {
     }
 
     @NotNull
-    public JsVars createTemporary(@NotNull JsExpression initExpression) {
-        return newVar(currentScope.declareTemporary(), initExpression);
+    public Pair<JsVar, JsNameRef> createTemporary(@NotNull JsExpression initExpression) {
+        JsVar var = new JsVar(currentScope.declareTemporary(), initExpression);
+        return new Pair<JsVar, JsNameRef>(var, var.getName().makeRef());
     }
 
     @NotNull

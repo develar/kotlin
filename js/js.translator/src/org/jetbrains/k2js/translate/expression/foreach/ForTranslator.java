@@ -32,7 +32,6 @@ import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopParameter;
  * @author Pavel Talanov
  */
 public abstract class ForTranslator extends AbstractTranslator {
-
     @NotNull
     public static JsStatement translate(@NotNull JetForExpression expression,
                                         @NotNull TranslationContext context) {

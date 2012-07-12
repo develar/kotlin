@@ -8,6 +8,7 @@ import com.google.dart.compiler.common.SourceInfo;
 import com.google.dart.compiler.common.Symbol;
 import com.intellij.util.SmartList;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -37,13 +38,12 @@ public class JsVars extends JsStatement implements Iterable<JsVars.JsVar> {
         this(Collections.singletonList(var), false);
     }
 
-    public boolean isMultiline() {
-        return multiline;
+    public JsVars(JsVar... vars) {
+        this(Arrays.asList(vars), false);
     }
 
-    public JsVar get() {
-        assert vars.size() == 1;
-        return vars.get(0);
+    public boolean isMultiline() {
+        return multiline;
     }
 
     /**

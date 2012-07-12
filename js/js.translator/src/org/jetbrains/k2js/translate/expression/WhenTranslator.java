@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.*;
@@ -30,6 +31,7 @@ import org.jetbrains.k2js.translate.utils.mutator.LastExpressionMutator;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
 
 /**
@@ -40,24 +42,23 @@ public final class WhenTranslator extends AbstractTranslator {
     private final JetWhenExpression whenExpression;
     @Nullable
     private final JsExpression expressionToMatch;
-    @NotNull
-    private final JsVars dummyCounter;
-    @NotNull
-    private final JsNameRef dummyCounterRef;
+
     @NotNull
     private final TemporaryVariable result;
 
     private int currentEntryNumber = 0;
 
+    @NotNull
+    private final Pair<JsVars.JsVar, JsNameRef> dummyCounter;
+
     private WhenTranslator(@NotNull JetWhenExpression expression, @NotNull TranslationContext context) {
         super(context);
-        this.whenExpression = expression;
-        this.expressionToMatch = translateExpressionToMatch(whenExpression);
+
+        whenExpression = expression;
+        expressionToMatch = translateExpressionToMatch(whenExpression);
+        result = context.declareTemporary(JsLiteral.NULL);
 
         dummyCounter = context.dynamicContext().createTemporary(program().getNumberLiteral(0));
-        dummyCounterRef = dummyCounter.get().getName().makeRef();
-
-        this.result = context.declareTemporary(JsLiteral.NULL);
     }
 
     @NotNull
@@ -85,24 +86,24 @@ public final class WhenTranslator extends AbstractTranslator {
     @NotNull
     private JsStatement surroundWithDummyIf(@NotNull JsStatement entryStatement) {
         JsNumberLiteral jsEntryNumber = program().getNumberLiteral(currentEntryNumber++);
-        JsExpression stepNumberEqualsCurrentEntryNumber = equality(dummyCounterRef, jsEntryNumber);
+        JsExpression stepNumberEqualsCurrentEntryNumber = equality(dummyCounter.second, jsEntryNumber);
         return new JsIf(stepNumberEqualsCurrentEntryNumber, entryStatement);
     }
 
     @NotNull
     private JsFor generateDummyFor() {
-        return new JsFor(dummyCounter, generateConditionStatement(), generateIncrementStatement());
+        return new JsFor(new JsVars(dummyCounter.first), generateConditionStatement(), generateIncrementStatement());
     }
 
     @NotNull
     private JsBinaryOperation generateConditionStatement() {
         JsNumberLiteral entriesNumber = program().getNumberLiteral(whenExpression.getEntries().size());
-        return new JsBinaryOperation(JsBinaryOperator.LT, dummyCounterRef, entriesNumber);
+        return new JsBinaryOperation(JsBinaryOperator.LT, dummyCounter.second, entriesNumber);
     }
 
     @NotNull
     private JsUnaryOperation generateIncrementStatement() {
-        return new JsPostfixOperation(JsUnaryOperator.INC, dummyCounterRef);
+        return new JsPostfixOperation(JsUnaryOperator.INC, dummyCounter.second);
     }
 
     @NotNull

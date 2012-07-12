@@ -16,30 +16,57 @@
 
 package org.jetbrains.k2js.translate.expression.foreach;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
+import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetForExpression;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getClassDescriptorForType;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopRange;
-import static org.jetbrains.k2js.translate.utils.TemporariesUtils.temporariesInitialization;
 
 /**
  * @author Pavel Talanov
  */
 public final class ArrayForTranslator extends ForTranslator {
+    @NotNull
+    private final Pair<JsVar, JsNameRef> loopRange;
+    @NotNull
+    private final Pair<JsVar, JsNameRef> end;
+    @NotNull
+    private final Pair<JsVar, JsNameRef> index;
+
+    private ArrayForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
+        super(forExpression, context);
+
+        JsExpression loopValue = Translation.translateAsExpression(getLoopRange(expression), context);
+        // don't create temp variable for simple expression
+        if (!(loopValue instanceof JsNameRef) || ((JsNameRef) loopValue).getQualifier() != null) {
+            loopRange = context.dynamicContext().createTemporary(loopValue);
+        }
+        else {
+            loopRange = new Pair<JsVar, JsNameRef>(null, (JsNameRef) loopValue);
+        }
+
+        Intrinsic lengthPropertyIntrinsic = context().intrinsics().getLengthPropertyIntrinsic();
+        JsExpression length = lengthPropertyIntrinsic.apply(loopRange.second,
+                                                            Collections.<JsExpression>emptyList(),
+                                                            context());
+        end = context.dynamicContext().createTemporary(length);
+        index = context.dynamicContext().createTemporary(program().getNumberLiteral(0));
+    }
 
     @NotNull
     public static JsStatement doTranslate(@NotNull JetForExpression expression,
@@ -58,53 +85,46 @@ public final class ArrayForTranslator extends ForTranslator {
     }
 
     @NotNull
-    private final TemporaryVariable loopRange;
-
-    @NotNull
-    private final TemporaryVariable end;
-
-    @NotNull
-    private final TemporaryVariable index;
-
-    private ArrayForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
-        super(forExpression, context);
-        loopRange = context.declareTemporary(Translation.translateAsExpression(getLoopRange(expression), context));
-        Intrinsic lengthPropertyIntrinsic = context().intrinsics().getLengthPropertyIntrinsic();
-        JsExpression length = lengthPropertyIntrinsic.apply(loopRange.reference(),
-                                                            Collections.<JsExpression>emptyList(),
-                                                            context());
-        end = context().declareTemporary(length);
-        index = context().declareTemporary(program().getNumberLiteral(0));
-    }
-
-    @NotNull
-    private JsBlock translate() {
-        List<JsStatement> blockStatements = Lists.newArrayList();
-        blockStatements.add(temporariesInitialization(loopRange, end).makeStmt());
-        blockStatements.add(generateForExpression(getInitExpression(), getCondition(), getIncrementExpression(), getBody()));
-        return new JsBlock(blockStatements);
+    private JsFor translate() {
+        return generateForExpression(getInitExpression(), getCondition(), getIncrementExpression(), getBody());
     }
 
     @NotNull
     private JsStatement getBody() {
-        JsArrayAccess arrayAccess = new JsArrayAccess(loopRange.reference(), index.reference());
+        JsArrayAccess arrayAccess = new JsArrayAccess(loopRange.second, index.second);
         JsStatement currentVar = newVar(parameterName, arrayAccess);
         JsStatement realBody = translateOriginalBodyExpression();
-        return new JsBlock(currentVar, realBody);
+
+        List<JsStatement> statements;
+        if (realBody instanceof JsBlock) {
+            statements = new ArrayList<JsStatement>();
+            statements.add(currentVar);
+            statements.addAll(((JsBlock) realBody).getStatements());
+        }
+        else {
+            statements = Arrays.asList(currentVar, realBody);
+        }
+        return new JsBlock(statements);
     }
 
     @NotNull
     private JsVars getInitExpression() {
-        return newVar(index.name(), program().getNumberLiteral(0));
+        JsVars vars = new JsVars();
+        if (loopRange.first != null) {
+            vars.add(loopRange.first);
+        }
+        vars.add(index.first);
+        vars.add(end.first);
+        return vars;
     }
 
     @NotNull
     private JsExpression getCondition() {
-        return inequality(index.reference(), end.reference());
+        return inequality(index.second, end.second);
     }
 
     @NotNull
     private JsExpression getIncrementExpression() {
-        return new JsPostfixOperation(JsUnaryOperator.INC, index.reference());
+        return new JsPostfixOperation(JsUnaryOperator.INC, index.second);
     }
 }
