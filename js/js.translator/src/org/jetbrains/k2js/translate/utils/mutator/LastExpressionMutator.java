@@ -27,9 +27,8 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToStatement;
  * @author Pavel Talanov
  */
 public final class LastExpressionMutator {
-
     public static JsNode mutateLastExpression(@NotNull JsNode node, @NotNull Mutator mutator) {
-        return (new LastExpressionMutator(mutator)).apply(node);
+        return new LastExpressionMutator(mutator).apply(node);
     }
 
     @NotNull

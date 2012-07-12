@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
@@ -26,17 +27,22 @@ import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetObjectLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetParameter;
+import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
+import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForConstructorParameter;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.isNotAny;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.*;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.getQualifiedReference;
@@ -166,7 +172,7 @@ public final class ClassTranslator extends AbstractTranslator {
     }
 
     private void addSuperclassReferences(@NotNull JsInvocation jsClassDeclaration) {
-        List<JsExpression> superClassReferences = getSuperclassNameReferences();
+        List<JsExpression> superClassReferences = getSupertypesNameReferences();
         List<JsExpression> expressions = jsClassDeclaration.getArguments();
         if (context().isEcma5()) {
             if (superClassReferences.isEmpty()) {
@@ -186,37 +192,50 @@ public final class ClassTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private List<JsExpression> getSuperclassNameReferences() {
-        List<JsExpression> superclassReferences = new ArrayList<JsExpression>();
-        List<ClassDescriptor> superclassDescriptors = getSuperclassDescriptors(descriptor);
-        addAncestorClass(superclassReferences, superclassDescriptors);
-        addTraits(superclassReferences, superclassDescriptors);
-        return superclassReferences;
-    }
-
-    private void addTraits(@NotNull List<JsExpression> superclassReferences,
-                           @NotNull List<ClassDescriptor> superclassDescriptors) {
-        for (ClassDescriptor superClassDescriptor : superclassDescriptors) {
-            assert (superClassDescriptor.getKind() == ClassKind.TRAIT) : "Only traits are expected here";
-            superclassReferences.add(getClassReference(superClassDescriptor));
+    private List<JsExpression> getSupertypesNameReferences() {
+        Collection<? extends JetType> supertypes = descriptor.getTypeConstructor().getSupertypes();
+        if (supertypes.isEmpty()) {
+            return Collections.emptyList();
         }
-    }
 
-    private void addAncestorClass(@NotNull List<JsExpression> superclassReferences,
-                                  @NotNull List<ClassDescriptor> superclassDescriptors) {
-        //here we remove ancestor class from the list
-        ClassDescriptor ancestorClass = findAndRemoveAncestorClass(superclassDescriptors);
-        if (ancestorClass != null) {
-            superclassReferences.add(getClassReference(ancestorClass));
+        JsExpression base = null;
+        List<JsExpression> list = null;
+        for (JetType type : supertypes) {
+            ClassDescriptor result = getClassDescriptorForType(type);
+            if (isNotAny(result) && !AnnotationsUtils.isNativeObject(result)) {
+                switch (result.getKind()) {
+                    case CLASS:
+                        base = getClassReference(result);
+                        break;
+                    case TRAIT:
+                        if (list == null) {
+                            list = new SmartList<JsExpression>();
+                        }
+                        list.add(getClassReference(result));
+                        break;
+
+                    default:
+                        throw new UnsupportedOperationException("unsupported super class kind " + result.getKind().name());
+                }
+            }
         }
+
+        if (list == null) {
+            return base == null ? Collections.<JsExpression>emptyList() : Collections.singletonList(base);
+        }
+        else if (base != null) {
+            list.add(0, base);
+        }
+
+        return list;
     }
 
     @NotNull
     private JsExpression getClassReference(@NotNull ClassDescriptor superClassDescriptor) {
         // aliasing here is needed for the declaration generation step
         if (aliasingMap != null) {
-            JsNameRef name = aliasingMap.get(BindingUtils.getClassForDescriptor(bindingContext(), superClassDescriptor),
-                                                       (JetClass) classDeclaration);
+            JsNameRef name = aliasingMap
+                    .get(BindingUtils.getClassForDescriptor(bindingContext(), superClassDescriptor), (JetClass) classDeclaration);
             if (name != null) {
                 return name;
             }
@@ -224,13 +243,6 @@ public final class ClassTranslator extends AbstractTranslator {
 
         // from library
         return getQualifiedReference(context(), superClassDescriptor);
-    }
-
-    @Nullable
-    private static ClassDescriptor findAndRemoveAncestorClass(@NotNull List<ClassDescriptor> superclassDescriptors) {
-        ClassDescriptor ancestorClass = findAncestorClass(superclassDescriptors);
-        superclassDescriptors.remove(ancestorClass);
-        return ancestorClass;
     }
 
     @NotNull

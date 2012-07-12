@@ -37,11 +37,6 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
  */
 public final class WhenTranslator extends AbstractTranslator {
     @NotNull
-    public static JsNode translateWhenExpression(@NotNull JetWhenExpression expression, @NotNull TranslationContext context) {
-        return new WhenTranslator(expression, context).translate();
-    }
-
-    @NotNull
     private final JetWhenExpression whenExpression;
     @Nullable
     private final JsExpression expressionToMatch;
@@ -63,6 +58,11 @@ public final class WhenTranslator extends AbstractTranslator {
         dummyCounterRef = dummyCounter.get().getName().makeRef();
 
         this.result = context.declareTemporary(JsLiteral.NULL);
+    }
+
+    @NotNull
+    public static JsNode translate(@NotNull JetWhenExpression expression, @NotNull TranslationContext context) {
+        return new WhenTranslator(expression, context).translate();
     }
 
     @NotNull
