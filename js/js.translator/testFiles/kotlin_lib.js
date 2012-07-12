@@ -134,18 +134,12 @@ var kotlin = {set:function (receiver, key, value) {
         },
         equals: function (o) {
             if (this.$size === o.$size) {
-                var iter1 = this.iterator();
-                var iter2 = o.iterator();
-                while (true) {
-                    var hn1 = iter1.get_hasNext();
-                    var hn2 = iter2.get_hasNext();
-                    if (hn1 != hn2) return false;
-                    if (!hn2)
-                        return true;
-                    else {
-                        var o1 = iter1.next();
-                        var o2 = iter2.next();
-                        if (!Kotlin.equals(o1, o2)) return false;
+                var iterator1 = this.iterator();
+                var iterator2 = o.iterator();
+                var i = this.$size;
+                while (i-- > 0) {
+                    if (!Kotlin.equals(iterator1.next(), iterator2.next())) {
+                        return false;
                     }
                 }
             }
@@ -153,14 +147,17 @@ var kotlin = {set:function (receiver, key, value) {
         },
         toString: function() {
             var builder = "[";
-            var iter = this.iterator();
+            var iterator = this.iterator();
             var first = true;
-            while (iter.get_hasNext()) {
-                if (first)
+            var i = this.$size;
+            while (i-- > 0) {
+                if (first) {
                     first = false;
-                else
+                }
+                else {
                     builder += ", ";
-                builder += iter.next();
+                }
+                builder += iterator.next();
             }
             builder += "]";
             return builder;
@@ -215,6 +212,9 @@ var kotlin = {set:function (receiver, key, value) {
                 }
             }
             return -1;
+        },
+        toString: function () {
+            return "[" + this.array.join(", ") + "]";
         }
     });
 
