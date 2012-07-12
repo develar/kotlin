@@ -40,10 +40,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForConstructorParameter;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.isNotAny;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.*;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.*;
+import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getClassDescriptorForType;
+import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getContainingClass;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.getQualifiedReference;
 
@@ -67,7 +66,7 @@ public final class ClassTranslator extends AbstractTranslator {
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
             @NotNull ClassAliasingMap aliasingMap,
             @NotNull TranslationContext context) {
-        return (new ClassTranslator(classDeclaration, aliasingMap, context)).translateClassOrObjectCreation(context);
+        return new ClassTranslator(classDeclaration, aliasingMap, context).translateClassOrObjectCreation(context);
     }
 
     @NotNull
@@ -95,7 +94,7 @@ public final class ClassTranslator extends AbstractTranslator {
     @Nullable
     private final ClassAliasingMap aliasingMap;
 
-    private ClassTranslator(@NotNull JetClassOrObject classDeclaration,
+    public ClassTranslator(@NotNull JetClassOrObject classDeclaration,
             @Nullable ClassAliasingMap aliasingMap,
             @NotNull TranslationContext context) {
         super(context.newDeclaration(classDeclaration));
@@ -119,31 +118,19 @@ public final class ClassTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    public JsExpression translateClassOrObjectCreation(@NotNull TranslationContext classDeclarationContext) {
-        JsInvocation jsClassDeclaration = classCreateMethodInvocation();
-        addSuperclassReferences(jsClassDeclaration);
-        addClassOwnDeclarations(jsClassDeclaration, classDeclarationContext);
-        return jsClassDeclaration;
+    public JsExpression translateClassOrObjectCreation(@NotNull TranslationContext declarationContext) {
+        JsInvocation createInvocation = context().namer().classCreateInvocation(descriptor);
+        translateClassOrObjectCreation(createInvocation, declarationContext);
+        return createInvocation;
     }
 
-    @NotNull
-    private JsInvocation classCreateMethodInvocation() {
-        JsExpression qualifier;
-        if (isObject()) {
-            qualifier = context().namer().objectCreationMethodReference();
-        }
-        else if (isTrait()) {
-            qualifier = context().namer().traitCreationMethodReference();
-        }
-        else {
-            qualifier = context().namer().classCreationMethodReference();
-        }
-
-        return new JsInvocation(qualifier);
+    public void translateClassOrObjectCreation(@NotNull JsInvocation createInvocation) {
+        translateClassOrObjectCreation(createInvocation, context());
     }
 
-    private boolean isObject() {
-        return descriptor.getKind().equals(ClassKind.OBJECT);
+    private void translateClassOrObjectCreation(@NotNull JsInvocation createInvocation, @NotNull TranslationContext context) {
+        addSuperclassReferences(createInvocation);
+        addClassOwnDeclarations(createInvocation, context);
     }
 
     private boolean isTrait() {
@@ -209,7 +196,7 @@ public final class ClassTranslator extends AbstractTranslator {
                         break;
                     case TRAIT:
                         if (list == null) {
-                            list = new SmartList<JsExpression>();
+                            list = new ArrayList<JsExpression>();
                         }
                         list.add(getClassReference(result));
                         break;
@@ -247,7 +234,7 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     private List<JsPropertyInitializer> translatePropertiesAsConstructorParameters(@NotNull TranslationContext classDeclarationContext) {
-        List<JsPropertyInitializer> result = new ArrayList<JsPropertyInitializer>();
+        List<JsPropertyInitializer> result = new SmartList<JsPropertyInitializer>();
         for (JetParameter parameter : getPrimaryConstructorParameters(classDeclaration)) {
             PropertyDescriptor descriptor =
                 getPropertyDescriptorForConstructorParameter(bindingContext(), parameter);

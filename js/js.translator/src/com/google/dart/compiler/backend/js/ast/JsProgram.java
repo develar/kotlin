@@ -22,8 +22,6 @@ public final class JsProgram extends JsNode {
     private final Map<String, JsStringLiteral> stringLiteralMap = new THashMap<String, JsStringLiteral>();
     private final JsScope topScope;
 
-    private final JsStringLiteral valueName = new JsStringLiteral("value");
-
     /**
      * Constructs a JavaScript program object.
      */
@@ -33,6 +31,10 @@ public final class JsProgram extends JsNode {
         setFragmentCount(1);
 
         emptyStmt = new JsEmpty();
+
+        stringLiteralMap.put(JsLiteral.VALUE.getValue(), JsLiteral.VALUE);
+        JsStringLiteral writable = ((JsStringLiteral) JsLiteral.WRITABLE.getLabelExpr());
+        stringLiteralMap.put(writable.getValue(), writable);
     }
 
     public JsEmpty getEmptyStmt() {
@@ -65,10 +67,6 @@ public final class JsProgram extends JsNode {
         }
 
         return literal;
-    }
-
-    public JsStringLiteral getValueName() {
-        return valueName;
     }
 
     /**

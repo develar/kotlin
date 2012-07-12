@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
@@ -120,9 +121,6 @@ public final class Namer {
     private final JsName isTypeName;
 
     @NotNull
-    private final JsPropertyInitializer writablePropertyDescriptorField;
-
-    @NotNull
     private final JsPropertyInitializer enumerablePropertyDescriptorField;
 
     private Namer(@NotNull JsScope rootScope) {
@@ -138,7 +136,6 @@ public final class Namer {
         isTypeName = kotlinScope.declareName("isType");
 
         JsProgram program = rootScope.getProgram();
-        writablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("writable"), JsLiteral.TRUE);
         enumerablePropertyDescriptorField = new JsPropertyInitializer(program.getStringLiteral("enumerable"), JsLiteral.TRUE);
     }
 
@@ -188,11 +185,6 @@ public final class Namer {
     }
 
     @NotNull
-    public JsPropertyInitializer writablePropertyDescriptorField() {
-        return writablePropertyDescriptorField;
-    }
-
-    @NotNull
     public JsPropertyInitializer enumerablePropertyDescriptorField() {
         return enumerablePropertyDescriptorField;
     }
@@ -209,6 +201,19 @@ public final class Namer {
         }
         else {
             return descriptor.getName().getName();
+        }
+    }
+
+    @NotNull
+    public JsInvocation classCreateInvocation(@NotNull ClassDescriptor descriptor) {
+        switch (descriptor.getKind()) {
+            case TRAIT:
+                return new JsInvocation(traitCreationMethodReference());
+            case OBJECT:
+                return new JsInvocation(objectCreationMethodReference());
+
+            default:
+                return new JsInvocation(classCreationMethodReference());
         }
     }
 }

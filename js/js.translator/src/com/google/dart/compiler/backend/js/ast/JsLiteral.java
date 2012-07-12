@@ -13,6 +13,10 @@ public abstract class JsLiteral extends JsExpression implements CanBooleanEval {
     public static final JsBooleanLiteral TRUE = new JsBooleanLiteral(true);
     public static final JsBooleanLiteral FALSE = new JsBooleanLiteral(false);
 
+    public static final JsStringLiteral VALUE = new JsStringLiteral("value");
+
+    public static final JsPropertyInitializer WRITABLE = new JsPropertyInitializer(new JsStringLiteral("writable"), TRUE);
+
     public static JsBooleanLiteral getBoolean(boolean truth) {
         return truth ? TRUE : FALSE;
     }

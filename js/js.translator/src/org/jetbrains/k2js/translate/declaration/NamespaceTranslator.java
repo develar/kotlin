@@ -77,7 +77,7 @@ public final class NamespaceTranslator extends AbstractTranslator {
 
         JsExpression value = getNamespaceDeclaration();
         if (context().isNotEcma3()) {
-            value = JsAstUtils.createDataDescriptor(value, false, context());
+            value = JsAstUtils.createDataDescriptor(value, false);
         }
 
         list.add(new JsPropertyInitializer(namespaceName.makeRef(), value));
