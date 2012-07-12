@@ -111,7 +111,7 @@ public final class NamespaceTranslator extends AbstractTranslator {
     private void addIfNeed(@NotNull List<JsPropertyInitializer> declarations, @NotNull List<JsExpression> expressions) {
         // ecma5 expects strict number of arguments, but ecma3 doesn't
         if (!declarations.isEmpty()) {
-            expressions.add(new JsObjectLiteral(declarations));
+            expressions.add(new JsObjectLiteral(declarations, true));
         }
         else if (context().isNotEcma3()) {
             expressions.add(JsLiteral.NULL);
