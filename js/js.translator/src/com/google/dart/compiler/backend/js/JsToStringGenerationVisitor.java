@@ -221,7 +221,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     private void printExpressions(List<JsExpression> expressions) {
         boolean sep = false;
         for (JsExpression arg : expressions) {
-            sep = _sepCommaOptSpace(sep);
+            sep = sepCommaOptSpace(sep);
             _parenPushIfCommaExpr(arg);
             accept(arg);
             parenPopIfCommaExpr(arg);
@@ -289,7 +289,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     private void continueOrBreakLabel(JsContinue x) {
         JsNameRef label = x.getLabel();
         if (label != null) {
-            _space();
+            space();
             _nameRef(label);
         }
     }
@@ -297,7 +297,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsCase x, JsContext ctx) {
         _case();
-        _space();
+        space();
         accept(x.getCaseExpr());
         _colon();
         newlineOpt();
@@ -332,9 +332,9 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         //
         JsExpression catchCond = x.getCondition();
         if (catchCond != null) {
-            _space();
+            space();
             _if();
-            _space();
+            space();
             accept(catchCond);
         }
 
@@ -490,8 +490,8 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         _lparen();
 
         if (x.getIterVarName() != null) {
-            _var();
-            _space();
+            var();
+            space();
             _nameDef(x.getIterVarName());
 
             if (x.getIterExpr() != null) {
@@ -507,9 +507,9 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             accept(x.getIterExpr());
         }
 
-        _space();
+        space();
         _in();
-        _space();
+        space();
         accept(x.getObjExpr());
 
         _rparen();
@@ -522,7 +522,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsFunction x, JsContext ctx) {
         _function();
-        _space();
+        space();
         if (x.getName() != null) {
             _nameOf(x);
         }
@@ -531,11 +531,11 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         boolean sep = false;
         for (Object element : x.getParameters()) {
             JsParameter param = (JsParameter) element;
-            sep = _sepCommaOptSpace(sep);
+            sep = sepCommaOptSpace(sep);
             accept(param);
         }
         _rparen();
-        _space();
+        space();
 
         lineBreakAfterBlock = false;
         accept(x.getBody());
@@ -570,7 +570,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
                 _nestedPush(elseStmt);
             }
             else {
-                _space();
+                space();
             }
             accept(elseStmt);
             if (!elseIf) {
@@ -625,7 +625,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsNew x, JsContext ctx) {
         _new();
-        _space();
+        space();
 
         JsExpression ctorExpr = x.getConstructorExpression();
         boolean needsParens = JsConstructExpressionVisitor.exec(ctorExpr);
@@ -698,7 +698,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             }
 
             _colon();
-            _space();
+            space();
             JsExpression valueExpr = item.getValueExpr();
             _parenPushIfCommaExpr(valueExpr);
             accept(valueExpr);
@@ -736,7 +736,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         p.print(op.getSymbol());
         JsExpression arg = x.getArg();
         if (_spaceCalc(op, arg)) {
-            _space();
+            space();
         }
         // unary operators always associate correctly (I think)
         printPair(x, arg);
@@ -780,7 +780,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         _return();
         JsExpression expr = x.getExpr();
         if (expr != null) {
-            _space();
+            space();
             accept(expr);
         }
         return false;
@@ -815,7 +815,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsThrow x, JsContext ctx) {
         _throw();
-        _space();
+        space();
         accept(x.getExpr());
         return false;
     }
@@ -855,15 +855,29 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     }
 
     @Override
-    public boolean visit(JsVars x, JsContext ctx) {
-        _var();
-        _space();
+    public boolean visit(JsVars vars, JsContext context) {
+        var();
+        space();
         boolean sep = false;
-        for (JsVar var : x) {
-            sep = _sepCommaOptSpace(sep);
+        for (JsVar var : vars) {
+            if (sep) {
+                if (vars.isMultiline()) {
+                    newlineOpt();
+                }
+                t();
+            }
+            else {
+                sep = true;
+            }
+
             accept(var);
         }
         return false;
+    }
+
+    private void t() {
+        p.print(',');
+        spaceOpt();
     }
 
     protected void _newline() {
@@ -1128,7 +1142,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             _rparen();
         }
         else {
-            _space();
+            space();
         }
         return doPop;
     }
@@ -1159,7 +1173,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
             _lparen();
         }
         else {
-            _space();
+            space();
         }
         return doPush;
     }
@@ -1192,7 +1206,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         p.printOpt(';');
     }
 
-    private boolean _sepCommaOptSpace(boolean sep) {
+    private boolean sepCommaOptSpace(boolean sep) {
         if (sep) {
             p.print(',');
             spaceOpt();
@@ -1204,7 +1218,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         p.print('/');
     }
 
-    private void _space() {
+    private void space() {
         p.print(' ');
     }
 
@@ -1262,7 +1276,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         p.print(CHARS_TRY);
     }
 
-    private void _var() {
+    private void var() {
         p.print(CHARS_VAR);
     }
 

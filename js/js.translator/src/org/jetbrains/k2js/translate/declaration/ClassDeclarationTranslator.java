@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import gnu.trove.THashMap;
 import gnu.trove.TLinkable;
 import gnu.trove.TLinkableAdaptor;
@@ -120,25 +121,24 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     }
 
     public void generateDeclarations() {
-        JsObjectLiteral valueLiteral = new JsObjectLiteral();
-        JsVars vars = new JsVars();
-        List<JsPropertyInitializer> propertyInitializers = valueLiteral.getPropertyInitializers();
+        List<JsVar> vars = new SmartList<JsVar>();
+        List<JsPropertyInitializer> propertyInitializers = new SmartList<JsPropertyInitializer>();
 
         generateOpenClassDeclarations(vars, propertyInitializers);
         generateFinalClassDeclarations(vars, propertyInitializers);
 
         if (vars.isEmpty()) {
             if (!propertyInitializers.isEmpty()) {
-                classesVar.setInitExpr(valueLiteral);
+                classesVar.setInitExpr(new JsObjectLiteral(propertyInitializers));
             }
             return;
         }
 
-        dummyFunction.setBody(new JsBlock(vars, new JsReturn(valueLiteral)));
+        dummyFunction.setBody(new JsBlock(new JsVars(vars, true), new JsReturn(new JsObjectLiteral(propertyInitializers))));
         classesVar.setInitExpr(new JsInvocation(dummyFunction));
     }
 
-    private void generateOpenClassDeclarations(@NotNull JsVars vars, @NotNull List<JsPropertyInitializer> propertyInitializers) {
+    private void generateOpenClassDeclarations(@NotNull List<JsVar> vars, @NotNull List<JsPropertyInitializer> propertyInitializers) {
         ClassAliasingMap classAliasingMap = new OpenClassRefProvider();
         // first pass: set up list order
         for (ListItem item : openList) {
@@ -154,7 +154,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         }
     }
 
-    private void generateFinalClassDeclarations(@NotNull JsVars vars, @NotNull List<JsPropertyInitializer> propertyInitializers) {
+    private void generateFinalClassDeclarations(@NotNull List<JsVar> vars, @NotNull List<JsPropertyInitializer> propertyInitializers) {
         ClassAliasingMap classAliasingMap = new FinalClassRefProvider();
         for (ListItem item : finalList) {
             generate(item, propertyInitializers, translateClassDeclaration(item.declaration, classAliasingMap, context()), vars);
@@ -164,7 +164,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     private static void generate(@NotNull ListItem item,
             @NotNull List<JsPropertyInitializer> propertyInitializers,
             @NotNull JsExpression definition,
-            @NotNull JsVars vars) {
+            @NotNull List<JsVar> vars) {
         JsExpression value;
         if (item.label.getName() == null) {
             value = definition;

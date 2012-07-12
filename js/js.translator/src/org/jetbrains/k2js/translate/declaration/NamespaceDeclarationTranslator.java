@@ -65,7 +65,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         classDeclarationTranslator.generateDeclarations();
 
         List<JsStatement> result = new ArrayList<JsStatement>();
-        JsVars vars = new JsVars();
+        JsVars vars = new JsVars(true);
         vars.addIfHasInitializer(context().literalFunctionTranslator().getDeclaration());
         vars.addIfHasInitializer(classDeclarationTranslator.getDeclaration());
         vars.addIfHasInitializer(namespaces);

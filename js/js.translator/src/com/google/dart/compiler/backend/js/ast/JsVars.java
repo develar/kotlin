@@ -18,6 +18,34 @@ import java.util.List;
 public class JsVars extends JsStatement implements Iterable<JsVars.JsVar> {
     private final List<JsVar> vars;
 
+    private final boolean multiline;
+
+    public JsVars() {
+        this(new SmartList<JsVar>(), false);
+    }
+
+    public JsVars(boolean multiline) {
+        this(new SmartList<JsVar>(), multiline);
+    }
+
+    public JsVars(List<JsVar> vars, boolean multiline) {
+        this.vars = vars;
+        this.multiline = multiline;
+    }
+
+    public JsVars(JsVar var) {
+        this(Collections.singletonList(var), false);
+    }
+
+    public boolean isMultiline() {
+        return multiline;
+    }
+
+    public JsVar get() {
+        assert vars.size() == 1;
+        return vars.get(0);
+    }
+
     /**
      * A var declared using the JavaScript <code>var</code> statement.
      */
@@ -72,19 +100,6 @@ public class JsVars extends JsStatement implements Iterable<JsVars.JsVar> {
         public NodeKind getKind() {
             return NodeKind.VAR;
         }
-    }
-
-    public JsVar get() {
-        assert vars.size() == 1;
-        return vars.get(0);
-    }
-
-    public JsVars() {
-        vars = new SmartList<JsVar>();
-    }
-
-    public JsVars(JsVar var) {
-        vars = Collections.singletonList(var);
     }
 
     public void add(JsVar var) {
