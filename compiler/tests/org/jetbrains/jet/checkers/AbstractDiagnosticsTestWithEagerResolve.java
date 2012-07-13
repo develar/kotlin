@@ -17,7 +17,6 @@
 package org.jetbrains.jet.checkers;
 
 import com.google.common.base.Predicates;
-import com.google.common.collect.Lists;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.psi.JetFile;
@@ -38,13 +37,9 @@ import java.util.List;
  */
 public abstract class AbstractDiagnosticsTestWithEagerResolve extends AbstractJetDiagnosticsTest {
 
-    protected void analyzeAndCheck(String expectedText, List<TestFile> testFiles) {
-        List<JetFile> jetFiles = Lists.newArrayList();
-        for (TestFile testFile : testFiles) {
-            if (testFile.getJetFile() != null) {
-                jetFiles.add(testFile.getJetFile());
-            }
-        }
+    @Override
+    protected void analyzeAndCheck(File testDataFile, String expectedText, List<TestFile> testFiles) {
+        List<JetFile> jetFiles = getJetFiles(testFiles);
 
         BindingContext bindingContext = AnalyzerFacadeForJVM.analyzeFilesWithJavaIntegration(
                 getProject(), jetFiles, Collections.<AnalyzerScriptParameter>emptyList(),
