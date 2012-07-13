@@ -124,7 +124,9 @@ var Kotlin = {};
         }
     })();
 
-    Kotlin.definePackage = Kotlin.createTrait;
+    Kotlin.definePackage = function (functionsAndClassesAndNestedPackages) {
+        return functionsAndClassesAndNestedPackages === null ? {} : functionsAndClassesAndNestedPackages;
+    };
 
     Kotlin.createClass = (function () {
         var METHODS = {addMethods: addMethods};

@@ -165,7 +165,7 @@ public final class Namer {
     }
 
     @NotNull
-    private JsExpression kotlin(@NotNull JsName name) {
+    private JsNameRef kotlin(@NotNull JsName name) {
         return new JsNameRef(name, kotlinObject());
     }
 

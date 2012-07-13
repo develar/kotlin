@@ -16,7 +16,6 @@
 
 package org.jetbrains.k2js.translate.declaration;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
@@ -62,9 +61,9 @@ public final class NamespaceTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    public JsPropertyInitializer getDeclarationAsInitializer() {
+    private JsPropertyInitializer getDeclarationAsInitializer() {
         addNamespaceInitializer();
-        return new JsPropertyInitializer(namespaceName.makeRef(), getNamespaceDeclaration());
+        return new JsPropertyInitializer(namespaceName.makeRef(), toDataDescriptor(getNamespaceDeclaration()));
     }
 
     public void addNamespaceDeclaration(List<JsPropertyInitializer> list) {
@@ -85,10 +84,10 @@ public final class NamespaceTranslator extends AbstractTranslator {
 
     @NotNull
     private JsInvocation getNamespaceDeclaration() {
-        JsInvocation namespaceDeclaration = namespaceCreateMethodInvocation();
-        addIfNeed(getFunctionsAndClasses(), namespaceDeclaration.getArguments());
-        addIfNeed(getNestedNamespaceDeclarations(), namespaceDeclaration.getArguments());
-        return namespaceDeclaration;
+        List<JsPropertyInitializer> items = getFunctionsAndClasses();
+        getNestedNamespaceDeclarations(items);
+        return new JsInvocation(context().namer().packageDefinitionMethodReference(),
+                                items.isEmpty() ? JsLiteral.NULL : new JsObjectLiteral(items, true));
     }
 
     private void addNamespaceInitializer() {
@@ -104,23 +103,7 @@ public final class NamespaceTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private JsInvocation namespaceCreateMethodInvocation() {
-        return new JsInvocation(context().namer().packageDefinitionMethodReference());
-    }
-
-    private void addIfNeed(@NotNull List<JsPropertyInitializer> declarations, @NotNull List<JsExpression> expressions) {
-        // ecma5 expects strict number of arguments, but ecma3 doesn't
-        if (!declarations.isEmpty()) {
-            expressions.add(new JsObjectLiteral(declarations, true));
-        }
-        else if (context().isNotEcma3()) {
-            expressions.add(JsLiteral.NULL);
-        }
-    }
-
-    @NotNull
-    private List<JsPropertyInitializer> getNestedNamespaceDeclarations() {
-        List<JsPropertyInitializer> result = Lists.newArrayList();
+    private List<JsPropertyInitializer> getNestedNamespaceDeclarations(List<JsPropertyInitializer> result) {
         List<NamespaceDescriptor> nestedNamespaces = JsDescriptorUtils.getNestedNamespaces(descriptor, context().bindingContext());
         for (NamespaceDescriptor nestedNamespace : nestedNamespaces) {
             NamespaceTranslator nestedNamespaceTranslator = new NamespaceTranslator(nestedNamespace, classDeclarationTranslator, context());

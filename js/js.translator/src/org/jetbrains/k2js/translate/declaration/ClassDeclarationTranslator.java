@@ -32,15 +32,14 @@ import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
-import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.general.Translation.translateClassDeclaration;
-import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
+import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
 
 /**
  * @author Pavel Talanov
@@ -201,9 +200,5 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         }
 
         return new JsPropertyInitializer(context().program().getStringLiteral(descriptor.getName().getName()), toDataDescriptor(value));
-    }
-
-    private JsExpression toDataDescriptor(JsExpression value) {
-        return context().isEcma5() ? JsAstUtils.createDataDescriptor(value) : value;
     }
 }

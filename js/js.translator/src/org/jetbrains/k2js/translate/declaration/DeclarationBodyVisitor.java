@@ -48,7 +48,7 @@ public final class DeclarationBodyVisitor extends TranslatorVisitor<List<JsPrope
         classDeclarationTranslator = null;
     }
 
-    public DeclarationBodyVisitor(@NotNull ClassDeclarationTranslator classDeclarationTranslator) {
+    public DeclarationBodyVisitor(@SuppressWarnings("NullableProblems") @NotNull ClassDeclarationTranslator classDeclarationTranslator) {
         this.classDeclarationTranslator = classDeclarationTranslator;
     }
 

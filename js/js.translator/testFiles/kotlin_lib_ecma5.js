@@ -123,17 +123,8 @@ var Kotlin = {};
         return constructor;
     }
 
-    Kotlin.definePackage = function (functionsAndClasses, nestedNamespaces) {
-        var p = Object.create(null, functionsAndClasses || undefined);
-        if (nestedNamespaces) {
-            var keys = Object.keys(nestedNamespaces);
-            for (var i = 0, n = keys.length; i < n; i++) {
-                var name = keys[i];
-                Object.defineProperty(p, name, {value: nestedNamespaces[name]});
-            }
-        }
-
-        return p;
+    Kotlin.definePackage = function (functionsAndClassesAndNestedPackages) {
+        return Object.create(null, functionsAndClassesAndNestedPackages === null ? undefined : functionsAndClassesAndNestedPackages );
     };
 
     Kotlin.$new = function (f) {

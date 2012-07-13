@@ -16,10 +16,12 @@
 
 package org.jetbrains.k2js.translate.general;
 
+import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsProgram;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 /**
  * @author Pavel Talanov
@@ -45,5 +47,9 @@ public abstract class AbstractTranslator {
     @NotNull
     protected BindingContext bindingContext() {
         return context.bindingContext();
+    }
+
+    protected JsExpression toDataDescriptor(JsExpression value) {
+        return context().isEcma5() ? JsAstUtils.createDataDescriptor(value) : value;
     }
 }
