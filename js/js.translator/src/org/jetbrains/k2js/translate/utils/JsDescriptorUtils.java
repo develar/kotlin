@@ -190,8 +190,10 @@ public final class JsDescriptorUtils {
     public static List<NamespaceDescriptor> getNestedNamespaces(@NotNull NamespaceDescriptor namespaceDescriptor,
             @NotNull BindingContext context) {
         List<NamespaceDescriptor> result = Lists.newArrayList();
-        for (DeclarationDescriptor descriptor : getContainedDescriptorsWhichAreNotPredefined(namespaceDescriptor, context)) {
-            if (descriptor instanceof NamespaceDescriptor) {
+        for (DeclarationDescriptor descriptor : namespaceDescriptor.getMemberScope().getAllDescriptors()) {
+            if (descriptor instanceof NamespaceDescriptor &&
+                !AnnotationsUtils.isPredefinedObject(descriptor) &&
+                !isExternal(context, descriptor)) {
                 result.add((NamespaceDescriptor) descriptor);
             }
         }
@@ -217,20 +219,25 @@ public final class JsDescriptorUtils {
         for (DeclarationDescriptor descriptor : namespace.getMemberScope().getAllDescriptors()) {
             if (!AnnotationsUtils.isPredefinedObject(descriptor)) {
                 // namespace may be defined in multiple files
-                if (!(descriptor instanceof NamespaceDescriptor)) {
-                    PsiElement psiElement = BindingContextUtils.descriptorToDeclaration(context, descriptor);
-                    if (psiElement != null) {
-                        PsiFile file = psiElement.getContainingFile();
-                        if (file.getUserData(LibrarySourcesConfig.EXTERNAL_MODULE_NAME) != null) {
-                            continue;
-                        }
-                    }
+                if (!(descriptor instanceof NamespaceDescriptor) && isExternal(context, descriptor)) {
+                    continue;
                 }
 
                 result.add(descriptor);
             }
         }
         return result;
+    }
+
+    private static boolean isExternal(BindingContext context, DeclarationDescriptor descriptor) {
+        PsiElement psiElement = BindingContextUtils.descriptorToDeclaration(context, descriptor);
+        if (psiElement != null) {
+            PsiFile file = psiElement.getContainingFile();
+            if (file.getUserData(LibrarySourcesConfig.EXTERNAL_MODULE_NAME) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     //TODO: at the moment this check is very ineffective
