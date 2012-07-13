@@ -51,7 +51,6 @@ import static org.jetbrains.k2js.translate.utils.mutator.LastExpressionMutator.m
  * @author Pavel Talanov
  */
 public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
-
     @Override
     @NotNull
     public JsNode visitConstantExpression(@NotNull JetConstantExpression expression,
@@ -170,7 +169,6 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
             @NotNull TranslationContext context) {
         return ReferenceTranslator.translateSimpleName(expression, context);
     }
-
 
     @NotNull
     private JsIf translateAsIfStatement(@NotNull JetIfExpression expression,

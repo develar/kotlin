@@ -14,55 +14,26 @@ import java.io.Serializable;
 public class JsName implements Symbol, Serializable {
   private final JsScope enclosing;
   private final String ident;
-  private String originalName;
-
-  /**
-   * A back-reference to the JsNode that the JsName refers to.
-   */
-  private JsNode staticRef;
 
   /**
    * @param ident the unmangled ident to use for this name
    */
-  JsName(JsScope enclosing, String ident, String originalName) {
+  JsName(JsScope enclosing, String ident) {
     this.enclosing = enclosing;
     this.ident = ident;
-    if (originalName != null) {
-      this.originalName = originalName;
-    }
-  }
-
-  public JsScope getEnclosing() {
-    return enclosing;
   }
 
   public String getIdent() {
     return ident;
   }
 
-  public String getOriginalName() {
-    return originalName;
-  }
-
   public JsNameRef makeRef() {
     return new JsNameRef(this);
-  }
-
-  /**
-   * Should never be called except on immutable stuff.
-   */
-  public void setStaticRef(JsNode node) {
-    this.staticRef = node;
   }
 
   @Override
   public String toString() {
     return ident;
-  }
-
-  @Override
-  public String getOriginalSymbolName() {
-    return getOriginalName();
   }
 
   @Override

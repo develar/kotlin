@@ -158,9 +158,9 @@ public final class JsAstUtils {
     @NotNull
     public static JsFor generateForExpression(@NotNull JsVars initExpression,
             @NotNull JsExpression condition,
-            @NotNull JsExpression incrExpression,
+            @NotNull JsExpression incrementExpression,
             @NotNull JsStatement body) {
-        JsFor result = new JsFor(initExpression, condition, incrExpression);
+        JsFor result = new JsFor(initExpression, condition, incrementExpression);
         result.setBody(body);
         return result;
     }

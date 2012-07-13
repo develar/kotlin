@@ -91,20 +91,7 @@ public final class ArrayForTranslator extends ForTranslator {
 
     @NotNull
     private JsStatement getBody() {
-        JsArrayAccess arrayAccess = new JsArrayAccess(loopRange.second, index.second);
-        JsStatement currentVar = newVar(parameterName, arrayAccess);
-        JsStatement realBody = translateOriginalBodyExpression();
-
-        List<JsStatement> statements;
-        if (realBody instanceof JsBlock) {
-            statements = new ArrayList<JsStatement>();
-            statements.add(currentVar);
-            statements.addAll(((JsBlock) realBody).getStatements());
-        }
-        else {
-            statements = Arrays.asList(currentVar, realBody);
-        }
-        return new JsBlock(statements);
+        return translateBody(new JsArrayAccess(loopRange.second, index.second));
     }
 
     @NotNull

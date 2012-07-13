@@ -18,7 +18,7 @@ public class JsCatch extends JsNode implements HasCondition {
     super();
     assert (parent != null);
     scope = new JsCatchScope(parent, ident);
-    param = new JsParameter(scope.findExistingName(ident));
+    param = new JsParameter(scope.findName(ident));
   }
 
   public JsBlock getBody() {

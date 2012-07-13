@@ -895,7 +895,6 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         }
 
         boolean needBraces = !x.isGlobalBlock();
-
         if (needBraces) {
             _blockOpen();
         }

@@ -12,7 +12,6 @@ import com.google.dart.compiler.backend.js.JsReservedIdentifiers;
  * JavaScript symbols.
  */
 public final class JsRootScope extends JsScope {
-
   private final JsProgram program;
 
   public JsRootScope(JsProgram program) {
@@ -26,8 +25,8 @@ public final class JsRootScope extends JsScope {
   }
 
   @Override
-  protected JsName findExistingNameNoRecurse(String ident) {
-    JsName name = super.findExistingNameNoRecurse(ident);
+  protected JsName findOwnName(String ident) {
+    JsName name = super.findOwnName(ident);
     if (name == null) {
         if (JsReservedIdentifiers.reservedGlobalSymbols.contains(ident)) {
         /*
@@ -35,7 +34,7 @@ public final class JsRootScope extends JsScope {
          * must report a legitimate enclosing scope, we can't simply have a shared set of symbol
          * names.
          */
-        name = doCreateName(ident, ident);
+        name = doCreateName(ident);
       }
     }
     return name;

@@ -173,7 +173,7 @@ public final class StaticContext {
             // ecma 5 property name never declares as obfuscatable:
             // 1) property cannot be overloaded, so, name collision is not possible
             // 2) main reason: if property doesn't have any custom accessor, value holder will have the same name as accessor, so, the same name will be declared more than once
-            return isEcma5() ? scope.declareUnobfuscatableName(name) : scope.declareObfuscatableName(name);
+            return isEcma5() ? scope.declareUnobfuscatableName(name) : scope.declareFreshName(name);
         }
 
         public NameGenerator() {
@@ -204,7 +204,7 @@ public final class StaticContext {
                 @Nullable
                 public JsName apply(@NotNull DeclarationDescriptor descriptor) {
                     JsScope namingScope = getEnclosingScope(descriptor);
-                    return namingScope.declareObfuscatableName(descriptor.getName().getName());
+                    return namingScope.declareFreshName(descriptor.getName().getName());
                 }
             };
             Rule<JsName> constructorHasTheSameNameAsTheClass = new Rule<JsName>() {

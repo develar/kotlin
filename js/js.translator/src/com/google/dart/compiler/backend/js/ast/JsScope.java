@@ -8,7 +8,6 @@ import com.google.dart.compiler.util.Maps;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 
@@ -38,7 +37,7 @@ import java.util.Map;
  * with a qualifier and could therefore never be confused with the global scope
  * hierarchy.
  */
-public class JsScope implements Serializable {
+public class JsScope {
     @Nullable
     private final String description;
     private Map<String, JsName> names = Collections.emptyMap();
@@ -66,9 +65,6 @@ public class JsScope implements Serializable {
         return new JsScope(this, scopeName);
     }
 
-    /**
-     * Subclasses can be parentless.
-     */
     protected JsScope(@Nullable String description) {
         this.description = description;
         this.parent = null;
@@ -85,27 +81,27 @@ public class JsScope implements Serializable {
      * @param identifier An identifier that is unique within this scope.
      */
     public JsName declareName(String identifier) {
-        JsName name = findExistingNameNoRecurse(identifier);
-        return name != null ? name : doCreateName(identifier, identifier);
+        JsName name = findOwnName(identifier);
+        return name != null ? name : doCreateName(identifier);
     }
 
     /**
      * Creates a new variable with an unique ident in this scope.
-     * The generated JsName is guaranteed to have an identifier (but not short
-     * name) that does not clash with any existing variables in the scope.
+     * The generated JsName is guaranteed to have an identifier that does not clash with any existing variables in the scope.
      * Future declarations of variables might however clash with the temporary
      * (unless they use this function).
      */
-    public JsName declareFreshName(String shortName) {
-        String ident = shortName;
+    @NotNull
+    public JsName declareFreshName(String suggestedName) {
+        String name = suggestedName;
         int counter = 0;
-        while (findExistingNameNoRecurse(ident) != null) {
-            ident = shortName + "_" + counter++;
+        while (hasOwnName(name)) {
+            name = suggestedName + '_' + counter++;
         }
-        return doCreateName(ident, shortName);
+        return doCreateName(name);
     }
 
-    String getNextTempName() {
+    private String getNextTempName() {
         // introduced by the compiler
         return "tmp$" + (scopeId != null ? scopeId + "$" : "") + tempIndex++;
     }
@@ -121,38 +117,21 @@ public class JsScope implements Serializable {
     }
 
     /**
-     * Gets a name object associated with the specified ident in this scope,
-     * creating it if necessary.<br/>
-     * If the JsName does not exist yet, a new JsName is created. The original
-     * name stored in the JsName is equal to the (unmangled) specified originalName.
-     *
-     * @param ident        An identifier that is unique within this scope.
-     * @param originalName The original name in the source.
-     * @throws IllegalArgumentException if ident already exists in this scope but
-     *                                  the requested short name does not match the existing short name,
-     *                                  or the original name does not match the existing original name.
-     */
-    public JsName declareName(String ident, String originalName) {
-        JsName name = findExistingNameNoRecurse(ident);
-        return name != null ? name : doCreateName(ident, originalName);
-    }
-
-    /**
      * Attempts to find the name object for the specified ident, searching in this
      * scope, and if not found, in the parent scopes.
      *
      * @return <code>null</code> if the identifier has no associated name
      */
-    public final JsName findExistingName(String ident) {
-        JsName name = findExistingNameNoRecurse(ident);
+    public final JsName findName(String ident) {
+        JsName name = findOwnName(ident);
         if (name == null && parent != null) {
-            return parent.findExistingName(ident);
+            return parent.findName(ident);
         }
         return name;
     }
 
     protected boolean hasOwnName(@NotNull String name) {
-        return names.get(name) != null;
+        return names.containsKey(name);
     }
 
     /**
@@ -163,9 +142,6 @@ public class JsScope implements Serializable {
         return parent;
     }
 
-    /**
-     * Returns the associated program.
-     */
     public JsProgram getProgram() {
         assert (parent != null) : "Subclasses must override getProgram() if they do not set a parent";
         return parent.getProgram();
@@ -181,12 +157,9 @@ public class JsScope implements Serializable {
         }
     }
 
-    /**
-     * Creates a new name in this scope.
-     */
-    protected JsName doCreateName(String ident, String originalName) {
-        JsName name = new JsName(this, ident, originalName);
-        names = Maps.putOrdered(names, ident, name);
+    protected JsName doCreateName(String ident) {
+        JsName name = new JsName(this, ident);
+        names = Maps.put(names, ident, name);
         return name;
     }
 
@@ -196,27 +169,12 @@ public class JsScope implements Serializable {
      *
      * @return <code>null</code> if the identifier has no associated name
      */
-    protected JsName findExistingNameNoRecurse(String ident) {
+    protected JsName findOwnName(String ident) {
         return names.get(ident);
     }
 
     @NotNull
     public JsName declareUnobfuscatableName(@NotNull String name) {
         return declareName(name);
-    }
-
-    @NotNull
-    public JsName declareObfuscatableName(@NotNull String name) {
-        return declareName(obfuscateName(name));
-    }
-
-    @NotNull
-    private String obfuscateName(@NotNull String name) {
-        int obfuscate = 0;
-        String result = name;
-        while (hasOwnName(result)) {
-            result = name + "$" + obfuscate++;
-        }
-        return result;
     }
 }

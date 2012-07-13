@@ -4,8 +4,7 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-import com.intellij.util.SmartList;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -17,7 +16,7 @@ public class JsBlock extends JsStatement {
     private final List<JsStatement> statements;
 
     public JsBlock() {
-        this(new SmartList<JsStatement>());
+        this(new ArrayList<JsStatement>());
     }
 
     public JsBlock(JsStatement statement) {

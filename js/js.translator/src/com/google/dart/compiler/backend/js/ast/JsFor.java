@@ -24,16 +24,16 @@ public class JsFor extends JsStatement {
     private JsExpression initExpr;
     private JsVars initVars;
 
-    public JsFor(JsVars initVars, JsExpression condition, JsExpression incrExpr) {
+    public JsFor(JsVars initVars, JsExpression condition, JsExpression incrementExpr) {
         this.initVars = initVars;
-        this.incrExpr = incrExpr;
+        this.incrExpr = incrementExpr;
         this.condition = condition;
         initExpr = null;
     }
 
-    public JsFor(JsExpression initExpr, JsExpression condition, JsExpression incrExpr) {
+    public JsFor(JsExpression initExpr, JsExpression condition, JsExpression incrementExpr) {
         this.initExpr = initExpr;
-        this.incrExpr = incrExpr;
+        this.incrExpr = incrementExpr;
         this.condition = condition;
         initVars = null;
     }

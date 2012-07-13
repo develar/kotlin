@@ -8,5 +8,4 @@ package com.google.dart.compiler.common;
  * @author johnlenz@google.com (John Lenz)
  */
 public interface Symbol {
-  String getOriginalSymbolName();
 }

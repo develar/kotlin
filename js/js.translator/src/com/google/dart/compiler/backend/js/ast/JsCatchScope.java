@@ -15,7 +15,7 @@ public class JsCatchScope extends JsScope {
 
     public JsCatchScope(JsScope parent, String ident) {
         super(parent, "Catch scope");
-        this.name = new JsName(this, ident, ident);
+        this.name = new JsName(this, ident);
     }
 
     @Override
@@ -26,16 +26,11 @@ public class JsCatchScope extends JsScope {
 
     @Override
     public boolean hasOwnName(@NotNull String name) {
-        return this.name.getIdent().equals(name);
+        return findOwnName(name) != null;
     }
 
     @Override
-    protected JsName doCreateName(String ident, String originalName) {
-        throw new UnsupportedOperationException("Cannot create a name in a catch scope");
-    }
-
-    @Override
-    protected JsName findExistingNameNoRecurse(String ident) {
+    protected JsName findOwnName(String ident) {
         return name.getIdent().equals(ident) ? name : null;
     }
 }

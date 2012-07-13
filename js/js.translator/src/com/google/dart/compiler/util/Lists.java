@@ -17,7 +17,10 @@ import java.util.List;
  * assumed to be mutable.
  */
 public class Lists {
-  public static <T> List<T> add(List<T> list, int index, T toAdd) {
+    private Lists() {
+    }
+
+    public static <T> List<T> add(List<T> list, int index, T toAdd) {
     switch (list.size()) {
       case 0:
         // Empty -> Singleton
