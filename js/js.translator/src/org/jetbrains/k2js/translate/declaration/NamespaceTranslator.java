@@ -17,25 +17,28 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.intellij.util.SmartList;
+import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
+import org.jetbrains.jet.lang.descriptors.NamespaceDescriptorParent;
+import org.jetbrains.jet.lang.psi.JetClass;
+import org.jetbrains.jet.lang.psi.JetClassInitializer;
+import org.jetbrains.jet.lang.psi.JetDeclaration;
+import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
-import org.jetbrains.k2js.translate.general.Translation;
+import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
-import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Pavel.Talanov
- *         <p/>
- *         Genereate code for a single descriptor.
  */
-public final class NamespaceTranslator extends AbstractTranslator {
+final class NamespaceTranslator extends AbstractTranslator {
     @NotNull
     private final NamespaceDescriptor descriptor;
     @NotNull
@@ -44,73 +47,102 @@ public final class NamespaceTranslator extends AbstractTranslator {
     private final ClassDeclarationTranslator classDeclarationTranslator;
 
     @NotNull
-    private final List<JsExpression> initializers = new SmartList<JsExpression>();
+    private final List<JsExpression> initializers;
+    private final Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace;
+
+    private final FileDeclarationVisitor visitor;
 
     /*package*/ NamespaceTranslator(@NotNull NamespaceDescriptor descriptor,
-                                    @NotNull ClassDeclarationTranslator classDeclarationTranslator,
-                                    @NotNull TranslationContext context) {
+            @NotNull ClassDeclarationTranslator classDeclarationTranslator,
+            @NotNull TranslationContext context,
+            @NotNull List<JsExpression> initializers,
+            Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace) {
         super(context.newDeclaration(descriptor));
         this.descriptor = descriptor;
+        this.initializers = initializers;
+        this.descriptorToDeclarationPlace = descriptorToDeclarationPlace;
         this.namespaceName = context.getNameForDescriptor(descriptor);
         this.classDeclarationTranslator = classDeclarationTranslator;
+
+        visitor = new FileDeclarationVisitor();
     }
 
-    @NotNull
-    public List<JsExpression> getInitializers() {
-        return initializers;
-    }
-
-    @NotNull
-    private JsPropertyInitializer getDeclarationAsInitializer() {
-        addNamespaceInitializer();
-        return new JsPropertyInitializer(namespaceName.makeRef(), toDataDescriptor(getNamespaceDeclaration()));
-    }
+    //@NotNull
+    //private JsPropertyInitializer getDeclarationAsInitializer() {
+    //    addNamespaceInitializer();
+    //    return new JsPropertyInitializer(namespaceName.makeRef(), toDataDescriptor(getNamespaceDeclaration()));
+    //}
 
     public void addNamespaceDeclaration(List<JsPropertyInitializer> list) {
-        addNamespaceInitializer();
+        List<JsStatement> initializerStatements = visitor.initializerVisitor.getResult();
+        if (!initializerStatements.isEmpty()) {
+            visitor.initializer.getBody().getStatements().addAll(initializerStatements);
+            initializers.add(new JsInvocation(new JsNameRef("call", visitor.initializer),
+                                              TranslationUtils.getQualifiedReference(context(), descriptor)));
+        }
 
         if (DescriptorUtils.isRootNamespace(descriptor)) {
-            list.addAll(getFunctionsAndClasses());
+            list.addAll(visitor.getResult());
             return;
         }
 
-        JsExpression value = getNamespaceDeclaration();
-        if (context().isNotEcma3()) {
-            value = JsAstUtils.createDataDescriptor(value, false);
-        }
-
-        list.add(new JsPropertyInitializer(namespaceName.makeRef(), value));
+        list.add(new JsPropertyInitializer(namespaceName.makeRef(), toDataDescriptor(getNamespaceDeclaration())));
     }
 
     @NotNull
     private JsInvocation getNamespaceDeclaration() {
-        List<JsPropertyInitializer> items = getFunctionsAndClasses();
-        getNestedNamespaceDeclarations(items);
+        JsObjectLiteral objectLiteral = descriptorToDeclarationPlace.get(descriptor);
+        if (objectLiteral == null) {
+            objectLiteral = new JsObjectLiteral();
+            descriptorToDeclarationPlace.put(descriptor, objectLiteral);
+            addPlaceToParent(objectLiteral, descriptor.getContainingDeclaration());
+        }
+
+        List<JsPropertyInitializer> items = visitor.getResult();
         return new JsInvocation(context().namer().packageDefinitionMethodReference(),
                                 items.isEmpty() ? JsLiteral.NULL : new JsObjectLiteral(items, true));
     }
 
-    private void addNamespaceInitializer() {
-        JsFunction initializer = Translation.generateNamespaceInitializerMethod(descriptor, context());
-        if (!initializer.getBody().getStatements().isEmpty()) {
-            initializers.add(new JsInvocation(new JsNameRef("call", initializer),
-                                              TranslationUtils.getQualifiedReference(context(), descriptor)));
+    private void addPlaceToParent(
+            NamespaceDescriptorParent parent, JsObjectLiteral child, JsObjectLiteral root) {
+        JsObjectLiteral place = descriptorToDeclarationPlace.get(parent);
+        if (place != null) {
+            place.getPropertyInitializers().add(new JsPropertyInitializer(namespaceName.makeRef(), toDataDescriptor(getNamespaceDeclaration())));
+            return;
+        }
+
+        place = new JsObjectLiteral();
+        place.getPropertyInitializers().add(child);
+    }
+
+
+    public void translate(JetFile file) {
+        for (JetDeclaration declaration : file.getDeclarations()) {
+            declaration.accept(visitor, context());
         }
     }
 
-    private List<JsPropertyInitializer> getFunctionsAndClasses() {
-        return new DeclarationBodyVisitor(classDeclarationTranslator).traverseNamespace(descriptor, context());
-    }
+    private class FileDeclarationVisitor extends DeclarationBodyVisitor {
+        private final JsFunction initializer;
+        private final TranslationContext initializerContext;
+        private InitializerVisitor initializerVisitor = new InitializerVisitor();
 
-    @NotNull
-    private List<JsPropertyInitializer> getNestedNamespaceDeclarations(List<JsPropertyInitializer> result) {
-        List<NamespaceDescriptor> nestedNamespaces = JsDescriptorUtils.getNestedNamespaces(descriptor, context().bindingContext());
-        for (NamespaceDescriptor nestedNamespace : nestedNamespaces) {
-            NamespaceTranslator nestedNamespaceTranslator = new NamespaceTranslator(nestedNamespace, classDeclarationTranslator, context());
-            result.add(nestedNamespaceTranslator.getDeclarationAsInitializer());
-
-            initializers.addAll(nestedNamespaceTranslator.getInitializers());
+        private FileDeclarationVisitor() {
+            initializer = JsAstUtils.createFunctionWithEmptyBody(context().scope());
+            initializerContext = context().contextWithScope(initializer);
         }
-        return result;
+
+        @Override
+        public Void visitClass(@NotNull JetClass expression, @NotNull TranslationContext context) {
+            result.add(classDeclarationTranslator.translateAndGetRef(expression));
+            return null;
+        }
+
+        @Override
+        public Void visitAnonymousInitializer(@NotNull JetClassInitializer expression, @NotNull TranslationContext context) {
+            initializerVisitor = new InitializerVisitor();
+            expression.accept(initializerVisitor, initializerContext);
+            return null;
+        }
     }
 }

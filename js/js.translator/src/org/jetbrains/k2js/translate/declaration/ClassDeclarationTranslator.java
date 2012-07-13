@@ -181,7 +181,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    public JsPropertyInitializer translateAndGetClassNameToClassObject(@NotNull JetClass declaration) {
+    public JsPropertyInitializer translateAndGetRef(@NotNull JetClass declaration) {
         ClassDescriptor descriptor = getClassDescriptor(context().bindingContext(), declaration);
         JsExpression value;
         if (descriptor.getModality() == Modality.FINAL) {

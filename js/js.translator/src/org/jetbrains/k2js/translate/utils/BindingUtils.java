@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.utils;
 
 import com.intellij.psi.PsiElement;
-import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -31,9 +30,7 @@ import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import static org.jetbrains.jet.lang.resolve.BindingContext.INDEXED_LVALUE_GET;
 import static org.jetbrains.jet.lang.resolve.BindingContext.INDEXED_LVALUE_SET;
@@ -66,15 +63,6 @@ public final class BindingUtils {
     public static ClassDescriptor getClassDescriptor(@NotNull BindingContext context,
             @NotNull JetClassOrObject declaration) {
         return getDescriptorForExpression(context, declaration, ClassDescriptor.class);
-    }
-
-    @NotNull
-    public static NamespaceDescriptor getNamespaceDescriptor(@NotNull BindingContext context,
-            @NotNull JetFile declaration) {
-        NamespaceDescriptor namespaceDescriptor =
-                context.get(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR, JetPsiUtil.getFQName(declaration));
-        assert namespaceDescriptor != null : message(declaration, "File should have a namespace descriptor");
-        return namespaceDescriptor;
     }
 
     @NotNull
@@ -323,20 +311,6 @@ public final class BindingUtils {
         PropertyDescriptor propertyDescriptor = context.get(BindingContext.OBJECT_DECLARATION, name);
         assert propertyDescriptor != null : message(name);
         return propertyDescriptor;
-    }
-
-    @NotNull
-    public static Set<NamespaceDescriptor> getAllNonNativeNamespaceDescriptors(@NotNull BindingContext context,
-            @NotNull Collection<JetFile> files) {
-        Set<NamespaceDescriptor> descriptorSet = new OrderedSet<NamespaceDescriptor>();
-        for (JetFile file : files) {
-            //TODO: can't be
-            NamespaceDescriptor namespaceDescriptor = getNamespaceDescriptor(context, file);
-            if (!AnnotationsUtils.isPredefinedObject(namespaceDescriptor)) {
-                descriptorSet.addAll(getNamespaceDescriptorHierarchy(namespaceDescriptor));
-            }
-        }
-        return descriptorSet;
     }
 
     @NotNull

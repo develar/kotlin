@@ -16,11 +16,10 @@
 
 package org.jetbrains.k2js.translate.initializer;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -28,77 +27,72 @@ import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.general.TranslatorVisitor;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.*;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getObjectDeclarationForName;
 
 /**
  * @author Pavel Talanov
  */
-public final class InitializerVisitor extends TranslatorVisitor<List<JsStatement>> {
+public final class InitializerVisitor extends TranslatorVisitor<Void> {
+    private final List<JsStatement> result = new SmartList<JsStatement>();
+
+    public List<JsStatement> getResult() {
+        return result;
+    }
+
     @Override
-    @NotNull
-    public final List<JsStatement> visitProperty(@NotNull JetProperty property, @NotNull TranslationContext context) {
+    public final Void visitProperty(@NotNull JetProperty property, @NotNull TranslationContext context) {
         JetExpression initializer = property.getInitializer();
-        if (initializer == null) {
-            return Collections.emptyList();
+        if (initializer != null) {
+            generateInitializerForProperty(getPropertyDescriptor(context.bindingContext(), property),
+                                           Translation.translateAsExpression(initializer, context), context);
         }
 
-        return generateInitializerForProperty(getPropertyDescriptor(context.bindingContext(), property),
-                                              Translation.translateAsExpression(initializer, context), context);
+        return null;
     }
 
-    @NotNull
-    private static List<JsStatement> generateInitializerForProperty(@NotNull PropertyDescriptor descriptor,
+    private JsStatement generateInitializerForProperty(@NotNull PropertyDescriptor descriptor,
             @NotNull JsExpression value, @NotNull TranslationContext context) {
-        return Collections.singletonList(InitializerUtils.generateInitializerForProperty(context, descriptor, value));
+        result.add(InitializerUtils.generateInitializerForProperty(context, descriptor, value));
+        return null;
     }
 
     @Override
-    @NotNull
-    public List<JsStatement> visitAnonymousInitializer(@NotNull JetClassInitializer initializer,
+    public Void visitAnonymousInitializer(@NotNull JetClassInitializer initializer,
             @NotNull TranslationContext context) {
-        return Arrays.asList(translateAsStatement(initializer.getBody(), context));
+        result.add(translateAsStatement(initializer.getBody(), context));
+        return null;
     }
 
     @Override
-    @NotNull
     // Not interested in other types of declarations, they do not contain initializers.
-    public List<JsStatement> visitDeclaration(@NotNull JetDeclaration expression, @NotNull TranslationContext context) {
-        return Collections.emptyList();
+    public Void visitDeclaration(@NotNull JetDeclaration expression, @NotNull TranslationContext context) {
+        return null;
     }
 
     @Override
-    @NotNull
-    public final List<JsStatement> visitObjectDeclarationName(@NotNull JetObjectDeclarationName objectName,
-            @NotNull TranslationContext context) {
+    public final Void visitObjectDeclarationName(@NotNull JetObjectDeclarationName objectName, @NotNull TranslationContext context) {
         PropertyDescriptor propertyDescriptor = getPropertyDescriptorForObjectDeclaration(context.bindingContext(), objectName);
         JetObjectDeclaration objectDeclaration = getObjectDeclarationForName(objectName);
         JsExpression objectValue = ClassTranslator.generateClassCreationExpression(objectDeclaration, context);
-        return generateInitializerForProperty(propertyDescriptor, objectValue, context);
+        generateInitializerForProperty(propertyDescriptor, objectValue, context);
+        return null;
     }
 
     @NotNull
-    private List<JsStatement> generateInitializerStatements(@NotNull List<JetDeclaration> declarations,
-            @NotNull TranslationContext context) {
-        List<JsStatement> statements = Lists.newArrayList();
+    private List<JsStatement> generateInitializerStatements(@NotNull List<JetDeclaration> declarations, @NotNull TranslationContext context) {
         for (JetDeclaration declaration : declarations) {
-            statements.addAll(declaration.accept(this, context));
+            declaration.accept(this, context);
         }
-        return statements;
+        return result;
     }
 
     @NotNull
     public final List<JsStatement> traverseClass(@NotNull JetClassOrObject expression, @NotNull TranslationContext context) {
         return generateInitializerStatements(expression.getDeclarations(), context);
-    }
-
-    @NotNull
-    public final List<JsStatement> traverseNamespace(@NotNull NamespaceDescriptor namespace, @NotNull TranslationContext context) {
-        return generateInitializerStatements(getDeclarationsForNamespace(context.bindingContext(), namespace), context);
     }
 }

@@ -20,7 +20,6 @@ import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
-import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
@@ -40,7 +39,6 @@ import org.jetbrains.k2js.translate.expression.FunctionTranslator;
 import org.jetbrains.k2js.translate.expression.PatternTranslator;
 import org.jetbrains.k2js.translate.expression.WhenTranslator;
 import org.jetbrains.k2js.translate.initializer.ClassInitializerTranslator;
-import org.jetbrains.k2js.translate.initializer.NamespaceInitializerTranslator;
 import org.jetbrains.k2js.translate.reference.CallBuilder;
 import org.jetbrains.k2js.translate.test.JSTestGenerator;
 import org.jetbrains.k2js.translate.test.JSTester;
@@ -134,13 +132,6 @@ public final class Translation {
     public static JsFunction generateClassInitializerMethod(@NotNull JetClassOrObject classDeclaration,
             @NotNull TranslationContext context) {
         return new ClassInitializerTranslator(classDeclaration, context).generateInitializeMethod();
-    }
-
-    @NotNull
-    public static JsFunction generateNamespaceInitializerMethod(@NotNull NamespaceDescriptor namespace,
-            @NotNull TranslationContext context) {
-        final NamespaceInitializerTranslator namespaceInitializerTranslator = new NamespaceInitializerTranslator(namespace, context);
-        return namespaceInitializerTranslator.generateInitializeMethod();
     }
 
     @NotNull
