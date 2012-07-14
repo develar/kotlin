@@ -205,7 +205,6 @@
 
             <zipgroupfileset dir="${basedir}/lib" includes="*.jar"/>
             <zipgroupfileset dir="${basedir}/ideaSDK/core" includes="*.jar"/>
-            <zipgroupfileset dir="${basedir}/js/js.translator/lib" includes="*.jar"/>
             <zipgroupfileset dir="${basedir}/dependencies" includes="jline.jar"/>
             <zipgroupfileset dir="${basedir}/dependencies" includes="jansi.jar"/>
 
