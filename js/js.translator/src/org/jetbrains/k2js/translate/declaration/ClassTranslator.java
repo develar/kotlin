@@ -40,8 +40,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.BindingUtils.*;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getClassDescriptorForType;
+import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorForType;
+import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isNotAny;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForConstructorParameter;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getContainingClass;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.getQualifiedReference;

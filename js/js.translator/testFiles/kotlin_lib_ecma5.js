@@ -10,7 +10,7 @@ var Kotlin = {};
       return args;
     };
 
-    Kotlin.isType = function (object, klass) {
+    Kotlin.isType = function (object, type) {
         if (object === null || object === undefined) {
             return false;
         }
@@ -18,7 +18,7 @@ var Kotlin = {};
         var proto = Object.getPrototypeOf(object);
         // todo test nested class
         //noinspection RedundantIfStatementJS
-        if (proto == klass.proto) {
+        if (proto == type.proto) {
             return true;
         }
 
@@ -111,7 +111,6 @@ var Kotlin = {};
         var constructor = createConstructor();
         Object.defineProperty(constructor, "proto", {value: proto});
         Object.defineProperty(constructor, "properties", {value: properties || null});
-        // null for trait
         if (isClass) {
             Object.defineProperty(constructor, "initializer", {value: initializer});
 

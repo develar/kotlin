@@ -28,13 +28,11 @@ import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getClassDescriptorForType;
+import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorForType;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.generateForExpression;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.inequality;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopRange;
 
 /**

@@ -23,19 +23,17 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.VariableAsFunctionResolvedCall;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.jetbrains.jet.lang.resolve.BindingContext.INDEXED_LVALUE_GET;
 import static org.jetbrains.jet.lang.resolve.BindingContext.INDEXED_LVALUE_SET;
 import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.*;
 
 /**
  * @author Pavel Talanov
@@ -95,34 +93,6 @@ public final class BindingUtils {
     }
 
     @NotNull
-    public static List<JetDeclaration> getDeclarationsForNamespace(@NotNull BindingContext bindingContext,
-            @NotNull NamespaceDescriptor namespace) {
-        List<JetDeclaration> declarations = new ArrayList<JetDeclaration>();
-        for (DeclarationDescriptor descriptor : getContainedDescriptorsWhichAreNotPredefined(namespace, bindingContext)) {
-            if (descriptor instanceof NamespaceDescriptor) {
-                continue;
-            }
-            JetDeclaration declaration = getDeclarationForDescriptor(bindingContext, descriptor);
-            if (declaration != null) {
-                declarations.add(declaration);
-            }
-        }
-        return declarations;
-    }
-
-    @Nullable
-    private static JetDeclaration getDeclarationForDescriptor(@NotNull BindingContext context,
-            @NotNull DeclarationDescriptor descriptor) {
-        PsiElement result = BindingContextUtils.descriptorToDeclaration(context, descriptor);
-        if (result == null) {
-            //TODO: never get there
-            return null;
-        }
-        assert result instanceof JetDeclaration : message(context, descriptor, "Descriptor should correspond to an element");
-        return (JetDeclaration) result;
-    }
-
-    @NotNull
     private static JetParameter getParameterForDescriptor(@NotNull BindingContext context,
             @NotNull ValueParameterDescriptor descriptor) {
         PsiElement result = BindingContextUtils.descriptorToDeclaration(context, descriptor);
@@ -133,7 +103,7 @@ public final class BindingUtils {
 
     public static boolean hasAncestorClass(@NotNull BindingContext context, @NotNull JetClassOrObject classDeclaration) {
         ClassDescriptor classDescriptor = getClassDescriptor(context, classDeclaration);
-        List<ClassDescriptor> superclassDescriptors = getSuperclassDescriptors(classDescriptor);
+        List<ClassDescriptor> superclassDescriptors = DescriptorUtils.getSuperclassDescriptors(classDescriptor);
         return (JsDescriptorUtils.findAncestorClass(superclassDescriptors) != null);
     }
 
@@ -154,7 +124,7 @@ public final class BindingUtils {
     @NotNull
     public static ClassDescriptor getClassDescriptorForTypeReference(@NotNull BindingContext context,
             @NotNull JetTypeReference typeReference) {
-        return getClassDescriptorForType(getTypeByReference(context, typeReference));
+        return DescriptorUtils.getClassDescriptorForType(getTypeByReference(context, typeReference));
     }
 
     @Nullable
@@ -186,10 +156,6 @@ public final class BindingUtils {
     public static DeclarationDescriptor getNullableDescriptorForReferenceExpression(@NotNull BindingContext context,
             @NotNull JetReferenceExpression reference) {
         return context.get(BindingContext.REFERENCE_TARGET, reference);
-    }
-
-    public static boolean isNotAny(@NotNull DeclarationDescriptor superClassDescriptor) {
-        return !superClassDescriptor.equals(JetStandardClasses.getAny());
     }
 
     @NotNull

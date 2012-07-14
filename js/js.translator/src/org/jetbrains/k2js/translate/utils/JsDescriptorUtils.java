@@ -16,28 +16,20 @@
 
 package org.jetbrains.k2js.translate.utils;
 
-import com.google.common.collect.Lists;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
-import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.BindingContextUtils;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
-import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
-import org.jetbrains.k2js.config.LibrarySourcesConfig;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isClassObject;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.isNotAny;
 
 /**
  * @author Pavel Talanov
@@ -105,31 +97,9 @@ public final class JsDescriptorUtils {
         return null;
     }
 
-    @NotNull
-    public static List<ClassDescriptor> getSuperclassDescriptors(@NotNull ClassDescriptor classDescriptor) {
-        Collection<? extends JetType> superclassTypes = classDescriptor.getTypeConstructor().getSupertypes();
-        List<ClassDescriptor> superClassDescriptors = new ArrayList<ClassDescriptor>();
-        for (JetType type : superclassTypes) {
-            ClassDescriptor result = getClassDescriptorForType(type);
-            if (isNotAny(result)) {
-                superClassDescriptors.add(result);
-            }
-        }
-        return superClassDescriptors;
-    }
-
     @Nullable
     public static ClassDescriptor getSuperclass(@NotNull ClassDescriptor classDescriptor) {
-        return findAncestorClass(getSuperclassDescriptors(classDescriptor));
-    }
-
-    @NotNull
-    public static ClassDescriptor getClassDescriptorForType(@NotNull JetType type) {
-        DeclarationDescriptor superClassDescriptor =
-            type.getConstructor().getDeclarationDescriptor();
-        assert superClassDescriptor instanceof ClassDescriptor
-            : "Superclass descriptor of a type should be of type ClassDescriptor";
-        return (ClassDescriptor)superClassDescriptor;
+        return findAncestorClass(DescriptorUtils.getSuperclassDescriptors(classDescriptor));
     }
 
 
@@ -186,20 +156,6 @@ public final class JsDescriptorUtils {
         return null;
     }
 
-    @NotNull
-    public static List<NamespaceDescriptor> getNestedNamespaces(@NotNull NamespaceDescriptor namespaceDescriptor,
-            @NotNull BindingContext context) {
-        List<NamespaceDescriptor> result = Lists.newArrayList();
-        for (DeclarationDescriptor descriptor : namespaceDescriptor.getMemberScope().getAllDescriptors()) {
-            if (descriptor instanceof NamespaceDescriptor &&
-                !AnnotationsUtils.isPredefinedObject(descriptor) &&
-                !isExternal(context, descriptor)) {
-                result.add((NamespaceDescriptor) descriptor);
-            }
-        }
-        return result;
-    }
-
     @Nullable
     public static FunctionDescriptor getOverriddenDescriptor(@NotNull FunctionDescriptor functionDescriptor) {
         Set<? extends FunctionDescriptor> overriddenDescriptors = functionDescriptor.getOverriddenDescriptors();
@@ -210,66 +166,6 @@ public final class JsDescriptorUtils {
             //TODO: for now translator can't deal with multiple inheritance good enough
             return overriddenDescriptors.iterator().next();
         }
-    }
-
-    @NotNull
-    public static List<DeclarationDescriptor> getContainedDescriptorsWhichAreNotPredefined(@NotNull NamespaceDescriptor namespace,
-            @NotNull BindingContext context) {
-        List<DeclarationDescriptor> result = Lists.newArrayList();
-        for (DeclarationDescriptor descriptor : namespace.getMemberScope().getAllDescriptors()) {
-            if (!AnnotationsUtils.isPredefinedObject(descriptor)) {
-                // namespace may be defined in multiple files
-                if (!(descriptor instanceof NamespaceDescriptor) && isExternal(context, descriptor)) {
-                    continue;
-                }
-
-                result.add(descriptor);
-            }
-        }
-        return result;
-    }
-
-    private static boolean isExternal(BindingContext context, DeclarationDescriptor descriptor) {
-        PsiElement psiElement = BindingContextUtils.descriptorToDeclaration(context, descriptor);
-        if (psiElement != null) {
-            PsiFile file = psiElement.getContainingFile();
-            if (file.getUserData(LibrarySourcesConfig.EXTERNAL_MODULE_NAME) != null) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    //TODO: at the moment this check is very ineffective
-    public static boolean isNamespaceEmpty(@NotNull NamespaceDescriptor namespace, @NotNull BindingContext context) {
-        List<DeclarationDescriptor> containedDescriptors = getContainedDescriptorsWhichAreNotPredefined(namespace, context);
-        for (DeclarationDescriptor descriptor : containedDescriptors) {
-            if (descriptor instanceof NamespaceDescriptor) {
-                if (!isNamespaceEmpty((NamespaceDescriptor) descriptor, context)) {
-                    return false;
-                }
-            }
-            else {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @NotNull
-    public static List<NamespaceDescriptor> getNamespaceDescriptorHierarchy(@NotNull NamespaceDescriptor namespaceDescriptor) {
-        List<NamespaceDescriptor> result = Lists.newArrayList(namespaceDescriptor);
-        NamespaceDescriptor current = namespaceDescriptor;
-        while (!(current.getContainingDeclaration() instanceof ModuleDescriptor)) {
-            result.add(current);
-            if (current.getContainingDeclaration() instanceof NamespaceDescriptor) {
-                current = (NamespaceDescriptor)current.getContainingDeclaration();
-            }
-            else {
-                break;
-            }
-        }
-        return result;
     }
 
     private static boolean isDefaultAccessor(@Nullable PropertyAccessorDescriptor accessorDescriptor) {

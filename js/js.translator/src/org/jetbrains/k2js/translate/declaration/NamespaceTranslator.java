@@ -17,7 +17,7 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import gnu.trove.THashMap;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptorParent;
@@ -25,7 +25,6 @@ import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.psi.JetClassInitializer;
 import org.jetbrains.jet.lang.psi.JetDeclaration;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
@@ -42,38 +41,52 @@ final class NamespaceTranslator extends AbstractTranslator {
     @NotNull
     private final NamespaceDescriptor descriptor;
     @NotNull
-    private final JsName namespaceName;
-    @NotNull
     private final ClassDeclarationTranslator classDeclarationTranslator;
-
-    @NotNull
-    private final List<JsExpression> initializers;
-    private final Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace;
 
     private final FileDeclarationVisitor visitor;
 
-    /*package*/ NamespaceTranslator(@NotNull NamespaceDescriptor descriptor,
+    NamespaceTranslator(@NotNull NamespaceDescriptor descriptor,
             @NotNull ClassDeclarationTranslator classDeclarationTranslator,
-            @NotNull TranslationContext context,
-            @NotNull List<JsExpression> initializers,
-            Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace) {
+            @NotNull TranslationContext context) {
         super(context.newDeclaration(descriptor));
         this.descriptor = descriptor;
-        this.initializers = initializers;
-        this.descriptorToDeclarationPlace = descriptorToDeclarationPlace;
-        this.namespaceName = context.getNameForDescriptor(descriptor);
         this.classDeclarationTranslator = classDeclarationTranslator;
 
         visitor = new FileDeclarationVisitor();
     }
 
-    //@NotNull
-    //private JsPropertyInitializer getDeclarationAsInitializer() {
-    //    addNamespaceInitializer();
-    //    return new JsPropertyInitializer(namespaceName.makeRef(), toDataDescriptor(getNamespaceDeclaration()));
-    //}
+    private void addToParent(Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace,
+            NamespaceDescriptorParent descriptor,
+            JsPropertyInitializer entry) {
+        JsObjectLiteral parentPlace = descriptorToDeclarationPlace.get(descriptor);
+        if (parentPlace != null) {
+            parentPlace.getPropertyInitializers().add(entry);
+            return;
+        }
 
-    public void addNamespaceDeclaration(List<JsPropertyInitializer> list) {
+        while (true) {
+            JsObjectLiteral place = new JsObjectLiteral(new SmartList<JsPropertyInitializer>(entry), true);
+            entry = new JsPropertyInitializer(context().getNameForDescriptor(descriptor).makeRef(), toDataDescriptor(new JsInvocation(context().namer().packageDefinitionMethodReference(), place)));
+
+            descriptorToDeclarationPlace.put(descriptor, place);
+
+            descriptor = (NamespaceDescriptorParent) descriptor.getContainingDeclaration();
+            assert descriptor != null;
+            if ((parentPlace = descriptorToDeclarationPlace.get(descriptor)) != null) {
+                parentPlace.getPropertyInitializers().add(entry);
+                return;
+            }
+        }
+    }
+
+    public void translate(JetFile file) {
+        for (JetDeclaration declaration : file.getDeclarations()) {
+            declaration.accept(visitor, context());
+        }
+    }
+
+    public void add(@NotNull Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace,
+            @NotNull List<JsExpression> initializers) {
         List<JsStatement> initializerStatements = visitor.initializerVisitor.getResult();
         if (!initializerStatements.isEmpty()) {
             visitor.initializer.getBody().getStatements().addAll(initializerStatements);
@@ -81,44 +94,16 @@ final class NamespaceTranslator extends AbstractTranslator {
                                               TranslationUtils.getQualifiedReference(context(), descriptor)));
         }
 
-        if (DescriptorUtils.isRootNamespace(descriptor)) {
-            list.addAll(visitor.getResult());
-            return;
+        JsObjectLiteral place = descriptorToDeclarationPlace.get(descriptor);
+        if (place == null) {
+            place = new JsObjectLiteral(visitor.getResult(), true);
+            descriptorToDeclarationPlace.put(descriptor, place);
+            addToParent(descriptorToDeclarationPlace, descriptor.getContainingDeclaration(),
+                        new JsPropertyInitializer(context().getNameForDescriptor(descriptor).makeRef(), toDataDescriptor(
+                                new JsInvocation(context().namer().packageDefinitionMethodReference(), place))));
         }
-
-        list.add(new JsPropertyInitializer(namespaceName.makeRef(), toDataDescriptor(getNamespaceDeclaration())));
-    }
-
-    @NotNull
-    private JsInvocation getNamespaceDeclaration() {
-        JsObjectLiteral objectLiteral = descriptorToDeclarationPlace.get(descriptor);
-        if (objectLiteral == null) {
-            objectLiteral = new JsObjectLiteral();
-            descriptorToDeclarationPlace.put(descriptor, objectLiteral);
-            addPlaceToParent(objectLiteral, descriptor.getContainingDeclaration());
-        }
-
-        List<JsPropertyInitializer> items = visitor.getResult();
-        return new JsInvocation(context().namer().packageDefinitionMethodReference(),
-                                items.isEmpty() ? JsLiteral.NULL : new JsObjectLiteral(items, true));
-    }
-
-    private void addPlaceToParent(
-            NamespaceDescriptorParent parent, JsObjectLiteral child, JsObjectLiteral root) {
-        JsObjectLiteral place = descriptorToDeclarationPlace.get(parent);
-        if (place != null) {
-            place.getPropertyInitializers().add(new JsPropertyInitializer(namespaceName.makeRef(), toDataDescriptor(getNamespaceDeclaration())));
-            return;
-        }
-
-        place = new JsObjectLiteral();
-        place.getPropertyInitializers().add(child);
-    }
-
-
-    public void translate(JetFile file) {
-        for (JetDeclaration declaration : file.getDeclarations()) {
-            declaration.accept(visitor, context());
+        else {
+            place.getPropertyInitializers().addAll(visitor.getResult());
         }
     }
 

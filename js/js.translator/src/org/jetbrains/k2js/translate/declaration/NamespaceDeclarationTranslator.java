@@ -28,10 +28,7 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 
@@ -39,8 +36,6 @@ import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
  * @author Pavel Talanov
  */
 public final class NamespaceDeclarationTranslator extends AbstractTranslator {
-    @NotNull
-    private final ClassDeclarationTranslator classDeclarationTranslator;
     @NotNull
     private final Iterable<JetFile> files;
 
@@ -52,92 +47,72 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         super(context);
 
         this.files = files;
-        classDeclarationTranslator = new ClassDeclarationTranslator(context);
     }
 
     @NotNull
     private List<JsStatement> translate() {
-        List<JsExpression> initializers = new ArrayList<JsExpression>();
         THashMap<NamespaceDescriptor, NamespaceTranslator> descriptorToTranslator = new THashMap<NamespaceDescriptor, NamespaceTranslator>();
-        Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace = new THashMap<NamespaceDescriptorParent, JsObjectLiteral>();
+
+        final Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace = new THashMap<NamespaceDescriptorParent, JsObjectLiteral>();
+        JsObjectLiteral rootNamespaceDefinition = null;
+
+        ClassDeclarationTranslator classDeclarationTranslator = new ClassDeclarationTranslator(context());
         for (JetFile file : files) {
             NamespaceDescriptor descriptor = context().bindingContext().get(BindingContext.FILE_TO_NAMESPACE, file);
             assert descriptor != null;
             NamespaceTranslator translator = descriptorToTranslator.get(descriptor);
             if (translator == null) {
-                translator = new NamespaceTranslator(descriptor, classDeclarationTranslator, context(), initializers, descriptorToDeclarationPlace);
+                if (rootNamespaceDefinition == null) {
+                    rootNamespaceDefinition = new JsObjectLiteral(true);
+                    NamespaceDescriptor rootNamespace = descriptor;
+                    while (rootNamespace.getContainingDeclaration() instanceof NamespaceDescriptor) {
+                        rootNamespace = (NamespaceDescriptor) rootNamespace.getContainingDeclaration();
+                    }
+                    descriptorToDeclarationPlace.put(rootNamespace, rootNamespaceDefinition);
+                }
+                translator = new NamespaceTranslator(descriptor, classDeclarationTranslator, context());
                 descriptorToTranslator.put(descriptor, translator);
             }
 
             translator.translate(file);
         }
 
-        JsVar namespaces = declarationStatements(descriptorToTranslator);
+        if (rootNamespaceDefinition == null) {
+            return Collections.emptyList();
+        }
 
         classDeclarationTranslator.generateDeclarations();
+
+        final List<JsExpression> initializers = new ArrayList<JsExpression>();
+        descriptorToTranslator.forEachValue(new TObjectProcedure<NamespaceTranslator>() {
+            @Override
+            public boolean execute(NamespaceTranslator translator) {
+                translator.add(descriptorToDeclarationPlace, initializers);
+                return true;
+            }
+        });
 
         List<JsStatement> result = new ArrayList<JsStatement>();
         JsVars vars = new JsVars(true);
         vars.addIfHasInitializer(context().literalFunctionTranslator().getDeclaration());
         vars.addIfHasInitializer(classDeclarationTranslator.getDeclaration());
-        vars.addIfHasInitializer(namespaces);
+        vars.addIfHasInitializer(getDeclaration(rootNamespaceDefinition));
         result.add(vars);
 
-        initializeStatements(initializers, result);
+        for (JsExpression expression : initializers) {
+            result.add(expression.makeStmt());
+        }
         return result;
     }
 
-    private JsVar declarationStatements(THashMap<NamespaceDescriptor, NamespaceTranslator> descriptorToTranslator) {
-        final JsObjectLiteral objectLiteral = new JsObjectLiteral(true);
-        JsNameRef packageMapNameRef = context().scope().declareName("_").makeRef();
-
-        descriptorToTranslator.forEachValue(new TObjectProcedure<NamespaceTranslator>() {
-            @Override
-            public boolean execute(NamespaceTranslator translator) {
-                getPlace(translator.descriptor.getContainingDeclaration())
-
-                JsObjectLiteral place = descriptorToDeclarationPlace.get(translator.descriptor);
-                if (place == null) {
-                    place = new JsObjectLiteral();
-                    descriptorToDeclarationPlace.get(translator.descriptor);
-                    createPlace(descriptorToDeclarationPlace, translator.descriptor.getContainingDeclaration(), place, objectLiteral);
-                }
-
-                translator.addNamespaceDeclaration(objectLiteral.getPropertyInitializers());
-                return true;
-            }
-        });
-
+    private JsVar getDeclaration(@NotNull JsObjectLiteral rootNamespaceDefinition) {
         JsExpression packageMapValue;
-        if (context().isNotEcma3()) {
-            packageMapValue = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL, objectLiteral);
+        if (context().isEcma5()) {
+            packageMapValue = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL, rootNamespaceDefinition);
         }
         else {
-            packageMapValue = objectLiteral;
+            packageMapValue = rootNamespaceDefinition;
         }
-        return new JsVar(packageMapNameRef.getName(), packageMapValue);
-    }
-
-    private static JsObjectLiteral getPlace(THashMap<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace,
-            NamespaceDescriptorParent descriptor, JsObjectLiteral child, JsObjectLiteral root) {
-        if (descriptor instanceof NamespaceDescriptor) {
-            JsObjectLiteral place = descriptorToDeclarationPlace.get(descriptor);
-            if (place != null) {
-                return;
-            }
-
-            place = new JsObjectLiteral();
-            place.getPropertyInitializers().add(child);
-        }
-        else {
-
-        }
-    }
-
-    private static void initializeStatements(@NotNull List<JsExpression> initializers,
-            @NotNull List<JsStatement> statements) {
-        for (JsExpression expression : initializers) {
-            statements.add(expression.makeStmt());
-        }
+        return new JsVar(context().scope().declareName("_").makeRef().getName(), packageMapValue);
     }
 }
