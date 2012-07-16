@@ -21,13 +21,12 @@ import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptorParent;
-import org.jetbrains.jet.lang.psi.JetClass;
-import org.jetbrains.jet.lang.psi.JetClassInitializer;
-import org.jetbrains.jet.lang.psi.JetDeclaration;
-import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
+import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
+import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
@@ -81,6 +80,10 @@ final class NamespaceTranslator extends AbstractTranslator {
 
     public void translate(JetFile file) {
         for (JetDeclaration declaration : file.getDeclarations()) {
+            if (AnnotationsUtils.isNativeObject(BindingUtils.getDescriptorForElement(bindingContext(), declaration))) {
+                continue;
+            }
+
             declaration.accept(visitor, context());
         }
     }
@@ -110,7 +113,7 @@ final class NamespaceTranslator extends AbstractTranslator {
     private class FileDeclarationVisitor extends DeclarationBodyVisitor {
         private final JsFunction initializer;
         private final TranslationContext initializerContext;
-        private InitializerVisitor initializerVisitor = new InitializerVisitor();
+        private final InitializerVisitor initializerVisitor = new InitializerVisitor();
 
         private FileDeclarationVisitor() {
             initializer = JsAstUtils.createFunctionWithEmptyBody(context().scope());
@@ -119,14 +122,27 @@ final class NamespaceTranslator extends AbstractTranslator {
 
         @Override
         public Void visitClass(@NotNull JetClass expression, @NotNull TranslationContext context) {
-            result.add(classDeclarationTranslator.translateAndGetRef(expression));
+            result.add(classDeclarationTranslator.translate(expression));
+            return null;
+        }
+
+        @Override
+        public Void visitProperty(@NotNull JetProperty property, @NotNull TranslationContext context) {
+            super.visitProperty(property, context);
+            property.accept(initializerVisitor, initializerContext);
             return null;
         }
 
         @Override
         public Void visitAnonymousInitializer(@NotNull JetClassInitializer expression, @NotNull TranslationContext context) {
-            initializerVisitor = new InitializerVisitor();
             expression.accept(initializerVisitor, initializerContext);
+            return null;
+        }
+
+        @Override
+        public Void visitObjectDeclaration(@NotNull JetObjectDeclaration expression,
+                @NotNull TranslationContext context) {
+            result.add(classDeclarationTranslator.translate(expression));
             return null;
         }
     }

@@ -44,14 +44,13 @@ import static org.jetbrains.k2js.test.utils.JsTestUtils.convertFileNameToDotJsFi
 public abstract class BasicTest extends KotlinTestWithEnvironment {
     // predictable order of ecma version in tests
     protected static final Iterable<EcmaVersion> DEFAULT_ECMA_VERSIONS = Lists.newArrayList(EcmaVersion.v5, EcmaVersion.v3);
+    //protected static final Iterable<EcmaVersion> DEFAULT_ECMA_VERSIONS = Lists.newArrayList(EcmaVersion.v3);
 
     private static final boolean DELETE_OUT = false;
     private static final String TEST_FILES = "js/js.translator/testFiles/";
     private static final String CASES = "cases/";
     private static final String OUT = "out/";
     private static final String EXPECTED = "expected/";
-
-    public static final String JSLINT_LIB = pathToTestFilesRoot() + "jslint.js";
 
     @NotNull
     private String mainDirectory = "";

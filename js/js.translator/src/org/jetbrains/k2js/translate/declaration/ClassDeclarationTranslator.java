@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.Modality;
 import org.jetbrains.jet.lang.psi.JetClass;
+import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -53,7 +54,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     private final THashMap<JetClass, FinalListItem> openClassToItem = new THashMap<JetClass, FinalListItem>();
 
     private final TLinkedList<FinalListItem> openList = new TLinkedList<FinalListItem>();
-    private final List<Pair<JetClass, JsInvocation>> finalList = new ArrayList<Pair<JetClass, JsInvocation>>();
+    private final List<Pair<JetClassOrObject, JsInvocation>> finalList = new ArrayList<Pair<JetClassOrObject, JsInvocation>>();
 
     @NotNull
     private final JsFunction dummyFunction;
@@ -73,13 +74,15 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     private final class OpenClassRefProvider implements ClassAliasingMap {
         @Override
         @Nullable
-        public JsNameRef get(JetClass declaration, JetClass referencedDeclaration) {
+        public JsNameRef get(JetClass declaration, JetClassOrObject referencedDeclaration) {
             FinalListItem item = openClassToItem.get(declaration);
             // class declared in library
             if (item == null) {
                 return null;
             }
 
+            // final items generated using another aliasing map, see generateFinalClassDeclarations
+            assert referencedDeclaration instanceof JetClass;
             addAfter(item, openClassToItem.get(referencedDeclaration));
             return item.label;
         }
@@ -152,13 +155,13 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     private void generateFinalClassDeclarations() {
         ClassAliasingMap aliasingMap = new ClassAliasingMap() {
             @Override
-            public JsNameRef get(JetClass declaration, JetClass referencedDeclaration) {
+            public JsNameRef get(JetClass declaration, JetClassOrObject referencedDeclaration) {
                 FinalListItem item = openClassToItem.get(declaration);
                 return item == null ? null : item.qualifiedLabel;
             }
         };
 
-        for (Pair<JetClass, JsInvocation> item : finalList) {
+        for (Pair<JetClassOrObject, JsInvocation> item : finalList) {
             new ClassTranslator(item.first, aliasingMap, context()).translateClassOrObjectCreation(item.second);
         }
     }
@@ -181,20 +184,20 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    public JsPropertyInitializer translateAndGetRef(@NotNull JetClass declaration) {
+    public JsPropertyInitializer translate(@NotNull JetClassOrObject declaration) {
         ClassDescriptor descriptor = getClassDescriptor(context().bindingContext(), declaration);
         JsExpression value;
         if (descriptor.getModality() == Modality.FINAL) {
             JsInvocation invocation = context().namer().classCreateInvocation(descriptor);
-            finalList.add(new Pair<JetClass, JsInvocation>(declaration, invocation));
+            finalList.add(new Pair<JetClassOrObject, JsInvocation>(declaration, invocation));
             value = invocation;
         }
         else {
             String label = localLabelGenerator.generate();
             JsNameRef labelRef = dummyFunction.getScope().declareName(label).makeRef();
-            FinalListItem item = new FinalListItem(declaration, labelRef, new JsNameRef(labelRef.getIdent(), declarationsObjectRef));
+            FinalListItem item = new FinalListItem((JetClass) declaration, labelRef, new JsNameRef(labelRef.getIdent(), declarationsObjectRef));
             openList.add(item);
-            openClassToItem.put(declaration, item);
+            openClassToItem.put(item.declaration, item);
 
             value = item.qualifiedLabel;
         }

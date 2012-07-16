@@ -224,9 +224,14 @@ public final class StaticContext {
                     if (!(descriptor instanceof PropertyAccessorDescriptor)) {
                         return null;
                     }
-                    boolean isGetter = descriptor instanceof PropertyGetterDescriptor;
+
                     PropertyAccessorDescriptor accessorDescriptor = (PropertyAccessorDescriptor) descriptor;
                     String propertyName = accessorDescriptor.getCorrespondingProperty().getName().getName();
+                    if (accessorDescriptor.getCorrespondingProperty().isObjectDeclaration()) {
+                        return declareName(descriptor, propertyName);
+                    }
+
+                    boolean isGetter = descriptor instanceof PropertyGetterDescriptor;
                     String accessorName = Namer.getNameForAccessor(propertyName, isGetter,
                                                                    !accessorDescriptor.getReceiverParameter().exists() && isEcma5());
                     return declareName(descriptor, accessorName);

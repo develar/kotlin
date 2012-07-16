@@ -30,6 +30,7 @@ import org.jetbrains.k2js.translate.general.TranslatorVisitor;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
+import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getObjectDeclarationForName;
@@ -48,16 +49,10 @@ public final class InitializerVisitor extends TranslatorVisitor<Void> {
     public final Void visitProperty(@NotNull JetProperty property, @NotNull TranslationContext context) {
         JetExpression initializer = property.getInitializer();
         if (initializer != null) {
-            generateInitializerForProperty(getPropertyDescriptor(context.bindingContext(), property),
-                                           Translation.translateAsExpression(initializer, context), context);
+            result.add(generateInitializerForProperty(context, getPropertyDescriptor(context.bindingContext(), property),
+                                                      Translation.translateAsExpression(initializer, context)));
         }
 
-        return null;
-    }
-
-    private JsStatement generateInitializerForProperty(@NotNull PropertyDescriptor descriptor,
-            @NotNull JsExpression value, @NotNull TranslationContext context) {
-        result.add(InitializerUtils.generateInitializerForProperty(context, descriptor, value));
         return null;
     }
 
@@ -79,12 +74,13 @@ public final class InitializerVisitor extends TranslatorVisitor<Void> {
         PropertyDescriptor propertyDescriptor = getPropertyDescriptorForObjectDeclaration(context.bindingContext(), objectName);
         JetObjectDeclaration objectDeclaration = getObjectDeclarationForName(objectName);
         JsExpression objectValue = ClassTranslator.generateClassCreationExpression(objectDeclaration, context);
-        generateInitializerForProperty(propertyDescriptor, objectValue, context);
+        result.add(generateInitializerForProperty(context, propertyDescriptor, objectValue));
         return null;
     }
 
     @NotNull
-    private List<JsStatement> generateInitializerStatements(@NotNull List<JetDeclaration> declarations, @NotNull TranslationContext context) {
+    private List<JsStatement> generateInitializerStatements(@NotNull List<JetDeclaration> declarations,
+            @NotNull TranslationContext context) {
         for (JetDeclaration declaration : declarations) {
             declaration.accept(this, context);
         }

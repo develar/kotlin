@@ -23,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
-import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetObjectLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetParameter;
@@ -54,16 +53,6 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.getQualifiedRe
  *         Generates a definition of a single class.
  */
 public final class ClassTranslator extends AbstractTranslator {
-
-    @NotNull
-    public static JsPropertyInitializer translateAsProperty(@NotNull JetClassOrObject classDeclaration,
-                                                            @NotNull TranslationContext context) {
-        JsExpression classCreationExpression =
-            generateClassCreationExpression(classDeclaration, context);
-        JsName className = context.getNameForElement(classDeclaration);
-        return new JsPropertyInitializer(className.makeRef(), classCreationExpression);
-    }
-
     @NotNull
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
             @NotNull ClassAliasingMap aliasingMap,
@@ -73,15 +62,14 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
-                                                               @NotNull TranslationContext context) {
-        return (new ClassTranslator(classDeclaration, null, context)).translateClassOrObjectCreation(context);
+            @NotNull TranslationContext context) {
+        return new ClassTranslator(classDeclaration, null, context).translateClassOrObjectCreation(context);
     }
 
     @NotNull
     public static JsExpression generateObjectLiteralExpression(@NotNull JetObjectLiteralExpression objectLiteralExpression,
-                                                               @NotNull TranslationContext context) {
-        return (new ClassTranslator(objectLiteralExpression.getObjectDeclaration(), null, context))
-            .translateObjectLiteralExpression();
+            @NotNull TranslationContext context) {
+        return new ClassTranslator(objectLiteralExpression.getObjectDeclaration(), null, context).translateObjectLiteralExpression();
     }
 
     @NotNull
@@ -223,8 +211,7 @@ public final class ClassTranslator extends AbstractTranslator {
     private JsExpression getClassReference(@NotNull ClassDescriptor superClassDescriptor) {
         // aliasing here is needed for the declaration generation step
         if (aliasingMap != null) {
-            JsNameRef name = aliasingMap
-                    .get(BindingUtils.getClassForDescriptor(bindingContext(), superClassDescriptor), (JetClass) classDeclaration);
+            JsNameRef name = aliasingMap.get(BindingUtils.getClassForDescriptor(bindingContext(), superClassDescriptor), classDeclaration);
             if (name != null) {
                 return name;
             }
@@ -239,7 +226,7 @@ public final class ClassTranslator extends AbstractTranslator {
         List<JsPropertyInitializer> result = new SmartList<JsPropertyInitializer>();
         for (JetParameter parameter : getPrimaryConstructorParameters(classDeclaration)) {
             PropertyDescriptor descriptor =
-                getPropertyDescriptorForConstructorParameter(bindingContext(), parameter);
+                    getPropertyDescriptorForConstructorParameter(bindingContext(), parameter);
             if (descriptor != null) {
                 result.addAll(PropertyTranslator.translateAccessors(descriptor, classDeclarationContext));
             }

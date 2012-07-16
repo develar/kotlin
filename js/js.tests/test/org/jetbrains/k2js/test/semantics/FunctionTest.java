@@ -16,13 +16,10 @@
 
 package org.jetbrains.k2js.test.semantics;
 
-import org.jetbrains.k2js.translate.context.Namer;
-
 /**
  * @author Pavel Talanov
  */
 public class FunctionTest extends AbstractExpressionTest {
-
     public FunctionTest() {
         super("function/");
     }

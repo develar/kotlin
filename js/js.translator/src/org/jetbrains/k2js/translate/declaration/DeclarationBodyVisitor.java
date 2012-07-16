@@ -51,7 +51,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
 
     @NotNull
     public List<JsPropertyInitializer> traverseClass(@NotNull JetClassOrObject jetClass,
-                                                     @NotNull TranslationContext context) {
+            @NotNull TranslationContext context) {
         for (JetDeclaration declaration : jetClass.getDeclarations()) {
             declaration.accept(this, context);
         }
@@ -65,7 +65,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
 
     @Override
     public Void visitNamedFunction(@NotNull JetNamedFunction expression,
-                                                          @NotNull TranslationContext context) {
+            @NotNull TranslationContext context) {
         FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
         if (descriptor.getModality() == Modality.ABSTRACT) {
             return null;
@@ -82,22 +82,15 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
 
     @Override
     public Void visitProperty(@NotNull JetProperty expression,
-                                                     @NotNull TranslationContext context) {
+            @NotNull TranslationContext context) {
         PropertyDescriptor propertyDescriptor = BindingUtils.getPropertyDescriptor(context.bindingContext(), expression);
         result.addAll(PropertyTranslator.translateAccessors(propertyDescriptor, context));
         return null;
     }
 
     @Override
-    public Void visitObjectDeclaration(@NotNull JetObjectDeclaration expression,
-                                                              @NotNull TranslationContext context) {
-        result.add(ClassTranslator.translateAsProperty(expression, context));
-        return null;
-    }
-
-    @Override
     public Void visitObjectDeclarationName(@NotNull JetObjectDeclarationName expression,
-                                                                  @NotNull TranslationContext context) {
+            @NotNull TranslationContext context) {
         if (!context.isEcma5()) {
             result.addAll(PropertyTranslator.translateAccessors(
                     getPropertyDescriptorForObjectDeclaration(context.bindingContext(), expression), context));

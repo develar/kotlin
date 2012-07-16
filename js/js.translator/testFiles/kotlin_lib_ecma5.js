@@ -82,7 +82,7 @@ var Kotlin = {};
 
     Kotlin.createObject = function (bases, initializer, properties) {
         var o = Object.create(computeProto2(bases, properties), properties || undefined);
-        if (initializer != null) {
+        if (initializer !== null) {
             initializer.call(o);
         }
         return o;

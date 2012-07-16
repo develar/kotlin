@@ -86,6 +86,7 @@ public final class RhinoUtils {
         // todo
         JSHINT_OPTIONS.defineProperty("expr", true, ScriptableObject.READONLY);
         JSHINT_OPTIONS.defineProperty("asi", true, ScriptableObject.READONLY);
+        JSHINT_OPTIONS.defineProperty("laxcomma", true, ScriptableObject.READONLY);
         //JSHINT_OPTIONS.defineProperty("nomen", true, ScriptableObject.READONLY);
         //JSHINT_OPTIONS.defineProperty("continue", true, ScriptableObject.READONLY);
         //JSHINT_OPTIONS.defineProperty("plusplus", true, ScriptableObject.READONLY);

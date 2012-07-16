@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.PropertyAccessorDescriptor;
@@ -32,7 +33,6 @@ import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,6 +47,12 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.backingFieldRe
  *         Translates single property /w accessors.
  */
 public final class PropertyTranslator extends AbstractTranslator {
+    @NotNull
+    private final PropertyDescriptor property;
+    @NotNull
+    private final List<JsPropertyInitializer> accessors = new SmartList<JsPropertyInitializer>();
+    @Nullable
+    private final JetProperty declaration;
 
     @NotNull
     public static List<JsPropertyInitializer> translateAccessors(@NotNull PropertyDescriptor descriptor,
@@ -67,19 +73,9 @@ public final class PropertyTranslator extends AbstractTranslator {
     private static List<JsPropertyInitializer> translateAsEcma5Accessors(@NotNull PropertyDescriptor descriptor,
             @NotNull List<JsPropertyInitializer> propertyInitializers,
             @NotNull TranslationContext context) {
-        JsObjectLiteral objectLiteral = new JsObjectLiteral(true);
-        objectLiteral.getPropertyInitializers().addAll(propertyInitializers);
         JsStringLiteral propertyNameLiteral = context.program().getStringLiteral(descriptor.getName().getName());
-        return Collections.singletonList(new JsPropertyInitializer(propertyNameLiteral, objectLiteral));
+        return Collections.singletonList(new JsPropertyInitializer(propertyNameLiteral, new JsObjectLiteral(propertyInitializers, true)));
     }
-
-
-    @NotNull
-    private final PropertyDescriptor property;
-    @NotNull
-    private final List<JsPropertyInitializer> accessors = new ArrayList<JsPropertyInitializer>();
-    @Nullable
-    private final JetProperty declaration;
 
     private PropertyTranslator(@NotNull PropertyDescriptor property, @NotNull TranslationContext context) {
         super(context);
@@ -115,11 +111,11 @@ public final class PropertyTranslator extends AbstractTranslator {
     }
 
     private boolean hasCustomGetter() {
-        return ((declaration != null) && (declaration.getGetter() != null) && getCustomGetterDeclaration().getBodyExpression() != null);
+        return declaration != null && declaration.getGetter() != null && getCustomGetterDeclaration().getBodyExpression() != null;
     }
 
     private boolean hasCustomSetter() {
-        return ((declaration != null) && (declaration.getSetter() != null) && getCustomSetterDeclaration().getBodyExpression() != null);
+        return declaration != null && declaration.getSetter() != null && getCustomSetterDeclaration().getBodyExpression() != null;
     }
 
     @NotNull

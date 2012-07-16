@@ -102,7 +102,6 @@ public final class JsDescriptorUtils {
         return findAncestorClass(DescriptorUtils.getSuperclassDescriptors(classDescriptor));
     }
 
-
     @NotNull
     public static DeclarationDescriptor getContainingDeclaration(@NotNull DeclarationDescriptor descriptor) {
         DeclarationDescriptor containing = descriptor.getContainingDeclaration();
@@ -111,7 +110,7 @@ public final class JsDescriptorUtils {
     }
 
     public static boolean isExtension(@NotNull CallableDescriptor functionDescriptor) {
-        return (functionDescriptor.getReceiverParameter().exists());
+        return functionDescriptor.getReceiverParameter().exists();
     }
 
     //TODO: why callable descriptor
@@ -173,7 +172,7 @@ public final class JsDescriptorUtils {
     }
 
     public static boolean isAsPrivate(@NotNull PropertyDescriptor propertyDescriptor) {
-        return propertyDescriptor.getReceiverParameter().exists() ||
+        return isExtension(propertyDescriptor) ||
                !isDefaultAccessor(propertyDescriptor.getGetter()) ||
                !isDefaultAccessor(propertyDescriptor.getSetter());
     }
