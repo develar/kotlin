@@ -226,7 +226,7 @@ public final class JsAstUtils {
         JsInvocation invocation = new JsInvocation(DEFINE_PROPERTY);
         invocation.getArguments().add(JsLiteral.THIS);
         invocation.getArguments().add(context.program().getStringLiteral(context.getNameForDescriptor(descriptor).getIdent()));
-        invocation.getArguments().add(createPropertyDataDescriptor(descriptor.isVar(), descriptor, value, context));
+        invocation.getArguments().add(createPropertyDataDescriptor(descriptor, value, context));
         return invocation;
     }
 
@@ -250,6 +250,13 @@ public final class JsAstUtils {
             dataDescriptor.getPropertyInitializers().add(JsLiteral.WRITABLE);
         }
         return dataDescriptor;
+    }
+
+    @NotNull
+    public static JsObjectLiteral createPropertyDataDescriptor(@NotNull PropertyDescriptor descriptor,
+            @NotNull JsExpression value,
+            @NotNull TranslationContext context) {
+        return createPropertyDataDescriptor(descriptor.isVar(), descriptor, value, context);
     }
 
     @NotNull

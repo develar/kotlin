@@ -18,10 +18,8 @@ package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import gnu.trove.THashMap;
-import gnu.trove.TObjectProcedure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.descriptors.NamespaceDescriptorParent;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -78,14 +76,12 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
 
         classDeclarationTranslator.generateDeclarations();
 
-        final List<JsExpression> initializers = new ArrayList<JsExpression>();
-        descriptorToTranslator.forEachValue(new TObjectProcedure<NamespaceTranslator>() {
-            @Override
-            public boolean execute(NamespaceTranslator translator) {
-                translator.add(descriptorToDeclarationPlace, initializers);
-                return true;
-            }
-        });
+        List<JsExpression> initializers = new ArrayList<JsExpression>();
+        NamespaceTranslator[] translators = descriptorToTranslator.values().toArray(new NamespaceTranslator[descriptorToTranslator.size()]);
+        Arrays.sort(translators);
+        for (NamespaceTranslator translator : translators) {
+            translator.add(descriptorToDeclarationPlace, initializers);
+        }
 
         List<JsStatement> result = new ArrayList<JsStatement>();
         JsVars vars = new JsVars(true);

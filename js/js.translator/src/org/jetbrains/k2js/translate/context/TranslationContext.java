@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.psi.PsiElement;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
@@ -36,7 +37,7 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForEl
  *         <p/>
  *         All the info about the state of the translation process.
  */
-public final class TranslationContext {
+public class TranslationContext {
     @NotNull
     private final DynamicContext dynamicContext;
     @NotNull
@@ -81,6 +82,33 @@ public final class TranslationContext {
     @NotNull
     private TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block, @NotNull AliasingContext aliasingContext) {
         return new TranslationContext(staticContext, DynamicContext.newContext(newScope, block), aliasingContext);
+    }
+
+    @NotNull
+    public TranslationContext createTracing(Processor<DeclarationDescriptor> processor) {
+        return new TracingTranslationContext(processor, staticContext, dynamicContext(), aliasingContext);
+    }
+
+    private static class TracingTranslationContext extends TranslationContext {
+        private final Processor<DeclarationDescriptor> processor;
+        private boolean processed;
+
+        private TracingTranslationContext(Processor<DeclarationDescriptor> processor, @NotNull StaticContext staticContext,
+                @NotNull DynamicContext dynamicContext,
+                @NotNull AliasingContext context) {
+            super(staticContext, dynamicContext, context);
+            this.processor = processor;
+        }
+
+        @NotNull
+        @Override
+        public JsName getNameForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+            if (!processed && !processor.process(descriptor)) {
+                processed = true;
+            }
+
+            return super.getNameForDescriptor(descriptor);
+        }
     }
 
     @NotNull
