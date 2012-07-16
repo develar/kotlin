@@ -72,7 +72,7 @@ public final class PatternMatchingTest extends SingleFileTranslationTest {
             fooBoxTest();
             fail();
         }
-        catch (JavaScriptException e) {
+        catch (JavaScriptException ignored) {
         }
     }
 

@@ -21,6 +21,8 @@ import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
 import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
@@ -37,12 +39,13 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
  * @author Pavel Talanov
  */
 public final class WhenTranslator extends AbstractTranslator {
+
     @NotNull
     private final JetWhenExpression whenExpression;
     @Nullable
     private final JsExpression expressionToMatch;
 
-    @NotNull
+    @Nullable
     private final TemporaryVariable result;
 
     private int currentEntryNumber = 0;
@@ -55,7 +58,12 @@ public final class WhenTranslator extends AbstractTranslator {
 
         whenExpression = expression;
         expressionToMatch = translateExpressionToMatch(whenExpression);
-        result = context.declareTemporary(JsLiteral.NULL);
+        if (context.bindingContext().get(BindingContext.EXPRESSION_TYPE, whenExpression) == JetStandardClasses.getTuple(0)) {
+            result = null;
+        }
+        else {
+            result = context.declareTemporary(null);
+        }
 
         dummyCounter = context.dynamicContext().createTemporary(program().getNumberLiteral(0));
     }
@@ -66,11 +74,16 @@ public final class WhenTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    JsNode translate() {
+    private JsNode translate() {
         JsFor resultingFor = generateDummyFor();
         resultingFor.setBody(new JsBlock(translateEntries()));
-        context().addStatementToCurrentBlock(resultingFor);
-        return result.reference();
+        if (result == null) {
+            return resultingFor;
+        }
+        else {
+            context().addStatementToCurrentBlock(resultingFor);
+            return result.reference();
+        }
     }
 
     @NotNull
@@ -116,8 +129,9 @@ public final class WhenTranslator extends AbstractTranslator {
 
     @NotNull
     JsStatement withReturnValueCaptured(@NotNull JsNode node) {
-        return convertToStatement(LastExpressionMutator.mutateLastExpression(node,
-                                                                             new AssignToExpressionMutator(result.reference())));
+        return convertToStatement(result == null
+                                  ? node
+                                  : LastExpressionMutator.mutateLastExpression(node, new AssignToExpressionMutator(result.reference())));
     }
 
     @NotNull

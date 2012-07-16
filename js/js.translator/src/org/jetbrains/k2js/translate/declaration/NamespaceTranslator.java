@@ -55,11 +55,9 @@ final class NamespaceTranslator extends AbstractTranslator {
 
     public void translate(JetFile file) {
         for (JetDeclaration declaration : file.getDeclarations()) {
-            if (AnnotationsUtils.isNativeObject(BindingUtils.getDescriptorForElement(bindingContext(), declaration))) {
-                continue;
+            if (!AnnotationsUtils.isNativeObject(BindingUtils.getDescriptorForElement(bindingContext(), declaration))) {
+                declaration.accept(visitor, context());
             }
-
-            declaration.accept(visitor, context());
         }
     }
 

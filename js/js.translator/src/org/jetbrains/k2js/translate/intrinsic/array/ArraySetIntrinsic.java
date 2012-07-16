@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
+import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.List;
 
@@ -42,6 +43,6 @@ public enum ArraySetIntrinsic implements Intrinsic {
         JsExpression indexExpression = arguments.get(0);
         JsExpression value = arguments.get(1);
         JsArrayAccess arrayAccess = AstUtil.newArrayAccess(receiver, indexExpression);
-        return AstUtil.newAssignment(arrayAccess, value);
+        return JsAstUtils.assignment(arrayAccess, value);
     }
 }

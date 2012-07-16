@@ -55,12 +55,12 @@ public final class DynamicContext {
     }
 
     @NotNull
-    public TemporaryVariable declareTemporary(@NotNull JsExpression initExpression) {
+    public TemporaryVariable declareTemporary(@Nullable JsExpression initExpression) {
         return declareTemporary(initExpression, false);
     }
 
     @NotNull
-    public TemporaryVariable declareTemporary(@NotNull JsExpression initExpression, boolean initialize) {
+    public TemporaryVariable declareTemporary(@Nullable JsExpression initExpression, boolean initialize) {
         if (vars == null) {
             vars = new JsVars();
             currentBlock.getStatements().add(vars);

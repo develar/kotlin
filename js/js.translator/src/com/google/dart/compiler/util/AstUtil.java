@@ -52,17 +52,6 @@ public final class AstUtil {
         return (JsBinaryOperation) result;
     }
 
-    // Ensure a valid LHS
-    public static JsBinaryOperation newAssignment(
-            JsNameRef nameRef, JsExpression expr) {
-        return new JsBinaryOperation(JsBinaryOperator.ASG, nameRef, expr);
-    }
-
-    public static JsBinaryOperation newAssignment(
-            JsArrayAccess target, JsExpression expr) {
-        return new JsBinaryOperation(JsBinaryOperator.ASG, target, expr);
-    }
-
     public static JsBinaryOperation comma(SourceInfo src, JsExpression op1, JsExpression op2) {
         return (JsBinaryOperation) new JsBinaryOperation(JsBinaryOperator.COMMA, op1, op2)
                 .setSourceRef(src);

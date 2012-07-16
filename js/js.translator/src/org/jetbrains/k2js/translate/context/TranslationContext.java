@@ -24,7 +24,6 @@ import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 
@@ -55,10 +54,6 @@ public final class TranslationContext {
 
     public boolean isEcma5() {
         return staticContext.isEcma5();
-    }
-
-    public boolean isNotEcma3() {
-        return staticContext.getEcmaVersion() != EcmaVersion.v3;
     }
 
     private TranslationContext(@NotNull StaticContext staticContext,
@@ -164,12 +159,12 @@ public final class TranslationContext {
     }
 
     @NotNull
-    public TemporaryVariable declareTemporary(@NotNull JsExpression initExpression) {
+    public TemporaryVariable declareTemporary(@Nullable JsExpression initExpression) {
         return dynamicContext.declareTemporary(initExpression);
     }
 
     @NotNull
-    public TemporaryVariable declareTemporary(@NotNull JsExpression initExpression, boolean initialize) {
+    public TemporaryVariable declareTemporary(@Nullable JsExpression initExpression, boolean initialize) {
         return dynamicContext.declareTemporary(initExpression, initialize);
     }
 
