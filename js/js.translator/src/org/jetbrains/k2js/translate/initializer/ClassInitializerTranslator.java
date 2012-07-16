@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.initializer;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
@@ -45,7 +46,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     @NotNull
     private final JetClassOrObject classDeclaration;
     @NotNull
-    private final List<JsStatement> initializerStatements = new ArrayList<JsStatement>();
+    private final List<JsStatement> initializerStatements = new SmartList<JsStatement>();
 
     public ClassInitializerTranslator(@NotNull JetClassOrObject classDeclaration, @NotNull TranslationContext context) {
         // Note: it's important we use scope for class descriptor because anonymous function used in property initializers
@@ -63,7 +64,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         // for properties declared as constructor parameters
         result.getParameters().addAll(translatePrimaryConstructorParameters());
         mayBeAddCallToSuperMethod(result);
-        initializerStatements.addAll(new InitializerVisitor().traverseClass(classDeclaration, context()));
+        new InitializerVisitor(initializerStatements).traverseClass(classDeclaration, context());
 
         for (JsStatement statement : initializerStatements) {
             if (statement instanceof JsBlock) {

@@ -23,6 +23,7 @@ import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
+import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
 import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
@@ -31,6 +32,9 @@ import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
 
 /**
  * @author Pavel.Talanov
@@ -63,9 +67,8 @@ final class NamespaceTranslator extends AbstractTranslator {
 
     public void add(@NotNull Map<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace,
             @NotNull List<JsExpression> initializers) {
-        List<JsStatement> initializerStatements = visitor.initializerVisitor.getResult();
-        if (!initializerStatements.isEmpty()) {
-            visitor.initializer.getBody().getStatements().addAll(initializerStatements);
+        if (!visitor.initializerStatements.isEmpty()) {
+            visitor.initializer.getBody().getStatements().addAll(visitor.initializerStatements);
             initializers.add(new JsInvocation(new JsNameRef("call", visitor.initializer),
                                               TranslationUtils.getQualifiedReference(context(), descriptor)));
         }
@@ -113,7 +116,8 @@ final class NamespaceTranslator extends AbstractTranslator {
     private class FileDeclarationVisitor extends DeclarationBodyVisitor {
         private final JsFunction initializer;
         private final TranslationContext initializerContext;
-        private final InitializerVisitor initializerVisitor = new InitializerVisitor();
+        private final List<JsStatement> initializerStatements = new SmartList<JsStatement>();
+        private final InitializerVisitor initializerVisitor = new InitializerVisitor(initializerStatements);
 
         private FileDeclarationVisitor() {
             initializer = JsAstUtils.createFunctionWithEmptyBody(context().scope());
@@ -129,7 +133,17 @@ final class NamespaceTranslator extends AbstractTranslator {
         @Override
         public Void visitProperty(@NotNull JetProperty property, @NotNull TranslationContext context) {
             super.visitProperty(property, context);
-            property.accept(initializerVisitor, initializerContext);
+            JetExpression initializer = property.getInitializer();
+            if (initializer != null) {
+                JsExpression value = Translation.translateAsExpression(initializer, context);
+                if (value instanceof JsLiteral) {
+                    result.add(new JsPropertyInitializer(context().program().getStringLiteral(property.getName()), toDataDescriptor(value)));
+                }
+                else {
+                    initializerStatements.add(generateInitializerForProperty(context,
+                                                                             getPropertyDescriptor(context.bindingContext(), property), value));
+                }
+            }
             return null;
         }
 

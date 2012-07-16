@@ -4,6 +4,8 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a JavaScript binary operation.
  */
@@ -16,7 +18,7 @@ public final class JsBinaryOperation extends JsExpression {
     this(op, null, null);
   }
 
-  public JsBinaryOperation(JsBinaryOperator op, JsExpression arg1, JsExpression arg2) {
+  public JsBinaryOperation(JsBinaryOperator op, @Nullable JsExpression arg1, @Nullable JsExpression arg2) {
     this.op = op;
     this.arg1 = arg1;
     this.arg2 = arg2;
@@ -76,14 +78,6 @@ public final class JsBinaryOperation extends JsExpression {
       return arg1.isDefinitelyNull();
     }
     return false;
-  }
-
-  public void setArg1(JsExpression arg1) {
-    this.arg1 = arg1;
-  }
-
-  public void setArg2(JsExpression arg2) {
-    this.arg2 = arg2;
   }
 
   @Override

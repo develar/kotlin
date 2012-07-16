@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.initializer;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
-import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
@@ -39,10 +38,10 @@ import static org.jetbrains.k2js.translate.utils.PsiUtils.getObjectDeclarationFo
  * @author Pavel Talanov
  */
 public final class InitializerVisitor extends TranslatorVisitor<Void> {
-    private final List<JsStatement> result = new SmartList<JsStatement>();
+    private final List<JsStatement> result;
 
-    public List<JsStatement> getResult() {
-        return result;
+    public InitializerVisitor(List<JsStatement> result) {
+        this.result = result;
     }
 
     @Override
