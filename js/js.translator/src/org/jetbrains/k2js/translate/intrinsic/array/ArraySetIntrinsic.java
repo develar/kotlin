@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.intrinsic.array;
 
 import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.util.AstUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -42,7 +41,6 @@ public enum ArraySetIntrinsic implements Intrinsic {
         assert arguments.size() == 2 : "Array set expression must have two arguments.";
         JsExpression indexExpression = arguments.get(0);
         JsExpression value = arguments.get(1);
-        JsArrayAccess arrayAccess = AstUtil.newArrayAccess(receiver, indexExpression);
-        return JsAstUtils.assignment(arrayAccess, value);
+        return JsAstUtils.assignment(new JsArrayAccess(receiver, indexExpression), value);
     }
 }

@@ -26,8 +26,6 @@ import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
-import static com.google.dart.compiler.util.AstUtil.newSequence;
-
 /**
  * @author Pavel Talanov
  */
@@ -43,7 +41,7 @@ public enum CallType {
             JsNullLiteral nullLiteral = JsLiteral.NULL;
             JsExpression methodCall = constructor.construct(temporaryVariable.reference());
             JsConditional callMethodIfNotNullElseNull = new JsConditional(notNullCheck, methodCall, nullLiteral);
-            return newSequence(temporaryVariable.assignmentExpression(), callMethodIfNotNullElseNull);
+            return new JsBinaryOperation(JsBinaryOperator.COMMA, temporaryVariable.assignmentExpression(), callMethodIfNotNullElseNull);
         }
     },
     //TODO: bang qualifier is not implemented in frontend for now

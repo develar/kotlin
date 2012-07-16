@@ -4,13 +4,18 @@
 
 package com.google.dart.compiler.util;
 
-import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.common.SourceInfo;
+import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
+import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
 
 /**
  * @author johnlenz@google.com (John Lenz)
  */
 public final class AstUtil {
+    private AstUtil() {
+    }
+
     public static JsNameRef newQualifiedNameRef(String name) {
         JsNameRef node = null;
         int endPos;
@@ -28,13 +33,6 @@ public final class AstUtil {
         return node;
     }
 
-    public static JsArrayAccess newArrayAccess(JsExpression target, JsExpression key) {
-        JsArrayAccess arr = new JsArrayAccess();
-        arr.setArrayExpr(target);
-        arr.setIndexExpr(key);
-        return arr;
-    }
-
     /**
      * Returns a sequence of expressions (using the binary sequence operator).
      *
@@ -50,22 +48,5 @@ public final class AstUtil {
             result = new JsBinaryOperation(JsBinaryOperator.COMMA, exprs[i], result);
         }
         return (JsBinaryOperation) result;
-    }
-
-    public static JsBinaryOperation comma(SourceInfo src, JsExpression op1, JsExpression op2) {
-        return (JsBinaryOperation) new JsBinaryOperation(JsBinaryOperator.COMMA, op1, op2)
-                .setSourceRef(src);
-    }
-
-    public static JsExpression not(SourceInfo src, JsExpression op1) {
-        return new JsPrefixOperation(JsUnaryOperator.NOT, op1).setSourceRef(src);
-    }
-
-    public static JsExpression and(SourceInfo src, JsExpression op1, JsExpression op2) {
-        return new JsBinaryOperation(JsBinaryOperator.AND, op1, op2).setSourceRef(src);
-    }
-
-    public static JsExpression in(SourceInfo src, JsExpression propName, JsExpression obj) {
-        return new JsBinaryOperation(JsBinaryOperator.INOP, propName, obj).setSourceRef(src);
     }
 }
