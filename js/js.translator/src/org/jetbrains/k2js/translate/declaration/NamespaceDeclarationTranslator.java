@@ -53,7 +53,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
     private List<JsStatement> translate() {
         THashMap<NamespaceDescriptor, NamespaceTranslator> descriptorToTranslator = new THashMap<NamespaceDescriptor, NamespaceTranslator>();
 
-        final Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace = new THashMap<NamespaceDescriptorParent, JsObjectLiteral>();
+        final Map<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace = new THashMap<NamespaceDescriptor, JsObjectLiteral>();
         JsObjectLiteral rootNamespaceDefinition = null;
 
         ClassDeclarationTranslator classDeclarationTranslator = new ClassDeclarationTranslator(context());
@@ -63,12 +63,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
             NamespaceTranslator translator = descriptorToTranslator.get(descriptor);
             if (translator == null) {
                 if (rootNamespaceDefinition == null) {
-                    rootNamespaceDefinition = new JsObjectLiteral(true);
-                    NamespaceDescriptor rootNamespace = descriptor;
-                    while (rootNamespace.getContainingDeclaration() instanceof NamespaceDescriptor) {
-                        rootNamespace = (NamespaceDescriptor) rootNamespace.getContainingDeclaration();
-                    }
-                    descriptorToDeclarationPlace.put(rootNamespace, rootNamespaceDefinition);
+                    rootNamespaceDefinition = getRootPackage(descriptorToDeclarationPlace, descriptor);
                 }
                 translator = new NamespaceTranslator(descriptor, classDeclarationTranslator, context());
                 descriptorToTranslator.put(descriptor, translator);
@@ -103,6 +98,18 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
             result.add(expression.makeStmt());
         }
         return result;
+    }
+
+    private static JsObjectLiteral getRootPackage(Map<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace,
+            NamespaceDescriptor descriptor) {
+        NamespaceDescriptor rootNamespace = descriptor;
+        while (rootNamespace.getContainingDeclaration() instanceof NamespaceDescriptor) {
+            rootNamespace = (NamespaceDescriptor) rootNamespace.getContainingDeclaration();
+        }
+
+        JsObjectLiteral rootNamespaceDefinition = new JsObjectLiteral(true);
+        descriptorToDeclarationPlace.put(rootNamespace, rootNamespaceDefinition);
+        return rootNamespaceDefinition;
     }
 
     private JsVar getDeclaration(@NotNull JsObjectLiteral rootNamespaceDefinition) {

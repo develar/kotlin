@@ -31,7 +31,6 @@ import org.jetbrains.k2js.translate.utils.mutator.LastExpressionMutator;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
 
 /**

@@ -20,7 +20,6 @@ import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.descriptors.NamespaceDescriptorParent;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
@@ -54,30 +53,6 @@ final class NamespaceTranslator extends AbstractTranslator {
         visitor = new FileDeclarationVisitor();
     }
 
-    private void addToParent(Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace,
-            NamespaceDescriptorParent descriptor,
-            JsPropertyInitializer entry) {
-        JsObjectLiteral parentPlace = descriptorToDeclarationPlace.get(descriptor);
-        if (parentPlace != null) {
-            parentPlace.getPropertyInitializers().add(entry);
-            return;
-        }
-
-        while (true) {
-            JsObjectLiteral place = new JsObjectLiteral(new SmartList<JsPropertyInitializer>(entry), true);
-            entry = new JsPropertyInitializer(context().getNameForDescriptor(descriptor).makeRef(), toDataDescriptor(new JsInvocation(context().namer().packageDefinitionMethodReference(), place)));
-
-            descriptorToDeclarationPlace.put(descriptor, place);
-
-            descriptor = (NamespaceDescriptorParent) descriptor.getContainingDeclaration();
-            assert descriptor != null;
-            if ((parentPlace = descriptorToDeclarationPlace.get(descriptor)) != null) {
-                parentPlace.getPropertyInitializers().add(entry);
-                return;
-            }
-        }
-    }
-
     public void translate(JetFile file) {
         for (JetDeclaration declaration : file.getDeclarations()) {
             if (AnnotationsUtils.isNativeObject(BindingUtils.getDescriptorForElement(bindingContext(), declaration))) {
@@ -88,7 +63,7 @@ final class NamespaceTranslator extends AbstractTranslator {
         }
     }
 
-    public void add(@NotNull Map<NamespaceDescriptorParent, JsObjectLiteral> descriptorToDeclarationPlace,
+    public void add(@NotNull Map<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace,
             @NotNull List<JsExpression> initializers) {
         List<JsStatement> initializerStatements = visitor.initializerVisitor.getResult();
         if (!initializerStatements.isEmpty()) {
@@ -101,12 +76,39 @@ final class NamespaceTranslator extends AbstractTranslator {
         if (place == null) {
             place = new JsObjectLiteral(visitor.getResult(), true);
             descriptorToDeclarationPlace.put(descriptor, place);
-            addToParent(descriptorToDeclarationPlace, descriptor.getContainingDeclaration(),
-                        new JsPropertyInitializer(context().getNameForDescriptor(descriptor).makeRef(), toDataDescriptor(
-                                new JsInvocation(context().namer().packageDefinitionMethodReference(), place))));
+            addToParent((NamespaceDescriptor) descriptor.getContainingDeclaration(), getEntry(descriptor, place),
+                        descriptorToDeclarationPlace);
         }
         else {
             place.getPropertyInitializers().addAll(visitor.getResult());
+        }
+    }
+
+    private JsPropertyInitializer getEntry(NamespaceDescriptor descriptor, JsObjectLiteral place) {
+        return new JsPropertyInitializer(context().getNameForDescriptor(descriptor).makeRef(),
+                                         toDataDescriptor(new JsInvocation(context().namer().packageDefinitionMethodReference(), place)));
+    }
+
+    private static boolean addEntryIfParentExists(NamespaceDescriptor parentDescriptor,
+            JsPropertyInitializer entry,
+            Map<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace) {
+        JsObjectLiteral parentPlace = descriptorToDeclarationPlace.get(parentDescriptor);
+        if (parentPlace != null) {
+            parentPlace.getPropertyInitializers().add(entry);
+            return true;
+        }
+        return false;
+    }
+
+    private void addToParent(NamespaceDescriptor parentDescriptor,
+            JsPropertyInitializer entry,
+            Map<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace) {
+        while (!addEntryIfParentExists(parentDescriptor, entry, descriptorToDeclarationPlace)) {
+            JsObjectLiteral place = new JsObjectLiteral(new SmartList<JsPropertyInitializer>(entry), true);
+            entry = getEntry(parentDescriptor, place);
+
+            descriptorToDeclarationPlace.put(parentDescriptor, place);
+            parentDescriptor = (NamespaceDescriptor) parentDescriptor.getContainingDeclaration();
         }
     }
 
