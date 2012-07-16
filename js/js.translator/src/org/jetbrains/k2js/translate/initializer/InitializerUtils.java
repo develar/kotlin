@@ -16,13 +16,13 @@
 
 package org.jetbrains.k2js.translate.initializer;
 
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsStatement;
+import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBackingField;
 
 /**
@@ -42,5 +42,16 @@ public final class InitializerUtils {
         else {
             return assignmentToBackingField(context, descriptor, value).makeStmt();
         }
+    }
+
+    public static JsExprStmt create(String name, JsExpression value, TranslationContext context) {
+        JsExpression expression;
+        if (context.isEcma5()) {
+            expression = JsAstUtils.defineProperty(name, JsAstUtils.createDataDescriptor(value), context);
+        }
+        else {
+            expression = assignment(new JsNameRef(name, JsLiteral.THIS), value);
+        }
+        return expression.makeStmt();
     }
 }

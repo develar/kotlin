@@ -41,16 +41,19 @@ public class TranslationContext {
     @NotNull
     private final DynamicContext dynamicContext;
     @NotNull
-    private final StaticContext staticContext;
+    protected final StaticContext staticContext;
     @NotNull
     private final AliasingContext aliasingContext;
+
+    @Nullable
+    private Processor<DeclarationDescriptor> processor;
 
     @NotNull
     public static TranslationContext rootFunctionContext(@NotNull StaticContext staticContext, JsFunction rootFunction) {
         DynamicContext rootDynamicContext =
                 DynamicContext.rootContext(rootFunction.getScope(), rootFunction.getBody());
         AliasingContext rootAliasingContext = AliasingContext.getCleanContext();
-        return new TranslationContext(staticContext, rootDynamicContext, rootAliasingContext);
+        return new TranslationContext(staticContext, rootDynamicContext, rootAliasingContext, null);
     }
 
     public boolean isEcma5() {
@@ -58,11 +61,20 @@ public class TranslationContext {
     }
 
     private TranslationContext(@NotNull StaticContext staticContext,
-                               @NotNull DynamicContext dynamicContext,
-                               @NotNull AliasingContext context) {
+            @NotNull DynamicContext dynamicContext,
+            @NotNull AliasingContext aliasingContext,
+            @Nullable Processor<DeclarationDescriptor> processor) {
         this.dynamicContext = dynamicContext;
         this.staticContext = staticContext;
-        aliasingContext = context;
+        this.aliasingContext = aliasingContext;
+        this.processor = processor;
+    }
+
+    private TranslationContext(@NotNull TranslationContext parent, @NotNull AliasingContext aliasingContext) {
+        dynamicContext = parent.dynamicContext;
+        staticContext = parent.staticContext;
+        this.aliasingContext = aliasingContext;
+        processor = parent.processor;
     }
 
     public DynamicContext dynamicContext() {
@@ -80,35 +92,20 @@ public class TranslationContext {
     }
 
     @NotNull
-    private TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block, @NotNull AliasingContext aliasingContext) {
-        return new TranslationContext(staticContext, DynamicContext.newContext(newScope, block), aliasingContext);
+    protected TranslationContext contextWithScope(@NotNull JsScope newScope, @NotNull JsBlock block, @NotNull AliasingContext aliasingContext) {
+        return new TranslationContext(staticContext, DynamicContext.newContext(newScope, block), aliasingContext, processor);
     }
 
     @NotNull
-    public TranslationContext createTracing(Processor<DeclarationDescriptor> processor) {
-        return new TracingTranslationContext(processor, staticContext, dynamicContext(), aliasingContext);
+    public TranslationContext nameTracer(Processor<DeclarationDescriptor> processor) {
+        this.processor = processor;
+        return this;
     }
 
-    private static class TracingTranslationContext extends TranslationContext {
-        private final Processor<DeclarationDescriptor> processor;
-        private boolean processed;
-
-        private TracingTranslationContext(Processor<DeclarationDescriptor> processor, @NotNull StaticContext staticContext,
-                @NotNull DynamicContext dynamicContext,
-                @NotNull AliasingContext context) {
-            super(staticContext, dynamicContext, context);
-            this.processor = processor;
-        }
-
-        @NotNull
-        @Override
-        public JsName getNameForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-            if (!processed && !processor.process(descriptor)) {
-                processed = true;
-            }
-
-            return super.getNameForDescriptor(descriptor);
-        }
+    @NotNull
+    public TranslationContext nameTracer(TranslationContext context) {
+        this.processor = context.processor;
+        return this;
     }
 
     @NotNull
@@ -118,7 +115,7 @@ public class TranslationContext {
 
     @NotNull
     public TranslationContext innerBlock(@NotNull JsBlock block) {
-        return new TranslationContext(staticContext, dynamicContext.innerBlock(block), aliasingContext);
+        return new TranslationContext(staticContext, dynamicContext.innerBlock(block), aliasingContext, processor);
     }
 
     @NotNull
@@ -128,17 +125,17 @@ public class TranslationContext {
 
     @NotNull
     public TranslationContext innerContextWithThisAliased(@NotNull DeclarationDescriptor correspondingDescriptor, @NotNull JsName alias) {
-        return new TranslationContext(staticContext, dynamicContext, aliasingContext.inner(correspondingDescriptor, alias));
+        return new TranslationContext(this, aliasingContext.inner(correspondingDescriptor, alias));
     }
 
     @NotNull
     public TranslationContext innerContextWithAliasesForExpressions(@NotNull Map<JetExpression, JsName> aliases) {
-        return new TranslationContext(staticContext, dynamicContext, aliasingContext.withAliasesForExpressions(aliases));
+        return new TranslationContext(this, aliasingContext.withAliasesForExpressions(aliases));
     }
 
     @NotNull
     public TranslationContext innerContextWithDescriptorsAliased(@NotNull Map<DeclarationDescriptor, JsName> aliases) {
-        return new TranslationContext(staticContext, dynamicContext, aliasingContext.withDescriptorsAliased(aliases));
+        return new TranslationContext(this, aliasingContext.withDescriptorsAliased(aliases));
     }
 
     @NotNull
@@ -177,6 +174,10 @@ public class TranslationContext {
         JsName alias = aliasingContext.getAliasForDescriptor(descriptor);
         if (alias != null) {
             return alias;
+        }
+
+        if (processor != null && !processor.process(descriptor)) {
+            processor = null;
         }
         return staticContext.getNameForDescriptor(descriptor);
     }

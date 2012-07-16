@@ -109,12 +109,6 @@ public final class JsAstUtils {
         }
     }
 
-    public static JsNameRef qualified(@NotNull JsName selector, @Nullable JsExpression qualifier) {
-        JsNameRef reference = selector.makeRef();
-        setQualifier(reference, qualifier);
-        return reference;
-    }
-
     @NotNull
     public static JsBinaryOperation equality(@NotNull JsExpression arg1, @NotNull JsExpression arg2) {
         return new JsBinaryOperation(JsBinaryOperator.REF_EQ, arg1, arg2);
@@ -223,10 +217,24 @@ public final class JsAstUtils {
     public static JsInvocation definePropertyDataDescriptor(@NotNull PropertyDescriptor descriptor,
             @NotNull JsExpression value,
             @NotNull TranslationContext context) {
+        return defineProperty(context.getNameForDescriptor(descriptor).getIdent(), createPropertyDataDescriptor(descriptor, value, context),
+                              context);
+    }
+
+    @NotNull
+    public static JsInvocation defineProperty(@NotNull String name,
+            @NotNull JsObjectLiteral value,
+            @NotNull TranslationContext context) {
+        return defineProperty(context.program().getStringLiteral(name), value);
+    }
+
+    @NotNull
+    public static JsInvocation defineProperty(@NotNull JsExpression name,
+            @NotNull JsObjectLiteral value) {
         JsInvocation invocation = new JsInvocation(DEFINE_PROPERTY);
         invocation.getArguments().add(JsLiteral.THIS);
-        invocation.getArguments().add(context.program().getStringLiteral(context.getNameForDescriptor(descriptor).getIdent()));
-        invocation.getArguments().add(createPropertyDataDescriptor(descriptor, value, context));
+        invocation.getArguments().add(name);
+        invocation.getArguments().add(value);
         return invocation;
     }
 

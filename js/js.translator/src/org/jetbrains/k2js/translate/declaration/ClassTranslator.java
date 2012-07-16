@@ -54,25 +54,6 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.getQualifiedRe
  */
 public final class ClassTranslator extends AbstractTranslator {
     @NotNull
-    public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
-            @NotNull ClassAliasingMap aliasingMap,
-            @NotNull TranslationContext context) {
-        return new ClassTranslator(classDeclaration, aliasingMap, context).translateClassOrObjectCreation(context);
-    }
-
-    @NotNull
-    public static JsExpression generateClassCreationExpression(@NotNull JetClassOrObject classDeclaration,
-            @NotNull TranslationContext context) {
-        return new ClassTranslator(classDeclaration, null, context).translateClassOrObjectCreation(context);
-    }
-
-    @NotNull
-    public static JsExpression generateObjectLiteralExpression(@NotNull JetObjectLiteralExpression objectLiteralExpression,
-            @NotNull TranslationContext context) {
-        return new ClassTranslator(objectLiteralExpression.getObjectDeclaration(), null, context).translateObjectLiteralExpression();
-    }
-
-    @NotNull
     private final DeclarationBodyVisitor declarationBodyVisitor = new DeclarationBodyVisitor();
 
     @NotNull
@@ -84,12 +65,44 @@ public final class ClassTranslator extends AbstractTranslator {
     @Nullable
     private final ClassAliasingMap aliasingMap;
 
-    public ClassTranslator(@NotNull JetClassOrObject classDeclaration,
+    @NotNull
+    public static JsExpression generateClassCreation(@NotNull JetClassOrObject classDeclaration,
+            @NotNull ClassAliasingMap aliasingMap,
+            @NotNull TranslationContext context) {
+        return new ClassTranslator(classDeclaration, aliasingMap, context).translateClassOrObjectCreation(context);
+    }
+
+    @NotNull
+    public static JsExpression generateClassCreation(@NotNull JetClassOrObject classDeclaration, @NotNull TranslationContext context) {
+        return new ClassTranslator(classDeclaration, null, context).translateClassOrObjectCreation(context);
+    }
+
+    @NotNull
+    public static JsExpression generateClassCreation(@NotNull JetClassOrObject classDeclaration,
+            @NotNull ClassDescriptor descriptor,
+            @NotNull TranslationContext context) {
+        return new ClassTranslator(classDeclaration, descriptor, null, context).translateClassOrObjectCreation(context);
+    }
+
+    @NotNull
+    public static JsExpression generateObjectLiteral(@NotNull JetObjectLiteralExpression objectLiteralExpression,
+            @NotNull TranslationContext context) {
+        return new ClassTranslator(objectLiteralExpression.getObjectDeclaration(), null, context).translateObjectLiteralExpression();
+    }
+
+    ClassTranslator(@NotNull JetClassOrObject classDeclaration,
             @Nullable ClassAliasingMap aliasingMap,
             @NotNull TranslationContext context) {
-        super(context.newDeclaration(classDeclaration));
+        this(classDeclaration, getClassDescriptor(context.bindingContext(), classDeclaration), aliasingMap, context);
+    }
+
+    ClassTranslator(@NotNull JetClassOrObject classDeclaration,
+            @NotNull ClassDescriptor descriptor,
+            @Nullable ClassAliasingMap aliasingMap,
+            @NotNull TranslationContext context) {
+        super(context);
         this.aliasingMap = aliasingMap;
-        this.descriptor = getClassDescriptor(context.bindingContext(), classDeclaration);
+        this.descriptor = descriptor;
         this.classDeclaration = classDeclaration;
     }
 

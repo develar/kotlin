@@ -21,14 +21,13 @@ import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
+import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
 import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
@@ -40,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
 
 /**
@@ -67,7 +67,7 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
 
     @Override
     public int compareTo(NamespaceTranslator o) {
-        return usedNamespaces.contains(o.descriptor) ? 1 : 0;
+        return usedNamespaces.contains(o.descriptor) ? 1 : (o.usedNamespaces.contains(descriptor) ? -1 : 0);
     }
 
     public void translate(JetFile file) {
@@ -136,12 +136,29 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
         private FileDeclarationVisitor() {
             initializer = JsAstUtils.createFunctionWithEmptyBody(context().scope());
             ownNamespaceRefTracer = new OwnNamespaceRefTracer();
-            initializerContext = context().contextWithScope(initializer).createTracing(ownNamespaceRefTracer);
+            initializerContext = context().contextWithScope(initializer).nameTracer(ownNamespaceRefTracer);
         }
 
         @Override
         public Void visitClass(@NotNull JetClass expression, @NotNull TranslationContext context) {
-            result.add(classDeclarationTranslator.translate(expression));
+            JsPropertyInitializer value = classDeclarationTranslator.translate(expression);
+            result.add(value);
+            return null;
+        }
+
+        @Override
+        public Void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
+            ownNamespaceRefTracer.hasReference = false;
+            ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);
+            JsExpression value = ClassTranslator.generateClassCreation(declaration, descriptor, initializerContext);
+            String name = descriptor.getName().getName();
+
+            if (ownNamespaceRefTracer.hasReference) {
+                initializerStatements.add(InitializerUtils.create(name, value, context));
+            }
+            else {
+                result.add(new JsPropertyInitializer(context.program().getStringLiteral(name), toDataDescriptor(value)));
+            }
             return null;
         }
 
@@ -150,6 +167,7 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
             super.visitProperty(property, context);
             JetExpression initializer = property.getInitializer();
             if (initializer != null) {
+                ownNamespaceRefTracer.hasReference = false;
                 JsExpression value = Translation.translateAsExpression(initializer, initializerContext);
                 PropertyDescriptor propertyDescriptor = getPropertyDescriptor(context.bindingContext(), property);
                 if (!ownNamespaceRefTracer.hasReference) {
@@ -170,41 +188,32 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
             return null;
         }
 
-        @Override
-        public Void visitObjectDeclaration(@NotNull JetObjectDeclaration expression,
-                @NotNull TranslationContext context) {
-            result.add(classDeclarationTranslator.translate(expression));
-            return null;
-        }
-
         private class OwnNamespaceRefTracer implements Processor<DeclarationDescriptor> {
             private boolean hasReference;
 
             @Override
             public boolean process(DeclarationDescriptor declarationDescriptor) {
-                //NamespaceDescriptor namespaceDescriptor;
-                //if (declarationDescriptor instanceof NamespaceDescriptor) {
-                //    namespaceDescriptor = (NamespaceDescriptor) declarationDescriptor;
-                //}
-                //else if (declarationDescriptor.getContainingDeclaration() instanceof NamespaceDescriptor) {
-                //    namespaceDescriptor = (NamespaceDescriptor) declarationDescriptor.getContainingDeclaration();
-                //}
-                //else if (declarationDescriptor instanceof ConstructorDescriptor) {
-                //    DeclarationDescriptor declaration =
-                //            ((ConstructorDescriptor) declarationDescriptor).getContainingDeclaration().getContainingDeclaration();
-                //    if (declaration instanceof NamespaceDescriptor) {
-                //        namespaceDescriptor = (NamespaceDescriptor) declaration;
-                //    }
-                //    else {
-                //        return true;
-                //    }
-                //}
-                //else {
-                //    return true;
-                //}
+                NamespaceDescriptor namespaceDescriptor;
+                if (declarationDescriptor instanceof NamespaceDescriptor) {
+                    namespaceDescriptor = (NamespaceDescriptor) declarationDescriptor;
+                }
+                else if (declarationDescriptor.getContainingDeclaration() instanceof NamespaceDescriptor) {
+                    namespaceDescriptor = (NamespaceDescriptor) declarationDescriptor.getContainingDeclaration();
+                }
+                else if (declarationDescriptor instanceof ConstructorDescriptor) {
+                    DeclarationDescriptor declaration =
+                            ((ConstructorDescriptor) declarationDescriptor).getContainingDeclaration().getContainingDeclaration();
+                    if (declaration instanceof NamespaceDescriptor) {
+                        namespaceDescriptor = (NamespaceDescriptor) declaration;
+                    }
+                    else {
+                        return true;
+                    }
+                }
+                else {
+                    return true;
+                }
 
-
-                NamespaceDescriptor namespaceDescriptor = getNamespaceDescriptor(declarationDescriptor);
                 if (namespaceDescriptor == descriptor) {
                     hasReference = true;
                 }
@@ -214,14 +223,6 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
                 }
 
                 return true;
-            }
-
-            private NamespaceDescriptor getNamespaceDescriptor(DeclarationDescriptor descriptor) {
-                while (!(descriptor instanceof NamespaceDescriptor)) {
-                    assert descriptor != null;
-                    descriptor = descriptor.getContainingDeclaration();
-                }
-                return (NamespaceDescriptor) descriptor;
             }
         }
     }

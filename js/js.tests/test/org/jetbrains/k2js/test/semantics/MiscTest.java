@@ -50,7 +50,7 @@ public final class MiscTest extends AbstractExpressionTest {
             fooBoxTest();
             fail();
         }
-        catch (JavaScriptException e) {
+        catch (JavaScriptException ignored) {
         }
     }
 

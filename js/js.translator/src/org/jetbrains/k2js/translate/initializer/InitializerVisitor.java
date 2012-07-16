@@ -19,7 +19,7 @@ package org.jetbrains.k2js.translate.initializer;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
@@ -30,9 +30,8 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForObjectDeclaration;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.getObjectDeclarationForName;
 
 /**
  * @author Pavel Talanov
@@ -56,8 +55,7 @@ public final class InitializerVisitor extends TranslatorVisitor<Void> {
     }
 
     @Override
-    public Void visitAnonymousInitializer(@NotNull JetClassInitializer initializer,
-            @NotNull TranslationContext context) {
+    public Void visitAnonymousInitializer(@NotNull JetClassInitializer initializer, @NotNull TranslationContext context) {
         result.add(translateAsStatement(initializer.getBody(), context));
         return null;
     }
@@ -69,11 +67,10 @@ public final class InitializerVisitor extends TranslatorVisitor<Void> {
     }
 
     @Override
-    public final Void visitObjectDeclarationName(@NotNull JetObjectDeclarationName objectName, @NotNull TranslationContext context) {
-        PropertyDescriptor propertyDescriptor = getPropertyDescriptorForObjectDeclaration(context.bindingContext(), objectName);
-        JetObjectDeclaration objectDeclaration = getObjectDeclarationForName(objectName);
-        JsExpression objectValue = ClassTranslator.generateClassCreationExpression(objectDeclaration, context);
-        result.add(generateInitializerForProperty(context, propertyDescriptor, objectValue));
+    public Void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
+        ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);
+        JsExpression value = ClassTranslator.generateClassCreation(declaration, descriptor, context);
+        result.add(InitializerUtils.create(descriptor.getName().getName(), value, context));
         return null;
     }
 

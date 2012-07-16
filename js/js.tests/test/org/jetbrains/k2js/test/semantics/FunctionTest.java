@@ -99,4 +99,8 @@ public class FunctionTest extends AbstractExpressionTest {
     public void testFunctionInsideFunction() throws Exception {
         fooBoxTest();
     }
+
+    public void testCallFunInInit() throws Exception {
+        fooBoxTest();
+    }
 }

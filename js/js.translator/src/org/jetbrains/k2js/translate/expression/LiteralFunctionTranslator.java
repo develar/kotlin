@@ -40,7 +40,7 @@ public class LiteralFunctionTranslator {
         return new JsVar(containingVarRef.getName(), properties.isEmpty() ? null : new JsObjectLiteral(properties, true));
     }
 
-    public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration) {
+    public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration, @NotNull TranslationContext context) {
         FunctionDescriptor descriptor = getFunctionDescriptor(rootContext.bindingContext(), declaration);
 
         JsFunction fun = createFunction();
@@ -56,7 +56,7 @@ public class LiteralFunctionTranslator {
         }
         else {
             asInner = descriptor.getContainingDeclaration() instanceof NamespaceDescriptor;
-            funContext = rootContext.contextWithScope(fun);
+            funContext = rootContext.contextWithScope(fun).nameTracer(context);
         }
 
         fun.getBody().getStatements().addAll(translateFunctionBody(descriptor, declaration, funContext).getStatements());
