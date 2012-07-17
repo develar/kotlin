@@ -77,8 +77,8 @@ public final class InlinedCallExpressionTranslator extends AbstractCallExpressio
         JsNode translatedBody = translateFunctionBody(getFunctionDescriptor(), getFunctionBody(), contextWithAllParametersAliased);
         //TODO: declare uninitialized temporary
         TemporaryVariable temporaryVariable = contextWithAllParametersAliased.declareTemporary(JsLiteral.NULL);
-        JsNode mutatedBody = LastExpressionMutator.mutateLastExpression(translatedBody, new InlineFunctionMutator(temporaryVariable));
-        context().addStatementToCurrentBlock(JsAstUtils.convertToBlock(mutatedBody));
+        JsStatement mutatedBody = LastExpressionMutator.mutateLastExpression(translatedBody, new InlineFunctionMutator(temporaryVariable));
+        context().addStatementToCurrentBlock(JsAstUtils.asBlock(mutatedBody));
         return temporaryVariable.reference();
     }
 

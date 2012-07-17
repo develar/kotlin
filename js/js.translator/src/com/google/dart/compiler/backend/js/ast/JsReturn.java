@@ -7,7 +7,7 @@ package com.google.dart.compiler.backend.js.ast;
 /**
  * A JavaScript return statement.
  */
-public final class JsReturn extends JsStatement {
+public final class JsReturn extends JsNodeImpl implements JsStatement {
 
   private JsExpression expr;
 
@@ -36,12 +36,7 @@ public final class JsReturn extends JsStatement {
     v.endVisit(this, ctx);
   }
 
-  @Override
-  public boolean unconditionalControlBreak() {
-    return true;
-  }
-
-  @Override
+    @Override
   public NodeKind getKind() {
     return NodeKind.RETURN;
   }

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a JavaScript binary operation.
  */
-public final class JsBinaryOperation extends JsExpression {
+public final class JsBinaryOperation extends JsExpressionImpl {
   private JsExpression arg1;
   private JsExpression arg2;
   private final JsBinaryOperator op;

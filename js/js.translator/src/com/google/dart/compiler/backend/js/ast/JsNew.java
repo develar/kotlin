@@ -6,13 +6,12 @@ package com.google.dart.compiler.backend.js.ast;
 
 import com.intellij.util.SmartList;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Represents the JavaScript new expression.
  */
-public final class JsNew extends JsExpression implements HasArguments {
+public final class JsNew extends JsExpressionImpl implements HasArguments {
 
   private final List<JsExpression> args = new SmartList<JsExpression>();
   private JsExpression ctorExpr;

@@ -16,15 +16,14 @@
 
 package org.jetbrains.k2js.translate.intrinsic;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.Source;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsInvocation;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.google.dart.compiler.util.AstUtil;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
 import java.util.List;
@@ -33,7 +32,6 @@ import java.util.List;
  * @author Pavel Talanov
  */
 public final class CallStandardMethodIntrinsic implements Intrinsic {
-
     @NotNull
     private final String methodName;
 
@@ -59,12 +57,10 @@ public final class CallStandardMethodIntrinsic implements Intrinsic {
 
     // TODO move to better helper class
     public static String atLocation(JsExpression expression, List<JsExpression> arguments) {
-        List list = Lists.newArrayList(expression);
-        list.addAll(arguments);
         for (JsExpression value : arguments) {
             Source source = value.getSource();
             if (source != null) {
-                return "at " + source + " " + expression.getSourceLine() + ":" + expression.getSourceLine();
+                return "at " + source + " " + expression.getLine() + ":" + expression.getLine();
             }
         }
         return "at unknown location";
@@ -73,8 +69,7 @@ public final class CallStandardMethodIntrinsic implements Intrinsic {
     @NotNull
     private static List<JsExpression> composeArguments(@Nullable JsExpression receiver, @NotNull List<JsExpression> arguments) {
         if (receiver != null) {
-            List<JsExpression> args = Lists.newArrayList();
-            args.add(receiver);
+            List<JsExpression> args = new SmartList<JsExpression>(receiver);
             args.addAll(arguments);
             return args;
         }

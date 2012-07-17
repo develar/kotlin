@@ -22,13 +22,13 @@ public interface SourceInfo extends Serializable {
    * @return A 1-based line number into the original source file indicating
    * where the source fragment begins.
    */
-  int getSourceLine();
+  int getLine();
 
   /**
    * @return A 1-based column number into the original source file indicating
    * where the source fragment begins.
    */
-  int getSourceColumn();
+  int getColumn();
 
   /**
    * Returns the character index into the original source file indicating
@@ -39,10 +39,10 @@ public interface SourceInfo extends Serializable {
    *
    * @return the 0-based character index, or <code>-1</code>
    *    if no source startPosition information is recorded for this node
-   * @see #getSourceLength()
+   * @see #getLength()
    * @see HasSourceInfo#setSourceLocation(Source, int, int, int, int)
    */
-  int getSourceStart();
+  int getStart();
 
   /**
    * Returns the length in characters of the original source file indicating
@@ -52,8 +52,8 @@ public interface SourceInfo extends Serializable {
    *
    * @return a (possibly 0) length, or <code>0</code>
    *    if no source source position information is recorded for this node
-   * @see #getSourceStart()
+   * @see #getStart()
    * @see HasSourceInfo#setSourceLocation(Source, int, int, int, int)
    */
-  int getSourceLength();
+  int getLength();
 }

@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * A JavaScript program.
  */
-public final class JsProgram extends JsNode {
+public final class JsProgram extends JsNodeImpl {
     private final JsEmpty emptyStmt;
 
     private JsProgramFragment[] fragments;

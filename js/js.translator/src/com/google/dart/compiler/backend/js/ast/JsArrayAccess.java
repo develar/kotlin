@@ -7,7 +7,7 @@ package com.google.dart.compiler.backend.js.ast;
 /**
  * Represents a javascript expression for array access.
  */
-public final class JsArrayAccess extends JsExpression {
+public final class JsArrayAccess extends JsExpressionImpl {
 
   private JsExpression arrayExpr;
   private JsExpression indexExpr;

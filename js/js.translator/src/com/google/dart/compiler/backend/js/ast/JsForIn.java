@@ -7,7 +7,7 @@ package com.google.dart.compiler.backend.js.ast;
 /**
  * Represents a JavaScript for..in statement.
  */
-public class JsForIn extends JsStatement {
+public class JsForIn extends JsNodeImpl implements JsStatement {
 
   private JsStatement body;
   private JsExpression iterExpr;

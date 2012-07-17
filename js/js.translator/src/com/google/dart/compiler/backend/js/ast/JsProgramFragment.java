@@ -7,7 +7,7 @@ package com.google.dart.compiler.backend.js.ast;
 /**
  * One independently loadable fragment of a {@link JsProgram}.
  */
-public class JsProgramFragment extends JsNode {
+public class JsProgramFragment extends JsNodeImpl {
 
   private final JsGlobalBlock globalBlock;
 

@@ -27,7 +27,7 @@ import org.jetbrains.k2js.translate.general.Translation;
 
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToBlock;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.asBlock;
 
 /**
  * @author Pavel Talanov
@@ -60,12 +60,12 @@ public final class TryTranslator extends AbstractTranslator {
         JetFinallySection finallyBlock = expression.getFinallyBlock();
         if (finallyBlock == null) return null;
 
-        return convertToBlock(Translation.translateAsStatement(finallyBlock.getFinalExpression(), context()));
+        return asBlock(Translation.translateAsStatement(finallyBlock.getFinalExpression(), context()));
     }
 
     @NotNull
     private JsBlock translateTryBlock() {
-        return convertToBlock(Translation.translateAsStatement(expression.getTryBlock(), context()));
+        return asBlock(Translation.translateAsStatement(expression.getTryBlock(), context()));
     }
 
     @NotNull
@@ -92,9 +92,9 @@ public final class TryTranslator extends AbstractTranslator {
     private JsBlock translateCatchBody(@NotNull JetCatchClause catchClause) {
         JetExpression catchBody = catchClause.getCatchBody();
         if (catchBody == null) {
-            return convertToBlock(program().getEmptyStmt());
+            return asBlock(program().getEmptyStmt());
         }
-        return convertToBlock(Translation.translateAsStatement(catchBody, context()));
+        return asBlock(Translation.translateAsStatement(catchBody, context()));
     }
 
 }

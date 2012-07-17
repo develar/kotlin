@@ -264,7 +264,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsLiteral.JsBooleanLiteral x, JsContext ctx) {
         if (x.getValue()) {
-            _true();
+            p.print(CHARS_TRUE);
         }
         else {
             _false();
@@ -435,8 +435,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         if (surroundWithParentheses) {
             _lparen();
         }
-        JsExpression expr = x.getExpression();
-        accept(expr);
+        accept(x.getExpression());
         if (surroundWithParentheses) {
             _rparen();
         }
@@ -814,15 +813,15 @@ public class JsToStringGenerationVisitor extends JsVisitor {
 
     @Override
     public boolean visit(JsThrow x, JsContext ctx) {
-        _throw();
+        p.print(CHARS_THROW);
         space();
-        accept(x.getExpr());
+        accept(x.getExpression());
         return false;
     }
 
     @Override
     public boolean visit(JsTry x, JsContext ctx) {
-        _try();
+        p.print(CHARS_TRY);
         spaceOpt();
         accept(x.getTryBlock());
 
@@ -1261,18 +1260,6 @@ public class JsToStringGenerationVisitor extends JsVisitor {
 
     private void _switch() {
         p.print(CHARS_SWITCH);
-    }
-
-    private void _throw() {
-        p.print(CHARS_THROW);
-    }
-
-    private void _true() {
-        p.print(CHARS_TRUE);
-    }
-
-    private void _try() {
-        p.print(CHARS_TRY);
     }
 
     private void var() {

@@ -16,7 +16,10 @@
 
 package org.jetbrains.k2js.translate.initializer;
 
-import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsLiteral;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.JsStatement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -44,7 +47,7 @@ public final class InitializerUtils {
         }
     }
 
-    public static JsExprStmt create(String name, JsExpression value, TranslationContext context) {
+    public static JsStatement create(String name, JsExpression value, TranslationContext context) {
         JsExpression expression;
         if (context.isEcma5()) {
             expression = JsAstUtils.defineProperty(name, JsAstUtils.createDataDescriptor(value), context);

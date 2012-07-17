@@ -4,17 +4,7 @@
 
 package com.google.dart.compiler.backend.js;
 
-import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
-import com.google.dart.compiler.backend.js.ast.JsArrayLiteral;
-import com.google.dart.compiler.backend.js.ast.JsContext;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsFunction;
-import com.google.dart.compiler.backend.js.ast.JsInvocation;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
-import com.google.dart.compiler.backend.js.ast.JsNew;
-import com.google.dart.compiler.backend.js.ast.JsObjectLiteral;
-import com.google.dart.compiler.backend.js.ast.JsVisitable;
-import com.google.dart.compiler.backend.js.ast.JsVisitor;
+import com.google.dart.compiler.backend.js.ast.*;
 
 /**
  * Searches for method invocations in constructor expressions that would not

@@ -35,7 +35,6 @@ import static org.jetbrains.k2js.translate.utils.PsiUtils.getTypeReference;
  * @author Pavel Talanov
  */
 public final class PatternTranslator extends AbstractTranslator {
-
     @NotNull
     public static PatternTranslator newInstance(@NotNull TranslationContext context) {
         return new PatternTranslator(context);
@@ -106,7 +105,7 @@ public final class PatternTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private JsExpression addNullCheck(@NotNull JsExpression expressionToMatch, @NotNull JsInvocation isCheck) {
+    private static JsExpression addNullCheck(@NotNull JsExpression expressionToMatch, @NotNull JsInvocation isCheck) {
         return or(TranslationUtils.isNullCheck(expressionToMatch), isCheck);
     }
 

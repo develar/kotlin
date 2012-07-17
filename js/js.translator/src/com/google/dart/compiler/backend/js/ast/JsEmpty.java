@@ -7,7 +7,7 @@ package com.google.dart.compiler.backend.js.ast;
 /**
  * Represents an empty statement in JavaScript.
  */
-public class JsEmpty extends JsStatement {
+public class JsEmpty extends JsNodeImpl implements JsStatement {
   // Interned by JsProgram
   JsEmpty() {
   }

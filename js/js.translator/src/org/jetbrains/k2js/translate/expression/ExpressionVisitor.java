@@ -96,7 +96,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
             assert statement instanceof JetExpression : "Elements in JetBlockExpression " +
                                                         "should be of type JetExpression";
             JsNode jsNode = statement.accept(this, blockContext);
-            jsBlock.getStatements().add(convertToStatement(jsNode));
+            jsBlock.getStatements().add(asStatement(jsNode));
         }
         return jsBlock;
     }
@@ -135,9 +135,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     // assume it is a local variable declaration
     public JsNode visitProperty(@NotNull JetProperty expression, @NotNull TranslationContext context) {
         DeclarationDescriptor descriptor = getDescriptorForElement(context.bindingContext(), expression);
-        JsName jsPropertyName = context.getNameForDescriptor(descriptor);
-        JsExpression jsInitExpression = translateInitializerForProperty(expression, context);
-        return newVar(jsPropertyName, jsInitExpression);
+        return newVar(context.getNameForDescriptor(descriptor), translateInitializerForProperty(expression, context));
     }
 
     @Override
@@ -150,17 +148,29 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @Override
     @NotNull
     public JsNode visitIfExpression(@NotNull JetIfExpression expression, @NotNull TranslationContext context) {
-        JsIf ifStatement = translateAsIfStatement(expression, context);
-        if (BindingUtils.isStatement(context.bindingContext(), expression)) {
-            return ifStatement;
+        JsExpression testExpression = translateConditionExpression(expression.getCondition(), context);
+        JetExpression thenExpression = expression.getThen();
+        JetExpression elseExpression = expression.getElse();
+        assert thenExpression != null;
+        JsNode thenNode = thenExpression.accept(this, context);
+        JsNode elseNode = elseExpression == null ? null : elseExpression.accept(this, context);
+
+        boolean isKotlinStatement = BindingUtils.isStatement(context.bindingContext(), expression);
+        boolean canBeJsExpression = thenNode instanceof JsExpression && elseNode instanceof JsExpression;
+        if (!isKotlinStatement && canBeJsExpression) {
+            return new JsConditional(testExpression, asExpression(thenNode), asExpression(elseNode));
         }
-        TemporaryVariable result = context.declareTemporary(JsLiteral.NULL);
-        AssignToExpressionMutator saveResultToTemporaryMutator =
-                new AssignToExpressionMutator(result.reference());
-        JsNode mutatedIfStatement = mutateLastExpression(ifStatement, saveResultToTemporaryMutator);
-        JsStatement resultingStatement = convertToStatement(mutatedIfStatement);
-        context.addStatementToCurrentBlock(resultingStatement);
-        return result.reference();
+        else {
+            JsIf ifStatement = new JsIf(testExpression, asStatement(thenNode), elseNode == null ? null : asStatement(elseNode));
+            if (isKotlinStatement) {
+                return ifStatement;
+            }
+
+            TemporaryVariable result = context.declareTemporary(null);
+            AssignToExpressionMutator saveResultToTemporaryMutator = new AssignToExpressionMutator(result.reference());
+            context.addStatementToCurrentBlock(mutateLastExpression(ifStatement, saveResultToTemporaryMutator));
+            return result.reference();
+        }
     }
 
     @Override
@@ -171,32 +181,12 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     }
 
     @NotNull
-    private JsIf translateAsIfStatement(@NotNull JetIfExpression expression,
-            @NotNull TranslationContext context) {
-        JsIf result = new JsIf();
-        result.setIfExpr(translateConditionExpression(expression.getCondition(), context));
-        result.setThenStmt(translateNullableExpressionAsNotNullStatement(expression.getThen(), context));
-        result.setElseStmt(translateElseAsStatement(expression, context));
-        return result;
-    }
-
-    @Nullable
-    private JsStatement translateElseAsStatement(@NotNull JetIfExpression expression,
-            @NotNull TranslationContext context) {
-        JetExpression jetElse = expression.getElse();
-        if (jetElse == null) {
-            return null;
-        }
-        return convertToStatement(jetElse.accept(this, context));
-    }
-
-    @NotNull
     private JsStatement translateNullableExpressionAsNotNullStatement(@Nullable JetExpression nullableExpression,
             @NotNull TranslationContext context) {
         if (nullableExpression == null) {
             return context.program().getEmptyStmt();
         }
-        return convertToStatement(nullableExpression.accept(this, context));
+        return asStatement(nullableExpression.accept(this, context));
     }
 
     @NotNull
@@ -204,7 +194,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
             @NotNull TranslationContext context) {
         JsExpression jsCondition = translateNullableExpression(expression, context);
         assert (jsCondition != null) : "Condition should not be empty";
-        return convertToExpression(jsCondition);
+        return asExpression(jsCondition);
     }
 
     @Nullable
@@ -213,23 +203,22 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         if (expression == null) {
             return null;
         }
-        return convertToExpression(expression.accept(this, context));
+        return asExpression(expression.accept(this, context));
     }
 
-    //NOTE: since JsWhile and JsDoWhile do not have an ancestor, cannot avoid duplication here
     @Override
     @NotNull
     public JsNode visitWhileExpression(@NotNull JetWhileExpression expression, @NotNull TranslationContext context) {
-        JsWhile result = new JsWhile();
-        result.setCondition(translateConditionExpression(expression.getCondition(), context));
-        result.setBody(translateNullableExpressionAsNotNullStatement(expression.getBody(), context));
-        return result;
+        return createWhile(new JsWhile(), expression, context);
     }
 
     @Override
     @NotNull
     public JsNode visitDoWhileExpression(@NotNull JetDoWhileExpression expression, @NotNull TranslationContext context) {
-        JsDoWhile result = new JsDoWhile();
+        return createWhile(new JsDoWhile(), expression, context);
+    }
+
+    private JsNode createWhile(JsWhile result, JetWhileExpression expression, TranslationContext context) {
         result.setCondition(translateConditionExpression(expression.getCondition(), context));
         result.setBody(translateNullableExpressionAsNotNullStatement(expression.getBody(), context));
         return result;

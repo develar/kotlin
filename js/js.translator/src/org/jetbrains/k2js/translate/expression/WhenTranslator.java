@@ -129,9 +129,9 @@ public final class WhenTranslator extends AbstractTranslator {
 
     @NotNull
     JsStatement withReturnValueCaptured(@NotNull JsNode node) {
-        return convertToStatement(result == null
-                                  ? node
-                                  : LastExpressionMutator.mutateLastExpression(node, new AssignToExpressionMutator(result.reference())));
+        return result == null
+               ? asStatement(node)
+               : LastExpressionMutator.mutateLastExpression(node, new AssignToExpressionMutator(result.reference()));
     }
 
     @NotNull

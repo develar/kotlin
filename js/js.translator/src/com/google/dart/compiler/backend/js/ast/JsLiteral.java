@@ -4,7 +4,7 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-public abstract class JsLiteral extends JsExpression implements CanBooleanEval {
+public abstract class JsLiteral extends JsExpressionImpl implements CanBooleanEval {
     public static final JsValueLiteral THIS = new JsThisRef();
     public static final JsNameRef UNDEFINED = new JsNameRef("undefined");
 

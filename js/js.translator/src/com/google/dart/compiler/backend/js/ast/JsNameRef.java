@@ -9,7 +9,7 @@ import com.google.dart.compiler.common.Symbol;
 /**
  * Represents a JavaScript expression that references a name.
  */
-public final class JsNameRef extends JsExpression implements CanBooleanEval, HasName {
+public final class JsNameRef extends JsExpressionImpl implements CanBooleanEval, HasName {
   private String ident;
   private JsName name;
   private JsExpression qualifier;

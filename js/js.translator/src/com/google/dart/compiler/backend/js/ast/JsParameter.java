@@ -9,7 +9,7 @@ import com.google.dart.compiler.common.Symbol;
 /**
  * A JavaScript parameter.
  */
-public final class JsParameter extends JsNode implements HasName {
+public final class JsParameter extends JsNodeImpl implements HasName {
   private final JsName name;
 
   public JsParameter(JsName name) {

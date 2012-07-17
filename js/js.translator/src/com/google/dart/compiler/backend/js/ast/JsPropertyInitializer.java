@@ -7,7 +7,7 @@ package com.google.dart.compiler.backend.js.ast;
 /**
  * Used in object literals to specify property values by name.
  */
-public class JsPropertyInitializer extends JsNode {
+public class JsPropertyInitializer extends JsNodeImpl {
     private JsExpression labelExpr;
     private JsExpression valueExpr;
 

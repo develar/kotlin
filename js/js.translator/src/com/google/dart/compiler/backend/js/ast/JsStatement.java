@@ -4,19 +4,5 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-/**
- * Abstract base class for JavaScript statement objects.
- */
-public abstract class JsStatement extends JsNode {
-
-  protected JsStatement() {
-  }
-
-  /**
-   * Returns true if this statement definitely causes an abrupt change in flow
-   * control.
-   */
-  public boolean unconditionalControlBreak() {
-    return false;
-  }
+public interface JsStatement extends JsNode {
 }

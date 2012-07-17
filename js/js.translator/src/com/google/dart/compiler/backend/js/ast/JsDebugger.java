@@ -7,7 +7,7 @@ package com.google.dart.compiler.backend.js.ast;
 /**
  * Represents a JavaScript debugger statement.
  */
-public class JsDebugger extends JsStatement {
+public class JsDebugger extends JsNodeImpl implements JsStatement {
 
   public JsDebugger() {
   }

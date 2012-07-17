@@ -17,7 +17,7 @@ import com.google.dart.compiler.common.SourceInfo;
  * Note that any of the parts of the <code>for</code> loop header can be
  * <code>null</code>, although the body will never be null.
  */
-public class JsFor extends JsStatement {
+public class JsFor extends JsNodeImpl implements JsStatement {
     private JsStatement body;
     private JsExpression condition;
     private JsExpression incrExpr;

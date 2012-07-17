@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents the JavaScript continue statement.
  */
-public class JsContinue extends JsStatement {
+public class JsContinue extends JsNodeImpl implements JsStatement {
     protected final JsNameRef label;
 
     public JsContinue() {
@@ -33,11 +33,6 @@ public class JsContinue extends JsStatement {
             }
         }
         v.endVisit(this, ctx);
-    }
-
-    @Override
-    public boolean unconditionalControlBreak() {
-        return true;
     }
 
     @Override

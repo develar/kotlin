@@ -48,8 +48,8 @@ public interface HasSourceInfo {
    *        source location is available
    * @param length a (possibly 0) length, or <code>-1</code>, if no source
    *        location is available
-   * @see SourceInfo#getSourceStart()
-   * @see SourceInfo#getSourceLength()
+   * @see SourceInfo#getStart()
+   * @see SourceInfo#getLength()
    */
   void setSourceLocation(Source source, int line, int column, int startPosition, int length);
 }

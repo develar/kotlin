@@ -4,33 +4,29 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-/**
- * Represents a JavaScript expression statement.
- */
-public final class JsExprStmt extends JsStatement {
+public final class JsExprStmt extends JsNodeImpl implements JsStatement {
+    private JsExpression expr;
 
-  private JsExpression expr;
-
-  public JsExprStmt(JsExpression expr) {
-    super();
-    this.expr = expr;
-    this.setSourceInfo(expr);
-  }
-
-  public JsExpression getExpression() {
-    return expr;
-  }
-
-  @Override
-  public void traverse(JsVisitor v, JsContext ctx) {
-    if (v.visit(this, ctx)) {
-      expr = v.accept(expr);
+    public JsExprStmt(JsExpression expr) {
+        super();
+        this.expr = expr;
+        this.setSourceInfo(expr);
     }
-    v.endVisit(this, ctx);
-  }
 
-  @Override
-  public NodeKind getKind() {
-    return NodeKind.EXPR_STMT;
-  }
+    public JsExpression getExpression() {
+        return expr;
+    }
+
+    @Override
+    public void traverse(JsVisitor v, JsContext ctx) {
+        if (v.visit(this, ctx)) {
+            expr = v.accept(expr);
+        }
+        v.endVisit(this, ctx);
+    }
+
+    @Override
+    public NodeKind getKind() {
+        return NodeKind.EXPRESSION_STMT;
+    }
 }

@@ -7,7 +7,7 @@ package com.google.dart.compiler.backend.js.ast;
 /**
  * A JavaScript prefix or postfix operation.
  */
-public abstract class JsUnaryOperation extends JsExpression {
+public abstract class JsUnaryOperation extends JsExpressionImpl {
 
   private JsExpression arg;
 
