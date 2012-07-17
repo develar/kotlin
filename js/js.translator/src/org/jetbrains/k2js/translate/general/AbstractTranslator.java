@@ -28,7 +28,7 @@ import org.jetbrains.k2js.translate.utils.JsAstUtils;
  */
 public abstract class AbstractTranslator {
     @NotNull
-    private final TranslationContext context;
+    protected final TranslationContext context;
 
     protected AbstractTranslator(@NotNull TranslationContext context) {
         this.context = context;

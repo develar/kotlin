@@ -3,6 +3,7 @@ package org.jetbrains.k2js.translate.expression;
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetElement;
+import org.jetbrains.k2js.translate.context.TraceableThisAliasProvider;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
 class InnerObjectTranslator extends InnerDeclarationTranslator {

@@ -124,8 +124,8 @@ var Kotlin = {};
         }
     })();
 
-    Kotlin.definePackage = function (functionsAndClassesAndNestedPackages) {
-        return functionsAndClassesAndNestedPackages === null ? {} : functionsAndClassesAndNestedPackages;
+    Kotlin.definePackage = function (members) {
+        return members === null ? {} : members;
     };
 
     Kotlin.createClass = (function () {

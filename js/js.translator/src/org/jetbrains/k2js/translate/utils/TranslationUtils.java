@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.utils;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
@@ -24,6 +25,7 @@ import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyGetterDescriptor;
 import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
@@ -64,8 +66,7 @@ public final class TranslationUtils {
 
     @NotNull
     public static JsBinaryOperation notNullCheck(@NotNull JsExpression expressionToCheck) {
-        JsNullLiteral nullLiteral = JsLiteral.NULL;
-        JsBinaryOperation notNull = inequality(expressionToCheck, nullLiteral);
+        JsBinaryOperation notNull = inequality(expressionToCheck, JsLiteral.NULL);
         JsBinaryOperation notUndefined = inequality(expressionToCheck, JsLiteral.UNDEFINED);
         return and(notNull, notUndefined);
     }
@@ -76,6 +77,12 @@ public final class TranslationUtils {
         JsBinaryOperation isNull = equality(expressionToCheck, nullLiteral);
         JsBinaryOperation isUndefined = equality(expressionToCheck, JsLiteral.UNDEFINED);
         return or(isNull, isUndefined);
+    }
+
+    @NotNull
+    public static JsBinaryOperation notNullConditionalTestExpression(@NotNull TemporaryVariable cachedValue) {
+        return and(inequality(cachedValue.assignmentExpression(), JsLiteral.NULL),
+                   inequality(cachedValue.reference(), JsLiteral.UNDEFINED));
     }
 
     @NotNull
@@ -91,7 +98,11 @@ public final class TranslationUtils {
     @NotNull
     public static List<JsExpression> translateArgumentList(@NotNull TranslationContext context,
             @NotNull List<? extends ValueArgument> jetArguments) {
-        List<JsExpression> jsArguments = new ArrayList<JsExpression>();
+        if (jetArguments.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<JsExpression> jsArguments = new SmartList<JsExpression>();
         for (ValueArgument argument : jetArguments) {
             jsArguments.add(translateArgument(context, argument));
         }
@@ -132,15 +143,8 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    public static JsNameRef getQualifiedReference(@NotNull TranslationContext context,
-            @NotNull DeclarationDescriptor descriptor) {
-        JsName name = context.getNameForDescriptor(descriptor);
-        JsNameRef reference = name.makeRef();
-        JsNameRef qualifier = context.getQualifierForDescriptor(descriptor);
-        if (qualifier != null) {
-            setQualifier(reference, qualifier);
-        }
-        return reference;
+    public static JsNameRef getQualifiedReference(@NotNull TranslationContext context, @NotNull DeclarationDescriptor descriptor) {
+        return new JsNameRef(context.getNameForDescriptor(descriptor), context.getQualifierForDescriptor(descriptor));
     }
 
     @NotNull

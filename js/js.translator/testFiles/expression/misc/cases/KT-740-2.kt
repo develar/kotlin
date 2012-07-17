@@ -23,7 +23,6 @@ val a: A = A()
     }
 
 fun box(): String {
-
     var d = a[1]
     if (c0 != 1) {
         return "1"

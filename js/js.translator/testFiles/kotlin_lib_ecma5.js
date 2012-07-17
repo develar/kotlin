@@ -122,9 +122,30 @@ var Kotlin = {};
         return constructor;
     }
 
-    Kotlin.definePackage = function (functionsAndClassesAndNestedPackages) {
-        return Object.create(null, functionsAndClassesAndNestedPackages === null ? undefined : functionsAndClassesAndNestedPackages );
+    Kotlin.definePackage = function (initializer, members) {
+        var definition = Object.create(null, members === null ? undefined : members);
+        if (initializer === null) {
+            return {value: definition};
+        }
+        else {
+            var getter = createPackageGetter(definition, initializer);
+            Object.freeze(getter);
+            return {get: getter};
+        }
     };
+
+    function createPackageGetter(instance, initializer) {
+        return function () {
+            if (initializer !== null) {
+                var tmp = initializer;
+                initializer = null;
+                tmp.call(instance);
+                Object.seal(instance);
+            }
+
+            return instance;
+        };
+    }
 
     Kotlin.$new = function (f) {
         return f;

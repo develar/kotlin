@@ -10,6 +10,7 @@ import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
 import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
+import org.jetbrains.k2js.translate.context.TraceableThisAliasProvider;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 
@@ -17,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
-import static org.jetbrains.k2js.translate.expression.InnerDeclarationTranslator.TraceableThisAliasProvider;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 import static org.jetbrains.k2js.translate.utils.FunctionBodyTranslator.translateFunctionBody;
 
@@ -40,7 +40,7 @@ public class LiteralFunctionTranslator {
         return new JsVar(containingVarRef.getName(), properties.isEmpty() ? null : new JsObjectLiteral(properties, true));
     }
 
-    public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration, @NotNull TranslationContext context) {
+    public JsExpression translate(@NotNull JetFunctionLiteralExpression declaration) {
         FunctionDescriptor descriptor = getFunctionDescriptor(rootContext.bindingContext(), declaration);
 
         JsFunction fun = createFunction();
@@ -56,7 +56,7 @@ public class LiteralFunctionTranslator {
         }
         else {
             asInner = descriptor.getContainingDeclaration() instanceof NamespaceDescriptor;
-            funContext = rootContext.contextWithScope(fun).nameTracer(context);
+            funContext = rootContext.contextWithScope(fun);
         }
 
         fun.getBody().getStatements().addAll(translateFunctionBody(descriptor, declaration, funContext).getStatements());

@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.reference;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
@@ -61,8 +60,7 @@ public final class ReferenceAccessTranslator extends AbstractTranslator implemen
     @Override
     @NotNull
     public JsExpression translateAsSet(@NotNull JsExpression toSetTo) {
-        assert reference instanceof JsNameRef;
-        return JsAstUtils.assignment((JsNameRef) reference, toSetTo);
+        return JsAstUtils.assignment(reference, toSetTo);
     }
 
     @NotNull

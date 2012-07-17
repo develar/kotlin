@@ -17,13 +17,13 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
-import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
+import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
@@ -34,9 +34,10 @@ import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
@@ -45,15 +46,13 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescrip
 /**
  * @author Pavel.Talanov
  */
-final class NamespaceTranslator extends AbstractTranslator implements Comparable<NamespaceTranslator> {
+final class NamespaceTranslator extends AbstractTranslator {
     @NotNull
     private final NamespaceDescriptor descriptor;
     @NotNull
     private final ClassDeclarationTranslator classDeclarationTranslator;
 
     private final FileDeclarationVisitor visitor;
-
-    private final Set<NamespaceDescriptor> usedNamespaces = new THashSet<NamespaceDescriptor>();
 
     NamespaceTranslator(@NotNull NamespaceDescriptor descriptor,
             @NotNull ClassDeclarationTranslator classDeclarationTranslator,
@@ -65,11 +64,6 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
         visitor = new FileDeclarationVisitor();
     }
 
-    @Override
-    public int compareTo(NamespaceTranslator o) {
-        return usedNamespaces.contains(o.descriptor) ? 1 : (o.usedNamespaces.contains(descriptor) ? -1 : 0);
-    }
-
     public void translate(JetFile file) {
         for (JetDeclaration declaration : file.getDeclarations()) {
             if (!AnnotationsUtils.isNativeObject(BindingUtils.getDescriptorForElement(bindingContext(), declaration))) {
@@ -78,37 +72,56 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
         }
     }
 
-    public void add(@NotNull Map<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace,
-            @NotNull List<JsExpression> initializers) {
-        if (!visitor.initializerStatements.isEmpty()) {
-            visitor.initializer.getBody().getStatements().addAll(visitor.initializerStatements);
-            initializers.add(new JsInvocation(new JsNameRef("call", visitor.initializer),
-                                              TranslationUtils.getQualifiedReference(context(), descriptor)));
-        }
-
-        JsObjectLiteral place = descriptorToDeclarationPlace.get(descriptor);
-        if (place == null) {
-            place = new JsObjectLiteral(visitor.getResult(), true);
-            descriptorToDeclarationPlace.put(descriptor, place);
-            addToParent((NamespaceDescriptor) descriptor.getContainingDeclaration(), getEntry(descriptor, place),
-                        descriptorToDeclarationPlace);
+    public void add(@NotNull Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation,
+            @NotNull List<JsStatement> initializers) {
+        JsExpression initializer;
+        if (visitor.initializerStatements.isEmpty()) {
+            initializer = null;
         }
         else {
-            place.getPropertyInitializers().addAll(visitor.getResult());
+            initializer = visitor.initializer;
+            if (!context().isEcma5()) {
+                initializers.add(new JsInvocation(new JsNameRef("call", initializer),
+                                                  TranslationUtils.getQualifiedReference(context(), descriptor)).makeStmt());
+            }
+        }
+
+        List<JsExpression> defineInvocation = descriptorToDefineInvocation.get(descriptor);
+        if (defineInvocation == null) {
+            defineInvocation = createDefineInvocation(initializer, new JsObjectLiteral(visitor.getResult(), true));
+            descriptorToDefineInvocation.put(descriptor, defineInvocation);
+            addToParent((NamespaceDescriptor) descriptor.getContainingDeclaration(), getEntry(descriptor, defineInvocation),
+                        descriptorToDefineInvocation);
+        }
+        else {
+            if (context().isEcma5() && initializer != null) {
+                assert defineInvocation.get(0) == JsLiteral.NULL;
+                defineInvocation.set(0, initializer);
+            }
+            ((JsObjectLiteral) defineInvocation.get(context().isEcma5() ? 1 : 0)).getPropertyInitializers().addAll(visitor.getResult());
         }
     }
 
-    private JsPropertyInitializer getEntry(NamespaceDescriptor descriptor, JsObjectLiteral place) {
-        return new JsPropertyInitializer(context().getNameForDescriptor(descriptor).makeRef(),
-                                         toDataDescriptor(new JsInvocation(context().namer().packageDefinitionMethodReference(), place)));
+    private List<JsExpression> createDefineInvocation(@Nullable JsExpression initializer, @NotNull JsObjectLiteral members) {
+        if (context().isEcma5()) {
+            return Arrays.asList(initializer == null ? JsLiteral.NULL : initializer, members);
+        }
+        else {
+            return Collections.<JsExpression>singletonList(members);
+        }
     }
 
-    private static boolean addEntryIfParentExists(NamespaceDescriptor parentDescriptor,
+    private JsPropertyInitializer getEntry(@NotNull NamespaceDescriptor descriptor, List<JsExpression> defineInvocation) {
+        return new JsPropertyInitializer(context().getNameForDescriptor(descriptor).makeRef(),
+                                         new JsInvocation(context().namer().packageDefinitionMethodReference(), defineInvocation));
+    }
+
+    private boolean addEntryIfParentExists(NamespaceDescriptor parentDescriptor,
             JsPropertyInitializer entry,
-            Map<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace) {
-        JsObjectLiteral parentPlace = descriptorToDeclarationPlace.get(parentDescriptor);
-        if (parentPlace != null) {
-            parentPlace.getPropertyInitializers().add(entry);
+            Map<NamespaceDescriptor, List<JsExpression>> descriptorToDeclarationPlace) {
+        List<JsExpression> parentDefineInvocation = descriptorToDeclarationPlace.get(parentDescriptor);
+        if (parentDefineInvocation != null) {
+            ((JsObjectLiteral) parentDefineInvocation.get(context().isEcma5() ? 1 : 0)).getPropertyInitializers().add(entry);
             return true;
         }
         return false;
@@ -116,12 +129,12 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
 
     private void addToParent(NamespaceDescriptor parentDescriptor,
             JsPropertyInitializer entry,
-            Map<NamespaceDescriptor, JsObjectLiteral> descriptorToDeclarationPlace) {
-        while (!addEntryIfParentExists(parentDescriptor, entry, descriptorToDeclarationPlace)) {
-            JsObjectLiteral place = new JsObjectLiteral(new SmartList<JsPropertyInitializer>(entry), true);
-            entry = getEntry(parentDescriptor, place);
+            Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation) {
+        while (!addEntryIfParentExists(parentDescriptor, entry, descriptorToDefineInvocation)) {
+            List<JsExpression> defineInvocation = createDefineInvocation(null, new JsObjectLiteral(new SmartList<JsPropertyInitializer>(entry), true));
+            entry = getEntry(parentDescriptor, defineInvocation);
 
-            descriptorToDeclarationPlace.put(parentDescriptor, place);
+            descriptorToDefineInvocation.put(parentDescriptor, defineInvocation);
             parentDescriptor = (NamespaceDescriptor) parentDescriptor.getContainingDeclaration();
         }
     }
@@ -129,14 +142,14 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
     private class FileDeclarationVisitor extends DeclarationBodyVisitor {
         private final JsFunction initializer;
         private final TranslationContext initializerContext;
-        private final List<JsStatement> initializerStatements = new SmartList<JsStatement>();
-        private final InitializerVisitor initializerVisitor = new InitializerVisitor(initializerStatements);
-        private final OwnNamespaceRefTracer ownNamespaceRefTracer;
+        private final List<JsStatement> initializerStatements;
+        private final InitializerVisitor initializerVisitor;
 
         private FileDeclarationVisitor() {
             initializer = JsAstUtils.createFunctionWithEmptyBody(context().scope());
-            ownNamespaceRefTracer = new OwnNamespaceRefTracer();
-            initializerContext = context().contextWithScope(initializer).nameTracer(ownNamespaceRefTracer);
+            initializerContext = context().contextWithScope(initializer);
+            initializerStatements = initializer.getBody().getStatements();
+            initializerVisitor = new InitializerVisitor(initializerStatements);
         }
 
         @Override
@@ -148,16 +161,15 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
 
         @Override
         public Void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
-            ownNamespaceRefTracer.hasReference = false;
             ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);
             JsExpression value = ClassTranslator.generateClassCreation(declaration, descriptor, initializerContext);
             String name = descriptor.getName().getName();
 
-            if (ownNamespaceRefTracer.hasReference) {
-                initializerStatements.add(InitializerUtils.create(name, value, context));
+            if (value instanceof JsLiteral) {
+                result.add(new JsPropertyInitializer(context.program().getStringLiteral(name), toDataDescriptor(value)));
             }
             else {
-                result.add(new JsPropertyInitializer(context.program().getStringLiteral(name), toDataDescriptor(value)));
+                initializerStatements.add(InitializerUtils.create(name, value, initializerContext));
             }
             return null;
         }
@@ -167,10 +179,9 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
             super.visitProperty(property, context);
             JetExpression initializer = property.getInitializer();
             if (initializer != null) {
-                ownNamespaceRefTracer.hasReference = false;
                 JsExpression value = Translation.translateAsExpression(initializer, initializerContext);
                 PropertyDescriptor propertyDescriptor = getPropertyDescriptor(context.bindingContext(), property);
-                if (!ownNamespaceRefTracer.hasReference) {
+                if (value instanceof JsLiteral) {
                     result.add(new JsPropertyInitializer(context.getNameForDescriptor(propertyDescriptor).makeRef(),
                                                          context().isEcma5() ? JsAstUtils
                                                                  .createPropertyDataDescriptor(propertyDescriptor, value, context) : value));
@@ -186,44 +197,6 @@ final class NamespaceTranslator extends AbstractTranslator implements Comparable
         public Void visitAnonymousInitializer(@NotNull JetClassInitializer expression, @NotNull TranslationContext context) {
             expression.accept(initializerVisitor, initializerContext);
             return null;
-        }
-
-        private class OwnNamespaceRefTracer implements Processor<DeclarationDescriptor> {
-            private boolean hasReference;
-
-            @Override
-            public boolean process(DeclarationDescriptor declarationDescriptor) {
-                NamespaceDescriptor namespaceDescriptor;
-                if (declarationDescriptor instanceof NamespaceDescriptor) {
-                    namespaceDescriptor = (NamespaceDescriptor) declarationDescriptor;
-                }
-                else if (declarationDescriptor.getContainingDeclaration() instanceof NamespaceDescriptor) {
-                    namespaceDescriptor = (NamespaceDescriptor) declarationDescriptor.getContainingDeclaration();
-                }
-                else if (declarationDescriptor instanceof ConstructorDescriptor) {
-                    DeclarationDescriptor declaration =
-                            ((ConstructorDescriptor) declarationDescriptor).getContainingDeclaration().getContainingDeclaration();
-                    if (declaration instanceof NamespaceDescriptor) {
-                        namespaceDescriptor = (NamespaceDescriptor) declaration;
-                    }
-                    else {
-                        return true;
-                    }
-                }
-                else {
-                    return true;
-                }
-
-                if (namespaceDescriptor == descriptor) {
-                    hasReference = true;
-                }
-                else if (context().bindingContext().get(BindingContext.NAMESPACE_IS_SRC, namespaceDescriptor) == Boolean.TRUE) {
-                    usedNamespaces.add(namespaceDescriptor);
-                    hasReference = true;
-                }
-
-                return true;
-            }
         }
     }
 }

@@ -24,7 +24,7 @@ import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.ClassOrNamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
@@ -96,7 +96,7 @@ public class AliasingContext {
     public abstract static class AbstractThisAliasProvider implements ThisAliasProvider {
         @NotNull
         protected static DeclarationDescriptor normalize(@NotNull DeclarationDescriptor descriptor) {
-            if (descriptor instanceof ClassDescriptor) {
+            if (descriptor instanceof ClassOrNamespaceDescriptor) {
                 return descriptor;
             }
             else if (descriptor instanceof CallableDescriptor) {

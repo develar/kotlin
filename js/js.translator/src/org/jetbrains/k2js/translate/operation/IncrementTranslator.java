@@ -43,7 +43,6 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.isIntrinsicOpe
  */
 // TODO: provide better increment translator logic
 public abstract class IncrementTranslator extends AbstractTranslator {
-
     public static boolean isIncrement(@NotNull JetUnaryExpression expression) {
         return OperatorConventions.INCREMENT_OPERATIONS.contains(getOperationToken(expression));
     }
@@ -54,7 +53,7 @@ public abstract class IncrementTranslator extends AbstractTranslator {
         if (isIntrinsicOperation(context, expression)) {
             return IntrinsicIncrementTranslator.doTranslate(expression, context);
         }
-        return (new OverloadedIncrementTranslator(expression, context)).translateIncrementExpression();
+        return new OverloadedIncrementTranslator(expression, context).translateIncrementExpression();
     }
 
     @NotNull

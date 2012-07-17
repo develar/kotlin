@@ -3,12 +3,9 @@ package org.jetbrains.k2js.translate.expression;
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetElement;
-import org.jetbrains.k2js.translate.context.AliasingContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.utils.closure.ClosureContext;
 import org.jetbrains.k2js.translate.utils.closure.ClosureUtils;
@@ -64,37 +61,5 @@ abstract class InnerDeclarationTranslator {
 
     protected List<JsExpression> getCapturedValueParametersList(JsInvocation invocation) {
         return invocation.getArguments();
-    }
-
-    static class TraceableThisAliasProvider extends AliasingContext.AbstractThisAliasProvider {
-        private final ClassDescriptor descriptor;
-        private final JsNameRef thisRef;
-        private boolean thisWasCaptured;
-
-        public boolean wasThisCaptured() {
-            return thisWasCaptured;
-        }
-
-        public TraceableThisAliasProvider(@NotNull ClassDescriptor descriptor, @NotNull JsNameRef thisRef) {
-            this.descriptor = descriptor;
-            this.thisRef = thisRef;
-        }
-
-        @Nullable
-        public JsNameRef getRefIfWasCaptured() {
-            return thisWasCaptured ? thisRef : null;
-        }
-
-        @Nullable
-        @Override
-        public JsNameRef get(@NotNull DeclarationDescriptor descriptor) {
-            if (this.descriptor == normalize(descriptor)) {
-                thisWasCaptured = true;
-                return thisRef;
-            }
-            else {
-                return null;
-            }
-        }
     }
 }

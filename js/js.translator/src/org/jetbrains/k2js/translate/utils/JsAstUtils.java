@@ -229,8 +229,7 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsInvocation defineProperty(@NotNull JsExpression name,
-            @NotNull JsObjectLiteral value) {
+    public static JsInvocation defineProperty(@NotNull JsExpression name, @NotNull JsObjectLiteral value) {
         JsInvocation invocation = new JsInvocation(DEFINE_PROPERTY);
         invocation.getArguments().add(JsLiteral.THIS);
         invocation.getArguments().add(name);
