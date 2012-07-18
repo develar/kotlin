@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.intellij.util.SmartList;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
@@ -50,13 +49,12 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
 
     @NotNull
     private List<JsStatement> translate() {
-        Map<NamespaceDescriptor, NamespaceTranslator> descriptorToTranslator = new THashMap<NamespaceDescriptor, NamespaceTranslator>();
+        // predictable order
+        Map<NamespaceDescriptor, NamespaceTranslator> descriptorToTranslator = new LinkedHashMap<NamespaceDescriptor, NamespaceTranslator>();
         Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation = new THashMap<NamespaceDescriptor, List<JsExpression>>();
         JsObjectLiteral rootNamespaceDefinition = null;
 
         ClassDeclarationTranslator classDeclarationTranslator = new ClassDeclarationTranslator(context());
-        // predictable order
-        List<NamespaceTranslator> translators = new SmartList<NamespaceTranslator>();
         for (JetFile file : files) {
             NamespaceDescriptor descriptor = context().bindingContext().get(BindingContext.FILE_TO_NAMESPACE, file);
             assert descriptor != null;
@@ -67,7 +65,6 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
                 }
                 translator = new NamespaceTranslator(descriptor, classDeclarationTranslator, context());
                 descriptorToTranslator.put(descriptor, translator);
-                translators.add(translator);
             }
 
             translator.translate(file);
@@ -83,12 +80,12 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
             result = Collections.<JsStatement>singletonList(vars);
         }
         else {
-            result = new ArrayList<JsStatement>(translators.size() + 1);
+            result = new ArrayList<JsStatement>();
             result.add(vars);
         }
 
         classDeclarationTranslator.generateDeclarations();
-        for (NamespaceTranslator translator : translators) {
+        for (NamespaceTranslator translator : descriptorToTranslator.values()) {
             translator.add(descriptorToDefineInvocation, result);
         }
 
