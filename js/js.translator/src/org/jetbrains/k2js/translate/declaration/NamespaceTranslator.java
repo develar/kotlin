@@ -161,16 +161,7 @@ final class NamespaceTranslator extends AbstractTranslator {
 
         @Override
         public Void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
-            ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);
-            JsExpression value = ClassTranslator.generateClassCreation(declaration, descriptor, initializerContext);
-            String name = descriptor.getName().getName();
-
-            if (value instanceof JsLiteral) {
-                result.add(new JsPropertyInitializer(context.program().getStringLiteral(name), toDataDescriptor(value)));
-            }
-            else {
-                initializerStatements.add(InitializerUtils.create(name, value, initializerContext));
-            }
+            InitializerUtils.generate(declaration, initializerStatements, result, context);
             return null;
         }
 
@@ -184,7 +175,7 @@ final class NamespaceTranslator extends AbstractTranslator {
                 if (value instanceof JsLiteral) {
                     result.add(new JsPropertyInitializer(context.getNameForDescriptor(propertyDescriptor).makeRef(),
                                                          context().isEcma5() ? JsAstUtils
-                                                                 .createPropertyDataDescriptor(propertyDescriptor, value, context) : value));
+                                                                 .createPropertyDataDescriptor(propertyDescriptor, value) : value));
                 }
                 else {
                     initializerStatements.add(generateInitializerForProperty(context, propertyDescriptor, value));

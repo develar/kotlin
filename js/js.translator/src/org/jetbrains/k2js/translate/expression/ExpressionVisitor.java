@@ -249,8 +249,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
             return null;
         }
         assert value instanceof String : "Compile time constant template should be a String constant.";
-        String constantString = (String) value;
-        return context.program().getStringLiteral(constantString);
+        return context.program().getStringLiteral((String) value);
     }
 
     @Override

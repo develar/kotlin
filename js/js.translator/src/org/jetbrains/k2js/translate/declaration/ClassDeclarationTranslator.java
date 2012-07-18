@@ -33,6 +33,7 @@ import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
+import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -202,6 +203,6 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
             value = item.qualifiedLabel;
         }
 
-        return new JsPropertyInitializer(context().program().getStringLiteral(descriptor.getName().getName()), toDataDescriptor(value));
+        return InitializerUtils.createPropertyInitializer(descriptor, value, context);
     }
 }

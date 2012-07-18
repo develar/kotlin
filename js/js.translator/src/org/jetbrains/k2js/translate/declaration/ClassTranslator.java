@@ -236,12 +236,16 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     private List<JsPropertyInitializer> translatePropertiesAsConstructorParameters(@NotNull TranslationContext classDeclarationContext) {
+        List<JetParameter> parameters = getPrimaryConstructorParameters(classDeclaration);
+        if (parameters.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         List<JsPropertyInitializer> result = new SmartList<JsPropertyInitializer>();
-        for (JetParameter parameter : getPrimaryConstructorParameters(classDeclaration)) {
-            PropertyDescriptor descriptor =
-                    getPropertyDescriptorForConstructorParameter(bindingContext(), parameter);
+        for (JetParameter parameter : parameters) {
+            PropertyDescriptor descriptor = getPropertyDescriptorForConstructorParameter(bindingContext(), parameter);
             if (descriptor != null) {
-                result.addAll(PropertyTranslator.translateAccessors(descriptor, classDeclarationContext));
+                PropertyTranslator.translateAccessors(descriptor, result, classDeclarationContext);
             }
         }
         return result;

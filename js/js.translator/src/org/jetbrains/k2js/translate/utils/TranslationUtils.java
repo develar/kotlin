@@ -217,9 +217,4 @@ public final class TranslationUtils {
     public static boolean isNullLiteral(@NotNull JsExpression expression) {
         return expression.equals(JsLiteral.NULL);
     }
-
-    public static void defineModule(@NotNull TranslationContext context, @NotNull List<JsStatement> statements, @NotNull String moduleId) {
-        statements.add(new JsInvocation(context.namer().kotlin("defineModule"), context.program().getStringLiteral(moduleId),
-                                        context.scope().declareName("_").makeRef()).makeStmt());
-    }
 }

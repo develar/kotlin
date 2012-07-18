@@ -133,16 +133,6 @@ public final class BindingUtils {
         return context.get(BindingContext.PRIMARY_CONSTRUCTOR_PARAMETER, parameter);
     }
 
-    @Nullable
-    public static JetProperty getPropertyForDescriptor(@NotNull BindingContext context,
-            @NotNull PropertyDescriptor property) {
-        PsiElement result = BindingContextUtils.descriptorToDeclaration(context, property);
-        if (!(result instanceof JetProperty)) {
-            return null;
-        }
-        return (JetProperty) result;
-    }
-
     @NotNull
     public static DeclarationDescriptor getDescriptorForReferenceExpression(@NotNull BindingContext context,
             @NotNull JetReferenceExpression reference) {

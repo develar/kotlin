@@ -31,10 +31,6 @@ public final class JsProgram extends JsNodeImpl {
         setFragmentCount(1);
 
         emptyStmt = new JsEmpty();
-
-        stringLiteralMap.put(JsLiteral.VALUE.getValue(), JsLiteral.VALUE);
-        JsStringLiteral writable = ((JsStringLiteral) JsLiteral.WRITABLE.getLabelExpr());
-        stringLiteralMap.put(writable.getValue(), writable);
     }
 
     public JsEmpty getEmptyStmt() {

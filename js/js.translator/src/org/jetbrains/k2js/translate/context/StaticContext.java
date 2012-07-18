@@ -173,7 +173,7 @@ public final class StaticContext {
             // ecma 5 property name never declares as obfuscatable:
             // 1) property cannot be overloaded, so, name collision is not possible
             // 2) main reason: if property doesn't have any custom accessor, value holder will have the same name as accessor, so, the same name will be declared more than once
-            return isEcma5() ? scope.declareUnobfuscatableName(name) : scope.declareFreshName(name);
+            return isEcma5() ? scope.declareName(name) : scope.declareFreshName(name);
         }
 
         public NameGenerator() {
@@ -196,7 +196,7 @@ public final class StaticContext {
                     }
 
                     String name = Namer.generateNamespaceName(descriptor);
-                    return getRootScope().declareUnobfuscatableName(name);
+                    return getRootScope().declareName(name);
                 }
             };
             Rule<JsName> memberDeclarationsInsideParentsScope = new Rule<JsName>() {
@@ -247,7 +247,7 @@ public final class StaticContext {
                         }
                         String name = getNameForAnnotatedObject(descriptor, annotation);
                         name = (name != null) ? name : descriptor.getName().getName();
-                        return getEnclosingScope(descriptor).declareUnobfuscatableName(name);
+                        return getEnclosingScope(descriptor).declareName(name);
                     }
                     return null;
                 }
@@ -278,7 +278,7 @@ public final class StaticContext {
                         return null;
                     }
                     if (((FunctionDescriptor) descriptor).getValueParameters().isEmpty()) {
-                        return getEnclosingScope(descriptor).declareUnobfuscatableName("toString");
+                        return getEnclosingScope(descriptor).declareName("toString");
                     }
                     return null;
                 }
@@ -298,7 +298,7 @@ public final class StaticContext {
 
                     JsScope namingScope = getEnclosingScope(descriptor);
                     JsName result = getNameForDescriptor(overriddenDescriptor);
-                    namingScope.declareUnobfuscatableName(result.getIdent());
+                    namingScope.declareName(result.getIdent());
                     return result;
                 }
             };
@@ -449,7 +449,7 @@ public final class StaticContext {
                     }
 
                     if (qualifier.getQualifier() == null) {
-                        qualifier.setQualifier(new JsNameRef(Namer.getRootNamespaceName()));
+                        qualifier.setQualifier(new JsNameRef(Namer.ROOT_NAMESPACE));
                     }
 
                     return result;

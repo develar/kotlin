@@ -6,12 +6,10 @@ package com.google.dart.compiler.backend.js.ast;
 
 import com.google.dart.compiler.common.Symbol;
 
-import java.io.Serializable;
-
 /**
  * An abstract base class for named JavaScript objects.
  */
-public class JsName implements Symbol, Serializable {
+public class JsName implements Symbol {
   private final JsScope enclosing;
   private final String ident;
 

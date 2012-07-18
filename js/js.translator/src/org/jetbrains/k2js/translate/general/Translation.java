@@ -29,6 +29,7 @@ import org.jetbrains.k2js.facade.exceptions.MainFunctionNotFoundException;
 import org.jetbrains.k2js.facade.exceptions.TranslationException;
 import org.jetbrains.k2js.facade.exceptions.TranslationInternalException;
 import org.jetbrains.k2js.facade.exceptions.UnsupportedFeatureException;
+import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.StaticContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.declaration.ClassAliasingMap;
@@ -43,7 +44,6 @@ import org.jetbrains.k2js.translate.reference.CallBuilder;
 import org.jetbrains.k2js.translate.test.JSTestGenerator;
 import org.jetbrains.k2js.translate.test.JSTester;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
-import org.jetbrains.k2js.translate.utils.TranslationUtils;
 import org.jetbrains.k2js.translate.utils.dangerous.DangerousData;
 import org.jetbrains.k2js.translate.utils.dangerous.DangerousTranslator;
 
@@ -74,7 +74,7 @@ public final class Translation {
     }
 
     @NotNull
-    public static List<JsStatement> translateFiles(@NotNull Collection<JetFile> files, @NotNull TranslationContext context) {
+    private static List<JsStatement> translateFiles(@NotNull Collection<JetFile> files, @NotNull TranslationContext context) {
         return NamespaceDeclarationTranslator.translateFiles(files, context);
     }
 
@@ -167,7 +167,7 @@ public final class Translation {
         TranslationContext context = TranslationContext.rootFunctionContext(staticContext, rootFunction);
         staticContext.getLiteralFunctionTranslator().setRootContext(context);
         statements.addAll(translateFiles(files, context));
-        TranslationUtils.defineModule(context, statements, config.getModuleId());
+        defineModule(context, statements, config.getModuleId());
 
         if (mainCallParameters.shouldBeGenerated()) {
             JsStatement statement = generateCallToMain(context, files, mainCallParameters.arguments());
@@ -177,6 +177,14 @@ public final class Translation {
         }
         mayBeGenerateTests(files, config, rootFunction.getBody(), context);
         return context.program();
+    }
+
+    private static void defineModule(@NotNull TranslationContext context, @NotNull List<JsStatement> statements, @NotNull String moduleId) {
+        JsName rootNamespaceName = context.scope().findName(Namer.ROOT_NAMESPACE);
+        if (rootNamespaceName != null) {
+            statements.add(new JsInvocation(context.namer().kotlin("defineModule"), context.program().getStringLiteral(moduleId),
+                                            rootNamespaceName.makeRef()).makeStmt());
+        }
     }
 
     private static void mayBeGenerateTests(@NotNull Collection<JetFile> files, @NotNull Config config,
@@ -212,8 +220,7 @@ public final class Translation {
 
     private static void setArguments(@NotNull TranslationContext context, @NotNull List<String> arguments,
             @NotNull JsInvocation translatedCall) {
-        JsArrayLiteral arrayLiteral = new JsArrayLiteral();
-        arrayLiteral.getExpressions().addAll(toStringLiteralList(arguments, context.program()));
+        JsArrayLiteral arrayLiteral = new JsArrayLiteral(toStringLiteralList(arguments, context.program()));
         JsAstUtils.setArguments(translatedCall, Collections.<JsExpression>singletonList(arrayLiteral));
     }
 }

@@ -122,6 +122,7 @@ public class JsScope {
      *
      * @return <code>null</code> if the identifier has no associated name
      */
+    @Nullable
     public final JsName findName(String ident) {
         JsName name = findOwnName(ident);
         if (name == null && parent != null) {
@@ -171,10 +172,5 @@ public class JsScope {
      */
     protected JsName findOwnName(String ident) {
         return names.get(ident);
-    }
-
-    @NotNull
-    public JsName declareUnobfuscatableName(@NotNull String name) {
-        return declareName(name);
     }
 }

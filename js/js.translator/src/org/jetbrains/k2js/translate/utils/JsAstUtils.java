@@ -16,8 +16,8 @@
 
 package org.jetbrains.k2js.translate.utils;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
@@ -25,8 +25,8 @@ import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -37,6 +37,10 @@ public final class JsAstUtils {
     public static final JsNameRef CREATE_OBJECT = new JsNameRef("create");
     private static final JsNameRef EMPTY_REF = new JsNameRef("");
 
+    private static final JsNameRef VALUE = new JsNameRef("value");
+    private static final JsPropertyInitializer WRITABLE = new JsPropertyInitializer(new JsNameRef("writable"), JsLiteral.TRUE);
+    private static final JsPropertyInitializer ENUMERABLE = new JsPropertyInitializer(new JsNameRef("enumerable"), JsLiteral.TRUE);
+
     static {
         JsNameRef globalObjectReference = new JsNameRef("Object");
         DEFINE_PROPERTY.setQualifier(globalObjectReference);
@@ -44,11 +48,6 @@ public final class JsAstUtils {
     }
 
     private JsAstUtils() {
-    }
-
-    @NotNull
-    public static JsPropertyInitializer newNamedMethod(@NotNull JsName name, @NotNull JsFunction function) {
-        return new JsPropertyInitializer(name.makeRef(), function);
     }
 
     @NotNull
@@ -206,7 +205,11 @@ public final class JsAstUtils {
 
     @NotNull
     public static List<JsExpression> toStringLiteralList(@NotNull List<String> strings, @NotNull JsProgram program) {
-        ArrayList<JsExpression> result = Lists.newArrayList();
+        if (strings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<JsExpression> result = new SmartList<JsExpression>();
         for (String str : strings) {
             result.add(program.getStringLiteral(str));
         }
@@ -217,7 +220,7 @@ public final class JsAstUtils {
     public static JsInvocation definePropertyDataDescriptor(@NotNull PropertyDescriptor descriptor,
             @NotNull JsExpression value,
             @NotNull TranslationContext context) {
-        return defineProperty(context.getNameForDescriptor(descriptor).getIdent(), createPropertyDataDescriptor(descriptor, value, context),
+        return defineProperty(context.getNameForDescriptor(descriptor).getIdent(), createPropertyDataDescriptor(descriptor, value),
                               context);
     }
 
@@ -225,23 +228,17 @@ public final class JsAstUtils {
     public static JsInvocation defineProperty(@NotNull String name,
             @NotNull JsObjectLiteral value,
             @NotNull TranslationContext context) {
-        return defineProperty(context.program().getStringLiteral(name), value);
-    }
-
-    @NotNull
-    public static JsInvocation defineProperty(@NotNull JsExpression name, @NotNull JsObjectLiteral value) {
         JsInvocation invocation = new JsInvocation(DEFINE_PROPERTY);
         invocation.getArguments().add(JsLiteral.THIS);
-        invocation.getArguments().add(name);
+        invocation.getArguments().add(context.program().getStringLiteral(name));
         invocation.getArguments().add(value);
         return invocation;
     }
 
     @NotNull
     public static JsObjectLiteral createPropertyDataDescriptor(@NotNull FunctionDescriptor descriptor,
-            @NotNull JsExpression value,
-            @NotNull TranslationContext context) {
-        return createPropertyDataDescriptor(descriptor.getModality().isOverridable(), descriptor, value, context);
+            @NotNull JsExpression value) {
+        return createPropertyDataDescriptor(descriptor.getModality().isOverridable(), descriptor, value);
     }
 
     @NotNull
@@ -252,28 +249,26 @@ public final class JsAstUtils {
     @NotNull
     public static JsObjectLiteral createDataDescriptor(@NotNull JsExpression value, boolean writable) {
         JsObjectLiteral dataDescriptor = new JsObjectLiteral();
-        dataDescriptor.getPropertyInitializers().add(new JsPropertyInitializer(JsLiteral.VALUE, value));
+        dataDescriptor.getPropertyInitializers().add(new JsPropertyInitializer(VALUE, value));
         if (writable) {
-            dataDescriptor.getPropertyInitializers().add(JsLiteral.WRITABLE);
+            dataDescriptor.getPropertyInitializers().add(WRITABLE);
         }
         return dataDescriptor;
     }
 
     @NotNull
     public static JsObjectLiteral createPropertyDataDescriptor(@NotNull PropertyDescriptor descriptor,
-            @NotNull JsExpression value,
-            @NotNull TranslationContext context) {
-        return createPropertyDataDescriptor(descriptor.isVar(), descriptor, value, context);
+            @NotNull JsExpression value) {
+        return createPropertyDataDescriptor(descriptor.isVar(), descriptor, value);
     }
 
     @NotNull
     private static JsObjectLiteral createPropertyDataDescriptor(boolean writable,
             @NotNull DeclarationDescriptor descriptor,
-            @NotNull JsExpression value,
-            @NotNull TranslationContext context) {
+            @NotNull JsExpression value) {
         JsObjectLiteral dataDescriptor = createDataDescriptor(value, writable);
         if (AnnotationsUtils.isEnumerable(descriptor)) {
-            dataDescriptor.getPropertyInitializers().add(context.namer().enumerablePropertyDescriptorField());
+            dataDescriptor.getPropertyInitializers().add(ENUMERABLE);
         }
         return dataDescriptor;
     }

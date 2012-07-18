@@ -16,13 +16,10 @@
 
 package org.jetbrains.k2js.translate.initializer;
 
-import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.general.TranslatorVisitor;
 
@@ -30,7 +27,6 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
 
 /**
@@ -68,9 +64,7 @@ public final class InitializerVisitor extends TranslatorVisitor<Void> {
 
     @Override
     public Void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
-        ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);
-        JsExpression value = ClassTranslator.generateClassCreation(declaration, descriptor, context);
-        result.add(InitializerUtils.create(descriptor.getName().getName(), value, context));
+        InitializerUtils.generate(declaration, result, null, context);
         return null;
     }
 

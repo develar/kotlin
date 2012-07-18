@@ -74,17 +74,16 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
         JsPropertyInitializer methodAsPropertyInitializer = Translation.functionTranslator(expression, context).translateAsMethod();
         if (context.isEcma5()) {
             JsExpression methodBodyExpression = methodAsPropertyInitializer.getValueExpr();
-            methodAsPropertyInitializer.setValueExpr(JsAstUtils.createPropertyDataDescriptor(descriptor, methodBodyExpression, context));
+            methodAsPropertyInitializer.setValueExpr(JsAstUtils.createPropertyDataDescriptor(descriptor, methodBodyExpression));
         }
         result.add(methodAsPropertyInitializer);
         return null;
     }
 
     @Override
-    public Void visitProperty(@NotNull JetProperty expression,
-            @NotNull TranslationContext context) {
+    public Void visitProperty(@NotNull JetProperty expression, @NotNull TranslationContext context) {
         PropertyDescriptor propertyDescriptor = BindingUtils.getPropertyDescriptor(context.bindingContext(), expression);
-        result.addAll(PropertyTranslator.translateAccessors(propertyDescriptor, context));
+        PropertyTranslator.translateAccessors(propertyDescriptor, expression, result, context);
         return null;
     }
 
@@ -92,8 +91,8 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
     public Void visitObjectDeclarationName(@NotNull JetObjectDeclarationName expression,
             @NotNull TranslationContext context) {
         if (!context.isEcma5()) {
-            result.addAll(PropertyTranslator.translateAccessors(
-                    getPropertyDescriptorForObjectDeclaration(context.bindingContext(), expression), context));
+            PropertyTranslator
+                    .translateAccessors(getPropertyDescriptorForObjectDeclaration(context.bindingContext(), expression), result, context);
         }
 
         return null;

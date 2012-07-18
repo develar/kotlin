@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
@@ -34,8 +35,9 @@ import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
  * @author Pavel Talanov
  */
 public final class NamespaceDeclarationTranslator extends AbstractTranslator {
-    @NotNull
     private final Iterable<JetFile> files;
+    private final Map<NamespaceDescriptor,NamespaceTranslator> descriptorToTranslator =
+            new LinkedHashMap<NamespaceDescriptor, NamespaceTranslator>();
 
     public static List<JsStatement> translateFiles(@NotNull Collection<JetFile> files, @NotNull TranslationContext context) {
         return new NamespaceDeclarationTranslator(files, context).translate();
@@ -50,7 +52,6 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
     @NotNull
     private List<JsStatement> translate() {
         // predictable order
-        Map<NamespaceDescriptor, NamespaceTranslator> descriptorToTranslator = new LinkedHashMap<NamespaceDescriptor, NamespaceTranslator>();
         Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation = new THashMap<NamespaceDescriptor, List<JsExpression>>();
         JsObjectLiteral rootNamespaceDefinition = null;
 
@@ -95,7 +96,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         return result;
     }
 
-    private JsObjectLiteral getRootPackage(Map<NamespaceDescriptor, List<JsExpression>> descriptorToDeclarationPlace,
+    private JsObjectLiteral getRootPackage(Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation,
             NamespaceDescriptor descriptor) {
         NamespaceDescriptor rootNamespace = descriptor;
         while (rootNamespace.getContainingDeclaration() instanceof NamespaceDescriptor) {
@@ -111,7 +112,7 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
             args = Collections.<JsExpression>singletonList(rootNamespaceDefinition);
         }
 
-        descriptorToDeclarationPlace.put(rootNamespace, args);
+        descriptorToDefineInvocation.put(rootNamespace, args);
         return rootNamespaceDefinition;
     }
 
@@ -123,6 +124,6 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         else {
             packageMapValue = rootNamespaceDefinition;
         }
-        return new JsVar(context().scope().declareName("_").makeRef().getName(), packageMapValue);
+        return new JsVar(context.scope().declareName(Namer.ROOT_NAMESPACE), packageMapValue);
     }
 }
