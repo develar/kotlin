@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.translate.intrinsic;
+package org.jetbrains.k2js.translate.intrinsic.operation;
 
+import com.google.dart.compiler.backend.js.ast.JsExpression;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
-import org.jetbrains.jet.lexer.JetToken;
+import org.jetbrains.jet.lang.psi.JetBinaryExpression;
+import org.jetbrains.k2js.translate.context.TranslationContext;
 
 /**
  * @author Pavel Talanov
  */
-public abstract class CompareToIntrinsic implements Intrinsic {
+public interface BinaryOperationIntrinsic {
 
-    private JetToken comparisonToken = null;
+    boolean isApplicable(@NotNull JetBinaryExpression expression, @NotNull TranslationContext context);
 
     @NotNull
-    protected JetToken getComparisonToken() {
-        assert comparisonToken != null : "Should use set token first";
-        return comparisonToken;
-    }
-
-    public void setComparisonToken(@NotNull JetToken comparisonToken) {
-        assert OperatorConventions.COMPARISON_OPERATIONS.contains(comparisonToken)
-                : "Should be a comparison operation";
-        this.comparisonToken = comparisonToken;
-    }
+    JsExpression apply(@NotNull JetBinaryExpression expression, @NotNull JsExpression left,
+            @NotNull JsExpression right, @NotNull TranslationContext context);
 }

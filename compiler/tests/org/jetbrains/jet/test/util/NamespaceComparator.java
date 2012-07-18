@@ -36,13 +36,10 @@ import org.jetbrains.jet.lang.types.Variance;
 import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
 import org.junit.Assert;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * @author Stepan Koltsov
@@ -73,7 +70,10 @@ public class NamespaceComparator {
             @NotNull Predicate<NamespaceDescriptor> includeIntoOutput,
             @NotNull File txtFile
     ) {
-        String serialized = assertNamespacesEqual(nsa, nsb, includeObject, includeIntoOutput);
+        String serializedFormWithDemarkedNames = assertNamespacesEqual(nsa, nsb, includeObject, includeIntoOutput);
+        // The serializer puts "!" in front of the name because it allows for speedy sorting of members
+        // see MemberComparator.normalize()
+        String serialized = serializedFormWithDemarkedNames.replace("!", "");
         try {
             if (!txtFile.exists()) {
                 FileUtil.writeToFile(txtFile, serialized);
@@ -204,12 +204,15 @@ public class NamespaceComparator {
      */
     private static class MemberComparator implements Comparator<String> {
 
-        private static final Pattern IRRELEVANT = Pattern.compile(
-                "^ *(private|protected|public|internal|final|abstract|open|override|fun|val|var|/\\*.*?\\*/|((?!<init>)<.*?>)| )*");
-
         @NotNull
         private String normalize(String s) {
-            return IRRELEVANT.matcher(s).replaceAll("");
+            // Serializers put "!" in front of the name in order to facilitate faster sorting of members
+            int i = s.indexOf("!");
+            if (i < 0) {
+                throw new IllegalStateException("No name mark in " + s);
+            }
+            String substring = s.substring(i + 1);
+            return substring;
         }
 
         @Override
@@ -345,7 +348,6 @@ public class NamespaceComparator {
             }
         }
 
-
         public void serialize(FunctionDescriptor fun) {
             serialize(fun.getVisibility());
             sb.append(" ");
@@ -371,12 +373,10 @@ public class NamespaceComparator {
                 sb.append(">");
             }
 
-            if (fun.getReceiverParameter().exists()) {
-                new TypeSerializer(sb).serialize(fun.getReceiverParameter());
-                sb.append(".");
-            }
-
+            sb.append("!");
+            serializeReceiver(fun);
             sb.append(fun.getName());
+
             sb.append("(");
             new TypeSerializer(sb).serializeCommaSeparated(fun.getValueParameters());
             sb.append("): ");
@@ -386,6 +386,13 @@ public class NamespaceComparator {
             }
             else {
                 new TypeSerializer(sb).serialize(returnType);
+            }
+        }
+
+        private void serializeReceiver(CallableDescriptor fun) {
+            if (fun.getReceiverParameter().exists()) {
+                new TypeSerializer(sb).serialize(fun.getReceiverParameter());
+                sb.append(".");
             }
         }
 
@@ -437,6 +444,7 @@ public class NamespaceComparator {
                 new Serializer(sb).serializeCommaSeparated(prop.getTypeParameters());
                 sb.append("> ");
             }
+            sb.append("!");
             if (prop.getReceiverParameter().exists()) {
                 new TypeSerializer(sb).serialize(prop.getReceiverParameter().getType());
                 sb.append(".");
@@ -457,6 +465,7 @@ public class NamespaceComparator {
             if (valueParameter.getVarargElementType() != null) {
                 sb.append("vararg ");
             }
+            sb.append("!");
             sb.append(valueParameter.getName());
             sb.append(": ");
             if (valueParameter.getVarargElementType() != null) {
@@ -662,6 +671,7 @@ public class NamespaceComparator {
             serialize(klass.getKind());
             sb.append(" ");
 
+            sb.append("!");
             new Serializer(sb).serialize(klass);
 
             if (!klass.getTypeConstructor().getParameters().isEmpty()) {
@@ -710,7 +720,7 @@ public class NamespaceComparator {
 
             if (klass.getClassObjectDescriptor() != null) {
                 StringBuilder sbForClassObject = new StringBuilder();
-                new FullContentSerialier(sbForClassObject).serialize(klass.getClassObjectDescriptor());
+                new ClassObjectSerializer(sbForClassObject).serialize(klass.getClassObjectDescriptor());
                 sb.append(indent(sbForClassObject.toString()));
             }
 
@@ -718,25 +728,43 @@ public class NamespaceComparator {
         }
     }
 
+    private class ClassObjectSerializer extends FullContentSerialier {
 
-    private static String indent(String string) {
-        try {
-            StringBuilder r = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new StringReader(string));
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                r.append("    ");
-                r.append(line);
-                r.append("\n");
-            }
-            return r.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        private ClassObjectSerializer(StringBuilder sb) {
+            super(sb);
+        }
+
+        @Override
+        public void serialize(ClassKind kind) {
+            assert kind == ClassKind.OBJECT : "Must be called for class objects only";
+            sb.append("class object");
         }
     }
 
 
+    private static String indent(String string) {
+        // This method gets called a lot, so the performance is critical
+        // That's why the hand-written code
+
+        String indent = "    ";
+        StringBuilder r = new StringBuilder(string.length());
+        r.append(indent);
+        boolean lastCharIsNewLine = false;
+        for (int i = 0; i < string.length(); i++) {
+             char c = string.charAt(i);
+            r.append(c);
+            if (c == '\n') {
+                if (i != string.length() - 1) {
+                    r.append(indent);
+                }
+                else {
+                    lastCharIsNewLine = true;
+                }
+            }
+        }
+        if (!lastCharIsNewLine) {
+            r.append("\n");
+        }
+        return r.toString();
+    }
 }

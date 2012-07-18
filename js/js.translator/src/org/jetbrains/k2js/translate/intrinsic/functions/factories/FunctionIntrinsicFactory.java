@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.translate.intrinsic;
+package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
+import com.google.common.base.Predicate;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 
 /**
  * @author Pavel Talanov
  */
-public abstract class EqualsIntrinsic implements Intrinsic {
+public interface FunctionIntrinsicFactory {
 
     @NotNull
-    private Boolean isNegated = false;
+    Predicate<FunctionDescriptor> getPredicate();
 
-    public void setNegated(boolean isNegated) {
-        this.isNegated = isNegated;
-    }
-
-    protected boolean isNegated() {
-        return isNegated;
-    }
+    @NotNull
+    FunctionIntrinsic getIntrinsic(@NotNull FunctionDescriptor descriptor);
 }

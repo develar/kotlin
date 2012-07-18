@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.translate.intrinsic;
+package org.jetbrains.k2js.translate.intrinsic.functions.patterns;
 
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import org.jetbrains.annotations.NotNull;
+import com.google.common.base.Predicate;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.k2js.translate.context.TranslationContext;
-
-import java.util.List;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 
 /**
  * @author Pavel Talanov
- *         <p/>
- *         Base class for all intrinsics.
  */
-public interface Intrinsic {
-
-    @NotNull
-    JsExpression apply(@Nullable JsExpression receiver, @NotNull List<JsExpression> arguments,
-                       @NotNull TranslationContext context);
+public interface DescriptorPredicate extends Predicate<FunctionDescriptor> {
+    @Override
+    boolean apply(@Nullable FunctionDescriptor descriptor);
 }

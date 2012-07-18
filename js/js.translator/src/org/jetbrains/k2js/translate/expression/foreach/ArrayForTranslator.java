@@ -25,7 +25,7 @@ import org.jetbrains.jet.lang.psi.JetForExpression;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
+import org.jetbrains.k2js.translate.intrinsic.functions.factories.ArrayFIF;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 
 import java.util.Collections;
@@ -73,7 +73,7 @@ public final class ArrayForTranslator extends ForTranslator {
     }
 
     public static boolean isApplicable(@NotNull JetForExpression expression,
-                                       @NotNull TranslationContext context) {
+            @NotNull TranslationContext context) {
         JetExpression loopRange = getLoopRange(expression);
         JetType rangeType = BindingUtils.getTypeForExpression(context.bindingContext(), loopRange);
         //TODO: better check

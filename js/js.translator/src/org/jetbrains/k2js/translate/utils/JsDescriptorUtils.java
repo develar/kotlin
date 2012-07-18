@@ -20,15 +20,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getSuperclassDescriptors;
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isClassObject;
 
 /**
@@ -47,44 +45,12 @@ public final class JsDescriptorUtils {
         return (valueParametersCount(functionDescriptor) > 0);
     }
 
-    public static boolean isEquals(@NotNull FunctionDescriptor functionDescriptor) {
-        return (functionDescriptor.getName().equals(OperatorConventions.EQUALS));
-    }
-
     public static boolean isCompareTo(@NotNull FunctionDescriptor functionDescriptor) {
         return (functionDescriptor.getName().equals(OperatorConventions.COMPARE_TO));
     }
 
     public static boolean isConstructorDescriptor(@NotNull CallableDescriptor descriptor) {
         return (descriptor instanceof ConstructorDescriptor);
-    }
-
-    @NotNull
-    public static FunctionDescriptor getFunctionByName(@NotNull JetScope scope,
-                                                       @NotNull Name name) {
-        Collection<FunctionDescriptor> functionDescriptors = scope.getFunctions(name);
-        assert functionDescriptors.size() == 1 :
-            "In scope " + scope + " supposed to be exactly one " + name + " function.\n" +
-            "Found: " + functionDescriptors.size();
-        //noinspection LoopStatementThatDoesntLoop
-        for (FunctionDescriptor descriptor : functionDescriptors) {
-            return descriptor;
-        }
-        throw new AssertionError("In scope " + scope
-                                 + " supposed to be exactly one " + name + " function.");
-    }
-
-    //TODO: some strange stuff happening to this method
-    //TODO: inspect
-    @NotNull
-    public static PropertyDescriptor getPropertyByName(@NotNull JetScope scope,
-                                                       @NotNull Name name) {
-        Collection<VariableDescriptor> variables = scope.getProperties(name);
-        assert variables.size() == 1 : "Actual size: " + variables.size();
-        VariableDescriptor variable = variables.iterator().next();
-        PropertyDescriptor descriptor = (PropertyDescriptor)variable;
-        assert descriptor != null : "Must have a descriptor.";
-        return descriptor;
     }
 
     @Nullable
@@ -99,7 +65,7 @@ public final class JsDescriptorUtils {
 
     @Nullable
     public static ClassDescriptor getSuperclass(@NotNull ClassDescriptor classDescriptor) {
-        return findAncestorClass(DescriptorUtils.getSuperclassDescriptors(classDescriptor));
+        return findAncestorClass(getSuperclassDescriptors(classDescriptor));
     }
 
     @NotNull
@@ -125,9 +91,9 @@ public final class JsDescriptorUtils {
 
     @NotNull
     public static DeclarationDescriptor getDeclarationDescriptorForReceiver
-        (@NotNull ReceiverDescriptor receiverParameter) {
+            (@NotNull ReceiverDescriptor receiverParameter) {
         DeclarationDescriptor declarationDescriptor =
-            receiverParameter.getType().getConstructor().getDeclarationDescriptor();
+                receiverParameter.getType().getConstructor().getDeclarationDescriptor();
         //TODO: WHY assert?
         assert declarationDescriptor != null;
         return declarationDescriptor.getOriginal();
@@ -148,11 +114,23 @@ public final class JsDescriptorUtils {
         DeclarationDescriptor containing = descriptor.getContainingDeclaration();
         while (containing != null) {
             if (containing instanceof ClassDescriptor && !isClassObject(containing)) {
-                return (ClassDescriptor)containing;
+                return (ClassDescriptor) containing;
             }
             containing = containing.getContainingDeclaration();
         }
         return null;
+    }
+
+    @NotNull
+    public static List<NamespaceDescriptor> getNestedNamespaces(@NotNull NamespaceDescriptor namespaceDescriptor,
+            @NotNull BindingContext context) {
+        List<NamespaceDescriptor> result = Lists.newArrayList();
+        for (DeclarationDescriptor descriptor : getContainedDescriptorsWhichAreNotPredefined(namespaceDescriptor, context)) {
+            if (descriptor instanceof NamespaceDescriptor) {
+                result.add((NamespaceDescriptor) descriptor);
+            }
+        }
+        return result;
     }
 
     @Nullable
@@ -165,6 +143,62 @@ public final class JsDescriptorUtils {
             //TODO: for now translator can't deal with multiple inheritance good enough
             return overriddenDescriptors.iterator().next();
         }
+    }
+
+    @NotNull
+    public static List<DeclarationDescriptor> getContainedDescriptorsWhichAreNotPredefined(@NotNull NamespaceDescriptor namespace,
+            @NotNull BindingContext context) {
+        List<DeclarationDescriptor> result = Lists.newArrayList();
+        for (DeclarationDescriptor descriptor : namespace.getMemberScope().getAllDescriptors()) {
+            if (!AnnotationsUtils.isPredefinedObject(descriptor)) {
+                // namespace may be defined in multiple files
+                if (!(descriptor instanceof NamespaceDescriptor)) {
+                    PsiElement psiElement = BindingContextUtils.descriptorToDeclaration(context, descriptor);
+                    if (psiElement != null) {
+                        PsiFile file = psiElement.getContainingFile();
+                        if (file.getUserData(LibrarySourcesConfig.EXTERNAL_MODULE_NAME) != null) {
+                            continue;
+                        }
+                    }
+                }
+
+                result.add(descriptor);
+            }
+        }
+        return result;
+    }
+
+    //TODO: at the moment this check is very ineffective
+    public static boolean isNamespaceEmpty(@NotNull NamespaceDescriptor namespace, @NotNull BindingContext context) {
+        List<DeclarationDescriptor> containedDescriptors = getContainedDescriptorsWhichAreNotPredefined(namespace, context);
+        for (DeclarationDescriptor descriptor : containedDescriptors) {
+            if (descriptor instanceof NamespaceDescriptor) {
+                if (!isNamespaceEmpty((NamespaceDescriptor) descriptor, context)) {
+                    return false;
+                }
+            }
+            else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @NotNull
+    public static List<NamespaceDescriptor> getNamespaceDescriptorHierarchy(@NotNull NamespaceDescriptor namespaceDescriptor) {
+        List<NamespaceDescriptor> result = Lists.newArrayList(namespaceDescriptor);
+        NamespaceDescriptor current = namespaceDescriptor;
+        while (!(current.getContainingDeclaration() instanceof ModuleDescriptor)) {
+            result.add(current);
+            if (current.getContainingDeclaration() instanceof NamespaceDescriptor) {
+                current = (NamespaceDescriptor)current.getContainingDeclaration();
+                assert current != null;
+            }
+            else {
+                break;
+            }
+        }
+        return result;
     }
 
     private static boolean isDefaultAccessor(@Nullable PropertyAccessorDescriptor accessorDescriptor) {

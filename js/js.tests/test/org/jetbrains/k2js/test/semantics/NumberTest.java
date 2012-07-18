@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.translate.intrinsic;
+package org.jetbrains.k2js.test.semantics;
 
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.k2js.translate.context.TranslationContext;
-
-import java.util.List;
+import org.jetbrains.k2js.test.SingleFileTranslationTest;
 
 /**
  * @author Pavel Talanov
  */
-public enum ReturnReceiverIntrinsic implements Intrinsic {
+public final class NumberTest extends SingleFileTranslationTest {
+    public NumberTest() {
+        super("number/");
+    }
 
-    INSTANCE;
+    public void testIntConversions() throws Exception {
+        fooBoxTest();
+    }
 
-    @NotNull
-    @Override
-    public JsExpression apply(@Nullable JsExpression receiver, @NotNull List<JsExpression> arguments,
-                              @NotNull TranslationContext context) {
-        assert receiver != null;
-        return receiver;
+    public void testDoubleConversions() throws Exception {
+        fooBoxTest();
+    }
+
+    public void testNumberConversions() throws Exception {
+        fooBoxTest();
+    }
+
+    public void testByteAndShortConversions() throws Exception {
+        fooBoxTest();
     }
 }

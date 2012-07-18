@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.translate.intrinsic;
+package org.jetbrains.k2js.translate.intrinsic.functions.basic;
 
 import com.google.dart.compiler.Source;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
@@ -31,7 +31,8 @@ import java.util.List;
 /**
  * @author Pavel Talanov
  */
-public final class CallStandardMethodIntrinsic implements Intrinsic {
+public final class CallStandardMethodIntrinsic extends FunctionIntrinsic {
+
     @NotNull
     private final String methodName;
 
@@ -47,23 +48,18 @@ public final class CallStandardMethodIntrinsic implements Intrinsic {
     @NotNull
     @Override
     public JsExpression apply(@Nullable JsExpression receiver,
-                              @NotNull List<JsExpression> arguments,
-                              @NotNull TranslationContext context) {
+            @NotNull List<JsExpression> arguments,
+            @NotNull TranslationContext context) {
         assert (receiver != null == receiverShouldBeNotNull);
-        assert arguments.size() == expectedParamsNumber : "Incorrect number of arguments " + arguments.size() + " when expected " + expectedParamsNumber + " on method " + methodName + " " + atLocation(receiver, arguments);
+        assert arguments.size() == expectedParamsNumber : errorMessage(receiver, arguments);
         JsNameRef iteratorFunName = AstUtil.newQualifiedNameRef(methodName);
         return new JsInvocation(iteratorFunName, composeArguments(receiver, arguments));
     }
 
-    // TODO move to better helper class
-    public static String atLocation(JsExpression expression, List<JsExpression> arguments) {
-        for (JsExpression value : arguments) {
-            Source source = value.getSource();
-            if (source != null) {
-                return "at " + source + " " + expression.getLine() + ":" + expression.getLine();
-            }
-        }
-        return "at unknown location";
+    @NotNull
+    private String errorMessage(@Nullable JsExpression receiver, @NotNull List<JsExpression> arguments) {
+        return "Incorrect number of arguments " + arguments.size() + " when expected " + expectedParamsNumber + " on method " + methodName + " " +
+                                                          atLocation(receiver, arguments);
     }
 
     @NotNull

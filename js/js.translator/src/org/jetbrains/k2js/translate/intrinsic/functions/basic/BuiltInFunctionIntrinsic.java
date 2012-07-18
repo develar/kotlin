@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.translate.intrinsic;
+package org.jetbrains.k2js.translate.intrinsic.functions.basic;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsInvocation;
@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * @author Pavel Talanov
  */
-public final class BuiltInFunctionIntrinsic implements Intrinsic {
+public final class BuiltInFunctionIntrinsic extends FunctionIntrinsic {
 
     @NotNull
     private final String functionName;

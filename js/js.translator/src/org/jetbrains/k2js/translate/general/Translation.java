@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.facade.exceptions.MainFunctionNotFoundException;
@@ -155,8 +154,7 @@ public final class Translation {
             @NotNull MainCallParameters mainCallParameters,
             @NotNull Config config) throws MainFunctionNotFoundException {
         //TODO: move some of the code somewhere
-        JetStandardLibrary standardLibrary = JetStandardLibrary.getInstance();
-        StaticContext staticContext = StaticContext.generateStaticContext(standardLibrary, bindingContext, config.getTarget());
+        StaticContext staticContext = StaticContext.generateStaticContext(bindingContext, config.getTarget());
         JsProgram program = staticContext.getProgram();
         JsBlock block = program.getGlobalBlock();
 
