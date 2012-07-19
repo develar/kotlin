@@ -19,6 +19,7 @@ package org.jetbrains.k2js.translate.intrinsic.operation;
 import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
 import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
@@ -60,7 +61,7 @@ public final class EqualsIntrinsic implements BinaryOperationIntrinsic {
             @NotNull JsExpression right,
             @NotNull TranslationContext context) {
         boolean isNegated = getOperationToken(expression).equals(JetTokens.EXCLEQ);
-        if (canUseSimpleEquals(expression, context)) {
+        if (right == JsLiteral.NULL || left == JsLiteral.NULL || canUseSimpleEquals(expression, context)) {
             return new JsBinaryOperation(isNegated ? JsBinaryOperator.REF_NEQ : JsBinaryOperator.REF_EQ, left, right);
         }
 
