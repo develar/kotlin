@@ -65,15 +65,21 @@ public final class TranslationUtils {
 
     @NotNull
     public static JsBinaryOperation isNullCheck(@NotNull JsExpression expressionToCheck) {
-        JsBinaryOperation isNull = equality(expressionToCheck, JsLiteral.NULL);
-        JsBinaryOperation isUndefined = equality(expressionToCheck, JsLiteral.UNDEFINED);
-        return or(isNull, isUndefined);
+        return nullCheck(expressionToCheck, false);
     }
 
     @NotNull
     public static JsBinaryOperation notNullConditionalTestExpression(@NotNull TemporaryVariable cachedValue) {
         return and(inequality(cachedValue.assignmentExpression(), JsLiteral.NULL),
                    inequality(cachedValue.reference(), JsLiteral.UNDEFINED));
+    }
+
+    @NotNull
+    public static JsBinaryOperation nullCheck(@NotNull JsExpression expressionToCheck, boolean isNegated) {
+        JsBinaryOperator operator = isNegated ? JsBinaryOperator.REF_NEQ : JsBinaryOperator.REF_EQ;
+        return new JsBinaryOperation(isNegated ? JsBinaryOperator.AND : JsBinaryOperator.OR,
+                                     new JsBinaryOperation(operator, expressionToCheck, JsLiteral.NULL),
+                                     new JsBinaryOperation(operator, expressionToCheck, JsLiteral.UNDEFINED));
     }
 
     @NotNull

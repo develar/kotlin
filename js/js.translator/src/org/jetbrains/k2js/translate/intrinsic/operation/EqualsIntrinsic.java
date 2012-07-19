@@ -34,6 +34,7 @@ import org.jetbrains.k2js.translate.intrinsic.functions.factories.TopLevelFIF;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.NamePredicate;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
+import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.Arrays;
 
@@ -61,7 +62,10 @@ public final class EqualsIntrinsic implements BinaryOperationIntrinsic {
             @NotNull JsExpression right,
             @NotNull TranslationContext context) {
         boolean isNegated = getOperationToken(expression).equals(JetTokens.EXCLEQ);
-        if (right == JsLiteral.NULL || left == JsLiteral.NULL || canUseSimpleEquals(expression, context)) {
+        if (right == JsLiteral.NULL || left == JsLiteral.NULL) {
+            return TranslationUtils.nullCheck(right == JsLiteral.NULL ? left : right, isNegated);
+        }
+        else if (canUseSimpleEquals(expression, context)) {
             return new JsBinaryOperation(isNegated ? JsBinaryOperator.REF_NEQ : JsBinaryOperator.REF_EQ, left, right);
         }
 
