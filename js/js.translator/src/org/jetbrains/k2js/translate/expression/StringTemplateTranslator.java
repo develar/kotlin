@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsInvocation;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.*;
@@ -61,7 +60,6 @@ public final class StringTemplateTranslator extends AbstractTranslator {
     }
 
     private final class EntryVisitor extends JetVisitorVoid {
-
         @Nullable
         private JsExpression resultingExpression = null;
 
@@ -79,8 +77,7 @@ public final class StringTemplateTranslator extends AbstractTranslator {
             JetExpression entryExpression = entry.getExpression();
             assert entryExpression != null :
                     "JetStringTemplateEntryWithExpression must have not null entry expression.";
-            JsExpression translatedExpression = Translation.translateAsExpression(entryExpression, context());
-            append(new JsInvocation(new JsNameRef("toString", translatedExpression)));
+            append(Translation.translateAsExpression(entryExpression, context()));
         }
 
         @Override
