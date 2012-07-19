@@ -25,8 +25,6 @@ import junit.framework.Test;
 @SuppressWarnings("JUnitTestCaseWithNoTests")
 public final class StdLibListTest extends JsUnitTestBase {
     public static Test suite() throws Exception {
-        return createTestSuiteForFile("libraries/stdlib/test/ListTest.kt",
-                                      "ListTest.withIndices",
-                                      "ListTest.tail");
+        return createTestSuiteForFile("libraries/stdlib/test/ListTest.kt");
     }
 }
