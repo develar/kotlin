@@ -65,8 +65,7 @@ public final class TranslationUtils {
 
     @NotNull
     public static JsBinaryOperation isNullCheck(@NotNull JsExpression expressionToCheck) {
-        JsNullLiteral nullLiteral = JsLiteral.NULL;
-        JsBinaryOperation isNull = equality(expressionToCheck, nullLiteral);
+        JsBinaryOperation isNull = equality(expressionToCheck, JsLiteral.NULL);
         JsBinaryOperation isUndefined = equality(expressionToCheck, JsLiteral.UNDEFINED);
         return or(isNull, isUndefined);
     }

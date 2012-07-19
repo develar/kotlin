@@ -39,7 +39,6 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
  * @author Pavel Talanov
  */
 public final class WhenTranslator extends AbstractTranslator {
-
     @NotNull
     private final JetWhenExpression whenExpression;
     @Nullable

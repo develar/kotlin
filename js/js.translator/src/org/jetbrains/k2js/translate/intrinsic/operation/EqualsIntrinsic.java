@@ -16,14 +16,21 @@
 
 package org.jetbrains.k2js.translate.intrinsic.operation;
 
+import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
+import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.psi.JetBinaryExpression;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
+import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.intrinsic.functions.factories.TopLevelFIF;
+import org.jetbrains.k2js.translate.intrinsic.functions.patterns.NamePredicate;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 
@@ -36,7 +43,6 @@ import static org.jetbrains.k2js.translate.utils.PsiUtils.getOperationToken;
  * @author Pavel Talanov
  */
 public final class EqualsIntrinsic implements BinaryOperationIntrinsic {
-
     @Override
     public boolean isApplicable(@NotNull JetBinaryExpression expression, @NotNull TranslationContext context) {
         if (!OperatorConventions.EQUALS_OPERATIONS.contains(getOperationToken(expression))) {
@@ -54,7 +60,23 @@ public final class EqualsIntrinsic implements BinaryOperationIntrinsic {
             @NotNull JsExpression right,
             @NotNull TranslationContext context) {
         boolean isNegated = getOperationToken(expression).equals(JetTokens.EXCLEQ);
+        if (canUseSimpleEquals(expression, context)) {
+            return new JsBinaryOperation(isNegated ? JsBinaryOperator.REF_NEQ : JsBinaryOperator.REF_EQ, left, right);
+        }
+
         JsExpression result = TopLevelFIF.EQUALS.apply(left, Arrays.asList(right), context);
         return isNegated ? JsAstUtils.negated(result) : result;
+    }
+
+    private static boolean canUseSimpleEquals(JetBinaryExpression expression, TranslationContext context) {
+        JetType leftExpression = context.bindingContext().get(BindingContext.EXPRESSION_TYPE, expression.getLeft());
+        if (leftExpression != null) {
+            ClassifierDescriptor descriptor = leftExpression.getConstructor().getDeclarationDescriptor();
+            if (descriptor != null && descriptor.getContainingDeclaration() == JetStandardClasses.STANDARD_CLASSES_NAMESPACE) {
+                return NamePredicate.PRIMITIVE_NUMBERS.apply(descriptor.getName());
+            }
+        }
+
+        return false;
     }
 }

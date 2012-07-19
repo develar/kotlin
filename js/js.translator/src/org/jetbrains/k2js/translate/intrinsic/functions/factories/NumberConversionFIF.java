@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
 import com.google.common.collect.Sets;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -78,7 +79,7 @@ public final class NumberConversionFIF extends CompositeFIF {
 
     private NumberConversionFIF() {
         add(pattern(INTEGER_NUMBER_TYPES, SUPPORTED_CONVERSIONS), RETURN_RECEIVER);
-        add(pattern(FLOATING_POINT_NUMBER_TYPES, INTEGER_CONVERSIONS), new CallStandardMethodIntrinsic("Math.floor", true, 0));
+        add(pattern(FLOATING_POINT_NUMBER_TYPES, INTEGER_CONVERSIONS), new CallStandardMethodIntrinsic(new JsNameRef("floor", "Math"), true, 0));
         add(pattern(FLOATING_POINT_NUMBER_TYPES, FLOATING_POINT_CONVERSIONS), RETURN_RECEIVER);
     }
 }
