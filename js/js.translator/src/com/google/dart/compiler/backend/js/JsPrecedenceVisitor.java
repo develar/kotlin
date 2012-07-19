@@ -180,11 +180,17 @@ class JsPrecedenceVisitor extends JsVisitor {
     return false;
   }
 
-  @Override
-  public boolean visit(JsNumberLiteral x, JsContext ctx) {
-    answer = 17; // primary
-    return false;
-  }
+    @Override
+    public boolean visit(JsNumberLiteral.JsIntLiteral x, JsContext ctx) {
+        answer = 17; // primary
+        return false;
+    }
+
+    @Override
+    public boolean visit(JsNumberLiteral.JsDoubleLiteral x, JsContext ctx) {
+        answer = 17; // primary
+        return false;
+    }
 
   @Override
   public boolean visit(JsObjectLiteral x, JsContext ctx) {

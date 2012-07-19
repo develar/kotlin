@@ -12,7 +12,7 @@ import java.util.Arrays;
 public class TextOutputImpl implements TextOutput {
     private final boolean compact;
     private int identLevel = 0;
-    private final int indentGranularity = 2;
+    private final static int indentGranularity = 2;
     private char[][] indents = new char[][] {new char[0]};
     private boolean justNewlined;
     private final StringBuilder out;
@@ -85,11 +85,31 @@ public class TextOutputImpl implements TextOutput {
     }
 
     @Override
+    public void print(double value) {
+        maybeIndent();
+        int oldLength = out.length();
+        out.append(value);
+        movePosition(out.length() - oldLength);
+    }
+
+    @Override
+    public void print(int value) {
+        maybeIndent();
+        int oldLength = out.length();
+        out.append(value);
+        movePosition(out.length() - oldLength);
+    }
+
+    @Override
     public void print(char c) {
         maybeIndent();
         out.append(c);
-        position++;
-        column++;
+        movePosition(1);
+    }
+
+    private void movePosition(int l) {
+        position += l;
+        column += l;
         justNewlined = false;
     }
 
@@ -107,13 +127,12 @@ public class TextOutputImpl implements TextOutput {
         justNewlined = false;
     }
 
-    // Why don't the "Opt" methods update "justNewLined"?
     @Override
     public void printOpt(char c) {
         if (!compact) {
             maybeIndent();
             out.append(c);
-            position += 1;
+            position++;
             column++;
         }
     }

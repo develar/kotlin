@@ -6,9 +6,13 @@ package com.google.dart.compiler.backend.js.ast;
 
 import gnu.trove.TDoubleObjectHashMap;
 import gnu.trove.THashMap;
+import gnu.trove.TIntObjectHashMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+
+import static com.google.dart.compiler.backend.js.ast.JsNumberLiteral.JsDoubleLiteral;
+import static com.google.dart.compiler.backend.js.ast.JsNumberLiteral.JsIntLiteral;
 
 /**
  * A JavaScript program.
@@ -17,7 +21,10 @@ public final class JsProgram extends JsNodeImpl {
     private final JsEmpty emptyStmt;
 
     private JsProgramFragment[] fragments;
-    private final TDoubleObjectHashMap<JsNumberLiteral> numberLiteralMap = new TDoubleObjectHashMap<JsNumberLiteral>();
+
+    private final TDoubleObjectHashMap<JsDoubleLiteral> doubleLiteralMap = new TDoubleObjectHashMap<JsDoubleLiteral>();
+    private final TIntObjectHashMap<JsIntLiteral> intLiteralMap = new TIntObjectHashMap<JsIntLiteral>();
+
     private final JsRootScope rootScope;
     private final Map<String, JsStringLiteral> stringLiteralMap = new THashMap<String, JsStringLiteral>();
     private final JsScope topScope;
@@ -44,22 +51,25 @@ public final class JsProgram extends JsNodeImpl {
         return fragments[fragment].getGlobalBlock();
     }
 
-    public int getFragmentCount() {
-        return this.fragments.length;
-    }
-
-    /**
-     * Gets the one and only global block.
-     */
     public JsBlock getGlobalBlock() {
         return getFragmentBlock(0);
     }
 
     public JsNumberLiteral getNumberLiteral(double value) {
-        JsNumberLiteral literal = numberLiteralMap.get(value);
+        JsDoubleLiteral literal = doubleLiteralMap.get(value);
         if (literal == null) {
-            literal = new JsNumberLiteral(value);
-            numberLiteralMap.put(value, literal);
+            literal = new JsDoubleLiteral(value);
+            doubleLiteralMap.put(value, literal);
+        }
+
+        return literal;
+    }
+
+    public JsNumberLiteral getNumberLiteral(int value) {
+        JsIntLiteral literal = intLiteralMap.get(value);
+        if (literal == null) {
+            literal = new JsIntLiteral(value);
+            intLiteralMap.put(value, literal);
         }
 
         return literal;

@@ -21,13 +21,10 @@ import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsLiteral;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.psi.JetBinaryExpression;
-import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.types.JetType;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.intrinsic.functions.factories.TopLevelFIF;
@@ -74,14 +71,7 @@ public final class EqualsIntrinsic implements BinaryOperationIntrinsic {
     }
 
     private static boolean canUseSimpleEquals(JetBinaryExpression expression, TranslationContext context) {
-        JetType leftExpression = context.bindingContext().get(BindingContext.EXPRESSION_TYPE, expression.getLeft());
-        if (leftExpression != null) {
-            ClassifierDescriptor descriptor = leftExpression.getConstructor().getDeclarationDescriptor();
-            if (descriptor != null && descriptor.getContainingDeclaration() == JetStandardClasses.STANDARD_CLASSES_NAMESPACE) {
-                return NamePredicate.PRIMITIVE_NUMBERS.apply(descriptor.getName());
-            }
-        }
-
-        return false;
+        Name typeName = JsDescriptorUtils.getNameIfStandardType(expression.getLeft(), context);
+        return typeName != null && NamePredicate.PRIMITIVE_NUMBERS.apply(typeName);
     }
 }

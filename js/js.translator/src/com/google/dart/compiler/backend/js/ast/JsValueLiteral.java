@@ -8,7 +8,6 @@ package com.google.dart.compiler.backend.js.ast;
  * A JavaScript string literal expression.
  */
 public abstract class JsValueLiteral extends JsLiteral {
-
     protected JsValueLiteral() {
     }
 

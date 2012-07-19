@@ -331,7 +331,11 @@ public class JsVisitor {
     return true;
   }
 
-  public boolean visit(JsNumberLiteral x, JsContext ctx) {
+  public boolean visit(JsNumberLiteral.JsIntLiteral x, JsContext ctx) {
+    return true;
+  }
+
+  public boolean visit(JsNumberLiteral.JsDoubleLiteral x, JsContext ctx) {
     return true;
   }
 

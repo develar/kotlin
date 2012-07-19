@@ -11,6 +11,9 @@ import gnu.trove.TIntArrayList;
 
 import java.util.*;
 
+import static com.google.dart.compiler.backend.js.ast.JsNumberLiteral.JsDoubleLiteral;
+import static com.google.dart.compiler.backend.js.ast.JsNumberLiteral.JsIntLiteral;
+
 /**
  * Produces text output from a JavaScript AST.
  */
@@ -650,15 +653,14 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     }
 
     @Override
-    public boolean visit(JsNumberLiteral x, JsContext ctx) {
-        double dvalue = x.getValue();
-        long lvalue = (long) dvalue;
-        if (lvalue == dvalue) {
-            p.print(Long.toString(lvalue));
-        }
-        else {
-            p.print(Double.toString(dvalue));
-        }
+    public boolean visit(JsIntLiteral x, JsContext ctx) {
+        p.print(x.value);
+        return false;
+    }
+
+    @Override
+    public boolean visit(JsDoubleLiteral x, JsContext ctx) {
+        p.print(x.value);
         return false;
     }
 
@@ -1247,9 +1249,15 @@ public class JsToStringGenerationVisitor extends JsVisitor {
                    && (op2 == JsUnaryOperator.DEC || op2 == JsUnaryOperator.NEG)
                    || (op == JsBinaryOperator.ADD && op2 == JsUnaryOperator.INC);
         }
-        if (arg instanceof JsNumberLiteral) {
-            JsNumberLiteral literal = (JsNumberLiteral) arg;
-            return (op == JsBinaryOperator.SUB || op == JsUnaryOperator.NEG) && (literal.getValue() < 0);
+        if (arg instanceof JsNumberLiteral && (op == JsBinaryOperator.SUB || op == JsUnaryOperator.NEG)) {
+            if (arg instanceof JsIntLiteral) {
+                return ((JsIntLiteral) arg).value < 0;
+            }
+            else {
+                assert arg instanceof JsDoubleLiteral;
+                //noinspection CastConflictsWithInstanceof
+                return ((JsDoubleLiteral) arg).value < 0;
+            }
         }
         return false;
     }

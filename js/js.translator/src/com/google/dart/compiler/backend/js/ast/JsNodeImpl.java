@@ -20,7 +20,7 @@ abstract class JsNodeImpl extends AbstractNode implements JsNode {
 
     // Causes source generation to delegate to the one visitor
     @Override
-    public final String toString() {
+    public String toString() {
         TextOutputImpl out = new TextOutputImpl();
         JsToStringGenerationVisitor v = new JsToStringGenerationVisitor(out);
         v.accept(this);

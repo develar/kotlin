@@ -23,6 +23,8 @@ public interface TextOutput {
   void newlineOpt();
 
   void print(char c);
+  void print(int v);
+  void print(double v);
 
   void print(char[] s);
 

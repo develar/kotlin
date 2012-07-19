@@ -56,6 +56,4 @@ public final class StringTest extends AbstractExpressionTest {
     public void testKt2227() throws Exception {
         fooBoxTest();
     }
-
-
 }

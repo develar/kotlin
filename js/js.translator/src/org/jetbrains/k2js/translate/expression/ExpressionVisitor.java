@@ -68,7 +68,10 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         }
 
         Object value = compileTimeValue.getValue();
-        if (value instanceof Number) {
+        if (value instanceof Integer || value instanceof Short || value instanceof Byte) {
+            return context.program().getNumberLiteral(((Number) value).intValue());
+        }
+        else if (value instanceof Number) {
             return context.program().getNumberLiteral(((Number) value).doubleValue());
         }
         else if (value instanceof Boolean) {

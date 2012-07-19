@@ -18,12 +18,16 @@ package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsInvocation;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.JsNumberLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
+import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.sum;
 
@@ -77,7 +81,19 @@ public final class StringTemplateTranslator extends AbstractTranslator {
             JetExpression entryExpression = entry.getExpression();
             assert entryExpression != null :
                     "JetStringTemplateEntryWithExpression must have not null entry expression.";
-            append(Translation.translateAsExpression(entryExpression, context()));
+            JsExpression translatedExpression = Translation.translateAsExpression(entryExpression, context());
+            if (translatedExpression instanceof JsNumberLiteral) {
+                append(context().program().getStringLiteral(translatedExpression.toString()));
+            }
+            else {
+                Name typeName = JsDescriptorUtils.getNameIfStandardType(entryExpression, context);
+                if (typeName != null && typeName.getName().equals("String")) {
+                    append(translatedExpression);
+                    return;
+                }
+
+                append(new JsInvocation(new JsNameRef("toString", translatedExpression)));
+            }
         }
 
         @Override
