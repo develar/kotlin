@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.utils;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.openapi.util.Pair;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +42,18 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
  */
 public final class TranslationUtils {
     private TranslationUtils() {
+    }
+
+    @NotNull
+    public static Pair<JsVars.JsVar, JsNameRef> createTemporaryIfNeed(@NotNull JsExpression expression,
+            @NotNull TranslationContext context) {
+        // don't create temp variable for simple expression
+        if (!(expression instanceof JsNameRef) || ((JsNameRef) expression).getQualifier() != null) {
+            return context.dynamicContext().createTemporary(expression);
+        }
+        else {
+            return new Pair<JsVars.JsVar, JsNameRef>(null, (JsNameRef) expression);
+        }
     }
 
     @NotNull

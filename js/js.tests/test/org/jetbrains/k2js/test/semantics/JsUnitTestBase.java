@@ -28,6 +28,7 @@ import org.jetbrains.k2js.test.config.TestConfigWithUnitTests;
 import org.jetbrains.k2js.test.rhino.RhinoSystemOutputChecker;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 

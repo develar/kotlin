@@ -27,6 +27,7 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.intrinsic.functions.factories.ArrayFIF;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
+import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.Collections;
 
@@ -49,14 +50,7 @@ public final class ArrayForTranslator extends ForTranslator {
     private ArrayForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
         super(forExpression, context);
 
-        JsExpression loopValue = Translation.translateAsExpression(getLoopRange(expression), context);
-        // don't create temp variable for simple expression
-        if (!(loopValue instanceof JsNameRef) || ((JsNameRef) loopValue).getQualifier() != null) {
-            loopRange = context.dynamicContext().createTemporary(loopValue);
-        }
-        else {
-            loopRange = new Pair<JsVar, JsNameRef>(null, (JsNameRef) loopValue);
-        }
+        loopRange = TranslationUtils.createTemporaryIfNeed(Translation.translateAsExpression(getLoopRange(expression), context), context);
 
         JsExpression length = ArrayFIF.ARRAY_LENGTH_INTRINSIC.apply(loopRange.second, Collections.<JsExpression>emptyList(), context());
         end = context.dynamicContext().createTemporary(length);
