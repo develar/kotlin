@@ -28,7 +28,6 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.k2js.translate.intrinsic.Intrinsic;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,13 +64,6 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    public static JsBinaryOperation notNullCheck(@NotNull JsExpression expressionToCheck) {
-        JsBinaryOperation notNull = inequality(expressionToCheck, JsLiteral.NULL);
-        JsBinaryOperation notUndefined = inequality(expressionToCheck, JsLiteral.UNDEFINED);
-        return and(notNull, notUndefined);
-    }
-
-    @NotNull
     public static JsBinaryOperation isNullCheck(@NotNull JsExpression expressionToCheck) {
         JsNullLiteral nullLiteral = JsLiteral.NULL;
         JsBinaryOperation isNull = equality(expressionToCheck, nullLiteral);
@@ -83,16 +75,6 @@ public final class TranslationUtils {
     public static JsBinaryOperation notNullConditionalTestExpression(@NotNull TemporaryVariable cachedValue) {
         return and(inequality(cachedValue.assignmentExpression(), JsLiteral.NULL),
                    inequality(cachedValue.reference(), JsLiteral.UNDEFINED));
-    }
-
-    @NotNull
-    public static JsBinaryOperation nullCheck(@NotNull JsExpression expressionToCheck, boolean shouldBeNull) {
-        if (shouldBeNull) {
-            return isNullCheck(expressionToCheck);
-        }
-        else {
-            return notNullCheck(expressionToCheck);
-        }
     }
 
     @NotNull
@@ -178,13 +160,13 @@ public final class TranslationUtils {
         return Translation.translateAsExpression(rightExpression, context);
     }
 
-    public static boolean isIntrinsicOperation(@NotNull TranslationContext context,
+    public static boolean hasCorrespondingFunctionIntrinsic(@NotNull TranslationContext context,
             @NotNull JetOperationExpression expression) {
         FunctionDescriptor operationDescriptor =
                 BindingUtils.getFunctionDescriptorForOperationExpression(context.bindingContext(), expression);
 
         if (operationDescriptor == null) return true;
-        if (context.intrinsics().isIntrinsic(operationDescriptor)) return true;
+        if (context.intrinsics().getFunctionIntrinsics().getIntrinsic(operationDescriptor).exists()) return true;
 
         return false;
     }
@@ -203,18 +185,5 @@ public final class TranslationUtils {
     @NotNull
     public static JsNumberLiteral zeroLiteral(@NotNull TranslationContext context) {
         return context.program().getNumberLiteral(0);
-    }
-
-    @NotNull
-    public static JsExpression applyIntrinsicToBinaryExpression(@NotNull TranslationContext context,
-            @NotNull Intrinsic intrinsic,
-            @NotNull JetBinaryExpression binaryExpression) {
-        JsExpression left = translateLeftExpression(context, binaryExpression);
-        JsExpression right = translateRightExpression(context, binaryExpression);
-        return intrinsic.apply(left, Collections.singletonList(right), context);
-    }
-
-    public static boolean isNullLiteral(@NotNull JsExpression expression) {
-        return expression.equals(JsLiteral.NULL);
     }
 }

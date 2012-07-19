@@ -16,7 +16,6 @@
 
 package org.jetbrains.k2js.translate.intrinsic.functions.basic;
 
-import com.google.dart.compiler.Source;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsInvocation;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
@@ -27,6 +26,8 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
 import java.util.List;
+
+import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.atLocation;
 
 /**
  * @author Pavel Talanov

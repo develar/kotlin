@@ -58,10 +58,7 @@ public final class ArrayForTranslator extends ForTranslator {
             loopRange = new Pair<JsVar, JsNameRef>(null, (JsNameRef) loopValue);
         }
 
-        Intrinsic lengthPropertyIntrinsic = context().intrinsics().getLengthPropertyIntrinsic();
-        JsExpression length = lengthPropertyIntrinsic.apply(loopRange.second,
-                                                            Collections.<JsExpression>emptyList(),
-                                                            context());
+        JsExpression length = ArrayFIF.ARRAY_LENGTH_INTRINSIC.apply(loopRange.second, Collections.<JsExpression>emptyList(), context());
         end = context.dynamicContext().createTemporary(length);
         index = context.dynamicContext().createTemporary(program().getNumberLiteral(0));
     }

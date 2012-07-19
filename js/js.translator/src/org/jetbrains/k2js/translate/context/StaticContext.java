@@ -26,7 +26,6 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.config.LibrarySourcesConfig;
 import org.jetbrains.k2js.translate.context.generator.Generator;
@@ -50,15 +49,12 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.*;
  */
 public final class StaticContext {
 
-    public static StaticContext generateStaticContext(@NotNull JetStandardLibrary library,
-            @NotNull BindingContext bindingContext,
-            @NotNull EcmaVersion ecmaVersion) {
+    public static StaticContext generateStaticContext(@NotNull BindingContext bindingContext, @NotNull EcmaVersion ecmaVersion) {
         JsProgram program = new JsProgram("main");
-        JsRootScope jsRootScope = program.getRootScope();
-        Namer namer = Namer.newInstance(jsRootScope);
-        Intrinsics intrinsics = Intrinsics.standardLibraryIntrinsics(library);
+        Namer namer = Namer.newInstance(program.getRootScope());
+        Intrinsics intrinsics = new Intrinsics();
         StandardClasses standardClasses = StandardClasses.bindImplementations(namer.getKotlinScope());
-        return new StaticContext(program, bindingContext, namer, intrinsics, standardClasses, jsRootScope, ecmaVersion);
+        return new StaticContext(program, bindingContext, namer, intrinsics, standardClasses, program.getRootScope(), ecmaVersion);
     }
 
     @NotNull
