@@ -39,6 +39,11 @@ public class TypeCheckingProcedure {
         if (constructor.equals(supertype.getConstructor())) {
             return subtype;
         }
+
+        if (JetStandardClasses.isNothingOrNullableNothing(subtype)) {
+            return null;
+        }
+
         for (JetType immediateSupertype : constructor.getSupertypes()) {
             JetType correspondingSupertype = findCorrespondingSupertype(immediateSupertype, supertype);
             if (correspondingSupertype != null) {
