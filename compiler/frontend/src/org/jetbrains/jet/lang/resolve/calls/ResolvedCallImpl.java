@@ -19,10 +19,12 @@ package org.jetbrains.jet.lang.resolve.calls;
 import com.google.common.collect.Maps;
 import com.intellij.util.Function;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.TypeParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.resolve.TemporaryBindingTrace;
+import org.jetbrains.jet.lang.resolve.calls.inference.ConstraintSystem;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.JetType;
 
@@ -69,6 +71,8 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements ResolvedC
     private boolean someArgumentHasNoType = false;
     private TemporaryBindingTrace trace;
     private ResolutionStatus status = UNKNOWN_STATUS;
+    private boolean hasUnknownTypeParameters = false;
+    private ConstraintSystem constraintSystem = null;
 
     private ResolvedCallImpl(@NotNull ResolutionCandidate<D> candidate, @NotNull TemporaryBindingTrace trace) {
         this.candidateDescriptor = candidate.getDescriptor();
@@ -87,6 +91,15 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements ResolvedC
 
     public void addStatus(@NotNull ResolutionStatus status) {
         this.status = this.status.combine(status);
+    }
+
+    @Override
+    public boolean hasUnknownTypeParameters() {
+        return hasUnknownTypeParameters;
+    }
+
+    public void setHasUnknownTypeParameters(boolean hasUnknownTypeParameters) {
+        this.hasUnknownTypeParameters = hasUnknownTypeParameters;
     }
 
     @Override
@@ -115,6 +128,15 @@ public class ResolvedCallImpl<D extends CallableDescriptor> implements ResolvedC
     public void recordTypeArgument(@NotNull TypeParameterDescriptor typeParameter, @NotNull JetType typeArgument) {
         assert !typeArguments.containsKey(typeParameter) : typeParameter + " -> " + typeArgument;
         typeArguments.put(typeParameter, typeArgument);
+    }
+
+    public void setConstraintSystem(@NotNull ConstraintSystem constraintSystem) {
+        this.constraintSystem = constraintSystem;
+    }
+
+    @Nullable
+    public ConstraintSystem getConstraintSystem() {
+        return constraintSystem;
     }
 
     public void recordValueArgument(@NotNull ValueParameterDescriptor valueParameter, @NotNull ResolvedValueArgument valueArgument) {

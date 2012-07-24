@@ -20,6 +20,8 @@ import com.google.common.collect.Lists;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
@@ -44,6 +46,7 @@ import org.jetbrains.jet.lexer.JetTokens;
 import javax.inject.Inject;
 import java.util.*;
 
+import static org.jetbrains.jet.lang.diagnostics.Errors.TYPE_INFERENCE_ERRORS;
 import static org.jetbrains.jet.lang.diagnostics.Errors.TYPE_MISMATCH;
 import static org.jetbrains.jet.lang.resolve.BindingContext.LABEL_TARGET;
 import static org.jetbrains.jet.lang.resolve.BindingContext.STATEMENT;
@@ -363,6 +366,10 @@ public class ExpressionTypingServices {
             @Override
             public void report(@NotNull Diagnostic diagnostic) {
                 if (diagnostic.getFactory() == TYPE_MISMATCH && diagnostic.getPsiElement() == expressionToWatch) {
+                    mismatchFound[0] = true;
+                }
+                if (TYPE_INFERENCE_ERRORS.contains(diagnostic.getFactory()) &&
+                    PsiTreeUtil.getParentOfType(diagnostic.getPsiElement(), JetQualifiedExpression.class, false) == expressionToWatch) {
                     mismatchFound[0] = true;
                 }
                 super.report(diagnostic);

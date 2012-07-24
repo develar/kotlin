@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptorForOperationExpression;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
 
 /**
@@ -187,21 +186,5 @@ public final class TranslationUtils {
         if (context.intrinsics().getFunctionIntrinsics().getIntrinsic(operationDescriptor).exists()) return true;
 
         return false;
-    }
-
-    @NotNull
-    public static JsNameRef getMethodReferenceForOverloadedOperation(@NotNull TranslationContext context,
-            @NotNull JetOperationExpression expression) {
-        FunctionDescriptor overloadedOperationDescriptor = getFunctionDescriptorForOperationExpression
-                (context.bindingContext(), expression);
-        assert overloadedOperationDescriptor != null;
-        JsNameRef overloadedOperationReference = context.getNameForDescriptor(overloadedOperationDescriptor).makeRef();
-        assert overloadedOperationReference != null;
-        return overloadedOperationReference;
-    }
-
-    @NotNull
-    public static JsNumberLiteral zeroLiteral(@NotNull TranslationContext context) {
-        return context.program().getNumberLiteral(0);
     }
 }

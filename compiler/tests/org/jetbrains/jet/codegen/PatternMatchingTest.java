@@ -158,4 +158,16 @@ public class PatternMatchingTest extends CodegenTestCase {
     public void testNullableWhen() throws Exception {  // KT-2148
         blackBoxFile("patternMatching/nullableWhen.kt");
     }
+
+    public void testKt2466() throws Exception {
+        blackBoxFile("patternMatching/kt2466.kt");
+    }
+
+    public void testMatchNotNullAgainstNullable() throws Exception {
+        blackBoxFile("patternMatching/matchNotNullAgainstNullable.kt");
+    }
+
+    public void testKt2457() throws Exception {
+        blackBoxFile("regressions/kt2457.kt");
+    }
 }

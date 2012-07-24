@@ -92,7 +92,6 @@ public class ReplInterpreter {
 
     public ReplInterpreter(@NotNull Disposable disposable, @NotNull CompilerConfiguration configuration) {
         jetCoreEnvironment = new JetCoreEnvironment(disposable, configuration);
-        jetCoreEnvironment.configure(configuration);
         Project project = jetCoreEnvironment.getProject();
         trace = new BindingTraceContext();
         module = new ModuleDescriptor(Name.special("<repl>"));
@@ -105,7 +104,7 @@ public class ReplInterpreter {
 
         List<URL> classpath = Lists.newArrayList();
 
-        for (File file : configuration.getUserData(JVMConfigurationKeys.CLASSPATH_KEY)) {
+        for (File file : configuration.getList(JVMConfigurationKeys.CLASSPATH_KEY)) {
             try {
                 classpath.add(file.toURI().toURL());
             }

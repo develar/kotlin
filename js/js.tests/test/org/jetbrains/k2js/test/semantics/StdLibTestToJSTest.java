@@ -23,7 +23,7 @@ public class StdLibTestToJSTest extends StdLibTestBase {
         performStdLibTest(DEFAULT_ECMA_VERSIONS,
                           "libraries/stdlib/test",
                           "dom/DomTest.kt",
-                          "js/MapTest.kt",
+                          "js/MapJsTest.kt",
                           "js/JsDomTest.kt",
                           "iterators/FunctionIteratorTest.kt",
                           "iterators/IteratorsTest.kt",

@@ -35,8 +35,6 @@ import java.util.Iterator;
 
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
 import static org.jetbrains.jet.lang.diagnostics.rendering.Renderers.*;
-import static org.jetbrains.jet.lang.diagnostics.rendering.Renderers.RENDER_TYPE;
-import static org.jetbrains.jet.lang.diagnostics.rendering.Renderers.TO_STRING;
 
 /**
  * @author Evgeny Gerashchenko
@@ -279,7 +277,6 @@ public class DefaultErrorMessages {
         MAP.put(SUPERTYPE_NOT_A_CLASS_OR_TRAIT, "Only classes and traits may serve as supertypes");
         MAP.put(SUPERTYPE_INITIALIZED_IN_TRAIT, "Traits cannot initialize supertypes");
         MAP.put(CONSTRUCTOR_IN_TRAIT, "A trait may not have a constructor");
-        MAP.put(SECONDARY_CONSTRUCTORS_ARE_NOT_SUPPORTED, "Secondary constructors are not supported");
         MAP.put(SUPERTYPE_APPEARS_TWICE, "A supertype appears twice");
         MAP.put(FINAL_SUPERTYPE, "This type is final, so it cannot be inherited from");
 
@@ -346,6 +343,7 @@ public class DefaultErrorMessages {
         }, RENDER_TYPE, RENDER_TYPE);
 
         MAP.put(SENSELESS_COMPARISON, "Condition ''{0}'' is always ''{1}''", ELEMENT_TEXT, TO_STRING);
+        MAP.put(SENSELESS_NULL_IN_WHEN, "Expression under 'when' is never equal to null");
 
         MAP.put(OVERRIDING_FINAL_MEMBER, "''{0}'' in ''{1}'' is final and cannot be overridden", NAME, NAME);
         MAP.put(CANNOT_WEAKEN_ACCESS_PRIVILEGE, "Cannot weaken access privilege ''{0}'' for ''{1}'' in ''{2}''", TO_STRING, NAME, NAME);
@@ -395,7 +393,13 @@ public class DefaultErrorMessages {
         MAP.put(NO_RECEIVER_ADMITTED, "No receiver can be passed to this function or property");
 
         MAP.put(CREATING_AN_INSTANCE_OF_ABSTRACT_CLASS, "Cannot create an instance of an abstract class");
-        MAP.put(TYPE_INFERENCE_FAILED, "Type inference failed: {0}", TO_STRING);
+
+        MAP.put(TYPE_INFERENCE_CONFLICTING_SUBSTITUTIONS, "Type inference failed: {0}", TYPE_INFERENCE_CONFLICTING_SUBSTITUTIONS_RENDERER);
+        MAP.put(TYPE_INFERENCE_NO_INFORMATION_FOR_PARAMETER, "Type inference failed: {0}", TYPE_INFERENCE_NO_INFORMATION_FOR_PARAMETER_RENDERER);
+        MAP.put(TYPE_INFERENCE_TYPE_CONSTRUCTOR_MISMATCH, "Type inference failed: {0}", TYPE_INFERENCE_TYPE_CONSTRUCTOR_MISMATCH_RENDERER);
+        MAP.put(TYPE_INFERENCE_UPPER_BOUND_VIOLATED, "{0}", TYPE_INFERENCE_UPPER_BOUND_VIOLATED_RENDERER);
+        MAP.put(TYPE_INFERENCE_EXPECTED_TYPE_MISMATCH, "Type inference failed. Expected type mismatch: found: {0} required: {1}", RENDER_TYPE, RENDER_TYPE);
+
         MAP.put(WRONG_NUMBER_OF_TYPE_ARGUMENTS, "{0,choice,0#No type arguments|1#Type argument|1<{0,number,integer} type argument} expected", null);
 
         MAP.put(DANGLING_FUNCTION_LITERAL_ARGUMENT_SUSPECTED,

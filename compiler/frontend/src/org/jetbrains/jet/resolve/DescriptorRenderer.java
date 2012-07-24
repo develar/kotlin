@@ -38,9 +38,21 @@ import java.util.*;
  */
 public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
 
+    public static final DescriptorRenderer COMPACT_WITH_MODIFIERS = new DescriptorRenderer() {
+        @Override
+        protected boolean shouldRenderDefinedIn() {
+            return false;
+        }
+    };
+
     public static final DescriptorRenderer COMPACT = new DescriptorRenderer() {
         @Override
         protected boolean shouldRenderDefinedIn() {
+            return false;
+        }
+
+        @Override
+        protected boolean shouldRenderModifiers() {
             return false;
         }
     };
@@ -55,30 +67,13 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
         }
     };
 
-    public static final DescriptorRenderer HTML = new DescriptorRenderer() {
-
-        @Override
-        protected String escape(String s) {
-            return s.replaceAll("<", "&lt;");
-        }
-
-        @Override
-        public String renderKeyword(String keyword) {
-            return "<b>" + keyword + "</b>";
-        }
-
-        @Override
-        public String renderMessage(String s) {
-            return "<i>" + s + "</i>";
-        }
-    };
-
+    public static final DescriptorRenderer HTML = new HtmlDescriptorRenderer();
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private final RenderDeclarationDescriptorVisitor rootVisitor = new RenderDeclarationDescriptorVisitor();
 
-    private final DeclarationDescriptorVisitor<Void, StringBuilder> subVisitor = new RenderDeclarationDescriptorVisitor() {
+    protected final DeclarationDescriptorVisitor<Void, StringBuilder> subVisitor = new RenderDeclarationDescriptorVisitor() {
         @Override
         public Void visitTypeParameterDescriptor(TypeParameterDescriptor descriptor, StringBuilder builder) {
             renderTypeParameter(descriptor, builder, false);
@@ -94,9 +89,6 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
             return null;
         }
     };
-
-    private DescriptorRenderer() {
-    }
 
     protected boolean hasDefaultValue(ValueParameterDescriptor descriptor) {
         return descriptor.hasDefaultValue();
@@ -256,11 +248,15 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
 
     public String renderFunctionParameters(@NotNull FunctionDescriptor functionDescriptor) {
         StringBuilder stringBuilder = new StringBuilder();
-        rootVisitor.renderValueParameters(functionDescriptor, stringBuilder);
+        renderValueParameters(functionDescriptor, stringBuilder);
         return stringBuilder.toString();
     }
 
     protected boolean shouldRenderDefinedIn() {
+        return true;
+    }
+
+    protected boolean shouldRenderModifiers() {
         return true;
     }
 
@@ -289,6 +285,32 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
 
     public String renderMessage(String s) {
         return s;
+    }
+
+    protected void renderValueParameters(FunctionDescriptor descriptor, StringBuilder builder) {
+        if (descriptor.getValueParameters().isEmpty()) {
+            renderEmptyValueParameters(builder);
+        }
+        for (Iterator<ValueParameterDescriptor> iterator = descriptor.getValueParameters().iterator(); iterator.hasNext(); ) {
+            renderValueParameter(iterator.next(), !iterator.hasNext(), builder);
+        }
+    }
+
+    protected void renderEmptyValueParameters(StringBuilder builder) {
+        builder.append("()");
+    }
+
+    protected void renderValueParameter(ValueParameterDescriptor parameterDescriptor, boolean isLast, StringBuilder builder) {
+        if (parameterDescriptor.getIndex() == 0) {
+            builder.append("(");
+        }
+        parameterDescriptor.accept(subVisitor, builder);
+        if (!isLast) {
+            builder.append(", ");
+        }
+        else {
+            builder.append(")");
+        }
     }
 
     private class RenderDeclarationDescriptorVisitor implements DeclarationDescriptorVisitor<Void, StringBuilder> {
@@ -368,6 +390,7 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
         }
 
         private void renderVisibility(Visibility visibility, StringBuilder builder) {
+            if(!shouldRenderModifiers()) return;
             if ("package".equals(visibility.toString())) {
                 builder.append("public/*package*/ ");
             } else {
@@ -376,6 +399,7 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
         }
 
         private void renderModality(Modality modality, StringBuilder builder) {
+            if (!shouldRenderModifiers()) return;
             String keyword = "";
             switch (modality) {
                 case FINAL:
@@ -420,18 +444,6 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
         @Override
         public Void visitPropertySetterDescriptor(PropertySetterDescriptor descriptor, StringBuilder data) {
             return visitFunctionDescriptor(descriptor, data);
-        }
-
-        private void renderValueParameters(FunctionDescriptor descriptor, StringBuilder builder) {
-            builder.append("(");
-            for (Iterator<ValueParameterDescriptor> iterator = descriptor.getValueParameters().iterator(); iterator.hasNext(); ) {
-                ValueParameterDescriptor parameterDescriptor = iterator.next();
-                parameterDescriptor.accept(subVisitor, builder);
-                if (iterator.hasNext()) {
-                    builder.append(", ");
-                }
-            }
-            builder.append(")");
         }
 
         private void renderWhereSuffix(@NotNull CallableMemberDescriptor callable, @NotNull StringBuilder builder) {
@@ -616,6 +628,24 @@ public class DescriptorRenderer implements Renderer<DeclarationDescriptor> {
             else {
                 // rendered with "where"
             }
+        }
+    }
+
+    public static class HtmlDescriptorRenderer extends DescriptorRenderer {
+
+        @Override
+        protected String escape(String s) {
+            return s.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+        }
+
+        @Override
+        public String renderKeyword(String keyword) {
+            return "<b>" + keyword + "</b>";
+        }
+
+        @Override
+        public String renderMessage(String s) {
+            return "<i>" + s + "</i>";
         }
     }
 }

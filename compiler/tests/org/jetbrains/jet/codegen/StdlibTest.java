@@ -16,6 +16,11 @@
 
 package org.jetbrains.jet.codegen;
 
+import org.jetbrains.jet.CompileCompilerDependenciesTest;
+import org.jetbrains.jet.ConfigurationKind;
+import org.jetbrains.jet.JetTestUtils;
+import org.jetbrains.jet.TestJdkKind;
+import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.codegen.forTestCompile.ForTestCompileRuntime;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.junit.Test;
@@ -35,15 +40,17 @@ public class StdlibTest extends CodegenTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        createEnvironmentWithFullJdk();
-        myEnvironment.addJarToClassPath(ForTestCompileRuntime.runtimeJarForTests());
         File junitJar = new File("libraries/lib/junit-4.9.jar");
 
         if (!junitJar.exists()) {
             throw new AssertionError();
         }
 
-        myEnvironment.addJarToClassPath(junitJar);
+        if (myEnvironment != null) {
+            throw new IllegalStateException("must not set up myEnvironemnt twice");
+        }
+        myEnvironment = new JetCoreEnvironment(getTestRootDisposable(), CompileCompilerDependenciesTest.compilerConfigurationForTests(
+                ConfigurationKind.ALL, TestJdkKind.FULL_JDK, JetTestUtils.getAnnotationsJar(), junitJar));
     }
 
     @Override
@@ -323,5 +330,14 @@ public class StdlibTest extends CodegenTestCase {
 
     public void testInvokeAnnotationMethod() {
         blackBoxFile("regressions/kt1932.kt");
+    }
+
+
+    public void testKt1800() {
+        blackBoxFile("regressions/kt1800.kt");
+    }
+
+    public void testUptoDownto() {
+        blackBoxFile("uptoDownto.kt");
     }
 }

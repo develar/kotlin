@@ -105,9 +105,6 @@ var kotlin = {set:function (receiver, key, value) {
         },
         get_hasNext: function () {
             return this.index < this.size;
-        },
-        hasNext: function () {
-            return this.index < this.size;
         }
     });
 
@@ -119,9 +116,6 @@ var kotlin = {set:function (receiver, key, value) {
         },
         next: function () {
             return this.list.get(this.index++);
-        },
-        get_hasNext: function () {
-            return this.index < this.size;
         }
     });
 
@@ -134,7 +128,8 @@ var kotlin = {set:function (receiver, key, value) {
         },
         addAll: function (collection) {
             var it = collection.iterator();
-            while (it.get_hasNext()) {
+            var i = this.$size;
+            while (i-- > 0) {
                 this.add(it.next());
             }
         },
@@ -158,7 +153,7 @@ var kotlin = {set:function (receiver, key, value) {
                     }
                 }
             }
-            return false;
+            return true;
         },
         toString: function() {
             var builder = "[";
@@ -211,6 +206,14 @@ var kotlin = {set:function (receiver, key, value) {
         addAt: function (index, element) {
             this.array.splice(index, 0, element);
             this.$size++;
+        },
+        addAll: function (collection) {
+            var it = collection.iterator();
+            for (var i = this.$size, n = collection.size(); n-- > 0;) {
+                this.array[i++] = it.next();
+            }
+
+            this.$size += collection.size();
         },
         removeAt: function (index) {
             this.array.splice(index, 1);

@@ -23,10 +23,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
+import org.jetbrains.jet.lang.diagnostics.Errors;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
-import org.jetbrains.jet.lang.resolve.calls.inference.SolutionStatus;
+import org.jetbrains.jet.lang.resolve.calls.inference.ConstraintSystem;
+import org.jetbrains.jet.lang.resolve.calls.inference.InferenceErrorData;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
@@ -186,12 +188,6 @@ public class ResolutionTask<D extends CallableDescriptor, F extends D> extends R
         }
 
         @Override
-        public void typeInferenceFailed(@NotNull BindingTrace trace, SolutionStatus status) {
-            assert !status.isSuccessful();
-            trace.report(TYPE_INFERENCE_FAILED.on(call.getCallElement(), status));
-        }
-
-        @Override
         public void unsafeCall(@NotNull BindingTrace trace, @NotNull JetType type, boolean isCallForImplicitInvoke) {
             ASTNode callOperationNode = call.getCallOperationNode();
             if (callOperationNode != null && !isCallForImplicitInvoke) {
@@ -235,6 +231,35 @@ public class ResolutionTask<D extends CallableDescriptor, F extends D> extends R
         @Override
         public void invisibleMember(@NotNull BindingTrace trace, @NotNull DeclarationDescriptor descriptor) {
             trace.report(INVISIBLE_MEMBER.on(call.getCallElement(), descriptor, descriptor.getContainingDeclaration()));
+        }
+
+        @Override
+        public void typeInferenceFailed(@NotNull BindingTrace trace, @NotNull InferenceErrorData data) {
+            ConstraintSystem constraintSystem = data.constraintSystem;
+            assert !constraintSystem.isSuccessful();
+            if (constraintSystem.hasErrorInConstrainingTypes()) {
+                return;
+            }
+            if (constraintSystem.hasExpectedTypeMismatch()) {
+                JetType returnType = data.descriptor.getReturnType();
+                assert returnType != null;
+                trace.report(TYPE_INFERENCE_EXPECTED_TYPE_MISMATCH.on(reference, returnType, data.expectedType));
+            }
+            else if (constraintSystem.hasTypeConstructorMismatch()) {
+                trace.report(TYPE_INFERENCE_TYPE_CONSTRUCTOR_MISMATCH.on(reference, data));
+            }
+            else if (constraintSystem.hasConflictingConstraints()) {
+                trace.report(TYPE_INFERENCE_CONFLICTING_SUBSTITUTIONS.on(reference, data));
+            }
+            else {
+                assert constraintSystem.hasUnknownParameters();
+                trace.report(TYPE_INFERENCE_NO_INFORMATION_FOR_PARAMETER.on(reference, data));
+            }
+        }
+
+        @Override
+        public void upperBoundViolated(@NotNull BindingTrace trace, @NotNull InferenceErrorData inferenceErrorData) {
+            trace.report(Errors.TYPE_INFERENCE_UPPER_BOUND_VIOLATED.on(reference, inferenceErrorData));
         }
     };
 }

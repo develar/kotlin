@@ -25,10 +25,6 @@ public final class ForeachTest extends AbstractExpressionTest {
         super("for/");
     }
 
-    public void TODO_testForUpTo() throws Exception {
-        fooBoxIsValue(10);
-    }
-
     public void testForIteratesOverArray() throws Exception {
         fooBoxTest();
     }

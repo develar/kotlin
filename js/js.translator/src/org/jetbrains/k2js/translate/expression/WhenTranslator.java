@@ -117,7 +117,7 @@ public final class WhenTranslator extends AbstractTranslator {
     private JsVars generateInitExpressions() {
         JsVars initVars = new JsVars();
         initVars.add(dummyCounter.first);
-        if (expressionToMatch.first != null) {
+        if (expressionToMatch != null && expressionToMatch.first != null) {
             initVars.add(expressionToMatch.first);
         }
         return initVars;

@@ -22,7 +22,7 @@ import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
-import org.jetbrains.jet.lang.resolve.calls.inference.SolutionStatus;
+import org.jetbrains.jet.lang.resolve.calls.inference.InferenceErrorData;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.JetType;
 
@@ -72,9 +72,6 @@ import java.util.List;
         public void instantiationOfAbstractClass(@NotNull BindingTrace trace) {}
 
         @Override
-        public void typeInferenceFailed(@NotNull BindingTrace trace, SolutionStatus status) {}
-
-        @Override
         public void unsafeCall(@NotNull BindingTrace trace, @NotNull JetType type, boolean isCallForImplicitInvoke) {}
 
         @Override
@@ -85,7 +82,14 @@ import java.util.List;
 
         @Override
         public void invisibleMember(@NotNull BindingTrace trace, @NotNull DeclarationDescriptor descriptor) {}
+
+        @Override
+        public void typeInferenceFailed(@NotNull BindingTrace trace, @NotNull InferenceErrorData inferenceErrorData) {}
+
+        @Override
+        public void upperBoundViolated(@NotNull BindingTrace trace, @NotNull InferenceErrorData inferenceErrorData) {}
     };
+
     <D extends CallableDescriptor> void bindReference(@NotNull BindingTrace trace, @NotNull ResolvedCallWithTrace<D> resolvedCall);
 
     <D extends CallableDescriptor> void bindResolvedCall(@NotNull BindingTrace trace, @NotNull ResolvedCallWithTrace<D> resolvedCall);
@@ -110,8 +114,6 @@ import java.util.List;
 
     void instantiationOfAbstractClass(@NotNull BindingTrace trace);
 
-    void typeInferenceFailed(@NotNull BindingTrace trace, SolutionStatus status);
-
     void unsafeCall(@NotNull BindingTrace trace, @NotNull JetType type, boolean isCallForImplicitInvoke);
 
     void unnecessarySafeCall(@NotNull BindingTrace trace, @NotNull JetType type);
@@ -119,4 +121,8 @@ import java.util.List;
     void danglingFunctionLiteralArgumentSuspected(@NotNull BindingTrace trace, @NotNull List<JetExpression> functionLiteralArguments);
 
     void invisibleMember(@NotNull BindingTrace trace, @NotNull DeclarationDescriptor descriptor);
+
+    void typeInferenceFailed(@NotNull BindingTrace trace, @NotNull InferenceErrorData inferenceErrorData);
+
+    void upperBoundViolated(@NotNull BindingTrace trace, @NotNull InferenceErrorData inferenceErrorData);
 }

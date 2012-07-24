@@ -18,6 +18,7 @@ package org.jetbrains.jet.lang.resolve.calls;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
+import org.jetbrains.jet.lang.resolve.TemporaryBindingTrace;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,8 +47,17 @@ import java.util.Collections;
         return new OverloadResolutionResultsImpl<D>(Code.AMBIGUITY, descriptors);
     }
 
+    public static <D extends CallableDescriptor> OverloadResolutionResultsImpl<D> incompleteTypeInference(Collection<ResolvedCallWithTrace<D>> descriptors) {
+        return new OverloadResolutionResultsImpl<D>(Code.INCOMPLETE_TYPE_INFERENCE, descriptors);
+    }
+
+    public static <D extends CallableDescriptor> OverloadResolutionResultsImpl<D> incompleteTypeInference(ResolvedCallWithTrace<D> descriptor) {
+        return new OverloadResolutionResultsImpl<D>(Code.INCOMPLETE_TYPE_INFERENCE, Collections.singleton(descriptor));
+    }
+
     private final Collection<ResolvedCallWithTrace<D>> results;
     private final Code resultCode;
+    private TemporaryBindingTrace trace;
 
     private OverloadResolutionResultsImpl(@NotNull Code resultCode, @NotNull Collection<ResolvedCallWithTrace<D>> results) {
         this.results = results;
@@ -102,4 +112,13 @@ import java.util.Collections;
 //    public OverloadResolutionResultsImpl<D> newContents(@NotNull Collection<D> functionDescriptors) {
 //        return new OverloadResolutionResultsImpl<D>(resultCode, functionDescriptors);
 //    }
+
+    public TemporaryBindingTrace getTrace() {
+        return trace;
+    }
+
+    public OverloadResolutionResultsImpl<D> setTrace(TemporaryBindingTrace trace) {
+        this.trace = trace;
+        return this;
+    }
 }
