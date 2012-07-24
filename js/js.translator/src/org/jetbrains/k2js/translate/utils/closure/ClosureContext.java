@@ -16,13 +16,13 @@
 
 package org.jetbrains.k2js.translate.utils.closure;
 
+import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -30,7 +30,7 @@ import java.util.Set;
  */
 public final class ClosureContext {
     @NotNull
-    private final Set<VariableDescriptor> descriptors = new HashSet<VariableDescriptor>();
+    private final Set<VariableDescriptor> descriptors = new OrderedSet<VariableDescriptor>();
 
     private boolean hasLocalVariables;
 
