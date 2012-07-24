@@ -40,11 +40,10 @@ var kotlin = {set:function (receiver, key, value) {
             return obj2 === null;
         }
 
-        if (typeof obj1 == "object") {
-            if (obj1.equals !== undefined) {
-                return obj1.equals(obj2);
-            }
+        if (typeof obj1 == "object" && obj1.equals !== undefined) {
+            return obj1.equals(obj2);
         }
+
         return obj1 === obj2;
     };
 
@@ -52,8 +51,12 @@ var kotlin = {set:function (receiver, key, value) {
         return args === null || args === undefined ? [] : args.slice();
     };
 
-    Kotlin.upto = function (from, limit, reversed) {
-        return Kotlin.$new(Kotlin.NumberRange)(from, limit - from, reversed).iterator();
+    Kotlin.intUpto = function (from, limit) {
+        return Kotlin.$new(Kotlin.NumberRange)(from, limit - from + 1, false);
+    };
+
+    Kotlin.intDownto = function (from, limit) {
+        return Kotlin.$new(Kotlin.NumberRange)(from, from - limit + 1, true);
     };
 
     Kotlin.modules = {};
@@ -916,6 +919,42 @@ var kotlin = {set:function (receiver, key, value) {
                 var h = new HashSet(hashingFunction, equalityFunction);
                 h.addAll(hashTable.keys());
                 return h;
+            };
+
+            this.equals = function (o) {
+                if (o === null || o === undefined) return false;
+                if (this.size() === o.size()) {
+                    var iter1 = this.iterator();
+                    var iter2 = o.iterator();
+                    while (true) {
+                        var hn1 = iter1.get_hasNext();
+                        var hn2 = iter2.get_hasNext();
+                        if (hn1 != hn2) return false;
+                        if (!hn2)
+                            return true;
+                        else {
+                            var o1 = iter1.next();
+                            var o2 = iter2.next();
+                            if (!Kotlin.equals(o1, o2)) return false;
+                        }
+                    }
+                }
+                return false;
+            };
+
+            this.toString = function() {
+                var builder = "[";
+                var iter = this.iterator();
+                var first = true;
+                while (iter.get_hasNext()) {
+                    if (first)
+                        first = false;
+                    else
+                        builder += ", ";
+                    builder += iter.next();
+                }
+                builder += "]";
+                return builder;
             };
 
             this.intersection = function (hashSet) {
