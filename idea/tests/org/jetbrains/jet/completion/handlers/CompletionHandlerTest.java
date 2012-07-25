@@ -35,11 +35,11 @@ import java.io.File;
 public class CompletionHandlerTest extends LightCompletionTestCase {
 
     public void testClassCompletionImport() {
-        doTest(CompletionType.CLASS_NAME, 1, "SortedSet", null);
+        doTest(CompletionType.BASIC, 2, "SortedSet", null);
     }
 
     public void testNonStandardArray() {
-        doTest(CompletionType.CLASS_NAME, 1, "Array", "java.lang.reflect");
+        doTest(CompletionType.BASIC, 2, "Array", "java.lang.reflect");
     }
 
     public void testNoParamsFunction() {
@@ -89,10 +89,16 @@ public class CompletionHandlerTest extends LightCompletionTestCase {
             configureByFileNoComplete(getBeforeFileName());
             setType(type);
 
-            complete(time);
-
             if (lookupString != null || tailText != null) {
-                selectItem(getExistentLookupElement(lookupString, tailText), '\t');
+                complete(time);
+
+                LookupElement item = getExistentLookupElement(lookupString, tailText);
+                if (item != null) {
+                    selectItem(item, '\n');
+                }
+            }
+            else {
+                forceCompleteFirst(time);
             }
 
             checkResultByFile(getAfterFileName());
@@ -102,6 +108,7 @@ public class CompletionHandlerTest extends LightCompletionTestCase {
         }
     }
 
+    @Nullable
     public static LookupElement getExistentLookupElement(@Nullable String lookupString, @Nullable String tailText) {
         final LookupImpl lookup = (LookupImpl) LookupManager.getInstance(getProject()).getActiveLookup();
         LookupElement foundElement = null;
@@ -140,7 +147,6 @@ public class CompletionHandlerTest extends LightCompletionTestCase {
             }
         }
 
-        Assert.assertNotNull("No element found for given constraints",foundElement);
         return foundElement;
     }
 
@@ -160,5 +166,12 @@ public class CompletionHandlerTest extends LightCompletionTestCase {
     @Override
     protected Sdk getProjectJDK() {
         return PluginTestCaseBase.jdkFromIdeaHome();
+    }
+
+    protected void forceCompleteFirst(int time) {
+        complete(time);
+        if (myItems != null && myItems.length > 1) {
+            selectItem(myItems[0]);
+        }
     }
 }
