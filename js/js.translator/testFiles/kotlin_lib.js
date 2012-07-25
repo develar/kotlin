@@ -122,12 +122,14 @@ var kotlin = {set:function (receiver, key, value) {
         }
     });
 
-    Kotlin.AbstractList = Kotlin.$createClass({
+    Kotlin.Collection = Kotlin.$createClass();
+
+    Kotlin.AbstractList = Kotlin.$createClass(Kotlin.Collection, {
         iterator: function () {
             return Kotlin.$new(ListIterator)(this);
         },
         isEmpty: function () {
-            return this.size() == 0;
+            return this.size() === 0;
         },
         addAll: function (collection) {
             var it = collection.iterator();
@@ -138,12 +140,12 @@ var kotlin = {set:function (receiver, key, value) {
         },
         remove: function (o) {
             var index = this.indexOf(o);
-            if (index != -1) {
+            if (index !== -1) {
                 this.removeAt(index);
             }
         },
         contains: function (o) {
-            return this.indexOf(o) != -1;
+            return this.indexOf(o) !== -1;
         },
         equals: function (o) {
             if (this.$size === o.$size) {
@@ -158,7 +160,7 @@ var kotlin = {set:function (receiver, key, value) {
             }
             return true;
         },
-        toString: function() {
+        toString: function () {
             var builder = "[";
             var iterator = this.iterator();
             var first = true;

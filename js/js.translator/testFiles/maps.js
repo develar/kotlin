@@ -369,9 +369,119 @@
     Kotlin.HashTable = Hashtable;
 })();
 
-Kotlin.HashMap = Kotlin.$createClass({initialize: function () {
+Kotlin.Map = Kotlin.$createClass();
+
+Kotlin.HashMap = Kotlin.$createClass(Kotlin.Map, {initialize: function () {
     Kotlin.HashTable.call(this);
 }});
+
+Kotlin.ComplexHashMap = Kotlin.HashMap;
+
+(function () {
+    var PrimitiveHashMapValuesIterator = Kotlin.$createClass(Kotlin.Iterator, {
+        initialize: function (map, keys, size) {
+            this.map = map;
+            this.keys = keys;
+            this.size = size;
+            this.index = 0;
+        },
+        next: function () {
+            return this.map[this.keys[this.index++]];
+        },
+        get_hasNext: function () {
+            return this.index < this.size;
+        }
+    });
+
+    var PrimitiveHashMapValues = Kotlin.$createClass(Kotlin.Collection, {
+        initialize: function (map) {
+            this.map = map;
+        },
+        iterator: function () {
+            var keys = new Array(this.map.$size);
+            var map = this.map.map;
+            var i = 0;
+            for (var key in map) {
+                if (map.hasOwnProperty(key)) {
+                    keys[i++] = key;
+                }
+            }
+
+            return Kotlin.$new(PrimitiveHashMapValuesIterator)(map, keys, i);
+        },
+        isEmpty: function () {
+            return this.map.$size === 0;
+        },
+        contains: function (o) {
+            return this.map.containsValue(o);
+        }
+    });
+
+    Kotlin.PrimitiveHashMap = Kotlin.$createClass(Kotlin.Map, {
+        initialize: function () {
+            this.$size = 0;
+            this.map = {};
+        },
+        size: function () {
+            return this.$size;
+        },
+        isEmpty: function () {
+            return this.$size === 0;
+        },
+        containsKey: function (key) {
+            return this.map[key] !== undefined;
+        },
+        containsValue: function (value) {
+            var map = this.map;
+            for (var key in map) {
+                if (map.hasOwnProperty(key) && map[key] === value) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+        get: function (key) {
+            return this.map[key];
+        },
+        put: function (key, value) {
+            var prevValue = this.map[key];
+            this.map[key] = value === undefined ? null : value;
+            if (prevValue === undefined) {
+                this.$size++;
+            }
+            return prevValue;
+        },
+        remove: function (key) {
+            var prevValue = this.map[key];
+            if (prevValue !== undefined) {
+                delete this.map[key];
+                this.$size--;
+            }
+            return prevValue;
+        },
+        putAll: function (fromMap) {
+            throw Kotlin.$new(Kotlin.exceptions.UnsupportedOperationException)();
+        },
+        keySet: function () {
+            var result = Kotlin.$new(Kotlin.HashSet)();
+            var map = this.map;
+            for (var key in map) {
+                if (map.hasOwnProperty(key)) {
+                    result.add(key);
+                }
+            }
+
+            return result;
+        },
+        values: function () {
+            return Kotlin.$new(PrimitiveHashMapValues)(this);
+        },
+        toJSON: function () {
+            return this.map;
+        }
+    });
+}());
 
 (function () {
     function HashSet(hashingFunction, equalityFunction) {
@@ -496,8 +606,4 @@ Kotlin.HashMap = Kotlin.$createClass({initialize: function () {
     Kotlin.HashSet = Kotlin.$createClass({initialize: function () {
         HashSet.call(this);
     }});
-}())
-
-(function () {
-
 }());

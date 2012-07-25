@@ -12,51 +12,55 @@ import java.util.List;
  * Represents the JavaScript new expression.
  */
 public final class JsNew extends JsExpressionImpl implements HasArguments {
+    private final List<JsExpression> arguments;
+    private JsExpression ctorExpression;
 
-  private final List<JsExpression> args = new SmartList<JsExpression>();
-  private JsExpression ctorExpr;
-
-  public JsNew(JsExpression ctorExpr) {
-    this.ctorExpr = ctorExpr;
-  }
-
-  @Override
-  public List<JsExpression> getArguments() {
-    return args;
-  }
-
-  public JsExpression getConstructorExpression() {
-    return ctorExpr;
-  }
-
-  @Override
-  public boolean hasSideEffects() {
-    return true;
-  }
-
-  @Override
-  public boolean isDefinitelyNotNull() {
-    // Sadly, in JS it can be!
-    // TODO: analysis could probably determine most instances cannot be null.
-    return false;
-  }
-
-  @Override
-  public boolean isDefinitelyNull() {
-    return false;
-  }
-
-  @Override
-  public void traverse(JsVisitor v, JsContext ctx) {
-    if (v.visit(this, ctx)) {
-      ctorExpr = v.accept(ctorExpr);
-      v.acceptList(args);
+    public JsNew(JsExpression ctorExpression) {
+        this(ctorExpression, new SmartList<JsExpression>());
     }
-    v.endVisit(this, ctx);
-  }
 
-  @Override
-  public NodeKind getKind() {
-    return NodeKind.NEW;
-  }
+    public JsNew(JsExpression ctorExpression, List<JsExpression> arguments) {
+        this.ctorExpression = ctorExpression;
+        this.arguments = arguments;
+    }
+
+    @Override
+    public List<JsExpression> getArguments() {
+        return arguments;
+    }
+
+    public JsExpression getConstructorExpression() {
+        return ctorExpression;
+    }
+
+    @Override
+    public boolean hasSideEffects() {
+        return true;
+    }
+
+    @Override
+    public boolean isDefinitelyNotNull() {
+        // Sadly, in JS it can be!
+        // TODO: analysis could probably determine most instances cannot be null.
+        return false;
+    }
+
+    @Override
+    public boolean isDefinitelyNull() {
+        return false;
+    }
+
+    @Override
+    public void traverse(JsVisitor v, JsContext ctx) {
+        if (v.visit(this, ctx)) {
+            ctorExpression = v.accept(ctorExpression);
+            v.acceptList(arguments);
+        }
+        v.endVisit(this, ctx);
+    }
+
+    @Override
+    public NodeKind getKind() {
+        return NodeKind.NEW;
+    }
 }

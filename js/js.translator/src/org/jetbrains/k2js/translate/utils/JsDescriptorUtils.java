@@ -164,12 +164,15 @@ public final class JsDescriptorUtils {
 
     @Nullable
     public static Name getNameIfStandardType(@NotNull JetExpression expression, @NotNull TranslationContext context) {
-        JetType leftExpression = context.bindingContext().get(BindingContext.EXPRESSION_TYPE, expression);
-        if (leftExpression != null) {
-            ClassifierDescriptor descriptor = leftExpression.getConstructor().getDeclarationDescriptor();
-            if (descriptor != null && descriptor.getContainingDeclaration() == JetStandardClasses.STANDARD_CLASSES_NAMESPACE) {
-                return descriptor.getName();
-            }
+        JetType type = context.bindingContext().get(BindingContext.EXPRESSION_TYPE, expression);
+        return type != null ? getNameIfStandardType(type) : null;
+    }
+
+    @Nullable
+    public static Name getNameIfStandardType(@NotNull JetType type) {
+        ClassifierDescriptor descriptor = type.getConstructor().getDeclarationDescriptor();
+        if (descriptor != null && descriptor.getContainingDeclaration() == JetStandardClasses.STANDARD_CLASSES_NAMESPACE) {
+            return descriptor.getName();
         }
 
         return null;
