@@ -128,13 +128,13 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
 
         if (vars.isEmpty()) {
             if (!propertyInitializers.isEmpty()) {
-                classesVar.setInitExpr(new JsObjectLiteral(propertyInitializers));
+                classesVar.setInitExpression(new JsObjectLiteral(propertyInitializers));
             }
             return;
         }
 
         dummyFunction.setBody(new JsBlock(new JsVars(vars, true), new JsReturn(new JsObjectLiteral(propertyInitializers))));
-        classesVar.setInitExpr(new JsInvocation(dummyFunction));
+        classesVar.setInitExpression(new JsInvocation(dummyFunction));
     }
 
     private void generateOpenClassDeclarations(@NotNull List<JsVar> vars, @NotNull List<JsPropertyInitializer> propertyInitializers) {

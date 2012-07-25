@@ -67,7 +67,7 @@ public final class DynamicContext {
     }
 
     @NotNull
-    public Pair<JsVar, JsNameRef> createTemporary(@NotNull JsExpression initExpression) {
+    public Pair<JsVar, JsNameRef> createTemporary(@Nullable JsExpression initExpression) {
         JsVar var = new JsVar(currentScope.declareTemporary(), initExpression);
         return new Pair<JsVar, JsNameRef>(var, var.getName().makeRef());
     }

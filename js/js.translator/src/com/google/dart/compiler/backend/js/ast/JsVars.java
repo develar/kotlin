@@ -7,6 +7,7 @@ package com.google.dart.compiler.backend.js.ast;
 import com.google.dart.compiler.common.SourceInfo;
 import com.google.dart.compiler.common.Symbol;
 import com.intellij.util.SmartList;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,19 +52,19 @@ public class JsVars extends JsNodeImpl implements JsStatement, Iterable<JsVars.J
      */
     public static class JsVar extends JsNodeImpl implements HasName {
         private final JsName name;
-        private JsExpression initExpr;
+        private JsExpression initExpression;
 
         public JsVar(JsName name) {
             this.name = name;
         }
 
-        public JsVar(JsName name, JsExpression initExpr) {
+        public JsVar(JsName name, @Nullable JsExpression initExpression) {
             this.name = name;
-            this.initExpr = initExpr;
+            this.initExpression = initExpression;
         }
 
-        public JsExpression getInitExpr() {
-            return initExpr;
+        public JsExpression getInitExpression() {
+            return initExpression;
         }
 
         @Override
@@ -76,15 +77,15 @@ public class JsVars extends JsNodeImpl implements JsStatement, Iterable<JsVars.J
             return name;
         }
 
-        public void setInitExpr(JsExpression initExpr) {
-            this.initExpr = initExpr;
+        public void setInitExpression(JsExpression initExpression) {
+            this.initExpression = initExpression;
         }
 
         @Override
         public void traverse(JsVisitor v, JsContext ctx) {
             if (v.visit(this, ctx)) {
-                if (initExpr != null) {
-                    initExpr = v.accept(initExpr);
+                if (initExpression != null) {
+                    initExpression = v.accept(initExpression);
                 }
             }
             v.endVisit(this, ctx);
@@ -107,7 +108,7 @@ public class JsVars extends JsNodeImpl implements JsStatement, Iterable<JsVars.J
     }
 
     public void addIfHasInitializer(JsVar var) {
-        if (var.getInitExpr() != null) {
+        if (var.getInitExpression() != null) {
             add(var);
         }
     }

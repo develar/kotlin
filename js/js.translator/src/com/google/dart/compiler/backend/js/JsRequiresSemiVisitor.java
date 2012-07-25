@@ -100,8 +100,8 @@ public class JsRequiresSemiVisitor extends JsVisitor {
 
   @Override
   public boolean visit(JsIf x, JsContext ctx) {
-    JsStatement thenStmt = x.getThenStmt();
-    JsStatement elseStmt = x.getElseStmt();
+    JsStatement thenStmt = x.getThenStatement();
+    JsStatement elseStmt = x.getElseStatement();
     JsStatement toCheck = thenStmt;
     if (elseStmt != null) {
       toCheck = elseStmt;

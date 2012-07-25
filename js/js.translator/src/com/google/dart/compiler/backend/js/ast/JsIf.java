@@ -8,55 +8,55 @@ package com.google.dart.compiler.backend.js.ast;
  * Represents a JavaScript if statement.
  */
 public final class JsIf extends JsNodeImpl implements JsStatement {
-    private JsExpression ifExpr;
-    private JsStatement thenStmt;
-    private JsStatement elseStmt;
+    private JsExpression ifExpression;
+    private JsStatement thenStatement;
+    private JsStatement elseStatement;
 
     public JsIf() {
     }
 
-    public JsIf(JsExpression ifExpr, JsStatement thenStmt, JsStatement elseStmt) {
-        this.ifExpr = ifExpr;
-        this.thenStmt = thenStmt;
-        this.elseStmt = elseStmt;
+    public JsIf(JsExpression ifExpression, JsStatement thenStatement, JsStatement elseStatement) {
+        this.ifExpression = ifExpression;
+        this.thenStatement = thenStatement;
+        this.elseStatement = elseStatement;
     }
 
-    public JsIf(JsExpression ifExpr, JsStatement thenStmt) {
-        this.ifExpr = ifExpr;
-        this.thenStmt = thenStmt;
+    public JsIf(JsExpression ifExpression, JsStatement thenStatement) {
+        this.ifExpression = ifExpression;
+        this.thenStatement = thenStatement;
     }
 
-    public JsStatement getElseStmt() {
-        return elseStmt;
+    public JsStatement getElseStatement() {
+        return elseStatement;
     }
 
-    public JsExpression getIfExpr() {
-        return ifExpr;
+    public JsExpression getIfExpression() {
+        return ifExpression;
     }
 
-    public JsStatement getThenStmt() {
-        return thenStmt;
+    public JsStatement getThenStatement() {
+        return thenStatement;
     }
 
-    public void setElseStmt(JsStatement elseStmt) {
-        this.elseStmt = elseStmt;
+    public void setElseStatement(JsStatement elseStmt) {
+        this.elseStatement = elseStmt;
     }
 
-    public void setIfExpr(JsExpression ifExpr) {
-        this.ifExpr = ifExpr;
+    public void setIfExpression(JsExpression ifExpr) {
+        this.ifExpression = ifExpr;
     }
 
-    public void setThenStmt(JsStatement thenStmt) {
-        this.thenStmt = thenStmt;
+    public void setThenStatement(JsStatement thenStmt) {
+        this.thenStatement = thenStmt;
     }
 
     @Override
     public void traverse(JsVisitor v, JsContext ctx) {
         if (v.visit(this, ctx)) {
-            ifExpr = v.accept(ifExpr);
-            thenStmt = v.accept(thenStmt);
-            if (elseStmt != null) {
-                elseStmt = v.accept(elseStmt);
+            ifExpression = v.accept(ifExpression);
+            thenStatement = v.accept(thenStatement);
+            if (elseStatement != null) {
+                elseStatement = v.accept(elseStatement);
             }
         }
         v.endVisit(this, ctx);

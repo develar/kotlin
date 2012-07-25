@@ -550,13 +550,13 @@ public class JsToStringGenerationVisitor extends JsVisitor {
         _if();
         spaceOpt();
         _lparen();
-        accept(x.getIfExpr());
+        accept(x.getIfExpression());
         _rparen();
-        JsStatement thenStmt = x.getThenStmt();
+        JsStatement thenStmt = x.getThenStatement();
         _nestedPush(thenStmt);
         accept(thenStmt);
         _nestedPop(thenStmt);
-        JsStatement elseStmt = x.getElseStmt();
+        JsStatement elseStmt = x.getElseStatement();
         if (elseStmt != null) {
             if (needSemi) {
                 semi();
@@ -843,7 +843,7 @@ public class JsToStringGenerationVisitor extends JsVisitor {
     @Override
     public boolean visit(JsVar x, JsContext ctx) {
         _nameOf(x);
-        JsExpression initExpr = x.getInitExpr();
+        JsExpression initExpr = x.getInitExpression();
         if (initExpr != null) {
             spaceOpt();
             _assignment();
