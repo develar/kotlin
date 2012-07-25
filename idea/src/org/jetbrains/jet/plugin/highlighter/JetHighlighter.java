@@ -35,13 +35,11 @@ import java.util.Map;
 public class JetHighlighter extends SyntaxHighlighterBase {
     private static final Map<IElementType, TextAttributesKey> keys;
 
-    @Override
     @NotNull
     public Lexer getHighlightingLexer() {
         return new JetLexer();
     }
 
-    @Override
     @NotNull
     public TextAttributesKey[] getTokenHighlights(IElementType tokenType) {
         return pack(keys.get(tokenType));
