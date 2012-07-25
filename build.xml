@@ -1,9 +1,9 @@
 <project name="Kotlin" default="dist">
 
     <!-- Set to false to disable proguard run on kotlin-compiler.jar. Speeds up the build -->
-    <property name="shrink" value="false"/>
+    <property name="shrink" value="true"/>
     <!-- Set to false to disable compiler's javadoc generation. Speeds up the build -->
-    <property name="generate.javadoc" value="false"/>
+    <property name="generate.javadoc" value="true"/>
 
     <property name="output.relative" value="dist"/>
     <property name="output" value="${basedir}/${output.relative}"/>
@@ -24,6 +24,7 @@
         <fileset dir="${basedir}/lib" includes="**/*.jar"/>
         <fileset dir="${basedir}/dependencies" includes="jline.jar"/>
         <fileset dir="${basedir}/dependencies" includes="jansi.jar"/>
+        <fileset dir="${basedir}/dependencies" includes="jetbrains-asm-util-4.0.jar"/>
         <fileset dir="${basedir}/js/js.translator/lib" includes="*.jar"/>
     </path>
 
@@ -186,9 +187,9 @@
       <arg value="--js"/>
       <arg value="${basedir}/js/js.translator/testFiles/kotlin_lib.js"/>
       <arg value="--js_output_file"/>
-        <arg value="${kotlin-home}/lib/kotlinEcma3.js"/>
-      </java>
-    </target>
+      <arg value="${kotlin-home}/lib/kotlinLib.js"/>
+    </java>
+  </target>
 
     <target name="compiler">
         <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${basedir}/dependencies/jarjar.jar"/>
@@ -208,8 +209,13 @@
 
             <zipgroupfileset dir="${basedir}/lib" includes="*.jar"/>
             <zipgroupfileset dir="${basedir}/ideaSDK/core" includes="*.jar"/>
+            <zipgroupfileset dir="${basedir}/ideaSDK/lib" includes="jna-utils.jar"/>
+            <zipgroupfileset dir="${basedir}/ideaSDK/lib" includes="oromatcher.jar"/>
+            <zipgroupfileset dir="${basedir}/js/js.translator/lib" includes="*.jar"/>
             <zipgroupfileset dir="${basedir}/dependencies" includes="jline.jar"/>
             <zipgroupfileset dir="${basedir}/dependencies" includes="jansi.jar"/>
+            <zipgroupfileset dir="${basedir}/dependencies" includes="jetbrains-asm-util-4.0.jar"/>
+            <zipgroupfileset dir="${basedir}/dependencies" includes="jetbrains-asm-analysis-4.0.jar"/>
 
             <zap pattern="com.thoughtworks.xstream.converters.extended.ISO8601*"/>
             <zap pattern="com.thoughtworks.xstream.converters.reflection.CGLIBEnhancedConverter*"/>
@@ -291,6 +297,8 @@
                 <proguard><![CDATA[
                     -injars '${output}/kotlin-compiler-before-proguard.jar'
                     -outjars '${kotlin-home}/lib/kotlin-compiler.jar'
+
+                    -dontwarn org.jetbrains.jet.internal.com.intellij.util.**
 
                     -libraryjars '${rtjar}'
 
@@ -464,9 +472,9 @@
         -->
     </target>
 
-  <target name="dist"
-            depends="init,prepareDist,injectorsGenerator,generateInjectors,compiler,compilerSources,antTools,jdkAnnotations,jslib"/>
-    
+    <target name="dist"
+            depends="init,prepareDist,injectorsGenerator,generateInjectors,compiler,compilerSources,antTools,jdkAnnotations,runtime,lang,jslib"/>
+
     <target name="zip" depends="dist">
         <zip destfile="${output}/${output.name}.zip">
             <zipfileset prefix="kotlinc" dir="${kotlin-home}"/>

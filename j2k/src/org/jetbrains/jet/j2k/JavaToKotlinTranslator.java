@@ -1,21 +1,21 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2010-2012 JetBrains s.r.o.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 package org.jetbrains.jet.j2k;
 
-import com.intellij.core.CoreApplicationEnvironment;
+import com.intellij.core.JavaCoreApplicationEnvironment;
 import com.intellij.core.JavaCoreProjectEnvironment;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.Disposable;
@@ -36,13 +36,20 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 /**
- * @author ignatov
- */
+* @author ignatov
+*/
 public class JavaToKotlinTranslator {
-    private JavaToKotlinTranslator() {
-    }
+
+    private static final Disposable DISPOSABLE = new Disposable() {
+        @Override
+        public void dispose() {
+        }
+    };
 
     private static final Converter CONVERTER = new Converter();
+
+    private JavaToKotlinTranslator() {
+    }
 
     @Nullable
     private static PsiFile createFile(@NotNull String text) {
@@ -61,13 +68,8 @@ public class JavaToKotlinTranslator {
 
     @NotNull
     static JavaCoreProjectEnvironment setUpJavaCoreEnvironment() {
-        final Disposable parentDisposable = new Disposable() {
-            @Override
-            public void dispose() {
-            }
-        };
-
-        JavaCoreProjectEnvironment javaCoreEnvironment = new JavaCoreProjectEnvironment(parentDisposable, new CoreApplicationEnvironment(parentDisposable));
+        JavaCoreApplicationEnvironment applicationEnvironment = new JavaCoreApplicationEnvironment(DISPOSABLE);
+        JavaCoreProjectEnvironment javaCoreEnvironment = new JavaCoreProjectEnvironment(DISPOSABLE, applicationEnvironment);
 
         javaCoreEnvironment.addJarToClassPath(findRtJar());
         File annotations = findAnnotations();

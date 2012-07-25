@@ -27,6 +27,7 @@ import com.intellij.testFramework.LightVirtualFile;
 import junit.framework.Test;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.asm4.*;
 import org.jetbrains.jet.JetTestCaseBuilder;
 import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentUtil;
@@ -37,9 +38,6 @@ import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.plugin.JetLanguage;
 import org.jetbrains.jet.test.TestCaseWithTmpdir;
 import org.junit.Assert;
-import org.jetbrains.asm4.AnnotationVisitor;
-import org.jetbrains.asm4.ClassReader;
-import org.jetbrains.asm4.MethodVisitor;
 import org.jetbrains.asm4.commons.Method;
 
 import java.io.File;
@@ -58,6 +56,8 @@ import java.util.regex.Pattern;
  * @see CompileJavaAgainstKotlinTest
  */
 public class WriteSignatureTest extends TestCaseWithTmpdir {
+
+    private static final AnnotationVisitor EMPTY_ANNOTATION_VISITOR = new AnnotationVisitor(Opcodes.ASM4) {};
 
     private final File ktFile;
     private JetCoreEnvironment jetCoreEnvironment;
@@ -118,138 +118,141 @@ public class WriteSignatureTest extends TestCaseWithTmpdir {
     
     @NotNull
     private ActualSignature readSignature(String className, final String methodName) throws Exception {
-        //// ugly unreadable code begin
-        //FileInputStream classInputStream = new FileInputStream(tmpdir + "/" + className.replace('.', '/') + ".class");
-        //try {
-        //    class Visitor extends EmptyVisitor {
-        //        ActualSignature readSignature;
-        //
-        //        @Override
-        //        public MethodVisitor visitMethod(int access, String name, final String desc, final String signature, String[] exceptions) {
-        //            if (name.equals(methodName)) {
-        //
-        //                final int parameterCount = new Method(name, desc).getArgumentTypes().length;
-        //
-        //                return new EmptyVisitor() {
-        //                    String typeParameters = "";
-        //                    String returnType;
-        //                    String[] parameterTypes = new String[parameterCount];
-        //
-        //                    @Override
-        //                    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        //                        if (desc.equals(JvmStdlibNames.JET_METHOD.getDescriptor())) {
-        //                            return new EmptyVisitor() {
-        //                                @Override
-        //                                public void visit(String name, Object value) {
-        //                                    if (name.equals(JvmStdlibNames.JET_METHOD_TYPE_PARAMETERS_FIELD)) {
-        //                                        typeParameters = (String) value;
-        //                                    }
-        //                                    else if (name.equals(JvmStdlibNames.JET_METHOD_RETURN_TYPE_FIELD)) {
-        //                                        returnType = (String) value;
-        //                                    }
-        //                                }
-        //
-        //                                @Override
-        //                                public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        //                                    return new EmptyVisitor();
-        //                                }
-        //
-        //                                @Override
-        //                                public AnnotationVisitor visitArray(String name) {
-        //                                    return new EmptyVisitor();
-        //                                }
-        //                            };
-        //                        }
-        //                        else {
-        //                            return new EmptyVisitor();
-        //                        }
-        //                    }
-        //
-        //                    @Override
-        //                    public AnnotationVisitor visitParameterAnnotation(final int parameter, String desc, boolean visible) {
-        //                        if (desc.equals(JvmStdlibNames.JET_VALUE_PARAMETER.getDescriptor())) {
-        //                            return new EmptyVisitor() {
-        //                                @Override
-        //                                public void visit(String name, Object value) {
-        //                                    if (name.equals(JvmStdlibNames.JET_VALUE_PARAMETER_TYPE_FIELD)) {
-        //                                        parameterTypes[parameter] = (String) value;
-        //                                    }
-        //                                }
-        //
-        //                                @Override
-        //                                public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        //                                    return new EmptyVisitor();
-        //                                }
-        //
-        //                                @Override
-        //                                public AnnotationVisitor visitArray(String name) {
-        //                                    return new EmptyVisitor();
-        //                                }
-        //                            };
-        //                        }
-        //                        else {
-        //                            return new EmptyVisitor();
-        //                        }
-        //                    }
-        //
-        //                    @Override
-        //                    public AnnotationVisitor visitAnnotationDefault() {
-        //                        return new EmptyVisitor();
-        //                    }
-        //
-        //                    @Nullable
-        //                    private String makeKotlinSignature() {
-        //                        boolean allNulls = true;
-        //
-        //                        StringBuilder sb = new StringBuilder();
-        //                        sb.append(typeParameters);
-        //                        if (typeParameters != null && typeParameters.length() > 0) {
-        //                            allNulls = false;
-        //                        }
-        //                        sb.append("(");
-        //                        for (String parameterType : parameterTypes) {
-        //                            sb.append(parameterType);
-        //                            if (parameterType != null) {
-        //                                allNulls = false;
-        //                            }
-        //                        }
-        //                        sb.append(")");
-        //                        sb.append(returnType);
-        //                        if (returnType != null) {
-        //                            allNulls = false;
-        //                        }
-        //                        if (allNulls) {
-        //                            return null;
-        //                        }
-        //                        else {
-        //                            return sb.toString();
-        //                        }
-        //                    }
-        //
-        //                    @Override
-        //                    public void visitEnd() {
-        //                        Assert.assertNull(readSignature);
-        //                        readSignature = new ActualSignature(desc, signature, makeKotlinSignature());
-        //                    }
-        //                };
-        //            }
-        //            return super.visitMethod(access, name, desc, signature, exceptions);
-        //        }
-        //    }
-        //
-        //    Visitor visitor = new Visitor();
-        //
-        //    new ClassReader(classInputStream).accept(visitor,
-        //            ClassReader.SKIP_CODE|ClassReader.SKIP_DEBUG|ClassReader.SKIP_FRAMES);
-        //
-        //    Assert.assertNotNull("method not found: " + className + "::" + methodName, visitor.readSignature);
-        //
-        //    return visitor.readSignature;
-        //} finally {
-        //    Closeables.closeQuietly(classInputStream);
-        //}
-        //// ugly unreadable code end
-        return null;
+        // ugly unreadable code begin
+        FileInputStream classInputStream = new FileInputStream(tmpdir + "/" + className.replace('.', '/') + ".class");
+        try {
+            class Visitor extends ClassVisitor {
+                ActualSignature readSignature;
+
+                public Visitor() {
+                    super(Opcodes.ASM4);
+                }
+
+                @Override
+                public MethodVisitor visitMethod(int access, String name, final String desc, final String signature, String[] exceptions) {
+                    if (name.equals(methodName)) {
+
+                        final int parameterCount = new Method(name, desc).getArgumentTypes().length;
+
+                        return new MethodVisitor(Opcodes.ASM4) {
+                            String typeParameters = "";
+                            String returnType;
+                            String[] parameterTypes = new String[parameterCount];
+                            
+                            @Override
+                            public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                                if (desc.equals(JvmStdlibNames.JET_METHOD.getDescriptor())) {
+                                    return new AnnotationVisitor(Opcodes.ASM4) {
+                                        @Override
+                                        public void visit(String name, Object value) {
+                                            if (name.equals(JvmStdlibNames.JET_METHOD_TYPE_PARAMETERS_FIELD)) {
+                                                typeParameters = (String) value;
+                                            }
+                                            else if (name.equals(JvmStdlibNames.JET_METHOD_RETURN_TYPE_FIELD)) {
+                                                returnType = (String) value;
+                                            }
+                                        }
+
+                                        @Override
+                                        public AnnotationVisitor visitAnnotation(String s, String s1) {
+                                            return EMPTY_ANNOTATION_VISITOR;
+                                        }
+
+                                        @Override
+                                        public AnnotationVisitor visitArray(String name) {
+                                            return EMPTY_ANNOTATION_VISITOR;
+                                        }
+                                    };
+                                }
+                                else {
+                                    return EMPTY_ANNOTATION_VISITOR;
+                                }
+                            }
+
+                            @Override
+                            public AnnotationVisitor visitParameterAnnotation(final int parameter, String desc, boolean visible) {
+                                if (desc.equals(JvmStdlibNames.JET_VALUE_PARAMETER.getDescriptor())) {
+                                    return new AnnotationVisitor(Opcodes.ASM4) {
+                                        @Override
+                                        public void visit(String name, Object value) {
+                                            if (name.equals(JvmStdlibNames.JET_VALUE_PARAMETER_TYPE_FIELD)) {
+                                                parameterTypes[parameter] = (String) value;
+                                            }
+                                        }
+
+                                        @Override
+                                        public AnnotationVisitor visitAnnotation(String name, String desc) {
+                                            return EMPTY_ANNOTATION_VISITOR;
+                                        }
+
+                                        @Override
+                                        public AnnotationVisitor visitArray(String name) {
+                                            return EMPTY_ANNOTATION_VISITOR;
+                                        }
+                                    };
+                                }
+                                else {
+                                    return EMPTY_ANNOTATION_VISITOR;
+                                }
+                            }
+
+                            @Override
+                            public AnnotationVisitor visitAnnotationDefault() {
+                                return EMPTY_ANNOTATION_VISITOR;
+                            }
+
+                            @Nullable
+                            private String makeKotlinSignature() {
+                                boolean allNulls = true;
+                                
+                                StringBuilder sb = new StringBuilder();
+                                sb.append(typeParameters);
+                                if (typeParameters != null && typeParameters.length() > 0) {
+                                    allNulls = false;
+                                }
+                                sb.append("(");
+                                for (String parameterType : parameterTypes) {
+                                    sb.append(parameterType);
+                                    if (parameterType != null) {
+                                        allNulls = false;
+                                    }
+                                }
+                                sb.append(")");
+                                sb.append(returnType);
+                                if (returnType != null) {
+                                    allNulls = false;
+                                }
+                                if (allNulls) {
+                                    return null;
+                                }
+                                else {
+                                    return sb.toString();
+                                }
+                            }
+
+                            @Override
+                            public void visitEnd() {
+                                Assert.assertNull(readSignature);
+                                readSignature = new ActualSignature(desc, signature, makeKotlinSignature());
+                            }
+                        };
+                    }
+                    return super.visitMethod(access, name, desc, signature, exceptions);
+                }
+            }
+            
+            Visitor visitor = new Visitor();
+            
+            new ClassReader(classInputStream).accept(visitor,
+                    ClassReader.SKIP_CODE|ClassReader.SKIP_DEBUG|ClassReader.SKIP_FRAMES);
+            
+            Assert.assertNotNull("method not found: " + className + "::" + methodName, visitor.readSignature);
+
+            return visitor.readSignature;
+        } finally {
+            Closeables.closeQuietly(classInputStream);
+        }
+        // ugly unreadable code end
     }
     
     private static class Expectation {

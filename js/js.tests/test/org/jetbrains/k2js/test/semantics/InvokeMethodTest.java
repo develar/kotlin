@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.codegen;
+package org.jetbrains.k2js.test.semantics;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.asm4.ClassWriter;
-import org.jetbrains.asm4.util.TraceClassVisitor;
+public final class InvokeMethodTest extends AbstractExpressionTest {
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
+    public InvokeMethodTest() {
+        super("invoke/");
+    }
 
-/**
- * @author max
- */
-public interface ClassBuilderFactory {
-    @NotNull
-    ClassBuilderMode getClassBuilderMode();
-    ClassBuilder newClassBuilder();
-    String asText(ClassBuilder builder);
-    byte[] asBytes(ClassBuilder builder);
+    public void testInvokeMethod() throws Exception {
+        // TODO uncomment this method to make the test case fail
+        // fooBoxIsValue("hello world!");
+    }
+
 }

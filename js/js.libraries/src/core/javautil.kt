@@ -68,12 +68,12 @@ public abstract class AbstractList<E>(): AbstractCollection<E>(), List<E> {
     override public  fun set(index: Int, element: E): E = js.noImpl
 
     library("addAt")
-    override public fun add(index: Int, element: E): Unit = js.noImpl
+    override public  public  fun add(index: Int, element: E): Unit = js.noImpl
 
     library("removeAt")
-    override public fun remove(index: Int): E = js.noImpl
+    override public  fun remove(index: Int): E = js.noImpl
 
-    override public fun indexOf(o: E?): Int = js.noImpl
+    override public  fun indexOf(o: E?): Int = js.noImpl
 }
 
 library
@@ -157,4 +157,9 @@ library
 public trait Enumeration<E> {
     open public fun hasMoreElements() : Boolean
     open public fun nextElement() : E
+}
+
+native
+public class Date() {
+    public fun getTime() : Int = js.noImpl
 }

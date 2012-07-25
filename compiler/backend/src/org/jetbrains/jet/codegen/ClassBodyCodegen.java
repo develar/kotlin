@@ -16,16 +16,15 @@
 
 package org.jetbrains.jet.codegen;
 
-import com.intellij.openapi.progress.ProcessCanceledException;
+import org.jetbrains.asm4.MethodVisitor;
+import org.jetbrains.asm4.Opcodes;
+import org.jetbrains.asm4.Type;
+import org.jetbrains.asm4.commons.InstructionAdapter;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
-import org.jetbrains.asm4.MethodVisitor;
-import org.jetbrains.asm4.Opcodes;
-import org.jetbrains.asm4.Type;
-import org.jetbrains.asm4.commons.InstructionAdapter;
 
 import java.util.ArrayList;
 import java.util.Collections;

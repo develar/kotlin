@@ -24,7 +24,6 @@ import com.intellij.psi.PsiFile;
 import com.intellij.testFramework.UsefulTestCase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.asm4.Type;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
@@ -36,6 +35,7 @@ import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.AnalyzingUtils;
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
 import org.jetbrains.jet.parsing.JetParsingTest;
+import org.jetbrains.asm4.Type;
 
 import java.io.File;
 import java.io.IOException;
