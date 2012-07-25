@@ -265,6 +265,16 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             doTest("compiler/testData/diagnostics/tests/IsExpressions.kt");
         }
         
+        @TestMetadata("kt310.kt")
+        public void testKt310() throws Exception {
+            doTest("compiler/testData/diagnostics/tests/kt310.kt");
+        }
+        
+        @TestMetadata("kt53.kt")
+        public void testKt53() throws Exception {
+            doTest("compiler/testData/diagnostics/tests/kt53.kt");
+        }
+        
         @TestMetadata("LValueAssignment.kt")
         public void testLValueAssignment() throws Exception {
             doTest("compiler/testData/diagnostics/tests/LValueAssignment.kt");
@@ -2673,6 +2683,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("kt2069.kt")
             public void testKt2069() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/subtyping/kt2069.kt");
+            }
+            
+            @TestMetadata("kt304.kt")
+            public void testKt304() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/subtyping/kt304.kt");
             }
             
             @TestMetadata("kt-1457.kt")
