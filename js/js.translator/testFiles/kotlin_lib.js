@@ -174,6 +174,9 @@ var kotlin = {set:function (receiver, key, value) {
             }
             builder += "]";
             return builder;
+        },
+        toJSON: function () {
+            return this.toArray();
         }
     });
 
@@ -236,6 +239,9 @@ var kotlin = {set:function (receiver, key, value) {
         },
         toString: function () {
             return "[" + this.array.join(", ") + "]";
+        },
+        toJSON: function () {
+            return this.array;
         }
     });
 
