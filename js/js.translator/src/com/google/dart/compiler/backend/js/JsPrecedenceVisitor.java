@@ -29,7 +29,6 @@ import com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
  * Precedence 1 is for comma operations.
  */
 class JsPrecedenceVisitor extends JsVisitor {
-
   static final int PRECEDENCE_NEW = 15;
 
   public static int exec(JsExpression expression) {

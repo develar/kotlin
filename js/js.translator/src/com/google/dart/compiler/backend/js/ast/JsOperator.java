@@ -4,29 +4,25 @@
 
 package com.google.dart.compiler.backend.js.ast;
 
-/**
- * A JavaScript operator.
- */
 public interface JsOperator {
+    int INFIX = 0x02;
+    int LEFT = 0x01;
+    int POSTFIX = 0x04;
+    int PREFIX = 0x08;
 
-  int INFIX = 0x02;
-  int LEFT = 0x01;
-  int POSTFIX = 0x04;
-  int PREFIX = 0x08;
+    int getPrecedence();
 
-  int getPrecedence();
+    String getSymbol();
 
-  String getSymbol();
+    boolean isKeyword();
 
-  boolean isKeyword();
+    boolean isLeftAssociative();
 
-  boolean isLeftAssociative();
+    boolean isPrecedenceLessThan(JsOperator other);
 
-  boolean isPrecedenceLessThan(JsOperator other);
+    boolean isValidInfix();
 
-  boolean isValidInfix();
+    boolean isValidPostfix();
 
-  boolean isValidPostfix();
-
-  boolean isValidPrefix();
+    boolean isValidPrefix();
 }

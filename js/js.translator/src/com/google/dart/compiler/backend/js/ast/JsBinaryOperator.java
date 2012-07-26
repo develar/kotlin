@@ -8,7 +8,6 @@ package com.google.dart.compiler.backend.js.ast;
  * Represents the operator in a JavaScript binary operation.
  */
 public enum JsBinaryOperator implements JsOperator {
-
   /*
    * Precedence indices from "JavaScript - The Definitive Guide" 4th Edition
    * (page 57)
@@ -76,11 +75,7 @@ public enum JsBinaryOperator implements JsOperator {
   }
 
   public boolean isAssignment() {
-    /*
-     * Beware, flaky! Maybe I should have added Yet Another Field to
-     * BinaryOperator?
-     */
-    return (getPrecedence() == ASG.getPrecedence());
+    return getPrecedence() == ASG.getPrecedence();
   }
 
   @Override
