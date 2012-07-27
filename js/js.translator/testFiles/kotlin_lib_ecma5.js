@@ -1,6 +1,6 @@
 // Be aware — Google Chrome has serious issue — you can rewrite READ-ONLY property (if it is defined in prototype). Firefox and Safari work correct.
 // Always test property access issues in Firefox, but not in Chrome.
-var Kotlin = {};
+var Kotlin = Object.create(null);
 
 (function () {
     "use strict";
@@ -192,7 +192,7 @@ var Kotlin = {};
 
     Kotlin.defineModule = function (id, module) {
         if (id in Kotlin.modules) {
-            throw Kotlin.$new(Kotlin.exceptions.IllegalArgumentException)();
+            throw Kotlin.$new(Kotlin.IllegalArgumentException)();
         }
 
         Object.freeze(module);

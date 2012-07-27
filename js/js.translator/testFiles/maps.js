@@ -461,7 +461,7 @@ Kotlin.ComplexHashMap = Kotlin.HashMap;
             return prevValue;
         },
         putAll: function (fromMap) {
-            throw Kotlin.$new(Kotlin.exceptions.UnsupportedOperationException)();
+            throw Kotlin.$new(Kotlin.UnsupportedOperationException)();
         },
         keySet: function () {
             var result = Kotlin.$new(Kotlin.HashSet)();

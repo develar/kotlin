@@ -229,7 +229,7 @@ var Kotlin = {};
 
     Kotlin.defineModule = function (id, module) {
         if (id in Kotlin.modules) {
-            throw Kotlin.$new(Kotlin.exceptions.IllegalArgumentException)();
+            throw Kotlin.$new(Kotlin.IllegalArgumentException)();
         }
 
         Kotlin.modules[id] = module;

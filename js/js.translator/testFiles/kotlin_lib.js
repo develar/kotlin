@@ -62,20 +62,18 @@ var kotlin = {set:function (receiver, key, value) {
     Kotlin.modules = {};
 
     Kotlin.Exception = Kotlin.$createClass();
-    Kotlin.exceptions = {
-        RuntimeException: Kotlin.$createClass(Kotlin.Exception),
-        IndexOutOfBounds: Kotlin.$createClass(Kotlin.Exception),
-        NullPointerException: Kotlin.$createClass(Kotlin.Exception),
-        NoSuchElementException: Kotlin.$createClass(Kotlin.Exception),
-        IllegalArgumentException: Kotlin.$createClass(Kotlin.Exception),
-        IllegalStateException: Kotlin.$createClass(Kotlin.Exception),
-        IndexOutOfBoundsException: Kotlin.$createClass(Kotlin.Exception),
-        UnsupportedOperationException: Kotlin.$createClass(Kotlin.Exception),
-        IOException: Kotlin.$createClass(Kotlin.Exception)
-    };
+    Kotlin.RuntimeException = Kotlin.$createClass(Kotlin.Exception);
+    Kotlin.IndexOutOfBounds = Kotlin.$createClass(Kotlin.Exception);
+    Kotlin.NullPointerException = Kotlin.$createClass(Kotlin.Exception);
+    Kotlin.NoSuchElementException = Kotlin.$createClass(Kotlin.Exception);
+    Kotlin.IllegalArgumentException = Kotlin.$createClass(Kotlin.Exception);
+    Kotlin.IllegalStateException = Kotlin.$createClass(Kotlin.Exception);
+    Kotlin.IndexOutOfBoundsException = Kotlin.$createClass(Kotlin.Exception);
+    Kotlin.UnsupportedOperationException = Kotlin.$createClass(Kotlin.Exception);
+    Kotlin.IOException = Kotlin.$createClass(Kotlin.Exception);
 
     Kotlin.throwNPE = function () {
-        throw Kotlin.$new(Kotlin.exceptions.NullPointerException)();
+        throw Kotlin.$new(Kotlin.NullPointerException)();
     };
 
     function throwAbstractFunctionInvocationError(funName) {
@@ -189,13 +187,13 @@ var kotlin = {set:function (receiver, key, value) {
         },
         get: function (index) {
             if (index < 0 || index >= this.$size) {
-                throw Kotlin.exceptions.IndexOutOfBounds;
+                throw Kotlin.IndexOutOfBounds;
             }
             return this.array[index];
         },
         set: function (index, value) {
             if (index < 0 || index >= this.$size) {
-                throw Kotlin.exceptions.IndexOutOfBounds;
+                throw Kotlin.IndexOutOfBounds;
             }
             this.array[index] = value;
         },
