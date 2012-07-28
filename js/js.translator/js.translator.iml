@@ -8,9 +8,18 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="frontend" />
-    <orderEntry type="library" scope="TEST" name="js-libs" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="intellij-core" level="project" />
-    <orderEntry type="module" module-name="dart-ast" />
+    <orderEntry type="module-library" exported="">
+      <library name="js-libs">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/dart-ast.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/src/dart-ast-src.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>
 
