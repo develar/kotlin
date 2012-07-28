@@ -41,7 +41,7 @@ public class TranslationContext {
     @NotNull
     private final DynamicContext dynamicContext;
     @NotNull
-    protected final StaticContext staticContext;
+    private final StaticContext staticContext;
     @NotNull
     private final AliasingContext aliasingContext;
 
