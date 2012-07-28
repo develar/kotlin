@@ -86,7 +86,7 @@ public final class StringTemplateTranslator extends AbstractTranslator {
                 append(context().program().getStringLiteral(translatedExpression.toString()));
             }
             else {
-                Name typeName = JsDescriptorUtils.getNameIfStandardType(entryExpression, context);
+                Name typeName = JsDescriptorUtils.getNameIfStandardType(entryExpression, context());
                 if (typeName != null && typeName.getName().equals("String")) {
                     append(translatedExpression);
                     return;

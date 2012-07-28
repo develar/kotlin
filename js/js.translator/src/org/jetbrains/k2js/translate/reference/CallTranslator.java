@@ -175,7 +175,7 @@ public final class CallTranslator extends AbstractTranslator {
                 hashMapClassName = "ComplexHashMap";
             }
 
-            constructorReference = context.namer().kotlin(hashMapClassName);
+            constructorReference = context().namer().kotlin(hashMapClassName);
         }
         else {
             constructorReference = translateAsFunctionWithNoThisObject(descriptor);

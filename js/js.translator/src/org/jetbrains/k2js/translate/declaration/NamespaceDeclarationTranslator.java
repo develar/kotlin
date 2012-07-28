@@ -124,6 +124,6 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
         else {
             packageMapValue = rootNamespaceDefinition;
         }
-        return new JsVar(context.scope().declareName(Namer.ROOT_NAMESPACE), packageMapValue);
+        return new JsVar(context().scope().declareName(Namer.ROOT_NAMESPACE), packageMapValue);
     }
 }

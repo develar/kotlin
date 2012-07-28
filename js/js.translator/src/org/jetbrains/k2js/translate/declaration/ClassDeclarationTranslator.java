@@ -203,6 +203,6 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
             value = item.qualifiedLabel;
         }
 
-        return InitializerUtils.createPropertyInitializer(descriptor, value, context);
+        return InitializerUtils.createPropertyInitializer(descriptor, value, context());
     }
 }
