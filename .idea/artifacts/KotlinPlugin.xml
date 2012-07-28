@@ -17,6 +17,7 @@
             <element id="module-output" name="js.translator" />
           </element>
           <element id="library" level="project" name="javax.inject" />
+          <element id="library" level="project" name="js-libs" />
         </element>
         <element id="directory" name="kotlinc">
           <element id="dir-copy" path="$PROJECT_DIR$/dist/kotlinc" />
