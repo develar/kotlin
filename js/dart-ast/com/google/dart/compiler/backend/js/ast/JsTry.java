@@ -7,7 +7,6 @@ package com.google.dart.compiler.backend.js.ast;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

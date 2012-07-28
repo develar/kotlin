@@ -156,7 +156,7 @@
     </jar>
     <java classname="com.google.javascript.jscomp.CommandLineRunner" failonerror="true">
       <classpath>
-        <pathelement location="${basedir}/js/js.translator/lib/closure-compiler.jar"/>
+        <pathelement location="${basedir}/js/js.tests/testLibs/closure-compiler.jar"/>
       </classpath>
       <arg value="--formatting"/>
       <arg value="PRETTY_PRINT"/>
