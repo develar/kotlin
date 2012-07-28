@@ -33,7 +33,7 @@ import org.jetbrains.k2js.translate.utils.mutator.LastExpressionMutator;
 
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.asStatement;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToStatement;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.negated;
 
 /**
@@ -129,7 +129,7 @@ public final class WhenTranslator extends AbstractTranslator {
     @NotNull
     JsStatement withReturnValueCaptured(@NotNull JsNode node) {
         return result == null
-               ? asStatement(node)
+               ? convertToStatement(node)
                : LastExpressionMutator.mutateLastExpression(node, new AssignToExpressionMutator(result.second));
     }
 

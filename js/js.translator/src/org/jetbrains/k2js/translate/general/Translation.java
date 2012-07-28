@@ -111,13 +111,13 @@ public final class Translation {
     @NotNull
     public static JsExpression translateAsExpression(@NotNull JetExpression expression,
             @NotNull TranslationContext context) {
-        return asExpression(translateExpression(expression, context));
+        return convertToExpression(translateExpression(expression, context));
     }
 
     @NotNull
     public static JsStatement translateAsStatement(@NotNull JetExpression expression,
             @NotNull TranslationContext context) {
-        return asStatement(translateExpression(expression, context));
+        return convertToStatement(translateExpression(expression, context));
     }
 
     @NotNull

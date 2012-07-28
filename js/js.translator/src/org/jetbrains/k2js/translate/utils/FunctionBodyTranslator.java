@@ -28,7 +28,7 @@ import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.utils.mutator.Mutator;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.asBlock;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToBlock;
 import static org.jetbrains.k2js.translate.utils.mutator.LastExpressionMutator.mutateLastExpression;
 
 /**
@@ -65,9 +65,9 @@ public final class FunctionBodyTranslator extends AbstractTranslator {
     @NotNull
     private JsBlock mayBeWrapWithReturn(@NotNull JsNode body) {
         if (!mustAddReturnToGeneratedFunctionBody()) {
-            return asBlock(body);
+            return convertToBlock(body);
         }
-        return asBlock(lastExpressionReturned(body));
+        return convertToBlock(lastExpressionReturned(body));
     }
 
     private boolean mustAddReturnToGeneratedFunctionBody() {

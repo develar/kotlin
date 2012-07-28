@@ -51,7 +51,7 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsStatement asStatement(@NotNull JsNode jsNode) {
+    public static JsStatement convertToStatement(@NotNull JsNode jsNode) {
         assert (jsNode instanceof JsExpression) || (jsNode instanceof JsStatement)
                 : "Unexpected node of type: " + jsNode.getClass().toString();
         if (jsNode instanceof JsExpression) {
@@ -61,15 +61,15 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsBlock asBlock(@NotNull JsNode jsNode) {
+    public static JsBlock convertToBlock(@NotNull JsNode jsNode) {
         if (jsNode instanceof JsBlock) {
             return (JsBlock) jsNode;
         }
-        return new JsBlock(asStatement(jsNode));
+        return new JsBlock(convertToStatement(jsNode));
     }
 
     @NotNull
-    public static JsExpression asExpression(@NotNull JsNode jsNode) {
+    public static JsExpression convertToExpression(@NotNull JsNode jsNode) {
         assert jsNode instanceof JsExpression : "Unexpected node of type: " + jsNode.getClass().toString();
         return (JsExpression) jsNode;
     }

@@ -102,7 +102,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
                 assert statement instanceof JetExpression : "Elements in JetBlockExpression " +
                                                             "should be of type JetExpression";
                 JsNode jsNode = statement.accept(this, blockContext);
-                jsBlock.getStatements().add(asStatement(jsNode));
+                jsBlock.getStatements().add(convertToStatement(jsNode));
             }
         }
         return jsBlock;
@@ -165,10 +165,10 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         boolean isKotlinStatement = BindingUtils.isStatement(context.bindingContext(), expression);
         boolean canBeJsExpression = thenNode instanceof JsExpression && elseNode instanceof JsExpression;
         if (!isKotlinStatement && canBeJsExpression) {
-            return new JsConditional(testExpression, asExpression(thenNode), asExpression(elseNode));
+            return new JsConditional(testExpression, convertToExpression(thenNode), convertToExpression(elseNode));
         }
         else {
-            JsIf ifStatement = new JsIf(testExpression, asStatement(thenNode), elseNode == null ? null : asStatement(elseNode));
+            JsIf ifStatement = new JsIf(testExpression, convertToStatement(thenNode), elseNode == null ? null : convertToStatement(elseNode));
             if (isKotlinStatement) {
                 return ifStatement;
             }
@@ -193,7 +193,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         if (nullableExpression == null) {
             return context.program().getEmptyStmt();
         }
-        return asStatement(nullableExpression.accept(this, context));
+        return convertToStatement(nullableExpression.accept(this, context));
     }
 
     @NotNull
@@ -201,7 +201,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
             @NotNull TranslationContext context) {
         JsExpression jsCondition = translateNullableExpression(expression, context);
         assert (jsCondition != null) : "Condition should not be empty";
-        return asExpression(jsCondition);
+        return convertToExpression(jsCondition);
     }
 
     @Nullable
@@ -210,7 +210,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         if (expression == null) {
             return null;
         }
-        return asExpression(expression.accept(this, context));
+        return convertToExpression(expression.accept(this, context));
     }
 
     @Override
