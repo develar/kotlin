@@ -24,6 +24,7 @@ import org.jetbrains.jet.checkers.AbstractJetDiagnosticsTest;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.test.generator.SimpleTestClassModel;
 import org.jetbrains.jet.test.generator.TestGenerator;
@@ -33,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author abreslav
@@ -48,16 +50,28 @@ public abstract class AbstractLazyResolveDiagnosticsTest extends AbstractJetDiag
         ModuleDescriptor eagerModule = LazyResolveTestUtil.resolveEagerly(jetFiles, getEnvironment());
 
         String path = JetTestUtils.getFilePath(new File(FileUtil.getRelativePath(TEST_DATA_DIR, testDataFile)));
+        NamespaceDescriptor expected = eagerModule.getRootNamespace();
+        NamespaceDescriptor actual = lazyModule.getRootNamespace();
+
         String txtFileRelativePath = path.replaceAll("\\.kt$|\\.ktscript", ".txt");
         File txtFile = new File("compiler/testData/lazyResolve/diagnostics/" + txtFileRelativePath);
-        NamespaceComparator.compareNamespaces(eagerModule.getRootNamespace(), lazyModule.getRootNamespace(), false,
-                                              new Predicate<NamespaceDescriptor>() {
-                                                  @Override
-                                                  public boolean apply(NamespaceDescriptor descriptor) {
-                                                      return !Name.identifier("jet").equals(descriptor.getName());
-                                                  }
-                                              },
-                                              txtFile);
+
+        // Only recurse into those namespaces mentioned in the files
+        // Otherwise we'll be examining the whole JDK
+        final Set<Name> names = LazyResolveTestUtil.getTopLevelPackagesFromFileList(jetFiles);
+        NamespaceComparator.compareNamespaces(
+                expected, actual,
+                NamespaceComparator.RECURSIVE.filterRecusion(new Predicate<FqNameUnsafe>() {
+                    @Override
+                    public boolean apply(FqNameUnsafe fqName) {
+                        if (fqName.isRoot()) return true;
+                        if (fqName.parent().isRoot()) {
+                            return names.contains(fqName.shortName());
+                        }
+                        return true;
+                    }
+                }),
+                txtFile);
     }
 
     public static void main(String[] args) throws IOException {
@@ -68,8 +82,7 @@ public abstract class AbstractLazyResolveDiagnosticsTest extends AbstractJetDiag
                 "LazyResolveDiagnosticsTestGenerated",
                 thisClass,
                 Arrays.asList(
-                        new SimpleTestClassModel(TEST_DATA_DIR, true, "kt", "doTest"),
-                        new SimpleTestClassModel(new File("compiler/testData/diagnostics/tests/script"), true, "ktscript", "doTest")
+                        new SimpleTestClassModel(TEST_DATA_DIR, true, "kt", "doTest")
                 ),
                 thisClass
         ).generateAndSave();

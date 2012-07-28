@@ -39,19 +39,6 @@ import static org.jetbrains.k2js.translate.utils.PsiUtils.isBackingFieldReferenc
  */
 public abstract class PropertyAccessTranslator extends AbstractTranslator implements AccessTranslator {
 
-    //TODO: is it really called?
-    @NotNull
-    private static PropertyAccessTranslator newInstance(@NotNull PropertyDescriptor descriptor,
-            @NotNull ResolvedCall<?> resolvedCall,
-            @NotNull TranslationContext context) {
-        if (isNativeObject(descriptor)) {
-            return new NativePropertyAccessTranslator(descriptor, /*qualifier = */ null, context);
-        }
-        else {
-            return new KotlinPropertyAccessTranslator(descriptor, /*qualifier = */ null, resolvedCall, context);
-        }
-    }
-
     @NotNull
     public static PropertyAccessTranslator newInstance(@NotNull JetSimpleNameExpression expression,
             @Nullable JsExpression qualifier,
@@ -81,15 +68,6 @@ public abstract class PropertyAccessTranslator extends AbstractTranslator implem
 
 
     @NotNull
-    /*package*/
-    static JsExpression translateAsPropertyGetterCall(@NotNull PropertyDescriptor descriptor,
-            @NotNull ResolvedCall<?> resolvedCall,
-            @NotNull TranslationContext context) {
-        return (newInstance(descriptor, resolvedCall, context))
-                .translateAsGet();
-    }
-
-    @NotNull
     public static JsExpression translateAsPropertyGetterCall(@NotNull JetSimpleNameExpression expression,
             @Nullable JsExpression qualifier,
             @NotNull CallType callType,
@@ -106,7 +84,7 @@ public abstract class PropertyAccessTranslator extends AbstractTranslator implem
         return canBePropertyGetterCall(selector, context);
     }
 
-    public static boolean canBePropertyGetterCall(@NotNull JetSimpleNameExpression expression,
+    private static boolean canBePropertyGetterCall(@NotNull JetSimpleNameExpression expression,
             @NotNull TranslationContext context) {
         return (getDescriptorForReferenceExpression
                         (context.bindingContext(), expression) instanceof PropertyDescriptor);

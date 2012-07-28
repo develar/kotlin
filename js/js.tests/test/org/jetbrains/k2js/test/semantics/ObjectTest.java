@@ -16,10 +16,7 @@
 
 package org.jetbrains.k2js.test.semantics;
 
-import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
-
-import java.util.EnumSet;
 
 /**
  * @author Pavel Talanov
@@ -42,7 +39,7 @@ public final class ObjectTest extends SingleFileTranslationTest {
     }
 
     public void testObjectInObject() throws Exception {
-        fooBoxTest(EnumSet.noneOf(EcmaVersion.class));
+        fooBoxTest();
     }
 
     public void testObjectInheritingFromATrait() throws Exception {
