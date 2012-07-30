@@ -1,5 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="K2JSCompiler chrome-ext" type="Application" factoryName="Application">
+    <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
     <option name="MAIN_CLASS_NAME" value="org.jetbrains.jet.cli.js.K2JSCompiler" />
     <option name="VM_PARAMETERS" value="-ea" />
     <option name="PROGRAM_PARAMETERS" value="-verbose -sourceFiles ../idea/plugins/html-instant-editing/extensions/chrome-ext/src -output ../idea/plugins/html-instant-editing/extensions/chrome/kotlin/chrome-ext.js -libraryFiles @browser-ext-platform,../idea/plugins/html-instant-editing/extensions/platform/src/util.kt,../idea/plugins/html-instant-editing/extensions/platform/src/dom.kt,../idea/plugins/html-instant-editing/extensions/platform/src/js.kt,../idea/plugins/html-instant-editing/extensions/platform/src/jsonRpc.kt,../idea/plugins/html-instant-editing/extensions/platform/src/platform.kt,../idea/plugins/html-instant-editing/extensions/platform/src/socket.kt,../idea/plugins/html-instant-editing/extensions/platform/src/extensions.kt,../idea/plugins/html-instant-editing/extensions/platform/src/logging.kt,dist/kotlinc/lib/kotlin-jslib.jar -target v5" />
