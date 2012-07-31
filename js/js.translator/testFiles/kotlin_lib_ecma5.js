@@ -10,6 +10,8 @@ var Kotlin = Object.create(null);
       return args;
     };
 
+    Kotlin.keys = Object.keys;
+
     Kotlin.isType = function (object, type) {
         if (object === null || object === undefined) {
             return false;

@@ -379,10 +379,10 @@ Kotlin.ComplexHashMap = Kotlin.HashMap;
 
 (function () {
     var PrimitiveHashMapValuesIterator = Kotlin.$createClass(Kotlin.Iterator, {
-        initialize: function (map, keys, size) {
+        initialize: function (map, keys) {
             this.map = map;
             this.keys = keys;
-            this.size = size;
+            this.size = keys.length;
             this.index = 0;
         },
         next: function () {
@@ -398,16 +398,7 @@ Kotlin.ComplexHashMap = Kotlin.HashMap;
             this.map = map;
         },
         iterator: function () {
-            var keys = new Array(this.map.$size);
-            var map = this.map.map;
-            var i = 0;
-            for (var key in map) {
-                if (map.hasOwnProperty(key)) {
-                    keys[i++] = key;
-                }
-            }
-
-            return Kotlin.$new(PrimitiveHashMapValuesIterator)(map, keys, i);
+            return Kotlin.$new(PrimitiveHashMapValuesIterator)(this.map.map, Kotlin.keys(this.map.map));
         },
         isEmpty: function () {
             return this.map.$size === 0;
@@ -459,6 +450,10 @@ Kotlin.ComplexHashMap = Kotlin.HashMap;
                 this.$size--;
             }
             return prevValue;
+        },
+        clear: function () {
+            this.$size = 0;
+            this.map = {};
         },
         putAll: function (fromMap) {
             throw Kotlin.$new(Kotlin.UnsupportedOperationException)();
