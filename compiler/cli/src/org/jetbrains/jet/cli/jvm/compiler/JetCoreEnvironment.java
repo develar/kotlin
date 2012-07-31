@@ -55,15 +55,6 @@ import java.util.List;
  * @author yole
  */
 public class JetCoreEnvironment {
-    @NotNull
-    public static JetCoreEnvironment createCoreEnvironmentForJS(Disposable disposable, @NotNull CompilerConfiguration configuration) {
-        return new JetCoreEnvironment(disposable, configuration);
-    }
-
-    @NotNull
-    public static JetCoreEnvironment createCoreEnvironmentForJVM(Disposable disposable, @NotNull CompilerConfiguration configuration) {
-        return new JetCoreEnvironment(disposable, configuration);
-    }
 
     private final JavaCoreApplicationEnvironment applicationEnvironment;
     private final JavaCoreProjectEnvironment projectEnvironment;
@@ -76,7 +67,8 @@ public class JetCoreEnvironment {
     private boolean initialized = false;
 
     public JetCoreEnvironment(Disposable parentDisposable, @NotNull CompilerConfiguration configuration) {
-        this.configuration = configuration;
+        this.configuration = configuration.copy();
+        this.configuration.setReadOnly(true);
 
         this.applicationEnvironment = new JavaCoreApplicationEnvironment(parentDisposable);
         applicationEnvironment.registerFileType(JetFileType.INSTANCE, "kt");

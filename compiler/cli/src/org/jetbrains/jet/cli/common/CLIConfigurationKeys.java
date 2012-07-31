@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.cli.js;
+package org.jetbrains.jet.cli.common;
 
-import com.intellij.openapi.util.Disposer;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.cli.common.CompileEnvironmentConfiguration;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
+import org.jetbrains.jet.config.CompilerConfigurationKey;
+
+import java.util.List;
 
 /**
- * @author Pavel Talanov
+ * @author Evgeny Gerashchenko
+ * @since 7/23/12
  */
-public class K2JSCompileEnvironmentConfiguration extends CompileEnvironmentConfiguration {
-    /**
-     * NOTE: It's very important to call dispose for every object of this class or there will be memory leaks.
-     *
-     * @see Disposer
-     */
-    public K2JSCompileEnvironmentConfiguration(@NotNull MessageCollector messageCollector) {
-        super(messageCollector);
+public class CLIConfigurationKeys {
+    public static final CompilerConfigurationKey<MessageCollector> MESSAGE_COLLECTOR_KEY =
+            CompilerConfigurationKey.create("message collector");
+    public static final CompilerConfigurationKey<List<CompilerPlugin>> COMPILER_PLUGINS =
+            CompilerConfigurationKey.create("compiler plugins");
+
+    private CLIConfigurationKeys() {
     }
 }

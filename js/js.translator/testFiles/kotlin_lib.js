@@ -40,6 +40,17 @@ var kotlin = {set:function (receiver, key, value) {
             return obj2 === null;
         }
 
+        if (obj1 instanceof Array) {
+            if (!(obj2 instanceof Array) || obj1.length != obj2.length) {
+                return false;
+            }
+            for (var i = 0; i < obj1.length; i++) {
+                if (!Kotlin.equals(obj1[i], obj2[i])) {
+                    return false;
+                }
+            }
+        }
+
         if (typeof obj1 == "object" && obj1.equals !== undefined) {
             return obj1.equals(obj2);
         }
