@@ -42,7 +42,7 @@ public final class MiscTest extends AbstractExpressionTest {
     }
 
     public void testClassWithoutNamespace() throws Exception {
-        runFunctionOutputTest("classWithoutNamespace.kt", Namer.ROOT_NAMESPACE, "box", true);
+        runFunctionOutputTest("classWithoutNamespace.kt", Namer.getRootNamespaceName(), "box", true);
     }
 
     public void testIfElseAsExpressionWithThrow() throws Exception {

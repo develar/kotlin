@@ -51,7 +51,7 @@ public final class IteratorForTranslator extends ForTranslator {
     @NotNull
     public static JsStatement doTranslate(@NotNull JetForExpression expression,
                                           @NotNull TranslationContext context) {
-        return new IteratorForTranslator(expression, context).translate();
+        return (new IteratorForTranslator(expression, context)).translate();
     }
 
     private IteratorForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {

@@ -445,7 +445,7 @@ public final class StaticContext {
                     }
 
                     if (qualifier.getQualifier() == null) {
-                        qualifier.setQualifier(new JsNameRef(Namer.ROOT_NAMESPACE));
+                        qualifier.setQualifier(new JsNameRef(Namer.getRootNamespaceName()));
                     }
 
                     return result;

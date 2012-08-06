@@ -178,7 +178,7 @@ public final class Translation {
     }
 
     private static void defineModule(@NotNull TranslationContext context, @NotNull List<JsStatement> statements, @NotNull String moduleId) {
-        JsName rootNamespaceName = context.scope().findName(Namer.ROOT_NAMESPACE);
+        JsName rootNamespaceName = context.scope().findName(Namer.getRootNamespaceName());
         if (rootNamespaceName != null) {
             statements.add(new JsInvocation(context.namer().kotlin("defineModule"), context.program().getStringLiteral(moduleId),
                                             rootNamespaceName.makeRef()).makeStmt());
