@@ -31,6 +31,7 @@ import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ClassReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExtensionReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ThisReceiverDescriptor;
 
 import java.util.Map;
 
@@ -120,8 +121,8 @@ public class AliasingContext {
                 return null;
             }
 
-            if (thisObject instanceof ClassReceiver) {
-                JsNameRef ref = get(((ClassReceiver) thisObject).getDeclarationDescriptor());
+            if (thisObject instanceof ExtensionReceiver || thisObject instanceof ClassReceiver) {
+                JsNameRef ref = get(((ThisReceiverDescriptor) thisObject).getDeclarationDescriptor());
                 if (ref != null) {
                     return ref;
                 }

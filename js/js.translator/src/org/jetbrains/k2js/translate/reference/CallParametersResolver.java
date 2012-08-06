@@ -17,14 +17,17 @@
 package org.jetbrains.k2js.translate.reference;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.ResolvedCallWithTrace;
 import org.jetbrains.jet.lang.resolve.calls.VariableAsFunctionResolvedCall;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 
 /**
  * @author Pavel Talanov
@@ -95,6 +98,7 @@ public final class CallParametersResolver {
         if (qualifier != null) {
             return qualifier;
         }
-        return context.getThisObject(resolvedCall.getResultingDescriptor());
+        DeclarationDescriptor receiverDescriptor = JsDescriptorUtils.getDeclarationDescriptorForExtensionCallReceiver(resolvedCall);
+        return context.getThisObject(receiverDescriptor);
     }
 }

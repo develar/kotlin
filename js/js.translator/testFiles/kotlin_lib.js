@@ -49,6 +49,7 @@ var kotlin = {set:function (receiver, key, value) {
                     return false;
                 }
             }
+            return true;
         }
 
         if (typeof obj1 == "object" && obj1.equals !== undefined) {
