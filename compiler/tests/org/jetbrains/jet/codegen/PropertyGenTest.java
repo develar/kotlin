@@ -81,7 +81,7 @@ public class PropertyGenTest extends CodegenTestCase {
         final Field field = fields[0];
         field.setAccessible(true);
         assertEquals("x", field.getName());
-        assertEquals(Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL, field.getModifiers());
+        assertEquals(Modifier.PROTECTED | Modifier.STATIC | Modifier.FINAL, field.getModifiers());
         assertEquals(239, field.get(null));
     }
 
@@ -227,6 +227,38 @@ public class PropertyGenTest extends CodegenTestCase {
         blackBoxFile("regressions/kt1398.kt");
     }
 
+    public void testKt2331() throws Exception {
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
+        blackBoxFile("regressions/kt2331.kt");
+    }
+
+    public void testKt1892() throws Exception {
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
+        blackBoxFile("regressions/kt1892.kt");
+        //System.out.println(generateToText());
+    }
+
+    public void testKt1846() throws Exception {
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
+        loadFile("regressions/kt1846.kt");
+        final Class aClass = loadImplementationClass(generateClassesInFile(), "A");
+        try {
+            Method v1 = aClass.getMethod("getV1");
+            System.out.println(generateToText());
+            fail();
+        }
+        catch (NoSuchMethodException e) {
+            try {
+                Method v1 = aClass.getMethod("setV1");
+                System.out.println(generateToText());
+                fail();
+            }
+            catch (NoSuchMethodException ee) {
+                //
+            }
+        }
+    }
+
     public void testKt1482_2279() throws Exception {
         createEnvironmentWithFullJdk();
         blackBoxFile("regressions/kt1482_2279.kt");
@@ -241,4 +273,10 @@ public class PropertyGenTest extends CodegenTestCase {
         createEnvironmentWithFullJdk();
         blackBoxFile("regressions/kt1714_minimal.kt");
     }
+
+    public void testKt2509() throws Exception {
+        createEnvironmentWithFullJdk();
+        blackBoxFile("regressions/kt2509.kt");
+    }
+
 }

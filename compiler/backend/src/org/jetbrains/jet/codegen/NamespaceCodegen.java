@@ -117,23 +117,21 @@ public class NamespaceCodegen {
     }
 
     private void generate(JetFile file, boolean multiFile) {
+        NamespaceDescriptor descriptor = state.getBindingContext().get(BindingContext.FILE_TO_NAMESPACE, file);
         for (JetDeclaration declaration : file.getDeclarations()) {
             if (declaration instanceof JetProperty) {
-                NamespaceDescriptor descriptor = state.getBindingContext().get(BindingContext.FILE_TO_NAMESPACE, file);
                 final CodegenContext context = CodegenContexts.STATIC.intoNamespace(descriptor);
                 state.getInjector().getMemberCodegen().generateFunctionOrProperty(
                         (JetTypeParameterListOwner) declaration, context, v.getClassBuilder());
             }
             else if (declaration instanceof JetNamedFunction) {
                 if (!multiFile) {
-                    NamespaceDescriptor descriptor = state.getBindingContext().get(BindingContext.FILE_TO_NAMESPACE, file);
                     final CodegenContext context = CodegenContexts.STATIC.intoNamespace(descriptor);
                     state.getInjector().getMemberCodegen().generateFunctionOrProperty(
                             (JetTypeParameterListOwner) declaration, context, v.getClassBuilder());
                 }
             }
             else if (declaration instanceof JetClassOrObject) {
-                NamespaceDescriptor descriptor = state.getBindingContext().get(BindingContext.FILE_TO_NAMESPACE, file);
                 final CodegenContext context = CodegenContexts.STATIC.intoNamespace(descriptor);
                 state.getInjector().getClassCodegen().generate(context, (JetClassOrObject) declaration);
             }
@@ -169,7 +167,6 @@ public class NamespaceCodegen {
 
                 for (JetDeclaration declaration : file.getDeclarations()) {
                     if (declaration instanceof JetNamedFunction) {
-                        NamespaceDescriptor descriptor = state.getBindingContext().get(BindingContext.FILE_TO_NAMESPACE, file);
                         {
                             final CodegenContext context = CodegenContexts.STATIC.intoNamespace(descriptor);
                             state.getInjector().getMemberCodegen().generateFunctionOrProperty((JetTypeParameterListOwner) declaration, context, builder);
@@ -226,22 +223,19 @@ public class NamespaceCodegen {
             @Override
             public void doSomething(@NotNull ClassBuilder v) {
                 MethodVisitor mv = v.newMethod(namespace, ACC_PUBLIC | ACC_STATIC, "<clinit>", "()V", null, null);
-                for (JetFile file : files) {
-                    if (state.getClassBuilderMode() == ClassBuilderMode.FULL) {
-                        mv.visitCode();
+                if (state.getClassBuilderMode() == ClassBuilderMode.FULL) {
+                    mv.visitCode();
 
-                        FrameMap frameMap = new FrameMap();
-                        ExpressionCodegen codegen = new ExpressionCodegen(mv, frameMap, Type.VOID_TYPE, CodegenContexts.STATIC, state);
+                    FrameMap frameMap = new FrameMap();
+                    ExpressionCodegen codegen = new ExpressionCodegen(mv, frameMap, Type.VOID_TYPE, CodegenContexts.STATIC, state);
 
+                    for (JetFile file : files) {
                         for (JetDeclaration declaration : file.getDeclarations()) {
                             if (declaration instanceof JetProperty) {
                                 final JetExpression initializer = ((JetProperty) declaration).getInitializer();
                                 if (initializer != null && !(initializer instanceof JetConstantExpression)) {
                                     final PropertyDescriptor descriptor = (PropertyDescriptor) state.getBindingContext().get(BindingContext.VARIABLE, declaration);
                                     assert descriptor != null;
-                                    if (descriptor.getReceiverParameter().exists()) {
-                                        continue;
-                                    }
                                     codegen.genToJVMStack(initializer);
                                     StackValue.Property propValue = codegen.intermediateValueForProperty(descriptor, true, null);
                                     propValue.store(propValue.type, new InstructionAdapter(mv));
@@ -249,9 +243,7 @@ public class NamespaceCodegen {
                             }
                         }
                     }
-                }
 
-                if (state.getClassBuilderMode() == ClassBuilderMode.FULL) {
                     mv.visitInsn(RETURN);
                     FunctionCodegen.endVisit(mv, "static initializer for namespace", namespace);
                     mv.visitEnd();

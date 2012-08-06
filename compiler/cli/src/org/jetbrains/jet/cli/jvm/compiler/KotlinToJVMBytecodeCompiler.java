@@ -42,6 +42,7 @@ import org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
+import org.jetbrains.jet.lang.resolve.ScriptNameUtil;
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.name.FqName;
@@ -55,6 +56,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
@@ -254,7 +256,7 @@ public class KotlinToJVMBytecodeCompiler {
                 },
                         parentLoader == null ? AllModules.class.getClassLoader() : parentLoader));
                 JetFile scriptFile = environment.getSourceFiles().get(0);
-                return classLoader.loadClass(ScriptCodegen.classNameForScript(scriptFile));
+                return classLoader.loadClass(ScriptNameUtil.classNameForScript(scriptFile));
             }
             catch (Exception e) {
                 throw new RuntimeException("Failed to evaluate script: " + e, e);
@@ -406,6 +408,16 @@ public class KotlinToJVMBytecodeCompiler {
         if(loader instanceof URLClassLoader) {
             for (URL url : ((URLClassLoader) loader).getURLs()) {
                 String urlFile = url.getFile();
+
+                if (urlFile.contains("%")) {
+                    try {
+                        urlFile = url.toURI().getPath();
+                    }
+                    catch (URISyntaxException e) {
+                        throw ExceptionUtils.rethrow(e);
+                    }
+                }
+
                 File file = new File(urlFile);
                 if(file.exists() && (file.isDirectory() || file.getName().endsWith(".jar"))) {
                     files.add(file);

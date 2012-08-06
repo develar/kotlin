@@ -69,7 +69,19 @@ public class TraitsTest extends CodegenTestCase {
         blackBoxFile("regressions/kt2541.kt");
     }
 
+    public void testKt2260() {
+        blackBoxFile("regressions/kt2260.kt");
+    }
+
     public void testFinalMethod() throws Exception {
         blackBoxFile("traits/finalMethod.jet");
+    }
+
+    public void testKt1936_1() throws Exception {
+        blackBoxFile("regressions/kt1936_1.kt");
+    }
+
+    public void testKt1936_2() throws Exception {
+        blackBoxFile("regressions/kt1936_2.kt");
     }
 }

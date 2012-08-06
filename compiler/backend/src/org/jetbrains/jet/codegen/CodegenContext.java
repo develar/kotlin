@@ -27,10 +27,7 @@ import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.asm4.Type;
 import org.jetbrains.asm4.commons.InstructionAdapter;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 /*
  * @author max
@@ -45,7 +42,7 @@ public abstract class CodegenContext {
     @Nullable
     private final CodegenContext parentContext;
     public  final ObjectOrClosureCodegen closure;
-    
+
     HashMap<JetType,Integer> typeInfoConstants;
     HashMap<Integer,JetType> reverseTypeInfoConstants;
     int typeInfoConstantsCount;
@@ -92,14 +89,6 @@ public abstract class CodegenContext {
 
     public DeclarationDescriptor getContextDescriptor() {
         return contextDescriptor;
-    }
-
-    public String getNamespaceClassName() {
-        DeclarationDescriptor descriptor = contextDescriptor;
-        while(!(descriptor instanceof NamespaceDescriptor)) {
-            descriptor = descriptor.getContainingDeclaration();
-        }
-        return NamespaceCodegen.getJVMClassNameForKotlinNs(DescriptorUtils.getFQName(descriptor).toSafe()).getInternalName();
     }
 
     public OwnerKind getContextKind() {
@@ -184,24 +173,7 @@ public abstract class CodegenContext {
 
         return cur == null ? null : typeMapper.mapType(((ClassDescriptor) cur.getContextDescriptor()).getDefaultType(), MapTypeMode.IMPL);
     }
-    
-    public int getTypeInfoConstantIndex(JetType type) {
-        if (parentContext != CodegenContexts.STATIC) { return parentContext.getTypeInfoConstantIndex(type); }
-        
-        if (typeInfoConstants == null) {
-            typeInfoConstants = new LinkedHashMap<JetType, Integer>();
-            reverseTypeInfoConstants = new LinkedHashMap<Integer, JetType>();
-        }
 
-        Integer index = typeInfoConstants.get(type);
-        if (index == null) {
-            index = typeInfoConstantsCount++;
-            typeInfoConstants.put(type, index);
-            reverseTypeInfoConstants.put(index, type);
-        }
-        return index;
-    }
-    
     DeclarationDescriptor getAccessor(DeclarationDescriptor descriptor) {
         if (accessors == null) {
             accessors = new HashMap<DeclarationDescriptor,DeclarationDescriptor>();
@@ -221,8 +193,8 @@ public abstract class CodegenContext {
                                   fd.getTypeParameters(),
                                   fd.getValueParameters(),
                                   fd.getReturnType(),
-                                  fd.getModality(),
-                                  fd.getVisibility(),
+                                  Modality.FINAL,
+                                  Visibilities.PUBLIC,
                                   /*isInline = */ false);
             accessor = myAccessor;
         }
@@ -230,26 +202,29 @@ public abstract class CodegenContext {
             PropertyDescriptor pd = (PropertyDescriptor) descriptor;
             PropertyDescriptor myAccessor = new PropertyDescriptor(contextDescriptor,
                     Collections.<AnnotationDescriptor>emptyList(),
-                    pd.getModality(),
-                    pd.getVisibility(),
+                    Modality.FINAL,
+                    Visibilities.PUBLIC,
                     pd.isVar(),
                     pd.isObjectDeclaration(),
-                    Name.identifier(pd.getName()  + "$bridge$" + accessors.size()),
+                    Name.identifier(pd.getName() + "$b$" + getHierarchyCount() + "$" + accessors.size()),
                     CallableMemberDescriptor.Kind.DECLARATION
             );
             JetType receiverType = pd.getReceiverParameter().exists() ? pd.getReceiverParameter().getType() : null;
             myAccessor.setType(pd.getType(), Collections.<TypeParameterDescriptorImpl>emptyList(), pd.getExpectedThisObject(), receiverType);
 
             PropertyGetterDescriptor pgd = new PropertyGetterDescriptor(
-                        myAccessor, Collections.<AnnotationDescriptor>emptyList(), myAccessor.getModality(),
-                        myAccessor.getVisibility(),
+                        myAccessor, Collections.<AnnotationDescriptor>emptyList(),
+                        Modality.FINAL,
+                        Visibilities.PUBLIC,
                     false, false, CallableMemberDescriptor.Kind.DECLARATION);
             pgd.initialize(myAccessor.getType());
-            
+
             PropertySetterDescriptor psd = new PropertySetterDescriptor(
-                    myAccessor, Collections.<AnnotationDescriptor>emptyList(), myAccessor.getModality(),
-                        myAccessor.getVisibility(),
+                    myAccessor, Collections.<AnnotationDescriptor>emptyList(),
+                        Modality.FINAL,
+                        Visibilities.PUBLIC,
                     false, false, CallableMemberDescriptor.Kind.DECLARATION);
+
             myAccessor.initialize(pgd, psd);
             accessor = myAccessor;
         }
@@ -261,15 +236,22 @@ public abstract class CodegenContext {
     }
 
     private int getHierarchyCount() {
-        ClassifierDescriptor descriptor = getThisDescriptor();
+        ClassDescriptor descriptor = getThisDescriptor();
         int c = 0;
-        while(true) {
+        while(descriptor != null) {
             Collection<? extends JetType> supertypes = descriptor.getDefaultType().getConstructor().getSupertypes();
-            if(supertypes.isEmpty())
-                return c;
+            if (supertypes.isEmpty()) {
+                break;
+            }
             c++;
-            descriptor = supertypes.iterator().next().getConstructor().getDeclarationDescriptor();
+            for (JetType supertype : supertypes) {
+                descriptor = (ClassDescriptor) supertype.getConstructor().getDeclarationDescriptor();
+                if (descriptor.getKind() == ClassKind.CLASS) {
+                    break;
+                }
+            }
         }
+        return c;
     }
 
     public StackValue getReceiverExpression(JetTypeMapper typeMapper) {

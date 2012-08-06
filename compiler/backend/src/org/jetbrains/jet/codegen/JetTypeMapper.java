@@ -61,16 +61,29 @@ public class JetTypeMapper {
     public static final Type TYPE_NOTHING = Type.getObjectType("jet/Nothing");
     public static final Type JL_NUMBER_TYPE = Type.getObjectType("java/lang/Number");
     public static final Type JL_STRING_BUILDER = Type.getObjectType("java/lang/StringBuilder");
-    public static final Type JL_ARRAY_LIST = Type.getObjectType("java/util/ArrayList");
     public static final Type JL_STRING_TYPE = Type.getObjectType("java/lang/String");
     public static final Type JL_CHAR_SEQUENCE_TYPE = Type.getObjectType("java/lang/CharSequence");
     private static final Type JL_COMPARABLE_TYPE = Type.getObjectType("java/lang/Comparable");
     public static final Type JL_CLASS_TYPE = Type.getObjectType("java/lang/Class");
+    public static final Type JL_BOOLEAN_TYPE = Type.getObjectType("java/lang/Boolean");
 
     public static final Type ARRAY_GENERIC_TYPE = Type.getType(Object[].class);
     public static final Type TUPLE0_TYPE = Type.getObjectType("jet/Tuple0");
 
-    private JetStandardLibrary standardLibrary1;
+    public static final Type TYPE_ITERATOR = Type.getObjectType("jet/Iterator");
+    public static final Type TYPE_INT_RANGE = Type.getObjectType("jet/IntRange");
+    public static final Type TYPE_SHARED_VAR = Type.getObjectType("jet/runtime/SharedVar$Object");
+    public static final Type TYPE_SHARED_INT = Type.getObjectType("jet/runtime/SharedVar$Int");
+    public static final Type TYPE_SHARED_DOUBLE = Type.getObjectType("jet/runtime/SharedVar$Double");
+    public static final Type TYPE_SHARED_FLOAT = Type.getObjectType("jet/runtime/SharedVar$Float");
+    public static final Type TYPE_SHARED_BYTE = Type.getObjectType("jet/runtime/SharedVar$Byte");
+    public static final Type TYPE_SHARED_SHORT = Type.getObjectType("jet/runtime/SharedVar$Short");
+    public static final Type TYPE_SHARED_CHAR = Type.getObjectType("jet/runtime/SharedVar$Char");
+    public static final Type TYPE_SHARED_LONG = Type.getObjectType("jet/runtime/SharedVar$Long");
+    public static final Type TYPE_SHARED_BOOLEAN = Type.getObjectType("jet/runtime/SharedVar$Boolean");
+    public static final Type TYPE_FUNCTION0 = Type.getObjectType("jet/Function0");
+    public static final Type TYPE_FUNCTION1 = Type.getObjectType("jet/Function1");
+
     public BindingContext bindingContext;
     private ClosureAnnotator closureAnnotator;
     private boolean mapBuiltinsToJava;
@@ -146,20 +159,6 @@ public class JetTypeMapper {
 
     private final HashMap<KnownTypeKey, Type> knowTypes = Maps.newHashMap();
 
-
-    public static final Type TYPE_ITERATOR = Type.getObjectType("jet/Iterator");
-    public static final Type TYPE_INT_RANGE = Type.getObjectType("jet/IntRange");
-    public static final Type TYPE_SHARED_VAR = Type.getObjectType("jet/runtime/SharedVar$Object");
-    public static final Type TYPE_SHARED_INT = Type.getObjectType("jet/runtime/SharedVar$Int");
-    public static final Type TYPE_SHARED_DOUBLE = Type.getObjectType("jet/runtime/SharedVar$Double");
-    public static final Type TYPE_SHARED_FLOAT = Type.getObjectType("jet/runtime/SharedVar$Float");
-    public static final Type TYPE_SHARED_BYTE = Type.getObjectType("jet/runtime/SharedVar$Byte");
-    public static final Type TYPE_SHARED_SHORT = Type.getObjectType("jet/runtime/SharedVar$Short");
-    public static final Type TYPE_SHARED_CHAR = Type.getObjectType("jet/runtime/SharedVar$Char");
-    public static final Type TYPE_SHARED_LONG = Type.getObjectType("jet/runtime/SharedVar$Long");
-    public static final Type TYPE_SHARED_BOOLEAN = Type.getObjectType("jet/runtime/SharedVar$Boolean");
-    public static final Type TYPE_FUNCTION0 = Type.getObjectType("jet/Function0");
-    public static final Type TYPE_FUNCTION1 = Type.getObjectType("jet/Function1");
 
     public static boolean isIntPrimitive(Type type) {
         return type == Type.INT_TYPE || type == Type.SHORT_TYPE || type == Type.BYTE_TYPE || type == Type.CHAR_TYPE;
@@ -301,19 +300,6 @@ public class JetTypeMapper {
         return mapType(jetType, signatureVisitor, MapTypeMode.VALUE);
     }
 
-    private String getStableNameForObject(JetObjectDeclaration object, DeclarationDescriptor descriptor) {
-        String local = getLocalNameForObject(object);
-        if (local == null) return null;
-
-        ClassDescriptor containingClass = getContainingClass(descriptor);
-        if (containingClass != null) {
-            return getClassFQName(containingClass).getInternalName() + "$" + local;
-        }
-        else {
-            return getFQName(getContainingNamespace(descriptor)) + "/" + local;
-        }
-    }
-
     public static String getLocalNameForObject(JetObjectDeclaration object) {
         PsiElement parent = object.getParent();
         if (parent instanceof JetClassObject) {
@@ -383,18 +369,6 @@ public class JetTypeMapper {
         }
 
         return name.getIdentifier();
-    }
-
-    private static ClassDescriptor getContainingClass(DeclarationDescriptor descriptor) {
-        DeclarationDescriptor parent = descriptor.getContainingDeclaration();
-        if (parent == null || parent instanceof ClassDescriptor) return (ClassDescriptor) parent;
-        return getContainingClass(parent);
-    }
-
-    private static NamespaceDescriptor getContainingNamespace(DeclarationDescriptor descriptor) {
-        DeclarationDescriptor parent = descriptor.getContainingDeclaration();
-        if (parent == null || parent instanceof NamespaceDescriptor) return (NamespaceDescriptor) parent;
-        return getContainingNamespace(parent);
     }
 
     @NotNull
@@ -530,6 +504,7 @@ public class JetTypeMapper {
             Type type = mapType(((TypeParameterDescriptor) descriptor).getUpperBoundsAsType(), kind);
             if (signatureVisitor != null) {
                 TypeParameterDescriptor typeParameterDescriptor = (TypeParameterDescriptor) jetType.getConstructor().getDeclarationDescriptor();
+                assert typeParameterDescriptor != null;
                 signatureVisitor.writeTypeVariable(typeParameterDescriptor.getName(), jetType.isNullable(), type);
             }
             checkValidType(type);
@@ -564,11 +539,10 @@ public class JetTypeMapper {
     private void checkValidType(@NotNull Type type) {
         if (!mapBuiltinsToJava) {
             String descriptor = type.getDescriptor();
-            if (descriptor.equals("Ljava/lang/Object;")) {
-                return;
-            }
-            else if (descriptor.startsWith("Ljava/")) {
-                throw new IllegalStateException("builtins must not reference java.* classes: " + descriptor);
+            if (!descriptor.equals("Ljava/lang/Object;")) {
+                if (descriptor.startsWith("Ljava/")) {
+                    throw new IllegalStateException("builtins must not reference java.* classes: " + descriptor);
+                }
             }
         }
     }
@@ -848,7 +822,6 @@ public class JetTypeMapper {
 
         if(kind == OwnerKind.TRAIT_IMPL) {
             ClassDescriptor containingDeclaration = (ClassDescriptor) parentDescriptor;
-            assert containingDeclaration != null;
             signatureWriter.writeParameterType(JvmMethodParameterKind.THIS);
             mapType(containingDeclaration.getDefaultType(), signatureWriter, MapTypeMode.IMPL);
             signatureWriter.writeParameterTypeEnd();
@@ -889,7 +862,6 @@ public class JetTypeMapper {
         String name = PropertyCodegen.setterName(descriptor.getName());
         if (kind == OwnerKind.TRAIT_IMPL) {
             ClassDescriptor containingDeclaration = (ClassDescriptor) descriptor.getContainingDeclaration();
-            assert containingDeclaration != null;
             signatureWriter.writeParameterType(JvmMethodParameterKind.THIS);
             mapType(containingDeclaration.getDefaultType(), signatureWriter, MapTypeMode.VALUE);
             signatureWriter.writeParameterTypeEnd();
@@ -999,7 +971,7 @@ public class JetTypeMapper {
                 return defaultFlags;
             }
             if (p.getContainingDeclaration() instanceof NamespaceDescriptor) {
-                return ACC_PUBLIC;
+                return ACC_PROTECTED;
             }
             return ACC_PRIVATE;
         }
@@ -1047,7 +1019,7 @@ public class JetTypeMapper {
         }
     }
     
-    private boolean isForceReal(JvmClassName className) {
+    private static boolean isForceReal(JvmClassName className) {
         return JvmPrimitiveType.getByWrapperClass(className) != null
                 || className.getFqName().getFqName().equals("java.lang.String")
                 || className.getFqName().getFqName().equals("java.lang.CharSequence")
@@ -1056,22 +1028,8 @@ public class JetTypeMapper {
                 || className.getFqName().getFqName().equals("java.lang.Comparable");
     }
 
-    public boolean isGenericsArray(JetType type) {
-        DeclarationDescriptor declarationDescriptor = type.getConstructor().getDeclarationDescriptor();
-        if (declarationDescriptor instanceof TypeParameterDescriptor) {
-            return true;
-        }
-
-        if (JetStandardLibraryNames.ARRAY.is(type)) {
-            return isGenericsArray(type.getArguments().get(0).getType());
-        }
-
-        return false;
-    }
-
-    public JetType getGenericsElementType(JetType arrayType) {
-        JetType type = arrayType.getArguments().get(0).getType();
-        return isGenericsArray(type) ? type : null;
+    public static boolean isGenericsArray(JetType type) {
+        return JetStandardLibraryNames.ARRAY.is(type) && type.getArguments().get(0).getType().getConstructor().getDeclarationDescriptor() instanceof TypeParameterDescriptor;
     }
 
     public Type getSharedVarType(DeclarationDescriptor descriptor) {

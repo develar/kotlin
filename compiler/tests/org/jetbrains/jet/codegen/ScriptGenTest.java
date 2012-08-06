@@ -27,6 +27,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,6 +38,9 @@ public class ScriptGenTest extends CodegenTestCase {
 
     public static final JetScriptDefinition FIB_SCRIPT_DEFINITION =
             new JetScriptDefinition(".lang.kt", new AnalyzerScriptParameter("num", "jet.Int"));
+
+    public static final JetScriptDefinition DEFIMPORT_SCRIPT_DEFINITION =
+            new JetScriptDefinition(".def.kt", null, Arrays.asList("java.util.Collections"));
 
     @Override
     protected void setUp() throws Exception {
@@ -122,6 +127,54 @@ public class ScriptGenTest extends CodegenTestCase {
             Field result = aClass.getField("result");
             Object script = constructor.newInstance(5);
             assertEquals(8,result.get(script));
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void testDependentScripts() {
+        JetScriptDefinitionProvider.getInstance(myEnvironment.getProject()).addScriptDefinition(FIB_SCRIPT_DEFINITION);
+        loadFiles("script/fibwp.lang.kt", "script/fibwprunner.ktscript");
+        final Class aClass = loadClass("Fibwprunner", generateClassesInFile());
+        try {
+            Constructor constructor = aClass.getConstructor();
+            Field result = aClass.getField("result");
+            Field rv = aClass.getField("rv");
+            Object script = constructor.newInstance();
+            assertEquals(12,rv.get(script));
+            assertEquals(8,result.get(script));
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void testDefImports() {
+        JetScriptDefinitionProvider.getInstance(myEnvironment.getProject()).addScriptDefinition(DEFIMPORT_SCRIPT_DEFINITION);
+        loadFile("script/withdefimports.def.kt");
+        final Class aClass = loadClass("Withdefimports", generateClassesInFile());
+        try {
+            Constructor constructor = aClass.getConstructor();
+            Field rv = aClass.getField("rv");
+            Object script = constructor.newInstance();
+            assertEquals(Collections.emptyList(),rv.get(script));
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void testScriptWhereMethodHasClosure() {
+        JetScriptDefinitionProvider.getInstance(myEnvironment.getProject()).addScriptDefinition(FIB_SCRIPT_DEFINITION);
+        loadFile("script/methodWithClosure.lang.kt");
+        final Class aClass = loadClass("MethodWithClosure", generateClassesInFile());
+        try {
+            Constructor constructor = aClass.getConstructor(int.class);
+            Object script = constructor.newInstance(239);
+            Method fib = aClass.getMethod("method");
+            Object invoke = fib.invoke(script);
+            assertEquals(239, ((Integer)invoke)/2);
         }
         catch (Exception e) {
             throw new RuntimeException(e);

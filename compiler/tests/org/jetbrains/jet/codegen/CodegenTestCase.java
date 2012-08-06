@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
+import org.jetbrains.jet.lang.resolve.ScriptNameUtil;
 import org.jetbrains.jet.utils.ExceptionUtils;
 import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
@@ -188,7 +189,7 @@ public abstract class CodegenTestCase extends UsefulTestCase {
 
         try {
             if (myFiles.isScript()) {
-                String scriptClassName = ScriptCodegen.classNameForScript(myFiles.getPsiFile());
+                String scriptClassName = ScriptNameUtil.classNameForScript(myFiles.getPsiFile());
                 Class<?> scriptClass = loader.loadClass(scriptClassName);
 
                 Constructor constructor = getConstructor(scriptClass, state.getScriptConstructorMethod());
@@ -219,9 +220,15 @@ public abstract class CodegenTestCase extends UsefulTestCase {
             else {
                 String fqName = NamespaceCodegen.getJVMClassNameForKotlinNs(JetPsiUtil.getFQName(myFiles.getPsiFiles().get(0))).getFqName().getFqName();
                 Class<?> namespaceClass = loader.loadClass(fqName);
-                Method method = namespaceClass.getMethod("box");
-                r = (String) method.invoke(null);
-                assertEquals("OK", r);
+                try {
+                    Method method = namespaceClass.getMethod("box");
+                    r = (String) method.invoke(null);
+                    assertEquals("OK", r);
+                }
+                catch (NoSuchMethodException e) {
+                    Method method = namespaceClass.getMethod("main",String[].class);
+                    method.invoke(null,new Object[]{new String[0]});
+                }
             }
         } catch (Error e) {
             System.out.println(generateToText());
