@@ -30,10 +30,16 @@ import java.util.Set;
 public class SpecialFiles {
     private static final Set<String> excludedFiles = Sets.newHashSet();
     private static final Set<String> filesCompiledWithoutStdLib = Sets.newHashSet();
+    private static final Set<String> filesCompiledWithJUnit = Sets.newHashSet();
 
     static {
         fillExcludedFiles();
         fillFilesCompiledWithoutStdLib();
+        fillFilesCompiledWithJUnit();
+    }
+
+    public static Set<String> getFilesCompiledWithJUnit() {
+        return filesCompiledWithJUnit;
     }
 
     public static Set<String> getExcludedFiles() {
@@ -42,6 +48,10 @@ public class SpecialFiles {
 
     public static Set<String> getFilesCompiledWithoutStdLib() {
         return filesCompiledWithoutStdLib;
+    }
+    
+    private static void fillFilesCompiledWithJUnit() {
+        filesCompiledWithJUnit.add("kt2334.kt");
     }
 
     private static void fillFilesCompiledWithoutStdLib() {
@@ -82,14 +92,15 @@ public class SpecialFiles {
         excludedFiles.add("classObjectMethod.jet"); // Commented
         excludedFiles.add("kt1592.kt"); // Codegen don't execute blackBoxFile() on it
 
-        excludedFiles.add("box.kt"); // MultiFileTest not supported yet
+        excludedFiles.add("box.kt");      // MultiFileTest not supported yet
         excludedFiles.add("kt2060_1.kt"); // MultiFileTest not supported yet
+        excludedFiles.add("kt2257_1.kt"); // MultiFileTest not supported yet
 
         excludedFiles.add("kt684.jet"); // StackOverflow with StringBuilder (escape())
 
         excludedFiles.add("kt1199.kt"); // Bug KT-2202
         excludedFiles.add("kt344.jet"); // Bug KT-2251
-        excludedFiles.add("kt529.kt"); // Bug
+        excludedFiles.add("kt529.kt");  // Bug
     }
 
     private SpecialFiles() {
