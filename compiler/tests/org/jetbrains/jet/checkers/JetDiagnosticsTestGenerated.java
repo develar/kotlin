@@ -1269,6 +1269,16 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/inference/dependOnExpectedType.kt");
             }
             
+            @TestMetadata("dependantOnVariance.kt")
+            public void testDependantOnVariance() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inference/dependantOnVariance.kt");
+            }
+            
+            @TestMetadata("dependantOnVarianceNullable.kt")
+            public void testDependantOnVarianceNullable() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inference/dependantOnVarianceNullable.kt");
+            }
+            
             @TestMetadata("hasErrorInConstrainingTypes.kt")
             public void testHasErrorInConstrainingTypes() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/inference/hasErrorInConstrainingTypes.kt");
@@ -1297,6 +1307,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("mapFunction.kt")
             public void testMapFunction() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/inference/mapFunction.kt");
+            }
+            
+            @TestMetadata("mostSpecificAfterInference.kt")
+            public void testMostSpecificAfterInference() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inference/mostSpecificAfterInference.kt");
             }
             
             @TestMetadata("NoInferenceFromDeclaredBounds.kt")
@@ -1363,6 +1378,26 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 @TestMetadata("kt2324.kt")
                 public void testKt2324() throws Exception {
                     doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2324.kt");
+                }
+                
+                @TestMetadata("kt2445.kt")
+                public void testKt2445() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2445.kt");
+                }
+                
+                @TestMetadata("kt2459.kt")
+                public void testKt2459() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2459.kt");
+                }
+                
+                @TestMetadata("kt2484.kt")
+                public void testKt2484() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2484.kt");
+                }
+                
+                @TestMetadata("kt2514.kt")
+                public void testKt2514() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2514.kt");
                 }
                 
                 @TestMetadata("kt702.kt")
