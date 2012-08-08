@@ -48,6 +48,16 @@ class ClsWrapperStubPsiFactory extends StubPsiFactory {
     }
 
     @Override
+    public PsiAnnotationParameterList createAnnotationParameterList(PsiAnnotationParameterListStub stub) {
+        return null;
+    }
+
+    @Override
+    public PsiNameValuePair createNameValuePair(PsiNameValuePairStub stub) {
+        return null;
+    }
+
+    @Override
     public PsiAnnotation createAnnotation(PsiAnnotationStub stub) {
         return delegate.createAnnotation(stub);
     }
