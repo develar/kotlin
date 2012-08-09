@@ -22,9 +22,6 @@ import org.jetbrains.k2js.test.BasicTest;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
 import org.jetbrains.k2js.translate.context.Namer;
 
-import java.io.File;
-import java.io.FilenameFilter;
-
 /**
  * @author Pavel Talanov
  */
@@ -47,12 +44,7 @@ public final class AdditionalTest extends SingleFileTranslationTest {
 
     public static Test suite() throws Exception {
         return TranslatorTestCaseBuilder
-                .suiteForDirectory(BasicTest.pathToTestFilesRoot() + "additional/cases/", true, new FilenameFilter() {
-                                       @Override
-                                       public boolean accept(File dir, String name) {
-                                           return name.equals("localFunction.kt");
-                                       }
-                                   }, new TranslatorTestCaseBuilder.NamedTestFactory() {
+                .suiteForDirectory(BasicTest.pathToTestFilesRoot() + "additional/cases/", new TranslatorTestCaseBuilder.NamedTestFactory() {
                     @NotNull
                     @Override
                     public Test createTest(@NotNull String filename) {

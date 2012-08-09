@@ -48,7 +48,6 @@ public class AliasingContext {
 
     @Nullable
     private Map<DeclarationDescriptor, JsExpression> aliasesForDescriptors;
-    private Set<DeclarationDescriptor> capturedAliasedDescriptors;
 
     @NotNull
     private final Map<JetExpression, JsName> aliasesForExpressions = Maps.newHashMap();
@@ -90,18 +89,10 @@ public class AliasingContext {
 
         JsExpression alias = aliasesForDescriptors.get(descriptor.getOriginal());
         if (alias != null) {
-            if (capturedAliasedDescriptors == null) {
-                capturedAliasedDescriptors = new HashSet<DeclarationDescriptor>();
-            }
-            capturedAliasedDescriptors.add(descriptor);
             return alias;
         }
 
         return parent.getAliasForDescriptor(descriptor);
-    }
-
-    public boolean isCaptured(@NotNull DeclarationDescriptor descriptor) {
-        return capturedAliasedDescriptors != null && capturedAliasedDescriptors.contains(descriptor);
     }
 
     @Nullable

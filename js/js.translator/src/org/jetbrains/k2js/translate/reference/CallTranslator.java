@@ -221,15 +221,11 @@ public final class CallTranslator extends AbstractTranslator {
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
                 assert receiver != null : "Could not be null for extensions";
-                return constructExtensionLiteralCall(receiver);
+                return new JsInvocation(callParameters.getFunctionReference(), generateExtensionCallArgumentList(receiver));
+                //List<JsExpression> callArguments = generateExtensionCallArgumentList(receiver);
+                //return new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()), callArguments);
             }
         }, context());
-    }
-
-    @NotNull
-    private JsExpression constructExtensionLiteralCall(@NotNull JsExpression realReceiver) {
-        List<JsExpression> callArguments = generateExtensionCallArgumentList(realReceiver);
-        return new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()), callArguments);
     }
 
     private boolean isExtensionFunction() {

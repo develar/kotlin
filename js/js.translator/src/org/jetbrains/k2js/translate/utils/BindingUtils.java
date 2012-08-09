@@ -66,7 +66,7 @@ public final class BindingUtils {
     @NotNull
     public static FunctionDescriptor getFunctionDescriptor(@NotNull BindingContext context,
             @NotNull JetDeclarationWithBody declaration) {
-        return getDescriptorForExpression(context, declaration, FunctionDescriptor.class);
+         return getDescriptorForExpression(context, declaration, FunctionDescriptor.class);
     }
 
     @NotNull

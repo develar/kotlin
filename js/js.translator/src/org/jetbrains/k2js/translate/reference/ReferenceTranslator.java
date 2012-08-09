@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
@@ -55,7 +56,7 @@ public final class ReferenceTranslator {
     @NotNull
     public static JsExpression translateAsLocalNameReference(@NotNull DeclarationDescriptor referencedDescriptor,
             @NotNull TranslationContext context) {
-        if (referencedDescriptor instanceof FunctionDescriptor) {
+        if (referencedDescriptor instanceof FunctionDescriptor || referencedDescriptor instanceof VariableDescriptor) {
             JsExpression alias = context.aliasingContext().getAliasForDescriptor(referencedDescriptor);
             if (alias != null) {
                 return alias;

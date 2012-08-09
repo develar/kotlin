@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
@@ -37,6 +38,7 @@ import org.jetbrains.k2js.translate.reference.*;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.mutator.AssignToExpressionMutator;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
@@ -98,9 +100,6 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
             if (statement instanceof JetWhenExpression) {
                 new WhenTranslator((JetWhenExpression) statement, blockContext, true).translate(jsBlock.getStatements());
             }
-            else if (statement instanceof JetNamedFunction) {
-                visitNamedFunction((JetNamedFunction) statement, blockContext);
-            }
             else {
                 assert statement instanceof JetExpression : "Elements in JetBlockExpression " +
                                                             "should be of type JetExpression";
@@ -144,8 +143,17 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     // assume it is a local variable declaration
     public JsNode visitProperty(@NotNull JetProperty expression, @NotNull TranslationContext context) {
-        DeclarationDescriptor descriptor = getDescriptorForElement(context.bindingContext(), expression);
-        return newVar(context.getNameForDescriptor(descriptor), translateInitializerForProperty(expression, context));
+        VariableDescriptor descriptor = context.bindingContext().get(BindingContext.VARIABLE, expression);
+        assert descriptor != null;
+        JsExpression initializer = translateInitializerForProperty(expression, context);
+        JsName name = context.getNameForDescriptor(descriptor);
+        if (descriptor.isVar() && context.bindingContext().get(BindingContext.CAPTURED_IN_CLOSURE, descriptor) == Boolean.TRUE) {
+            // well, wrap it
+            initializer = new JsObjectLiteral(Collections.singletonList(new JsPropertyInitializer(new JsNameRef("v"), initializer)));
+            context.aliasingContext().registerAlias(descriptor, new JsNameRef("v", new JsNameRef(name)));
+        }
+
+        return newVar(name, initializer);
     }
 
     @Override
@@ -338,8 +346,9 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     public JsNode visitNamedFunction(@NotNull JetNamedFunction expression, @NotNull TranslationContext context) {
         FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
         JsExpression alias = context.literalFunctionTranslator().translateFunction(expression, descriptor, context);
-        context.aliasingContext().registerAlias(descriptor, alias);
-        return alias;
+        JsName name = context.scope().declareFreshName(descriptor.getName().getName());
+        context.aliasingContext().registerAlias(descriptor, name.makeRef());
+        return new JsVars(new JsVars.JsVar(name, alias));
     }
 
     @Override

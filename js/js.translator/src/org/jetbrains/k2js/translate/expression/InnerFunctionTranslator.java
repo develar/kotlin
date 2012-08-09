@@ -2,6 +2,7 @@ package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
@@ -21,28 +22,23 @@ class InnerFunctionTranslator extends InnerDeclarationTranslator {
         this.descriptor = descriptor;
     }
 
-    public boolean isLocalVariablesAffected() {
-        return closureContext.isLocalVariablesAffected();
-    }
-
     @Override
     protected List<ValueParameterDescriptor> getValueParameters() {
         return descriptor.getValueParameters();
     }
 
-    public JsExpression translate(@NotNull JsNameRef nameRef, TranslationContext outerContext) {
-        JsExpression result = translate(nameRef, getThis(outerContext));
-        FunctionTranslator.addParameters(fun.getParameters(), descriptor, context);
-        return result;
+    @SuppressWarnings("MethodOverloadsMethodOfSuperclass")
+    public JsExpression translate(@NotNull JsNameRef nameRef, @NotNull TranslationContext outerContext) {
+        return translate(nameRef, getThis(outerContext));
     }
 
     @Override
-    protected JsExpression createExpression(JsNameRef nameRef, JsExpression self) {
+    protected JsExpression createExpression(@NotNull JsNameRef nameRef, JsExpression self) {
         return nameRef;
     }
 
     @Override
-    protected JsInvocation createInvocation(JsNameRef nameRef, JsExpression self) {
+    protected JsInvocation createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
         JsInvocation bind = new JsInvocation(context.namer().kotlin(getBindMethodName()));
         bind.getArguments().add(nameRef);
         bind.getArguments().add(self);
@@ -62,16 +58,20 @@ class InnerFunctionTranslator extends InnerDeclarationTranslator {
     @NotNull
     private String getBindMethodName() {
         if (closureContext.getDescriptors().isEmpty()) {
-            return getValueParameters().isEmpty() ? "b3" : "b4";
+            return !hasArguments() ? "b3" : "b4";
         }
         else {
-            return getValueParameters().isEmpty() ? (closureContext.getDescriptors().size() == 1 ? "b0" : "b1") : "b2";
+            return !hasArguments() ? (closureContext.getDescriptors().size() == 1 ? "b0" : "b1") : "b2";
         }
+    }
+
+    private boolean hasArguments() {
+        return !getValueParameters().isEmpty() || descriptor.getReceiverParameter().exists();
     }
 
     @Override
     protected List<JsExpression> getCapturedValueParametersList(JsInvocation invocation) {
-        if (closureContext.getDescriptors().size() > 1 || !getValueParameters().isEmpty()) {
+        if (closureContext.getDescriptors().size() > 1 || hasArguments()) {
             JsArrayLiteral values = new JsArrayLiteral();
             invocation.getArguments().add(values);
             return values.getExpressions();

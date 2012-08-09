@@ -3,6 +3,7 @@ package org.jetbrains.k2js.translate.expression;
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
@@ -32,7 +33,7 @@ abstract class InnerDeclarationTranslator {
         return Collections.emptyList();
     }
 
-    protected JsExpression translate(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
+    public JsExpression translate(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
         if (closureContext.getDescriptors().isEmpty() && self == JsLiteral.NULL) {
             return createExpression(nameRef, self);
         }
@@ -43,9 +44,9 @@ abstract class InnerDeclarationTranslator {
         }
     }
 
-    protected abstract JsExpression createExpression(JsNameRef nameRef, JsExpression self);
+    protected abstract JsExpression createExpression(@NotNull JsNameRef nameRef, @Nullable JsExpression self);
 
-    protected abstract JsInvocation createInvocation(JsNameRef nameRef, JsExpression self);
+    protected abstract JsInvocation createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self);
 
     private void addCapturedValueParameters(JsInvocation bind) {
         if (closureContext.getDescriptors().isEmpty()) {
@@ -53,8 +54,15 @@ abstract class InnerDeclarationTranslator {
         }
 
         List<JsExpression> expressions = getCapturedValueParametersList(bind);
-        for (VariableDescriptor variableDescriptor : closureContext.getDescriptors()) {
-            JsName name = context.getNameForDescriptor(variableDescriptor);
+        for (CallableDescriptor descriptor : closureContext.getDescriptors()) {
+            JsName name;
+            if (descriptor instanceof VariableDescriptor) {
+                name = context.getNameForDescriptor(descriptor);
+            }
+            else {
+                name = ((JsNameRef) context.getAliasForDescriptor(descriptor)).getName();
+                assert name != null;
+            }
             fun.getParameters().add(new JsParameter(name));
             expressions.add(name.makeRef());
         }
