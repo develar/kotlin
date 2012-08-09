@@ -1,21 +1,21 @@
-fun IntRange.forEach(body : (Int) -> Unit) {
-    for(i in this) {
+fun IntRange.forEach(body: (Int) -> Unit) {
+    for (i in this) {
         body(i)
     }
 }
 
-fun box() : String {
+fun box(): String {
     var seed = 0
 
     fun local(x: Int) {
         fun deep() {
             seed += x
         }
-        fun deep2(x : Int) {
+        fun deep2(x: Int) {
             seed += x
         }
         fun Int.iter() {
-                seed += this
+            seed += this
         }
 
         deep()
@@ -24,7 +24,7 @@ fun box() : String {
         seed += x
     }
 
-    for(i in 1..5) {
+    for (i in 1..5) {
         fun Int.iter() {
             seed += this
         }
@@ -38,7 +38,7 @@ fun box() : String {
     }
 
     (1..5).forEach {
-            local2(it)
+        local2(it)
     }
 
 

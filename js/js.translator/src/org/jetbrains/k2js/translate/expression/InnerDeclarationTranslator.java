@@ -19,21 +19,18 @@ abstract class InnerDeclarationTranslator {
     protected final TranslationContext context;
     protected final JsFunction fun;
 
-    public InnerDeclarationTranslator(@NotNull JetElement declaration,
+    public InnerDeclarationTranslator(@NotNull JetElement element,
             @NotNull DeclarationDescriptor descriptor,
             @NotNull TranslationContext context,
             @NotNull JsFunction fun) {
         this.context = context;
-        closureContext = ClosureUtils.captureClosure(context.bindingContext(), declaration, descriptor);
+        closureContext = ClosureUtils.captureClosure(context.bindingContext(), element, descriptor);
         this.fun = fun;
     }
 
     protected List<ValueParameterDescriptor> getValueParameters() {
         return Collections.emptyList();
     }
-
-    @NotNull
-    public abstract JsExpression translate(@NotNull JsNameRef nameRef);
 
     protected JsExpression translate(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
         if (closureContext.getDescriptors().isEmpty() && self == JsLiteral.NULL) {

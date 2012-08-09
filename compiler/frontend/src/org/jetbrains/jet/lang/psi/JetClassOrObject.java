@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * @author max
  */
-public interface JetClassOrObject extends PsiNameIdentifierOwner, JetDeclarationContainer, JetElement {
+public interface JetClassOrObject extends PsiNameIdentifierOwner, JetDeclarationContainer {
     @Nullable
     JetDelegationSpecifierList getDelegationSpecifierList();
 

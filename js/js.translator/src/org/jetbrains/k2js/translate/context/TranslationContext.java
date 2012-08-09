@@ -21,6 +21,7 @@ import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.Named;
 import org.jetbrains.jet.lang.psi.JetExpression;
@@ -31,6 +32,7 @@ import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 import java.util.Map;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForElement;
+import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
 /**
  * @author Pavel Talanov
@@ -97,7 +99,9 @@ public class TranslationContext {
 
     @NotNull
     public TranslationContext innerBlock(@NotNull JsBlock block) {
-        return new TranslationContext(staticContext, dynamicContext.innerBlock(block), aliasingContext);
+        TranslationContext context = new TranslationContext(staticContext, dynamicContext.innerBlock(block), aliasingContext);
+        context.usageTracker = usageTracker;
+        return context;
     }
 
     @NotNull
@@ -107,7 +111,7 @@ public class TranslationContext {
 
     @NotNull
     public TranslationContext innerContextWithThisAliased(@NotNull DeclarationDescriptor correspondingDescriptor, @NotNull JsName alias) {
-        return new TranslationContext(this, aliasingContext.inner(correspondingDescriptor, alias));
+        return new TranslationContext(this, aliasingContext.inner(correspondingDescriptor, alias.makeRef()));
     }
 
     @NotNull
@@ -116,7 +120,7 @@ public class TranslationContext {
     }
 
     @NotNull
-    public TranslationContext innerContextWithDescriptorsAliased(@NotNull Map<DeclarationDescriptor, JsName> aliases) {
+    public TranslationContext innerContextWithDescriptorsAliased(@NotNull Map<DeclarationDescriptor, JsExpression> aliases) {
         return new TranslationContext(this, aliasingContext.withDescriptorsAliased(aliases));
     }
 
@@ -153,10 +157,6 @@ public class TranslationContext {
 
     @NotNull
     public JsName getNameForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-        JsName alias = aliasingContext.getAliasForDescriptor(descriptor);
-        if (alias != null) {
-            return alias;
-        }
         return staticContext.getNameForDescriptor(descriptor);
     }
 
@@ -214,14 +214,50 @@ public class TranslationContext {
         dynamicContext.jsBlock().getStatements().add(statement);
     }
 
-    @NotNull
-    public AliasingContext.ThisAliasProvider thisAliasProvider() {
-        return aliasingContext().thisAliasProvider;
+    public JsExpression getAliasForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+        if (usageTracker != null && descriptor instanceof ClassDescriptor) {
+            usageTracker.triggerUsed(descriptor);
+        }
+        return aliasingContext.getAliasForDescriptor(descriptor);
     }
 
     @NotNull
     public JsExpression getThisObject(@NotNull DeclarationDescriptor descriptor) {
-        JsNameRef ref = thisAliasProvider().get(descriptor);
-        return ref == null ? JsLiteral.THIS : ref;
+        DeclarationDescriptor effectiveDescriptor;
+        if (descriptor instanceof CallableDescriptor) {
+            effectiveDescriptor = getExpectedReceiverDescriptor((CallableDescriptor) descriptor);
+            assert effectiveDescriptor != null;
+        }
+        else {
+            effectiveDescriptor = descriptor;
+        }
+
+        if (usageTracker != null) {
+            usageTracker.triggerUsed(effectiveDescriptor);
+        }
+
+        JsExpression alias = aliasingContext.getAliasForDescriptor(effectiveDescriptor);
+        return alias == null ? JsLiteral.THIS : alias;
+    }
+
+    public UsageTracker usageTracker;
+
+    public static class UsageTracker {
+        private final DeclarationDescriptor trackedDescriptor;
+        private boolean used;
+
+        public UsageTracker(DeclarationDescriptor trackedDescriptor) {
+            this.trackedDescriptor = trackedDescriptor;
+        }
+
+        public boolean isUsed() {
+            return used;
+        }
+
+        public void triggerUsed(DeclarationDescriptor descriptor) {
+            if (trackedDescriptor == descriptor) {
+                used = true;
+            }
+        }
     }
 }

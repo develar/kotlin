@@ -93,8 +93,7 @@ class CaptureClosureVisitor extends JetTreeVisitor<ClosureContext> {
         }
 
         if (descriptor instanceof LocalVariableDescriptor && descriptor.isVar()) {
-            // todo modification of outer local variable
-            context.setHasLocalVariables();
+            context.hasLocalVariables = true;
             return true;
         }
 

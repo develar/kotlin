@@ -19,8 +19,8 @@ package org.jetbrains.k2js.translate.expression;
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.JetNodeTypes;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
@@ -55,10 +55,10 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitConstantExpression(@NotNull JetConstantExpression expression,
             @NotNull TranslationContext context) {
-        // todo try to compile idea project
-        if (expression.getNode().getElementType() == JetNodeTypes.NULL) {
-            return JsLiteral.NULL;
-        }
+        //// todo try to compile idea project
+        //if (expression.getNode().getElementType() == JetNodeTypes.NULL) {
+        //    return JsLiteral.NULL;
+        //}
 
         CompileTimeConstant<?> compileTimeValue = context.bindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
         assert compileTimeValue != null;
@@ -97,6 +97,9 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         for (JetElement statement : statements) {
             if (statement instanceof JetWhenExpression) {
                 new WhenTranslator((JetWhenExpression) statement, blockContext, true).translate(jsBlock.getStatements());
+            }
+            else if (statement instanceof JetNamedFunction) {
+                visitNamedFunction((JetNamedFunction) statement, blockContext);
             }
             else {
                 assert statement instanceof JetExpression : "Elements in JetBlockExpression " +
@@ -325,9 +328,18 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
 
     @Override
     @NotNull
-    public JsNode visitFunctionLiteralExpression(@NotNull JetFunctionLiteralExpression expression,
-                                                 @NotNull TranslationContext context) {
-        return context.literalFunctionTranslator().translate(expression);
+    public JsNode visitFunctionLiteralExpression(@NotNull JetFunctionLiteralExpression expression, @NotNull TranslationContext context) {
+        FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
+        return context.literalFunctionTranslator().translateFunction(expression, descriptor, context);
+    }
+
+    @Override
+    @NotNull
+    public JsNode visitNamedFunction(@NotNull JetNamedFunction expression, @NotNull TranslationContext context) {
+        FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
+        JsExpression alias = context.literalFunctionTranslator().translateFunction(expression, descriptor, context);
+        context.aliasingContext().registerAlias(descriptor, alias);
+        return alias;
     }
 
     @Override
@@ -394,12 +406,5 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         JsName propertyName = context.getNameForDescriptor(descriptor);
         JsExpression value = ClassTranslator.generateClassCreation(expression, context);
         return newVar(propertyName, value);
-    }
-
-    @Override
-    @NotNull
-    public JsNode visitNamedFunction(@NotNull JetNamedFunction function,
-            @NotNull TranslationContext context) {
-        return FunctionTranslator.newInstance(function, context).translateAsLocalFunction();
     }
 }

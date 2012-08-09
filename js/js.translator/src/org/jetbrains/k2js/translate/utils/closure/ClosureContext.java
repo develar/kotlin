@@ -32,17 +32,13 @@ public final class ClosureContext {
     @NotNull
     private final Set<VariableDescriptor> descriptors = new OrderedSet<VariableDescriptor>();
 
-    private boolean hasLocalVariables;
+    boolean hasLocalVariables;
 
     @Nullable
     public ClassDescriptor outerClassDescriptor;
 
     public boolean isLocalVariablesAffected() {
         return hasLocalVariables;
-    }
-
-    void setHasLocalVariables() {
-        hasLocalVariables = true;
     }
 
     /*package*/ void put(@NotNull VariableDescriptor descriptor) {

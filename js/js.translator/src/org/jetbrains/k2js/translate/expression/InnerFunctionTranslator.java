@@ -13,11 +13,11 @@ import java.util.List;
 class InnerFunctionTranslator extends InnerDeclarationTranslator {
     private final FunctionDescriptor descriptor;
 
-    public InnerFunctionTranslator(@NotNull JetElement declaration,
+    public InnerFunctionTranslator(@NotNull JetElement element,
             @NotNull FunctionDescriptor descriptor,
             @NotNull TranslationContext context,
             @NotNull JsFunction fun) {
-        super(declaration, descriptor, context, fun);
+        super(element, descriptor, context, fun);
         this.descriptor = descriptor;
     }
 
@@ -30,10 +30,8 @@ class InnerFunctionTranslator extends InnerDeclarationTranslator {
         return descriptor.getValueParameters();
     }
 
-    @Override
-    @NotNull
-    public JsExpression translate(@NotNull JsNameRef nameRef) {
-        JsExpression result = translate(nameRef, getThis());
+    public JsExpression translate(@NotNull JsNameRef nameRef, TranslationContext outerContext) {
+        JsExpression result = translate(nameRef, getThis(outerContext));
         FunctionTranslator.addParameters(fun.getParameters(), descriptor, context);
         return result;
     }
@@ -52,10 +50,10 @@ class InnerFunctionTranslator extends InnerDeclarationTranslator {
     }
 
     @NotNull
-    private JsExpression getThis() {
+    private JsExpression getThis(TranslationContext outerContext) {
         ClassDescriptor outerClassDescriptor = closureContext.outerClassDescriptor;
         if (outerClassDescriptor != null && !descriptor.getReceiverParameter().exists()) {
-            return JsLiteral.THIS;
+            return outerContext.getThisObject(outerClassDescriptor);
         }
 
         return JsLiteral.NULL;

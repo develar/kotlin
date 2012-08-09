@@ -1,9 +1,10 @@
 package foo
 
 native
-fun _setTimeout(callback:()->Unit):Unit = noImpl
+fun _setTimeout(callback: ()->Unit): Unit = noImpl
 
 var done = false
+var result = ""
 
 object foo {
     var timeoutId: Long = 1
@@ -14,7 +15,20 @@ object foo {
     }
 }
 
+private class Bar {
+    val s = "v"
+
+    {
+        _setTimeout {
+            _setTimeout {
+                result = s
+            }
+        }
+    }
+}
+
 fun box(): Boolean {
+    val bar = Bar()
     _setTimeout(foo.callbackWrapper)
-    return foo.timeoutId == -1 as Long
+    return foo.timeoutId == -1 as Long && done && result == bar.s
 }

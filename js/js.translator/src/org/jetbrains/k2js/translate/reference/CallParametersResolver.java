@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.reference;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsLiteral;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
@@ -26,8 +27,14 @@ import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.ResolvedCallWithTrace;
 import org.jetbrains.jet.lang.resolve.calls.VariableAsFunctionResolvedCall;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ClassReceiver;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ExtensionReceiver;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ThisReceiverDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
+
+import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getDeclarationDescriptorForReceiver;
 
 /**
  * @author Pavel Talanov
@@ -90,7 +97,20 @@ public final class CallParametersResolver {
         if (qualifier != null && !isExtensionCall) {
             return qualifier;
         }
-        return context.thisAliasProvider().get(resolvedCall);
+
+        ReceiverDescriptor thisObject = resolvedCall.getThisObject();
+        if (!thisObject.exists()) {
+            return null;
+        }
+
+        if (thisObject instanceof ExtensionReceiver || thisObject instanceof ClassReceiver) {
+            JsExpression ref = context.getAliasForDescriptor(((ThisReceiverDescriptor) thisObject).getDeclarationDescriptor());
+            if (ref != null) {
+                return ref;
+            }
+        }
+
+        return context.getThisObject(getDeclarationDescriptorForReceiver(thisObject));
     }
 
     @NotNull
