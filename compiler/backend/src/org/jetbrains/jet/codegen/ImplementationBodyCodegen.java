@@ -312,7 +312,9 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
             Method originalMethod = typeMapper.mapSignature(original.getName(), original).getAsmMethod();
             Type[] argTypes = method.getArgumentTypes();
 
-            MethodVisitor mv = v.newMethod(null, ACC_BRIDGE | ACC_FINAL, bridge.getName().getName(), method.getDescriptor(), null, null);
+            String owner = typeMapper.getOwner(original, OwnerKind.IMPLEMENTATION).getInternalName();
+            MethodVisitor mv = v.newMethod(null, ACC_BRIDGE | ACC_SYNTHETIC | ACC_STATIC, bridge.getName().getName(),
+                                           method.getDescriptor(), null, null);
             if (state.getClassBuilderMode() == ClassBuilderMode.STUBS) {
                 StubCodegen.generateStubCode(mv);
             }
@@ -322,13 +324,13 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 InstructionAdapter iv = new InstructionAdapter(mv);
 
                 iv.load(0, JetTypeMapper.TYPE_OBJECT);
-                for (int i = 0, reg = 1; i < argTypes.length; i++) {
+                for (int i = 1, reg = 1; i < argTypes.length; i++) {
                     Type argType = argTypes[i];
                     iv.load(reg, argType);
                     //noinspection AssignmentToForLoopParameter
                     reg += argType.getSize();
                 }
-                iv.invokespecial(typeMapper.getOwner(original, OwnerKind.IMPLEMENTATION).getInternalName(), originalMethod.getName(), originalMethod.getDescriptor());
+                iv.invokespecial(owner, originalMethod.getName(), originalMethod.getDescriptor());
 
                 iv.areturn(method.getReturnType());
                 FunctionCodegen.endVisit(iv, "accessor", null);
@@ -342,7 +344,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 Method method = typeMapper.mapGetterSignature(bridge, OwnerKind.IMPLEMENTATION).getJvmMethodSignature().getAsmMethod();
                 JvmPropertyAccessorSignature originalSignature = typeMapper.mapGetterSignature(original, OwnerKind.IMPLEMENTATION);
                 Method originalMethod = originalSignature.getJvmMethodSignature().getAsmMethod();
-                MethodVisitor mv = v.newMethod(null, ACC_PUBLIC | ACC_BRIDGE | ACC_FINAL, method.getName(), method.getDescriptor(), null, null);
+                MethodVisitor mv = v.newMethod(null, ACC_BRIDGE | ACC_SYNTHETIC | ACC_STATIC, method.getName(), method.getDescriptor(), null, null);
                 PropertyCodegen.generateJetPropertyAnnotation(mv, originalSignature.getPropertyTypeKotlinSignature(),
                                                               originalSignature.getJvmMethodSignature().getKotlinTypeParameter(),
                                                               original, ((PropertyDescriptor) entry.getValue()).getGetter().getVisibility());
@@ -370,7 +372,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 Method method = typeMapper.mapSetterSignature(bridge, OwnerKind.IMPLEMENTATION).getJvmMethodSignature().getAsmMethod();
                 JvmPropertyAccessorSignature originalSignature2 = typeMapper.mapSetterSignature(original, OwnerKind.IMPLEMENTATION);
                 Method originalMethod = originalSignature2.getJvmMethodSignature().getAsmMethod();
-                MethodVisitor mv = v.newMethod(null, ACC_PUBLIC | ACC_BRIDGE | ACC_FINAL, method.getName(), method.getDescriptor(), null, null);
+                MethodVisitor mv = v.newMethod(null, ACC_STATIC | ACC_BRIDGE | ACC_FINAL, method.getName(), method.getDescriptor(), null, null);
                 PropertyCodegen.generateJetPropertyAnnotation(mv, originalSignature2.getPropertyTypeKotlinSignature(),
                                                               originalSignature2.getJvmMethodSignature().getKotlinTypeParameter(),
                                                               original, ((PropertyDescriptor) entry.getValue()).getSetter().getVisibility());
@@ -384,7 +386,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
                     iv.load(0, JetTypeMapper.TYPE_OBJECT);
                     Type[] argTypes = method.getArgumentTypes();
-                    for (int i = 0, reg = 1; i < argTypes.length; i++) {
+                    for (int i = 1, reg = 1; i < argTypes.length; i++) {
                         Type argType = argTypes[i];
                         iv.load(reg, argType);
                         //noinspection AssignmentToForLoopParameter
@@ -592,6 +594,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
             }
 
             for (ValueParameterDescriptor valueParameter : constructorDescriptor.getValueParameters()) {
+                AnnotationCodegen.forParameter(i, mv, state.getInjector().getJetTypeMapper()).genAnnotations(valueParameter);
                 JetValueParameterAnnotationWriter jetValueParameterAnnotation = JetValueParameterAnnotationWriter.visitParameterAnnotation(mv, i);
                 jetValueParameterAnnotation.writeName(valueParameter.getName().getName());
                 jetValueParameterAnnotation.writeHasDefaultValue(valueParameter.declaresDefaultValue());
@@ -1020,18 +1023,6 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                                 functionCodegen.genDelegate((SimpleFunctionDescriptor) declaration, overriddenDescriptor, field);
                             }
                         }
-                    }
-                }
-            }
-        }
-
-        for (JetParameter p : toClass.getPrimaryConstructorParameters()) {
-            if (p.getValOrVarNode() != null) {
-                PropertyDescriptor propertyDescriptor = bindingContext.get(BindingContext.PRIMARY_CONSTRUCTOR_PARAMETER, p);
-                if (propertyDescriptor != null) {
-                    propertyCodegen.generateDefaultGetter(propertyDescriptor, ACC_PUBLIC, p);
-                    if (propertyDescriptor.isVar()) {
-                        propertyCodegen.generateDefaultSetter(propertyDescriptor, ACC_PUBLIC, p);
                     }
                 }
             }

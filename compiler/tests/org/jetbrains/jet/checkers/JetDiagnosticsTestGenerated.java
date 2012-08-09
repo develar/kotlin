@@ -1259,6 +1259,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/inference/arrayConstructor.kt");
             }
             
+            @TestMetadata("completeInferenceIfManyFailed.kt")
+            public void testCompleteInferenceIfManyFailed() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inference/completeInferenceIfManyFailed.kt");
+            }
+            
             @TestMetadata("conflictingSubstitutions.kt")
             public void testConflictingSubstitutions() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/inference/conflictingSubstitutions.kt");
@@ -1324,6 +1329,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/inference/noInformationForParameter.kt");
             }
             
+            @TestMetadata("possibleCycleOnConstraints.kt")
+            public void testPossibleCycleOnConstraints() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inference/possibleCycleOnConstraints.kt");
+            }
+            
             @TestMetadata("typeConstructorMismatch.kt")
             public void testTypeConstructorMismatch() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/inference/typeConstructorMismatch.kt");
@@ -1365,6 +1375,16 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                     doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2179.kt");
                 }
                 
+                @TestMetadata("kt2200.kt")
+                public void testKt2200() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2200.kt");
+                }
+                
+                @TestMetadata("kt2283.kt")
+                public void testKt2283() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2283.kt");
+                }
+                
                 @TestMetadata("kt2294.kt")
                 public void testKt2294() throws Exception {
                     doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2294.kt");
@@ -1393,6 +1413,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 @TestMetadata("kt2484.kt")
                 public void testKt2484() throws Exception {
                     doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2484.kt");
+                }
+                
+                @TestMetadata("kt2505.kt")
+                public void testKt2505() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2505.kt");
                 }
                 
                 @TestMetadata("kt2514.kt")
