@@ -11,7 +11,7 @@ object B {
 
 class C {
   fun ov() = "d"
-  val query = object {val status = "complete" + ov()}
+  val query = object {val status = "complete" + ov(); val innerFunShouldBeInTopLevelScope = {val f = {}; f()}}
 }
 
 fun box() = A.query.status == "complete" && B.query.status == "completed" && C().query.status == "completed"

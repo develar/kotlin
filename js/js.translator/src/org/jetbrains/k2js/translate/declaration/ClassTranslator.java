@@ -63,22 +63,15 @@ public final class ClassTranslator extends AbstractTranslator {
     private final ClassAliasingMap aliasingMap;
 
     @NotNull
-    public static JsExpression generateClassCreation(@NotNull JetClassOrObject classDeclaration,
-            @NotNull ClassAliasingMap aliasingMap,
-            @NotNull TranslationContext context) {
-        return new ClassTranslator(classDeclaration, aliasingMap, context).translateClassOrObjectCreation(context);
-    }
-
-    @NotNull
     public static JsExpression generateClassCreation(@NotNull JetClassOrObject classDeclaration, @NotNull TranslationContext context) {
-        return new ClassTranslator(classDeclaration, null, context).translateClassOrObjectCreation(context);
+        return new ClassTranslator(classDeclaration, null, context).translate(context);
     }
 
     @NotNull
     public static JsExpression generateClassCreation(@NotNull JetClassOrObject classDeclaration,
             @NotNull ClassDescriptor descriptor,
             @NotNull TranslationContext context) {
-        return new ClassTranslator(classDeclaration, descriptor, null, context).translateClassOrObjectCreation(context);
+        return new ClassTranslator(classDeclaration, descriptor, null, context).translate(context);
     }
 
     @NotNull
@@ -107,23 +100,23 @@ public final class ClassTranslator extends AbstractTranslator {
     private JsExpression translateObjectLiteralExpression() {
         ClassDescriptor containingClass = getContainingClass(descriptor);
         if (containingClass == null) {
-            return translateClassOrObjectCreation(context());
+            return translate(context());
         }
         return context().literalFunctionTranslator().translate(containingClass, classDeclaration, descriptor, this);
     }
 
     @NotNull
-    public JsExpression translateClassOrObjectCreation(@NotNull TranslationContext declarationContext) {
+    public JsExpression translate(@NotNull TranslationContext declarationContext) {
         JsInvocation createInvocation = context().namer().classCreateInvocation(descriptor);
-        translateClassOrObjectCreation(createInvocation, declarationContext);
+        translate(createInvocation, declarationContext);
         return createInvocation;
     }
 
-    public void translateClassOrObjectCreation(@NotNull JsInvocation createInvocation) {
-        translateClassOrObjectCreation(createInvocation, context());
+    public void translate(@NotNull JsInvocation createInvocation) {
+        translate(createInvocation, context());
     }
 
-    private void translateClassOrObjectCreation(@NotNull JsInvocation createInvocation, @NotNull TranslationContext context) {
+    private void translate(@NotNull JsInvocation createInvocation, @NotNull TranslationContext context) {
         addSuperclassReferences(createInvocation);
         addClassOwnDeclarations(createInvocation, context);
     }
@@ -132,21 +125,25 @@ public final class ClassTranslator extends AbstractTranslator {
         return descriptor.getKind().equals(ClassKind.TRAIT);
     }
 
-    private void addClassOwnDeclarations(@NotNull JsInvocation jsClassDeclaration, @NotNull TranslationContext classDeclarationContext) {
+    private void addClassOwnDeclarations(@NotNull JsInvocation jsClassDeclaration, @NotNull TranslationContext declarationContext) {
         List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
 
         List<JsPropertyInitializer> staticProperties;
-        if (isObject(descriptor)) {
+        boolean isTopLevelDeclaration = context() == declarationContext;
+        if (!isTopLevelDeclaration) {
             staticProperties = null;
-            classDeclarationContext.literalFunctionTranslator().setDefinitionPlace(properties, context().getThisObject(descriptor));
+        }
+        else if (isObject(descriptor)) {
+            staticProperties = null;
+            declarationContext.literalFunctionTranslator().setDefinitionPlace(properties, context().getThisObject(descriptor));
         }
         else {
             staticProperties = new SmartList<JsPropertyInitializer>();
-            classDeclarationContext.literalFunctionTranslator().setDefinitionPlace(staticProperties, getQualifiedReference(classDeclarationContext, descriptor));
+            declarationContext.literalFunctionTranslator().setDefinitionPlace(staticProperties, getQualifiedReference(declarationContext, descriptor));
         }
 
         if (!isTrait()) {
-            JsFunction initializer = new ClassInitializerTranslator(classDeclaration, classDeclarationContext).generateInitializeMethod();
+            JsFunction initializer = new ClassInitializerTranslator(classDeclaration, declarationContext).generateInitializeMethod();
             if (context().isEcma5()) {
                 jsClassDeclaration.getArguments().add(initializer.getBody().getStatements().isEmpty() ? JsLiteral.NULL : initializer);
             }
@@ -155,9 +152,12 @@ public final class ClassTranslator extends AbstractTranslator {
             }
         }
 
-        translatePropertiesAsConstructorParameters(classDeclarationContext, properties);
-        new DeclarationBodyVisitor(properties).traverseContainer(classDeclaration, classDeclarationContext);
-        classDeclarationContext.literalFunctionTranslator().setDefinitionPlace(null, null);
+        translatePropertiesAsConstructorParameters(declarationContext, properties);
+        new DeclarationBodyVisitor(properties).traverseContainer(classDeclaration, declarationContext);
+
+        if (isTopLevelDeclaration) {
+            declarationContext.literalFunctionTranslator().setDefinitionPlace(null, null);
+        }
 
         boolean hasStaticProperties = staticProperties != null && !staticProperties.isEmpty();
         if (!properties.isEmpty() || hasStaticProperties) {

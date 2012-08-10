@@ -137,7 +137,7 @@ public class LiteralFunctionTranslator {
         TranslationContext funContext = rootContext
                 .contextWithScope(fun, rootContext.aliasingContext().inner(outerClass, outerClassRef), new UsageTracker(outerClass));
 
-        fun.getBody().getStatements().add(new JsReturn(classTranslator.translateClassOrObjectCreation(funContext)));
+        fun.getBody().getStatements().add(new JsReturn(classTranslator.translate(funContext)));
         JetClassBody body = declaration.getBody();
         assert body != null;
         InnerObjectTranslator translator = new InnerObjectTranslator(body, descriptor, funContext, fun);
