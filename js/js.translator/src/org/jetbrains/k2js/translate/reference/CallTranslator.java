@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.reference;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -33,7 +34,6 @@ import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.ErrorReportingUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.reference.CallParametersResolver.resolveCallParameters;
@@ -118,10 +118,7 @@ public final class CallTranslator extends AbstractTranslator {
             return new JsInvocation(callParameters.getFunctionReference(), arguments);
         }
         else {
-            JsInvocation call = new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()));
-            call.getArguments().add(thisExpression);
-            call.getArguments().addAll(arguments);
-            return call;
+            return new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()), generateCallArgumentList(thisExpression));
         }
     }
 
@@ -221,9 +218,7 @@ public final class CallTranslator extends AbstractTranslator {
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
                 assert receiver != null : "Could not be null for extensions";
-                return new JsInvocation(callParameters.getFunctionReference(), generateExtensionCallArgumentList(receiver));
-                //List<JsExpression> callArguments = generateExtensionCallArgumentList(receiver);
-                //return new JsInvocation(new JsNameRef("call", callParameters.getFunctionReference()), callArguments);
+                return new JsInvocation(callParameters.getFunctionReference(), generateCallArgumentList(receiver));
             }
         }, context());
     }
@@ -246,16 +241,14 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
     private JsExpression constructExtensionFunctionCall(@NotNull JsExpression receiver) {
-        List<JsExpression> argumentList = generateExtensionCallArgumentList(receiver);
         JsExpression functionReference = callParameters.getFunctionReference();
         setQualifier(functionReference, getThisObjectOrQualifier());
-        return new JsInvocation(functionReference, argumentList);
+        return new JsInvocation(functionReference, generateCallArgumentList(receiver));
     }
 
     @NotNull
-    private List<JsExpression> generateExtensionCallArgumentList(@NotNull JsExpression receiver) {
-        List<JsExpression> argumentList = new ArrayList<JsExpression>();
-        argumentList.add(receiver);
+    private List<JsExpression> generateCallArgumentList(@NotNull JsExpression receiver) {
+        List<JsExpression> argumentList = new SmartList<JsExpression>(receiver);
         argumentList.addAll(arguments);
         return argumentList;
     }
