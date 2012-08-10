@@ -17,12 +17,15 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.openapi.util.NotNullLazyValue;
+import com.intellij.openapi.util.Trinity;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
@@ -38,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator.createPlace;
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
 
@@ -52,32 +56,49 @@ final class NamespaceTranslator extends AbstractTranslator {
 
     private final FileDeclarationVisitor visitor;
 
-    NamespaceTranslator(@NotNull NamespaceDescriptor descriptor,
+    private final NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>> definitionPlace;
+
+    NamespaceTranslator(@NotNull final NamespaceDescriptor descriptor,
             @NotNull ClassDeclarationTranslator classDeclarationTranslator,
+            @NotNull final Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation,
             @NotNull TranslationContext context) {
         super(context.newDeclaration(descriptor));
+
         this.descriptor = descriptor;
         this.classDeclarationTranslator = classDeclarationTranslator;
 
         visitor = new FileDeclarationVisitor();
+
+        definitionPlace = new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
+            @Override
+            @NotNull
+            public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
+                List<JsExpression> defineInvocation = descriptorToDefineInvocation.get(descriptor);
+                if (defineInvocation == null) {
+                    defineInvocation = createDefinitionPlace(null, descriptorToDefineInvocation);
+                }
+
+                return createPlace(getListFromPlace(defineInvocation), TranslationUtils.getQualifiedReference(context(), descriptor));
+            }
+        };
     }
 
-    public void translate(JetFile file, Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation) {
-        List<JsExpression> defineInvocation = descriptorToDefineInvocation.get(descriptor);
-        if (defineInvocation == null) {
-            defineInvocation = createDefineInvocation(null, new JsObjectLiteral(true));
-            descriptorToDefineInvocation.put(descriptor, defineInvocation);
-            addToParent((NamespaceDescriptor) descriptor.getContainingDeclaration(), getEntry(descriptor, defineInvocation),
-                        descriptorToDefineInvocation);
-        }
-
-        context().literalFunctionTranslator().setDefinitionPlace(((JsObjectLiteral) defineInvocation.get(context().isEcma5() ? 1 : 0)).getPropertyInitializers(), TranslationUtils.getQualifiedReference(context(), descriptor));
+    public void translate(JetFile file) {
+        context().literalFunctionTranslator().setDefinitionPlace(definitionPlace);
         for (JetDeclaration declaration : file.getDeclarations()) {
             if (!AnnotationsUtils.isNativeObject(BindingUtils.getDescriptorForElement(bindingContext(), declaration))) {
                 declaration.accept(visitor, context());
             }
         }
-        context().literalFunctionTranslator().setDefinitionPlace(null, null);
+        context().literalFunctionTranslator().setDefinitionPlace(null);
+    }
+
+    private List<JsExpression> createDefinitionPlace(@Nullable JsExpression initializer,
+            Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation) {
+        List<JsExpression> place = createDefineInvocation(initializer, new JsObjectLiteral(visitor.getResult(), true));
+        descriptorToDefineInvocation.put(descriptor, place);
+        addToParent((NamespaceDescriptor) descriptor.getContainingDeclaration(), getEntry(descriptor, place), descriptorToDefineInvocation);
+        return place;
     }
 
     public void add(@NotNull Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation,
@@ -96,18 +117,24 @@ final class NamespaceTranslator extends AbstractTranslator {
 
         List<JsExpression> defineInvocation = descriptorToDefineInvocation.get(descriptor);
         if (defineInvocation == null) {
-            defineInvocation = createDefineInvocation(initializer, new JsObjectLiteral(visitor.getResult(), true));
-            descriptorToDefineInvocation.put(descriptor, defineInvocation);
-            addToParent((NamespaceDescriptor) descriptor.getContainingDeclaration(), getEntry(descriptor, defineInvocation),
-                        descriptorToDefineInvocation);
+            createDefinitionPlace(initializer, descriptorToDefineInvocation);
         }
         else {
             if (context().isEcma5() && initializer != null) {
                 assert defineInvocation.get(0) == JsLiteral.NULL;
                 defineInvocation.set(0, initializer);
             }
-            ((JsObjectLiteral) defineInvocation.get(context().isEcma5() ? 1 : 0)).getPropertyInitializers().addAll(visitor.getResult());
+
+            List<JsPropertyInitializer> listFromPlace = getListFromPlace(defineInvocation);
+            // if equals, so, inner functions was added
+            if (listFromPlace != visitor.getResult()) {
+                listFromPlace.addAll(visitor.getResult());
+            }
         }
+    }
+
+    private List<JsPropertyInitializer> getListFromPlace(List<JsExpression> defineInvocation) {
+        return ((JsObjectLiteral) defineInvocation.get(context().isEcma5() ? 1 : 0)).getPropertyInitializers();
     }
 
     private List<JsExpression> createDefineInvocation(@Nullable JsExpression initializer, @NotNull JsObjectLiteral members) {

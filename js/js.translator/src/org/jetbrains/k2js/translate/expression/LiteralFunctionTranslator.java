@@ -1,6 +1,7 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.openapi.util.NotNullLazyValue;
 import com.intellij.openapi.util.Trinity;
 import com.intellij.util.containers.Stack;
 import org.jetbrains.annotations.NotNull;
@@ -25,24 +26,28 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedRe
 public class LiteralFunctionTranslator {
     private TranslationContext rootContext;
 
-    private final Stack<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>> definitionPlaces =
-            new Stack<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>();
-    private Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> definitionPlace;
+    private final Stack<NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>> definitionPlaces =
+            new Stack<NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>>();
+    private NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>> definitionPlace;
 
     public void setRootContext(@NotNull TranslationContext rootContext) {
         assert this.rootContext == null;
         this.rootContext = rootContext;
     }
 
-    public void setDefinitionPlace(@Nullable List<JsPropertyInitializer> value, @Nullable JsExpression reference) {
-        if (value == null) {
+    public static Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> createPlace(@NotNull List<JsPropertyInitializer> list,
+            @NotNull JsExpression reference) {
+        return Trinity.create(list, new LabelGenerator('f'), reference);
+    }
+
+    public void setDefinitionPlace(@Nullable NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>> place) {
+        if (place == null) {
             definitionPlaces.pop();
             definitionPlace = definitionPlaces.isEmpty() ? null : definitionPlaces.peek();
         }
         else {
-            Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> newPlace = Trinity.create(value, new LabelGenerator('f'), reference);
-            definitionPlaces.push(newPlace);
-            definitionPlace = newPlace;
+            definitionPlaces.push(place);
+            definitionPlace = place;
         }
     }
 
@@ -109,8 +114,9 @@ public class LiteralFunctionTranslator {
     }
 
     private JsNameRef createReference(JsFunction fun) {
-        JsNameRef nameRef = new JsNameRef(definitionPlace.second.generate(), definitionPlace.third);
-        definitionPlace.first.add(new JsPropertyInitializer(nameRef, InitializerUtils.toDataDescriptor(fun, rootContext)));
+        Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> place = definitionPlace.getValue();
+        JsNameRef nameRef = new JsNameRef(place.second.generate(), place.third);
+        place.first.add(new JsPropertyInitializer(nameRef, InitializerUtils.toDataDescriptor(fun, rootContext)));
         return nameRef;
     }
 

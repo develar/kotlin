@@ -64,11 +64,11 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
                 if (rootNamespaceDefinition == null) {
                     rootNamespaceDefinition = getRootPackage(descriptorToDefineInvocation, descriptor);
                 }
-                translator = new NamespaceTranslator(descriptor, classDeclarationTranslator, context());
+                translator = new NamespaceTranslator(descriptor, classDeclarationTranslator, descriptorToDefineInvocation, context());
                 descriptorToTranslator.put(descriptor, translator);
             }
 
-            translator.translate(file, descriptorToDefineInvocation);
+            translator.translate(file);
         }
 
         if (rootNamespaceDefinition == null) {

@@ -17,6 +17,8 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.openapi.util.NotNullLazyValue;
+import com.intellij.openapi.util.Trinity;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +29,7 @@ import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetObjectLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetParameter;
 import org.jetbrains.jet.lang.types.JetType;
+import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
@@ -38,9 +41,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorForType;
-import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isNotAny;
-import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isObject;
+import static org.jetbrains.jet.lang.resolve.DescriptorUtils.*;
+import static org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator.createPlace;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForConstructorParameter;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getContainingClass;
@@ -125,21 +127,35 @@ public final class ClassTranslator extends AbstractTranslator {
         return descriptor.getKind().equals(ClassKind.TRAIT);
     }
 
-    private void addClassOwnDeclarations(@NotNull JsInvocation jsClassDeclaration, @NotNull TranslationContext declarationContext) {
-        List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
+    private void addClassOwnDeclarations(@NotNull JsInvocation jsClassDeclaration, @NotNull final TranslationContext declarationContext) {
+        final List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
 
-        List<JsPropertyInitializer> staticProperties;
+        final List<JsPropertyInitializer> staticProperties;
         boolean isTopLevelDeclaration = context() == declarationContext;
         if (!isTopLevelDeclaration) {
             staticProperties = null;
         }
         else if (isObject(descriptor)) {
             staticProperties = null;
-            declarationContext.literalFunctionTranslator().setDefinitionPlace(properties, context().getThisObject(descriptor));
+            declarationContext.literalFunctionTranslator()
+                    .setDefinitionPlace(new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
+                        @Override
+                        @NotNull
+                        public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
+                            return createPlace(properties, context().getThisObject(descriptor));
+                        }
+                    });
         }
         else {
             staticProperties = new SmartList<JsPropertyInitializer>();
-            declarationContext.literalFunctionTranslator().setDefinitionPlace(staticProperties, getQualifiedReference(declarationContext, descriptor));
+            declarationContext.literalFunctionTranslator()
+                    .setDefinitionPlace(new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
+                        @Override
+                        @NotNull
+                        public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
+                            return createPlace(staticProperties, getQualifiedReference(declarationContext, descriptor));
+                        }
+                    });
         }
 
         if (!isTrait()) {
@@ -156,7 +172,7 @@ public final class ClassTranslator extends AbstractTranslator {
         new DeclarationBodyVisitor(properties).traverseContainer(classDeclaration, declarationContext);
 
         if (isTopLevelDeclaration) {
-            declarationContext.literalFunctionTranslator().setDefinitionPlace(null, null);
+            declarationContext.literalFunctionTranslator().setDefinitionPlace(null);
         }
 
         boolean hasStaticProperties = staticProperties != null && !staticProperties.isEmpty();
