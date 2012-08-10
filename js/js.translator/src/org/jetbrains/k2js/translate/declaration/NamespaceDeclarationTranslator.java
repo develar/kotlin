@@ -90,7 +90,6 @@ public final class NamespaceDeclarationTranslator extends AbstractTranslator {
             translator.add(descriptorToDefineInvocation, result);
         }
 
-        vars.addIfHasInitializer(context().literalFunctionTranslator().getDeclaration());
         vars.addIfHasInitializer(classDeclarationTranslator.getDeclaration());
         vars.addIfHasInitializer(getDeclaration(rootNamespaceDefinition));
         return result;
