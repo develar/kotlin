@@ -38,7 +38,6 @@ import org.jetbrains.k2js.translate.expression.ExpressionVisitor;
 import org.jetbrains.k2js.translate.expression.FunctionTranslator;
 import org.jetbrains.k2js.translate.expression.PatternTranslator;
 import org.jetbrains.k2js.translate.expression.WhenTranslator;
-import org.jetbrains.k2js.translate.initializer.ClassInitializerTranslator;
 import org.jetbrains.k2js.translate.reference.CallBuilder;
 import org.jetbrains.k2js.translate.test.JSTestGenerator;
 import org.jetbrains.k2js.translate.test.JSTester;
@@ -124,13 +123,6 @@ public final class Translation {
     public static JsNode translateWhenExpression(@NotNull JetWhenExpression expression,
             @NotNull TranslationContext context) {
         return WhenTranslator.translate(expression, context);
-    }
-
-    //TODO: see if generate*Initializer methods fit somewhere else
-    @NotNull
-    public static JsFunction generateClassInitializerMethod(@NotNull JetClassOrObject classDeclaration,
-            @NotNull TranslationContext context) {
-        return new ClassInitializerTranslator(classDeclaration, context).generateInitializeMethod();
     }
 
     @NotNull

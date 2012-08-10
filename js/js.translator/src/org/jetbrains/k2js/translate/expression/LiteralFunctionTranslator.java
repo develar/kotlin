@@ -1,7 +1,10 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.openapi.util.Trinity;
+import com.intellij.util.containers.Stack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetClassBody;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
@@ -18,26 +21,44 @@ import java.util.List;
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 
 import org.jetbrains.k2js.translate.context.UsageTracker;
+import org.jetbrains.k2js.translate.initializer.InitializerUtils;
+
 import static org.jetbrains.k2js.translate.utils.FunctionBodyTranslator.translateFunctionBody;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
-// todo easy incremental compiler implementation — generated functions should be inside corresponding class/namespace definition
 public class LiteralFunctionTranslator {
-    private final List<JsPropertyInitializer> properties = new ArrayList<JsPropertyInitializer>();
-    private final LabelGenerator labelGenerator = new LabelGenerator('f');
-    private final JsNameRef containingVarRef = new JsNameRef("_f");
+    private final Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> rootPlace =
+            new Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>(new ArrayList<JsPropertyInitializer>(),
+                                                                                   new LabelGenerator('f'), new JsNameRef("_f"));
 
     private TranslationContext rootContext;
+
+    private final Stack<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>> definitionPlaces =
+            new Stack<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>();
+    private Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> definitionPlace = rootPlace;
 
     public void setRootContext(@NotNull TranslationContext rootContext) {
         assert this.rootContext == null;
         this.rootContext = rootContext;
-        JsName containingVarName = rootContext.scope().declareName(containingVarRef.getIdent());
-        containingVarRef.resolve(containingVarName);
+        JsNameRef ref = (JsNameRef) rootPlace.third;
+        JsName containingVarName = rootContext.scope().declareName(ref.getIdent());
+        ref.resolve(containingVarName);
     }
 
     public JsVar getDeclaration() {
-        return new JsVar(containingVarRef.getName(), properties.isEmpty() ? null : new JsObjectLiteral(properties, true));
+        return new JsVar(((JsNameRef) rootPlace.third).getName(), rootPlace.first.isEmpty() ? null : new JsObjectLiteral(rootPlace.first, true));
+    }
+
+    public void setDefinitionPlace(@Nullable List<JsPropertyInitializer> value, @Nullable JsExpression reference) {
+        if (value == null) {
+            definitionPlaces.pop();
+            definitionPlace = definitionPlaces.isEmpty() ? rootPlace : definitionPlaces.peek();
+        }
+        else {
+            Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> newPlace = Trinity.create(value, new LabelGenerator('f'), reference);
+            definitionPlaces.push(newPlace);
+            definitionPlace = newPlace;
+        }
     }
 
     public JsExpression translateFunction(@NotNull JetDeclarationWithBody declaration, @NotNull FunctionDescriptor descriptor, @NotNull TranslationContext outerContext) {
@@ -97,11 +118,15 @@ public class LiteralFunctionTranslator {
             return fun;
         }
 
-        JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
-        properties.add(new JsPropertyInitializer(nameRef, fun));
-        JsExpression result = translator.translate(nameRef, outerContext);
+        JsExpression result = translator.translate(createReference(fun), outerContext);
         addRegularParameters(descriptor, fun, funContext, receiverName);
         return result;
+    }
+
+    private JsNameRef createReference(JsFunction fun) {
+        JsNameRef nameRef = new JsNameRef(definitionPlace.second.generate(), definitionPlace.third);
+        definitionPlace.first.add(new JsPropertyInitializer(nameRef, InitializerUtils.toDataDescriptor(fun, rootContext)));
+        return nameRef;
     }
 
     private static void addRegularParameters(FunctionDescriptor descriptor,
@@ -131,10 +156,7 @@ public class LiteralFunctionTranslator {
         JetClassBody body = declaration.getBody();
         assert body != null;
         InnerObjectTranslator translator = new InnerObjectTranslator(body, descriptor, funContext, fun);
-
-        JsNameRef nameRef = new JsNameRef(labelGenerator.generate(), containingVarRef);
-        properties.add(new JsPropertyInitializer(nameRef, fun));
-        return translator.translate(nameRef, funContext.usageTracker().isUsed() ? outerClassRef : null);
+        return translator.translate(createReference(fun), funContext.usageTracker().isUsed() ? outerClassRef : null);
     }
 }
 

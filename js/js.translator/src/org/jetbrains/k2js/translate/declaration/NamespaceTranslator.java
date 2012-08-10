@@ -62,12 +62,22 @@ final class NamespaceTranslator extends AbstractTranslator {
         visitor = new FileDeclarationVisitor();
     }
 
-    public void translate(JetFile file) {
+    public void translate(JetFile file, Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation) {
+        List<JsExpression> defineInvocation = descriptorToDefineInvocation.get(descriptor);
+        if (defineInvocation == null) {
+            defineInvocation = createDefineInvocation(null, new JsObjectLiteral(true));
+            descriptorToDefineInvocation.put(descriptor, defineInvocation);
+            addToParent((NamespaceDescriptor) descriptor.getContainingDeclaration(), getEntry(descriptor, defineInvocation),
+                        descriptorToDefineInvocation);
+        }
+
+        context().literalFunctionTranslator().setDefinitionPlace(((JsObjectLiteral) defineInvocation.get(context().isEcma5() ? 1 : 0)).getPropertyInitializers(), TranslationUtils.getQualifiedReference(context(), descriptor));
         for (JetDeclaration declaration : file.getDeclarations()) {
             if (!AnnotationsUtils.isNativeObject(BindingUtils.getDescriptorForElement(bindingContext(), declaration))) {
                 declaration.accept(visitor, context());
             }
         }
+        context().literalFunctionTranslator().setDefinitionPlace(null, null);
     }
 
     public void add(@NotNull Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation,

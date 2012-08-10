@@ -64,7 +64,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         // for properties declared as constructor parameters
         result.getParameters().addAll(translatePrimaryConstructorParameters());
         mayBeAddCallToSuperMethod(result);
-        new InitializerVisitor(initializerStatements).traverseClass(classDeclaration, context());
+        new InitializerVisitor(initializerStatements).traverseContainer(classDeclaration, context());
 
         for (JsStatement statement : initializerStatements) {
             if (statement instanceof JsBlock) {

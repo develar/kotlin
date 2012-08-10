@@ -108,7 +108,7 @@ public final class FunctionTranslator extends AbstractTranslator {
 
     @NotNull
     public JsPropertyInitializer translateAsMethod() {
-        JsName functionName = context().getNameForElement(functionDeclaration);
+        JsName functionName = context().getNameForDescriptor(descriptor);
         generateFunctionObject();
         return new JsPropertyInitializer(functionName.makeRef(), functionObject);
     }
