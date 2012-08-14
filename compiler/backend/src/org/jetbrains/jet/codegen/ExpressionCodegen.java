@@ -687,14 +687,26 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
     }
 
     private StackValue generateSingleBranchIf(StackValue condition, JetExpression expression, boolean inverse) {
+        Type expressionType = expressionType(expression);
+        Type targetType = expressionType;
+        if (!expressionType.equals(TUPLE0_TYPE)) {
+            targetType = TYPE_OBJECT;
+        }
+
+        Label elseLabel = new Label();
+        condition.condJump(elseLabel, inverse, v);
+
+        gen(expression, expressionType);
+        StackValue.coerce(expressionType, targetType, v);
+
         Label end = new Label();
+        v.goTo(end);
 
-        condition.condJump(end, inverse, v);
-
-        gen(expression, Type.VOID_TYPE);
+        v.mark(elseLabel);
+        StackValue.putTuple0Instance(v);
 
         v.mark(end);
-        return StackValue.none();
+        return StackValue.onStack(targetType);
     }
 
     @Override
@@ -1023,7 +1035,11 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
 
         IntrinsicMethod intrinsic = null;
         if (descriptor instanceof CallableMemberDescriptor) {
-            intrinsic = state.getInjector().getIntrinsics().getIntrinsic((CallableMemberDescriptor) descriptor);
+            CallableMemberDescriptor memberDescriptor = (CallableMemberDescriptor) descriptor;
+            while(memberDescriptor.getKind() == CallableMemberDescriptor.Kind.FAKE_OVERRIDE) {
+                memberDescriptor = memberDescriptor.getOverriddenDescriptors().iterator().next();
+            }
+            intrinsic = state.getInjector().getIntrinsics().getIntrinsic(memberDescriptor);
         }
         if (intrinsic != null) {
             final Type expectedType = expressionType(expression);
@@ -1099,11 +1115,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> {
         if (descriptor instanceof ClassDescriptor) {
             PsiElement declaration = BindingContextUtils.descriptorToDeclaration(bindingContext, descriptor);
             if (declaration instanceof JetClass) {
-                final JetClassObject classObject = ((JetClass) declaration).getClassObject();
-                if (classObject == null) {
-                    throw new UnsupportedOperationException("trying to reference a class which doesn't have a class object");
-                }
-                final ClassDescriptor descriptor1 = bindingContext.get(BindingContext.CLASS, classObject.getObjectDeclaration());
+                final ClassDescriptor descriptor1 = ((ClassDescriptor)descriptor).getClassObjectDescriptor();
                 assert descriptor1 != null;
                 final Type type = typeMapper.mapType(descriptor1.getDefaultType(), MapTypeMode.VALUE);
                 return StackValue.field(type,
