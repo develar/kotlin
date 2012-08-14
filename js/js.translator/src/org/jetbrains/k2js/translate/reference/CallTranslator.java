@@ -161,18 +161,20 @@ public final class CallTranslator extends AbstractTranslator {
     private JsExpression constructorCall() {
         JsExpression constructorReference;
         ClassDescriptor classDescriptor = (ClassDescriptor) descriptor.getContainingDeclaration();
-        if (AnnotationsUtils.isLibraryObject(classDescriptor) && classDescriptor.getName().getName().equals("HashMap")) {
+        boolean isSet = false;
+        if (AnnotationsUtils.isLibraryObject(classDescriptor) &&
+            (classDescriptor.getName().getName().equals("HashMap") || (isSet = classDescriptor.getName().getName().equals("HashSet")))) {
             JetType keyType = resolvedCall.getTypeArguments().values().iterator().next();
             Name keyTypeName = JsDescriptorUtils.getNameIfStandardType(keyType);
-            String hashMapClassName;
+            String collectionClassName;
             if (keyTypeName != null && (NamePredicate.PRIMITIVE_NUMBERS.apply(keyTypeName) || keyTypeName.getName().equals("String"))) {
-                hashMapClassName = "PrimitiveHashMap";
+                collectionClassName = isSet ? "PrimitiveHashSet" : "PrimitiveHashMap";
             }
             else {
-                hashMapClassName = "ComplexHashMap";
+                collectionClassName = isSet ? "ComplexHashSet" : "ComplexHashMap";
             }
 
-            constructorReference = context().namer().kotlin(hashMapClassName);
+            constructorReference = context().namer().kotlin(collectionClassName);
         }
         else {
             constructorReference = translateAsFunctionWithNoThisObject(descriptor);
