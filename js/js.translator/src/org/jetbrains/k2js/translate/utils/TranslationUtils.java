@@ -86,6 +86,11 @@ public final class TranslationUtils {
     }
 
     @NotNull
+    public static JsBinaryOperation isNotNullCheck(@NotNull JsExpression expressionToCheck) {
+        return nullCheck(expressionToCheck, true);
+    }
+
+    @NotNull
     public static JsBinaryOperation notNullConditionalTestExpression(@NotNull TemporaryVariable cachedValue) {
         return and(inequality(cachedValue.assignmentExpression(), JsLiteral.NULL),
                    inequality(cachedValue.reference(), JsLiteral.UNDEFINED));
