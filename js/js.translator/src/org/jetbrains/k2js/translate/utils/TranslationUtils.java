@@ -44,11 +44,15 @@ public final class TranslationUtils {
     private TranslationUtils() {
     }
 
+    public static boolean isCacheNeeded(@NotNull JsExpression expression) {
+        return !(expression instanceof JsNameRef) || ((JsNameRef) expression).getQualifier() != null;
+    }
+
     @NotNull
     public static Pair<JsVars.JsVar, JsNameRef> createTemporaryIfNeed(@NotNull JsExpression expression,
             @NotNull TranslationContext context) {
         // don't create temp variable for simple expression
-        if (!(expression instanceof JsNameRef) || ((JsNameRef) expression).getQualifier() != null) {
+        if (isCacheNeeded(expression)) {
             return context.dynamicContext().createTemporary(expression);
         }
         else {

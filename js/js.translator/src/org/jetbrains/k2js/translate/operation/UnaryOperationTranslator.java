@@ -33,6 +33,7 @@ import static org.jetbrains.k2js.translate.general.Translation.translateAsExpres
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getResolvedCall;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getBaseExpression;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getOperationToken;
+import static org.jetbrains.k2js.translate.utils.TranslationUtils.isNullCheck;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.notNullConditionalTestExpression;
 
 /**
@@ -61,8 +62,20 @@ public final class UnaryOperationTranslator {
 
     @NotNull
     private static JsExpression translateExclExclOperator(@NotNull JetUnaryExpression expression, @NotNull TranslationContext context) {
-        TemporaryVariable cachedValue = context.declareTemporary(translateAsExpression(getBaseExpression(expression), context));
-        return new JsConditional(notNullConditionalTestExpression(cachedValue), cachedValue.reference(), context.namer().throwNPEFunctionCall());
+        JsExpression baseExpression = translateAsExpression(getBaseExpression(expression), context);
+        JsExpression testExpression;
+        JsExpression thenExpression;
+        if (TranslationUtils.isCacheNeeded(baseExpression)) {
+            TemporaryVariable cachedValue = context.declareTemporary(baseExpression);
+            testExpression = notNullConditionalTestExpression(cachedValue);
+            thenExpression = cachedValue.reference();
+        }
+        else {
+            testExpression = isNullCheck(baseExpression);
+            thenExpression = baseExpression;
+        }
+
+        return new JsConditional(testExpression, thenExpression, context.namer().throwNPEFunctionCall());
     }
 
     @NotNull
