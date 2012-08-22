@@ -34,10 +34,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptorForOperationExpression;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.getBaseExpression;
 
 /**
  * @author Pavel Talanov
@@ -106,16 +104,20 @@ public final class TranslationUtils {
                                      new JsBinaryOperation(operator, expressionToCheck, JsLiteral.UNDEFINED));
     }
 
-    //@NotNull
-    //public static JsExpression nullConditional(@NotNull JetExpression expression, @NotNull TranslationContext context, @NotNull JsExpression elseExpression, boolean isNegated) {
-    //    return nullConditional(testExpression, context, elseExpression, isNegated);
-    //}
-
     @NotNull
     public static JsExpression notNullConditional(
+            @NotNull JetExpression expression,
+            @NotNull JsExpression elseExpression,
+            @NotNull TranslationContext context
+    ) {
+        return notNullConditional(Translation.translateAsExpression(expression, context), elseExpression, context);
+    }
+
+    @NotNull
+    public static JsConditional notNullConditional(
             @NotNull JsExpression expression,
-            @NotNull TranslationContext context,
-            @NotNull JsExpression elseExpression
+            @NotNull JsExpression elseExpression,
+            @NotNull TranslationContext context
     ) {
         JsExpression testExpression;
         JsExpression thenExpression;
