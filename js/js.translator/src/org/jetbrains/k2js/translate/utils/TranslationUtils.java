@@ -34,8 +34,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptorForOperationExpression;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
+import static org.jetbrains.k2js.translate.utils.PsiUtils.getBaseExpression;
 
 /**
  * @author Pavel Talanov
@@ -102,6 +104,32 @@ public final class TranslationUtils {
         return new JsBinaryOperation(isNegated ? JsBinaryOperator.AND : JsBinaryOperator.OR,
                                      new JsBinaryOperation(operator, expressionToCheck, JsLiteral.NULL),
                                      new JsBinaryOperation(operator, expressionToCheck, JsLiteral.UNDEFINED));
+    }
+
+    //@NotNull
+    //public static JsExpression nullConditional(@NotNull JetExpression expression, @NotNull TranslationContext context, @NotNull JsExpression elseExpression, boolean isNegated) {
+    //    return nullConditional(testExpression, context, elseExpression, isNegated);
+    //}
+
+    @NotNull
+    public static JsExpression notNullConditional(
+            @NotNull JsExpression expression,
+            @NotNull TranslationContext context,
+            @NotNull JsExpression elseExpression
+    ) {
+        JsExpression testExpression;
+        JsExpression thenExpression;
+        if (isCacheNeeded(expression)) {
+            TemporaryVariable cachedValue = context.declareTemporary(expression);
+            testExpression = notNullConditionalTestExpression(cachedValue);
+            thenExpression = cachedValue.reference();
+        }
+        else {
+            testExpression = isNotNullCheck(expression);
+            thenExpression = expression;
+        }
+
+        return new JsConditional(testExpression, thenExpression, elseExpression);
     }
 
     @NotNull
