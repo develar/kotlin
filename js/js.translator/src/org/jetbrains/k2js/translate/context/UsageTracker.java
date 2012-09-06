@@ -134,7 +134,8 @@ public final class UsageTracker {
         FunctionDescriptor paramOwner = (FunctionDescriptor) parameterDescriptor.getContainingDeclaration();
         UsageTracker p = parent;
         do {
-            if (p.memberDescriptor == paramOwner) {
+            if (p.memberDescriptor == paramOwner ||
+                p.memberDescriptor instanceof ClassDescriptor && p.memberDescriptor == paramOwner.getContainingDeclaration()) {
                 return true;
             }
         }
