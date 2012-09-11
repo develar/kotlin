@@ -337,7 +337,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
 
         // KT-2670
         // we actually do not care for types in js
-        return TranslationUtils.notNullConditional(jsExpression, context.namer().throwNPEFunctionCall(), context);
+        return TranslationUtils.sure(jsExpression, context);
     }
 
     @Override
