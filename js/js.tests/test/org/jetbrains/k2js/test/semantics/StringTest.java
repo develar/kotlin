@@ -60,4 +60,8 @@ public final class StringTest extends AbstractExpressionTest {
     public void testKt2227_2() throws Exception {
         fooBoxTest();
     }
+
+    public void testExtensionMethods() throws Exception {
+        fooBoxTest();
+    }
 }
