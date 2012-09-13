@@ -49,7 +49,7 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic.CallParametersAwareFunctionIntrinsic;
 import static org.jetbrains.k2js.translate.intrinsic.functions.patterns.PatternBuilder.pattern;
-import static org.jetbrains.k2js.translate.utils.TranslationUtils.generateCallArgumentList;
+import static org.jetbrains.k2js.translate.utils.TranslationUtils.generateInvocationArguments;
 
 /**
  * @author Pavel Talanov
@@ -123,11 +123,11 @@ public final class TopLevelFIF extends CompositeFIF {
     public static final FunctionIntrinsicFactory INSTANCE = new TopLevelFIF();
 
     private TopLevelFIF() {
-        add(pattern("jet", "toString").receiverExists(true), new BuiltInFunctionIntrinsic("toString"));
+        add(pattern("jet", "toString").receiverExists(true), new KotlinFunctionIntrinsic("toString"));
         add(pattern("jet", "equals").receiverExists(true), EQUALS);
         add(pattern(NamePredicate.PRIMITIVE_NUMBERS, "equals"), EQUALS);
         add(pattern("String|Boolean|Char|Number.equals"), EQUALS);
-        add(pattern("jet", "arrayOfNulls"), new CallStandardMethodIntrinsic(new JsNameRef("nullArray", "Kotlin"), false, 1));
+        add(pattern("jet", "arrayOfNulls"), new KotlinFunctionIntrinsic("arrayOfNulls"));
         add(pattern("jet", "iterator").receiverExists(true), RETURN_RECEIVER_INTRINSIC);
         add(new DescriptorPredicate() {
                 @Override
@@ -159,18 +159,19 @@ public final class TopLevelFIF extends CompositeFIF {
                     }
                     else {
                         return new JsInvocation(new JsNameRef("call", callTranslator.getCallParameters().getFunctionReference()),
-                                                generateCallArgumentList(thisExpression, arguments));
+                                                generateInvocationArguments(thisExpression, arguments));
                     }
                 }
             }
         );
 
-        add(pattern("java", "util", "set").receiverExists(true), NATIVE_MAP_SET);
+        String[] javaUtil = {"java", "util"};
+        add(pattern(javaUtil, "set").receiverExists(true), NATIVE_MAP_SET);
         add(pattern("jet", "Map", "get"), NATIVE_MAP_GET);
-        add(pattern("java", "util", "HashMap", "get"), NATIVE_MAP_GET);
+        add(pattern(javaUtil, "HashMap", "get"), NATIVE_MAP_GET);
 
-        add(pattern("java", "util", "HashMap", "<init>"), new MapSelectImplementationIntrinsic(false));
-        add(pattern("java", "util", "HashSet", "<init>"), new MapSelectImplementationIntrinsic(true));
+        add(pattern(javaUtil, "HashMap", "<init>"), new MapSelectImplementationIntrinsic(false));
+        add(pattern(javaUtil, "HashSet", "<init>"), new MapSelectImplementationIntrinsic(true));
 
         add(pattern("jet", "sure").receiverExists(true), new FunctionIntrinsic() {
             @NotNull
@@ -182,6 +183,12 @@ public final class TopLevelFIF extends CompositeFIF {
                 return TranslationUtils.notNullConditional(receiver, context.namer().throwNPEFunctionCall(), context);
             }
         });
+
+        add(pattern("jet", "MutableCollection", "add"), new KotlinFunctionIntrinsic("collectionAdd"));
+        add(pattern("jet", "MutableCollection", "remove"), new KotlinFunctionIntrinsic("collectionRemove"));
+        add(pattern("jet", "Collection", "iterator"), new KotlinFunctionIntrinsic("collectionIterator"));
+        add(pattern("jet", "Collection", "size"), new KotlinFunctionIntrinsic("collectionSize"));
+        add(pattern("jet", "Collection", "isEmpty"), new KotlinFunctionIntrinsic("collectionIsEmpty"));
     }
 
     private abstract static class NativeMapGetSet extends CallParametersAwareFunctionIntrinsic {
