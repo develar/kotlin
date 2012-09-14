@@ -34,7 +34,6 @@ import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.intrinsic.functions.basic.BuiltInFunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.CallStandardMethodIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
@@ -183,12 +182,6 @@ public final class TopLevelFIF extends CompositeFIF {
                 return TranslationUtils.notNullConditional(receiver, context.namer().throwNPEFunctionCall(), context);
             }
         });
-
-        add(pattern("jet", "MutableCollection", "add"), new KotlinFunctionIntrinsic("collectionAdd"));
-        add(pattern("jet", "MutableCollection", "remove"), new KotlinFunctionIntrinsic("collectionRemove"));
-        add(pattern("jet", "Collection", "iterator"), new KotlinFunctionIntrinsic("collectionIterator"));
-        add(pattern("jet", "Collection", "size"), new KotlinFunctionIntrinsic("collectionSize"));
-        add(pattern("jet", "Collection", "isEmpty"), new KotlinFunctionIntrinsic("collectionIsEmpty"));
     }
 
     private abstract static class NativeMapGetSet extends CallParametersAwareFunctionIntrinsic {
