@@ -68,4 +68,4 @@ public abstract class CompositeFIF implements FunctionIntrinsicFactory {
     protected void add(@NotNull Predicate<FunctionDescriptor> pattern, @NotNull FunctionIntrinsic intrinsic) {
         patternsAndIntrinsics.add(Pair.create(pattern, intrinsic));
     }
- }
+}
