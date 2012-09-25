@@ -165,17 +165,6 @@ public final class TopLevelFIF extends CompositeFIF {
 
         add(pattern(javaUtil, "HashMap", "<init>"), new MapSelectImplementationIntrinsic(false));
         add(pattern(javaUtil, "HashSet", "<init>"), new MapSelectImplementationIntrinsic(true));
-
-        add(pattern("jet", "sure").receiverExists(), new FunctionIntrinsic() {
-            @NotNull
-            @Override
-            public JsExpression apply(
-                    @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
-            ) {
-                assert receiver != null;
-                return TranslationUtils.notNullConditional(receiver, context.namer().throwNPEFunctionCall(), context);
-            }
-        });
     }
 
     private abstract static class NativeMapGetSet extends CallParametersAwareFunctionIntrinsic {
