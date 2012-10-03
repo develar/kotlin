@@ -23,10 +23,16 @@ import com.google.dart.compiler.backend.js.ast.JsNumberLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
+import org.jetbrains.k2js.translate.intrinsic.functions.factories.TopLevelFIF;
+import org.jetbrains.k2js.translate.intrinsic.functions.patterns.NamePredicate;
+
+import java.util.Collections;
 
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.sum;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getNameIfStandardType;
@@ -36,6 +42,7 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getNameIfStan
  * @author Pavel Talanov
  */
 public final class StringTemplateTranslator extends AbstractTranslator {
+    private final JetStringTemplateEntry[] expressionEntries;
 
     @NotNull
     public static JsExpression translate(@NotNull JetStringTemplateExpression expression,
@@ -43,20 +50,20 @@ public final class StringTemplateTranslator extends AbstractTranslator {
         return (new StringTemplateTranslator(expression, context).translate());
     }
 
-    @NotNull
-    private final JetStringTemplateExpression expression;
+
 
     private StringTemplateTranslator(@NotNull JetStringTemplateExpression expression,
                                      @NotNull TranslationContext context) {
         super(context);
-        this.expression = expression;
+
+        expressionEntries = expression.getEntries();
+        assert expressionEntries.length != 0 : "String template must have one or more entries.";
     }
 
     @NotNull
     private JsExpression translate() {
-        assert expression.getEntries().length != 0 : "String template must have one or more entries.";
         EntryVisitor entryVisitor = new EntryVisitor();
-        for (JetStringTemplateEntry entry : expression.getEntries()) {
+        for (JetStringTemplateEntry entry : expressionEntries) {
             entry.accept(entryVisitor);
         }
         return entryVisitor.getResultingExpression();
@@ -86,26 +93,31 @@ public final class StringTemplateTranslator extends AbstractTranslator {
                 append(context().program().getStringLiteral(translatedExpression.toString()));
                 return;
             }
-            if (mustCallToString(entryExpression)) {
+
+            JetType type = context().bindingContext().get(BindingContext.EXPRESSION_TYPE, entryExpression);
+            if (type == null || type.isNullable()) {
+                append(TopLevelFIF.STRINGIFY.apply((JsExpression) null, Collections.singletonList(translatedExpression), context()));
+            }
+            else if (mustCallToString(type)) {
                 append(new JsInvocation(new JsNameRef("toString", translatedExpression)));
-            } else {
+            }
+            else {
                 append(translatedExpression);
             }
         }
 
-        private boolean mustCallToString(@NotNull JetExpression entryExpression) {
-            Name typeName = getNameIfStandardType(entryExpression, context());
-            if (typeName == null) {
-                return true;
+        private boolean mustCallToString(@NotNull JetType type) {
+            Name typeName = getNameIfStandardType(type);
+            if (typeName != null) {
+                //TODO: this is a hacky optimization, should use some generic approach
+                if (typeName.getName().equals("String")) {
+                    return false;
+                }
+                else if (NamePredicate.PRIMITIVE_NUMBERS.apply(typeName)) {
+                    return resultingExpression == null;
+                }
             }
-            //TODO: this is a hacky optimization, should use some generic approach
-            if (typeName.getName().equals("String")) {
-                return false;
-            }
-            if (typeName.getName().equals("Int") && resultingExpression != null) {
-                return false;
-            }
-            return true;
+            return expressionEntries.length == 1;
         }
 
         @Override
