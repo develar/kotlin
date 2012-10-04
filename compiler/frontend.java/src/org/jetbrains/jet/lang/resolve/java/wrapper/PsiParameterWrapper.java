@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.resolve.java;
+package org.jetbrains.jet.lang.resolve.java.wrapper;
 
 import com.intellij.psi.PsiParameter;
 import org.jetbrains.annotations.NotNull;
@@ -34,8 +34,10 @@ public class PsiParameterWrapper {
         this.jetTypeParameter = JetTypeParameterAnnotation.get(psiParameter);
     }
 
-    private JetValueParameterAnnotation jetValueParameter;
-    private JetTypeParameterAnnotation jetTypeParameter;
+    @NotNull
+    private final JetValueParameterAnnotation jetValueParameter;
+    @NotNull
+    private final JetTypeParameterAnnotation jetTypeParameter;
 
     @NotNull
     public PsiParameter getPsiParameter() {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.resolve.java;
+package org.jetbrains.jet.lang.resolve.java.descriptor;
 
 import com.intellij.psi.PsiClass;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +23,8 @@ import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.MutableClassDescriptorLite;
+import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolveData;
+import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.lazy.LazyClassDescriptor;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 
@@ -37,7 +39,7 @@ public class ClassDescriptorFromJvmBytecode extends MutableClassDescriptorLite {
     @NotNull
     private final JavaDescriptorResolver javaDescriptorResolver;
     @NotNull
-    private final JavaDescriptorResolver.ResolverClassData resolverBinaryClassData;
+    private final JavaDescriptorResolveData.ResolverClassData resolverBinaryClassData;
 
 
     // lazy
@@ -49,14 +51,13 @@ public class ClassDescriptorFromJvmBytecode extends MutableClassDescriptorLite {
             @NotNull JavaDescriptorResolver javaDescriptorResolver) {
         super(containingDeclaration, kind);
         this.javaDescriptorResolver = javaDescriptorResolver;
-        this.resolverBinaryClassData = new JavaDescriptorResolver.ResolverBinaryClassData(psiClass, fqName, this);
+        this.resolverBinaryClassData = new JavaDescriptorResolveData.ResolverBinaryClassData(psiClass, fqName, this);
     }
 
     @NotNull
-    public JavaDescriptorResolver.ResolverClassData getResolverBinaryClassData() {
+    public JavaDescriptorResolveData.ResolverClassData getResolverBinaryClassData() {
         return resolverBinaryClassData;
     }
-
 
     @NotNull
     @Override

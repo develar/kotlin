@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.resolve.java;
+package org.jetbrains.jet.lang.resolve.java.scope;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
+import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
+import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolveData.ResolverScopeData;
+import org.jetbrains.jet.lang.resolve.java.JavaSemanticServices;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
@@ -34,11 +37,11 @@ public class JavaPackageScope extends JavaClassOrPackageScope {
     public JavaPackageScope(
             @NotNull FqName packageFQN,
             @NotNull JavaSemanticServices semanticServices,
-            @NotNull JavaDescriptorResolver.ResolverScopeData resolverNamespaceData) {
+            @NotNull ResolverScopeData resolverNamespaceData) {
         super(semanticServices, resolverNamespaceData);
         this.packageFQN = packageFQN;
 
-        if (!resolverNamespaceData.staticMembers) {
+        if (!resolverNamespaceData.isStaticMembers()) {
             throw new IllegalArgumentException("instance members should be resolved using " + JavaClassMembersScope.class);
         }
     }
@@ -50,8 +53,7 @@ public class JavaPackageScope extends JavaClassOrPackageScope {
 
     @Override
     public ClassDescriptor getObjectDescriptor(@NotNull Name name) {
-        // TODO
-        return null;
+        return semanticServices.getDescriptorResolver().resolveClass(packageFQN.child(name), DescriptorSearchRule.IGNORE_IF_FOUND_IN_KOTLIN);
     }
 
     @Override

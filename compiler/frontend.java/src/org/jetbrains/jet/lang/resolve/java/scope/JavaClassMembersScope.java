@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.resolve.java;
+package org.jetbrains.jet.lang.resolve.java.scope;
 
 import com.google.common.collect.Maps;
 import com.intellij.psi.PsiClass;
@@ -24,6 +24,9 @@ import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
+import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
+import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolveData.ResolverScopeData;
+import org.jetbrains.jet.lang.resolve.java.JavaSemanticServices;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -41,10 +44,10 @@ public class JavaClassMembersScope extends JavaClassOrPackageScope {
 
     public JavaClassMembersScope(
             @NotNull JavaSemanticServices semanticServices,
-            @NotNull JavaDescriptorResolver.ResolverScopeData resolverScopeData) {
+            @NotNull ResolverScopeData resolverScopeData) {
         super(semanticServices, resolverScopeData);
 
-        if (resolverScopeData.psiClass == null) {
+        if (resolverScopeData.getPsiClass() == null) {
             throw new IllegalArgumentException("must pass PsiClass here");
         }
     }
@@ -78,9 +81,9 @@ public class JavaClassMembersScope extends JavaClassOrPackageScope {
 
     private ClassifierDescriptor doGetClassifierDescriptor(Name name) {
         // TODO : suboptimal, walk the list only once
-        for (PsiClass innerClass : resolverScopeData.psiClass.getAllInnerClasses()) {
+        for (PsiClass innerClass : resolverScopeData.getPsiClass().getAllInnerClasses()) {
             if (name.getName().equals(innerClass.getName())) {
-                if (innerClass.hasModifierProperty(PsiModifier.STATIC) != resolverScopeData.staticMembers) return null;
+                if (innerClass.hasModifierProperty(PsiModifier.STATIC) != resolverScopeData.isStaticMembers()) return null;
                 ClassDescriptor classDescriptor = semanticServices.getDescriptorResolver()
                         .resolveClass(new FqName(innerClass.getQualifiedName()), DescriptorSearchRule.IGNORE_IF_FOUND_IN_KOTLIN);
                 if (classDescriptor != null) {
