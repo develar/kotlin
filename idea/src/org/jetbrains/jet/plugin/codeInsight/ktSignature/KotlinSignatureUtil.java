@@ -26,8 +26,8 @@ import com.intellij.psi.impl.compiled.ClsElementImpl;
 import com.intellij.psi.impl.source.SourceTreeToPsiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
+import org.jetbrains.jet.lang.resolve.java.resolver.AnnotationResolver;
 
 /**
  * @author Evgeny Gerashchenko
@@ -49,8 +49,8 @@ class KotlinSignatureUtil {
             ASTNode node = SourceTreeToPsiMap.psiElementToTree(element);
             if (node != null) {
                 PsiCompiledElement compiledElement = node.getUserData(ClsElementImpl.COMPILED_ELEMENT);
-                if (compiledElement instanceof PsiMethod) {
-                    return (PsiMethod) compiledElement;
+                if (compiledElement instanceof PsiModifierListOwner) {
+                    return (PsiModifierListOwner) compiledElement;
                 }
             }
         }
@@ -84,7 +84,7 @@ class KotlinSignatureUtil {
     static PsiAnnotation findKotlinSignatureAnnotation(@NotNull PsiElement element) {
         if (!(element instanceof PsiModifierListOwner)) return null;
         PsiModifierListOwner annotationOwner = getAnnotationOwner(element);
-        PsiAnnotation annotation = JavaDescriptorResolver.findAnnotation(annotationOwner, KOTLIN_SIGNATURE_ANNOTATION);
+        PsiAnnotation annotation = AnnotationResolver.findAnnotation(annotationOwner, KOTLIN_SIGNATURE_ANNOTATION);
         if (annotation == null) return null;
         if (annotation.getParameterList().getAttributes().length == 0) return null;
         return annotation;

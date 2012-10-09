@@ -27,12 +27,16 @@ import org.jetbrains.asm4.MethodVisitor;
 import org.jetbrains.asm4.Type;
 import org.jetbrains.asm4.commons.InstructionAdapter;
 import org.jetbrains.jet.codegen.binding.CalculatedClosure;
+import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.codegen.state.JetTypeMapper;
 import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.java.AsmTypeConstants;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.java.JvmPrimitiveType;
+import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
 import org.jetbrains.jet.lexer.JetTokens;
 
@@ -416,5 +420,71 @@ public class AsmUtil {
 
     public static void genStubCode(MethodVisitor mv) {
         genMethodThrow(mv, STUB_EXCEPTION, STUB_EXCEPTION_MESSAGE);
+    }
+
+    public static void genNotNullAssertionsForParameters(
+            @NotNull InstructionAdapter v,
+            @NotNull GenerationState state,
+            @NotNull FunctionDescriptor descriptor,
+            @NotNull FrameMap frameMap
+    ) {
+        if (!state.isGenerateNotNullParamAssertions()) return;
+
+        // Private method is not accessible from other classes, no assertions needed
+        if (getVisibilityAccessFlag(descriptor) == ACC_PRIVATE) return;
+
+        for (ValueParameterDescriptor parameter : descriptor.getValueParameters()) {
+            JetType type = parameter.getReturnType();
+            if (type == null || type.isNullable()) continue;
+
+            int index = frameMap.getIndex(parameter);
+            Type asmType = state.getTypeMapper().mapReturnType(type);
+            if (asmType.getSort() == Type.OBJECT || asmType.getSort() == Type.ARRAY) {
+                v.load(index, asmType);
+                v.visitLdcInsn(descriptor.getName().getName());
+                v.invokestatic("jet/runtime/Intrinsics", "checkParameterIsNotNull", "(Ljava/lang/Object;Ljava/lang/String;)V");
+            }
+        }
+    }
+
+    public static void genNotNullAssertionForField(
+            @NotNull InstructionAdapter v,
+            @NotNull GenerationState state,
+            @NotNull PropertyDescriptor descriptor
+    ) {
+        genNotNullAssertion(v, state, descriptor, "checkFieldIsNotNull");
+    }
+
+    public static void genNotNullAssertionForMethod(
+            @NotNull InstructionAdapter v,
+            @NotNull GenerationState state,
+            @NotNull ResolvedCall resolvedCall
+    ) {
+        CallableDescriptor descriptor = resolvedCall.getResultingDescriptor();
+        if (descriptor instanceof ConstructorDescriptor) return;
+
+        genNotNullAssertion(v, state, descriptor, "checkReturnedValueIsNotNull");
+    }
+
+    private static void genNotNullAssertion(
+            @NotNull InstructionAdapter v,
+            @NotNull GenerationState state,
+            @NotNull CallableDescriptor descriptor,
+            @NotNull String assertMethodToCall
+    ) {
+        if (!state.isGenerateNotNullAssertions()) return;
+
+        if (!Boolean.TRUE.equals(state.getBindingContext().get(BindingContext.IS_DECLARED_IN_JAVA, descriptor))) return;
+
+        JetType type = descriptor.getReturnType();
+        if (type == null || type.isNullable()) return;
+
+        Type asmType = state.getTypeMapper().mapReturnType(type);
+        if (asmType.getSort() == Type.OBJECT || asmType.getSort() == Type.ARRAY) {
+            v.dup();
+            v.visitLdcInsn(descriptor.getContainingDeclaration().getName().getName());
+            v.visitLdcInsn(descriptor.getName().getName());
+            v.invokestatic("jet/runtime/Intrinsics", assertMethodToCall, "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V");
+        }
     }
 }

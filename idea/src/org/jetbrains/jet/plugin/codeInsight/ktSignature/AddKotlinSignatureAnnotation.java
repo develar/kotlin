@@ -35,12 +35,14 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.di.InjectorForJavaSemanticServices;
 import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.SimpleFunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.plugin.JetBundle;
 import org.jetbrains.jet.plugin.JetIcons;
@@ -89,76 +91,133 @@ public class AddKotlinSignatureAnnotation extends BaseIntentionAction implements
 
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {
-        PsiMethod method = findMethod(file, editor.getCaretModel().getOffset());
-        if (method == null) return false;
-        if (findKotlinSignatureAnnotation(method) != null) return false;
-        if (method.getModifierList().hasExplicitModifier(PsiModifier.PRIVATE)) return false;
-        return createFix(method, "").isAvailable(project, editor, file);
+        PsiModifierListOwner annotationOwner = findAnnotationOwner(file, editor);
+        if (annotationOwner == null) {
+            return false;
+        }
+
+        PsiModifierList modifierList = annotationOwner.getModifierList();
+        if (modifierList == null || modifierList.hasExplicitModifier(PsiModifier.PRIVATE)) {
+            return false;
+        }
+
+        return createFix(annotationOwner, "").isAvailable(project, editor, file);
     }
 
     @Override
     public void invoke(@NotNull final Project project, final Editor editor, PsiFile file) throws IncorrectOperationException {
-        final PsiMethod method = findMethod(file, editor.getCaretModel().getOffset());
-        String signature = getDefaultSignature(project, (PsiMethod) method.getOriginalElement());
+        final PsiMember annotatedElement = findAnnotationOwner(file, editor);
+
+        assert (annotatedElement != null);
+
+        String signature = getDefaultSignature(project, (PsiMember) annotatedElement.getOriginalElement());
+
         final MessageBusConnection busConnection = project.getMessageBus().connect();
         busConnection.subscribe(ExternalAnnotationsManager.TOPIC, new ExternalAnnotationsListener.Adapter() {
             @Override
-            public void afterExternalAnnotationChanging(@NotNull PsiModifierListOwner owner, @NotNull String annotationFQName,
-                    boolean successful) {
+            public void afterExternalAnnotationChanging(@NotNull PsiModifierListOwner owner, @NotNull String annotationFQName, boolean successful) {
                 busConnection.disconnect();
 
-                if (successful && owner == method && KOTLIN_SIGNATURE_ANNOTATION.equals(annotationFQName)) {
+                if (successful && owner == annotatedElement && KOTLIN_SIGNATURE_ANNOTATION.equals(annotationFQName)) {
                     ApplicationManager.getApplication().invokeLater(new Runnable() {
                         @Override
                         public void run() {
                             refreshMarkers(project);
-                            EditSignatureAction.invokeEditSignature(method, editor, null);
+                            EditSignatureAction.invokeEditSignature(annotatedElement, editor, null);
                         }
                     }, ModalityState.NON_MODAL);
                 }
             }
         });
-        createFix(method, signature).invoke(project, editor, file);
+        createFix(annotatedElement, signature).invoke(project, editor, file);
     }
 
     @NotNull
-    private static AddAnnotationFix createFix(@NotNull PsiMethod method, @NotNull String signature) {
-        return new AddAnnotationFix(KOTLIN_SIGNATURE_ANNOTATION, method, signatureToNameValuePairs(method.getProject(), signature));
+    private static AddAnnotationFix createFix(@NotNull PsiModifierListOwner annotatedElement, @NotNull String signature) {
+        return new AddAnnotationFix(KOTLIN_SIGNATURE_ANNOTATION, annotatedElement, signatureToNameValuePairs(annotatedElement.getProject(), signature));
+    }
+
+    private static String getDefaultSignature(@NotNull PsiMethod method, FqName classFqName, JavaDescriptorResolver javaDescriptorResolver, BindingContext context) {
+        if (method.getReturnType() == null) {
+            // For constructor
+            ClassDescriptor classDescriptor = javaDescriptorResolver.resolveClass(classFqName);
+            assert classDescriptor != null: "Couldn't resolve class descriptor for " + classFqName;
+            classDescriptor.getConstructors();
+
+            ConstructorDescriptor constructorDescriptor = context.get(BindingContext.CONSTRUCTOR, method);
+            assert constructorDescriptor != null: "Couldn't find constructor descriptor for " + method.getName() + " in " + classFqName;
+            return getDefaultConstructorAnnotation(constructorDescriptor, classFqName);
+        }
+
+        getMemberScope(method, classFqName, javaDescriptorResolver).getFunctions(Name.identifier(method.getName()));
+
+        SimpleFunctionDescriptor functionDescriptor = context.get(BindingContext.FUNCTION, method);
+        assert functionDescriptor != null: "Couldn't find function descriptor for " + method.getName() + " in " + classFqName;
+        return RENDERER.render(functionDescriptor);
     }
 
     @NotNull
-    private static String getDefaultSignature(@NotNull Project project, @NotNull PsiMethod method) {
+    private static String getDefaultSignature(@NotNull PsiField field, FqName classFqName, JavaDescriptorResolver javaDescriptorResolver, BindingContext context) {
+        // getMemberScope(field, classFqName, javaDescriptorResolver).getProperties(Name.identifier(field.getName()));
+        // TODO: Generate default string for the field
+        return "";
+    }
+
+    @NotNull
+    private static String getDefaultSignature(@NotNull Project project, @NotNull PsiMember psiMember) {
         InjectorForJavaSemanticServices injector = new InjectorForJavaSemanticServices(BuiltinsScopeExtensionMode.ALL, project);
         JavaDescriptorResolver javaDescriptorResolver = injector.getJavaDescriptorResolver();
 
-        PsiClass containingClass = method.getContainingClass();
+        PsiClass containingClass = psiMember.getContainingClass();
         assert containingClass != null;
         String qualifiedName = containingClass.getQualifiedName();
         assert qualifiedName != null;
         FqName classFqName = new FqName(qualifiedName);
 
-        if (method.getModifierList().hasModifierProperty(PsiModifier.STATIC)) {
-            NamespaceDescriptor namespaceDescriptor = javaDescriptorResolver.resolveNamespace(classFqName);
-            assert namespaceDescriptor != null: "Couldn't resolve namespace descriptor for " + classFqName;
-            namespaceDescriptor.getMemberScope().getFunctions(Name.identifier(method.getName()));
-        }
-        else {
-            ClassDescriptor classDescriptor = javaDescriptorResolver.resolveClass(classFqName);
-            assert classDescriptor != null: "Couldn't resolve class descriptor for " + classFqName;
-            classDescriptor.getDefaultType().getMemberScope().getFunctions(Name.identifier(method.getName()));
+        if (psiMember instanceof PsiMethod) {
+            return getDefaultSignature((PsiMethod) psiMember, classFqName, javaDescriptorResolver, injector.getBindingTrace().getBindingContext());
         }
 
-        SimpleFunctionDescriptor functionDescriptor = injector.getBindingTrace().getBindingContext().get(BindingContext.FUNCTION, method);
-        assert functionDescriptor != null: "Couldn't find function descriptor for " + method.getName() + " in " + classFqName;
-        return RENDERER.render(functionDescriptor);
+        if (psiMember instanceof PsiField) {
+            return getDefaultSignature((PsiField) psiMember, classFqName, javaDescriptorResolver, injector.getBindingTrace().getBindingContext());
+        }
+
+        throw new IllegalStateException("PsiMethod or PsiField are expected");
+    }
+
+    @NotNull
+    private static JetScope getMemberScope(PsiModifierListOwner psiModifierListOwner, FqName classFqName, JavaDescriptorResolver javaDescriptorResolver) {
+        if (psiModifierListOwner.hasModifierProperty(PsiModifier.STATIC)) {
+            NamespaceDescriptor namespaceDescriptor = javaDescriptorResolver.resolveNamespace(classFqName);
+            assert namespaceDescriptor != null: "Couldn't resolve namespace descriptor for " + classFqName;
+            return namespaceDescriptor.getMemberScope();
+        }
+
+        ClassDescriptor classDescriptor = javaDescriptorResolver.resolveClass(classFqName);
+        assert classDescriptor != null: "Couldn't resolve class descriptor for " + classFqName;
+        return classDescriptor.getDefaultType().getMemberScope();
+    }
+
+    private static String getDefaultConstructorAnnotation(ConstructorDescriptor constructorDescriptor, FqName classFqName) {
+        return String.format("fun %s%s", classFqName.shortName(), RENDERER.renderFunctionParameters(constructorDescriptor));
     }
 
     @Nullable
-    private static PsiMethod findMethod(@NotNull PsiFile file, int offset) {
+    private static PsiMember findAnnotationOwner(@NotNull PsiElement file, Editor editor) {
+        int offset = editor.getCaretModel().getOffset();
+        PsiMember methodMember = findMethod(file, offset);
+        if (methodMember != null) {
+            return methodMember;
+        }
+
+        return findField(file, offset);
+    }
+
+    @Nullable
+    private static PsiMethod findMethod(@NotNull PsiElement file, int offset) {
         PsiElement element = file.findElementAt(offset);
         PsiMethod res = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
         if (res == null) return null;
-        if (res.getReturnType() == null) return null; // disabled for constructors
 
         //Not available in method's body
         PsiCodeBlock body = res.getBody();
@@ -169,5 +228,10 @@ public class AddKotlinSignatureAnnotation extends BaseIntentionAction implements
             }
         }
         return res;
+    }
+
+    @Nullable
+    private static PsiField findField(@NotNull PsiElement file, int offset) {
+        return PsiTreeUtil.getParentOfType(file.findElementAt(offset), PsiField.class);
     }
 }

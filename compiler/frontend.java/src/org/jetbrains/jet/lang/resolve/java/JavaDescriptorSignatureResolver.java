@@ -21,12 +21,10 @@ import com.intellij.psi.*;
 import jet.typeinfo.TypeInfoVariance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.TypeParameterDescriptor;
-import org.jetbrains.jet.lang.descriptors.TypeParameterDescriptorImpl;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
-import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolveData.ResolverClassData;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
+import org.jetbrains.jet.lang.resolve.java.data.ResolverClassData;
 import org.jetbrains.jet.lang.resolve.java.kt.JetClassAnnotation;
 import org.jetbrains.jet.lang.resolve.java.wrapper.PsiMethodWrapper;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -57,6 +55,12 @@ public class JavaDescriptorSignatureResolver {
         this.semanticServices = javaSemanticServices;
     }
 
+    private static boolean isJavaLangObject(@NotNull JetType type) {
+        ClassifierDescriptor classifierDescriptor = type.getConstructor().getDeclarationDescriptor();
+        return classifierDescriptor instanceof ClassDescriptor &&
+               DescriptorUtils.getFQName(classifierDescriptor).equalsTo(DescriptorResolverUtils.OBJECT_FQ_NAME);
+    }
+
     private enum TypeParameterDescriptorOrigin {
         JAVA,
         KOTLIN,
@@ -66,8 +70,8 @@ public class JavaDescriptorSignatureResolver {
         @NotNull
         private final TypeParameterDescriptorOrigin origin;
         @NotNull
-        final TypeParameterDescriptorImpl descriptor;
-        final PsiTypeParameter psiTypeParameter;
+        private final TypeParameterDescriptorImpl descriptor;
+        private final PsiTypeParameter psiTypeParameter;
         @Nullable
         private final List<JetType> upperBoundsForKotlin;
 
@@ -86,6 +90,11 @@ public class JavaDescriptorSignatureResolver {
             this.descriptor = descriptor;
             this.psiTypeParameter = psiTypeParameter;
             this.upperBoundsForKotlin = upperBoundsForKotlin;
+        }
+
+        @NotNull
+        public TypeParameterDescriptorImpl getDescriptor() {
+            return descriptor;
         }
     }
 
@@ -137,7 +146,7 @@ public class JavaDescriptorSignatureResolver {
             return new JetTypeJetSignatureReader(semanticServices, JetStandardLibrary.getInstance(), typeVariableResolver) {
                 @Override
                 protected void done(@NotNull JetType jetType) {
-                    if (JavaDescriptorResolver.isJavaLangObject(jetType)) {
+                    if (isJavaLangObject(jetType)) {
                         return;
                     }
                     upperBounds.add(jetType);
@@ -298,7 +307,11 @@ public class JavaDescriptorSignatureResolver {
         typeParameterDescriptor.setInitialized();
     }
 
-    void initializeTypeParameters(List<TypeParameterDescriptorInitialization> typeParametersInitialization, @NotNull DeclarationDescriptor typeParametersOwner, @NotNull String context) {
+    public void initializeTypeParameters(
+            List<TypeParameterDescriptorInitialization> typeParametersInitialization,
+            @NotNull DeclarationDescriptor typeParametersOwner,
+            @NotNull String context
+    ) {
         List<TypeParameterDescriptor> prevTypeParameters = Lists.newArrayList();
 
         List<TypeParameterDescriptor> typeParameters = Lists.newArrayList();
@@ -314,7 +327,10 @@ public class JavaDescriptorSignatureResolver {
     }
 
 
-    List<TypeParameterDescriptorInitialization> createUninitializedClassTypeParameters(PsiClass psiClass, ResolverClassData classData) {
+    public List<TypeParameterDescriptorInitialization> createUninitializedClassTypeParameters(
+            PsiClass psiClass,
+            ResolverClassData classData
+    ) {
         JetClassAnnotation jetClassAnnotation = JetClassAnnotation.get(psiClass);
 
         if (jetClassAnnotation.signature().length() > 0) {
@@ -326,9 +342,10 @@ public class JavaDescriptorSignatureResolver {
     }
 
 
-    List<TypeParameterDescriptor> resolveMethodTypeParameters(
+    public List<TypeParameterDescriptor> resolveMethodTypeParameters(
             @NotNull PsiMethodWrapper method,
-            @NotNull DeclarationDescriptor functionDescriptor) {
+            @NotNull DeclarationDescriptor functionDescriptor
+    ) {
 
         List<TypeParameterDescriptorInitialization> typeParametersIntialization;
         final PsiMethod psiMethod = method.getPsiMethod();

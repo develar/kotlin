@@ -252,7 +252,10 @@ public interface BindingContext {
 
     WritableSlice<ClassDescriptor, Boolean> INCOMPLETE_HIERARCHY = Slices.createCollectiveSetSlice();
 
-    WritableSlice<DeclarationDescriptor, String> ALTERNATIVE_SIGNATURE_DATA_ERROR = Slices.createSimpleSlice();
+    WritableSlice<DeclarationDescriptor, String> ALTERNATIVE_SIGNATURE_DATA_ERROR =
+            new BasicWritableSlice<DeclarationDescriptor, String>(Slices.ONLY_REWRITE_TO_EQUAL, true);
+
+    WritableSlice<CallableDescriptor, Boolean> IS_DECLARED_IN_JAVA = Slices.createSimpleSlice();
 
     @SuppressWarnings("UnusedDeclaration")
     @Deprecated // This field is needed only for the side effects of its initializer

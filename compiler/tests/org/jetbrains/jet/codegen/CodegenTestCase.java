@@ -35,6 +35,7 @@ import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.codegen.state.GenerationStrategy;
+import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.AnalyzingUtils;
@@ -42,6 +43,7 @@ import org.jetbrains.jet.lang.resolve.ScriptNameUtil;
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
 import org.jetbrains.jet.parsing.JetParsingTest;
 import org.jetbrains.jet.utils.ExceptionUtils;
+import org.jetbrains.jet.utils.Progress;
 
 import java.io.File;
 import java.io.IOException;
@@ -174,6 +176,11 @@ public abstract class CodegenTestCase extends UsefulTestCase {
         blackBox();
     }
 
+    protected void blackBoxMultiFile(String expected, boolean classPathInTheSameClassLoader, String... filenames) {
+        loadFiles(filenames);
+        blackBox(expected, classPathInTheSameClassLoader);
+    }
+
     @NotNull
     private Class<?> loadClassFromType(@NotNull Type type) {
         try {
@@ -287,19 +294,27 @@ public abstract class CodegenTestCase extends UsefulTestCase {
     }
 
     protected void blackBoxFileWithJava(@NotNull String ktFile, boolean classPathInTheSameClassLoader) throws Exception {
-        File javaClassesTempDirectory = new File(FileUtil.getTempDirectory(), "java-classes");
-        JetTestUtils.mkdirs(javaClassesTempDirectory);
-        List<String> options = Arrays.asList(
-                "-d", javaClassesTempDirectory.getPath()
-        );
-
-        File javaFile = new File("compiler/testData/codegen/" + ktFile.replaceFirst("\\.kt$", ".java"));
-        JetTestUtils.compileJavaFiles(Collections.singleton(javaFile), options);
+        File javaClassesTempDirectory = compileJava(ktFile.replaceFirst("\\.kt$", ".java"));
 
         myEnvironment = new JetCoreEnvironment(getTestRootDisposable(), CompileCompilerDependenciesTest.compilerConfigurationForTests(
                 ConfigurationKind.JDK_ONLY, TestJdkKind.MOCK_JDK, JetTestUtils.getAnnotationsJar(), javaClassesTempDirectory));
 
         blackBoxFile(ktFile, "OK", classPathInTheSameClassLoader);
+    }
+
+    protected File compileJava(@NotNull String filename) throws IOException {
+        File javaClassesTempDirectory = new File(FileUtil.getTempDirectory(), "java-classes");
+        JetTestUtils.mkdirs(javaClassesTempDirectory);
+        String classPath = "out/production/runtime" + File.pathSeparator + JetTestUtils.getAnnotationsJar().getPath();
+        List<String> options = Arrays.asList(
+                "-classpath", classPath,
+                "-d", javaClassesTempDirectory.getPath()
+        );
+
+        File javaFile = new File("compiler/testData/codegen/" + filename);
+        JetTestUtils.compileJavaFiles(Collections.singleton(javaFile), options);
+
+        return javaClassesTempDirectory;
     }
 
     protected GeneratedClassLoader createClassLoader(ClassFileFactory codegens) {
@@ -328,26 +343,34 @@ public abstract class CodegenTestCase extends UsefulTestCase {
     }
 
     protected String generateToText() {
-        if(alreadyGenerated == null)
-            alreadyGenerated = generateCommon(ClassBuilderFactories.TEST);
+        if (alreadyGenerated == null)
+            alreadyGenerated = generateCommon(ClassBuilderFactories.TEST, myEnvironment, myFiles);
         return alreadyGenerated.getFactory().createText();
     }
 
-    private GenerationState generateCommon(ClassBuilderFactory classBuilderFactory) {
-        if(alreadyGenerated != null)
-            return alreadyGenerated;
-
-        final AnalyzeExhaust analyzeExhaust = AnalyzerFacadeForJVM.analyzeFilesWithJavaIntegrationAndCheckForErrors(
-                myEnvironment.getProject(),
-                myFiles.getPsiFiles(),
-                myFiles.getScriptParameterTypes(),
+    @NotNull
+    protected static GenerationState generateCommon(
+            @NotNull ClassBuilderFactory classBuilderFactory,
+            @NotNull JetCoreEnvironment environment,
+            @NotNull CodegenTestFiles files
+    ) {
+        AnalyzeExhaust analyzeExhaust = AnalyzerFacadeForJVM.analyzeFilesWithJavaIntegrationAndCheckForErrors(
+                environment.getProject(),
+                files.getPsiFiles(),
+                files.getScriptParameterTypes(),
                 Predicates.<PsiFile>alwaysTrue(),
                 BuiltinsScopeExtensionMode.ALL);
         analyzeExhaust.throwIfError();
         AnalyzingUtils.throwExceptionOnErrors(analyzeExhaust.getBindingContext());
-        alreadyGenerated = new GenerationState(myEnvironment.getProject(), classBuilderFactory, analyzeExhaust, myFiles.getPsiFiles());
-        GenerationStrategy.STANDARD.compileCorrectFiles(alreadyGenerated, CompilationErrorHandler.THROW_EXCEPTION);
-        return alreadyGenerated;
+        CompilerConfiguration configuration = environment.getConfiguration();
+        GenerationState state = new GenerationState(
+                environment.getProject(), classBuilderFactory, Progress.DEAF, analyzeExhaust, files.getPsiFiles(),
+                configuration.get(JVMConfigurationKeys.BUILTIN_TO_JAVA_TYPES_MAPPING_KEY, BuiltinToJavaTypesMapping.ENABLED),
+                configuration.get(JVMConfigurationKeys.GENERATE_NOT_NULL_ASSERTIONS, true),
+                configuration.get(JVMConfigurationKeys.GENERATE_NOT_NULL_PARAMETER_ASSERTIONS, true)
+        );
+        GenerationStrategy.STANDARD.compileCorrectFiles(state, CompilationErrorHandler.THROW_EXCEPTION);
+        return state;
     }
 
     protected Class generateNamespaceClass() {
@@ -391,7 +414,7 @@ public abstract class CodegenTestCase extends UsefulTestCase {
     private GenerationState generateClassesInFileGetState() {
         GenerationState generationState;
         try {
-            generationState = generateCommon(ClassBuilderFactories.TEST);
+            generationState = generateCommon(ClassBuilderFactories.TEST, myEnvironment, myFiles);
 
             if (DxChecker.RUN_DX_CHECKER) {
                 DxChecker.check(generationState.getFactory());

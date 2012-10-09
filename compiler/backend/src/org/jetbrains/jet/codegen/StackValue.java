@@ -39,8 +39,7 @@ import org.jetbrains.jet.lexer.JetTokens;
 import java.util.List;
 
 import static org.jetbrains.asm4.Opcodes.*;
-import static org.jetbrains.jet.codegen.AsmUtil.boxType;
-import static org.jetbrains.jet.codegen.AsmUtil.isIntPrimitive;
+import static org.jetbrains.jet.codegen.AsmUtil.*;
 import static org.jetbrains.jet.lang.resolve.java.AsmTypeConstants.*;
 
 /**
@@ -153,7 +152,7 @@ public abstract class StackValue {
     }
 
     public static Property property(
-            String name,
+            PropertyDescriptor descriptor,
             JvmClassName methodOwner,
             JvmClassName methodOwnerParam,
             Type type,
@@ -162,9 +161,11 @@ public abstract class StackValue {
             boolean isSuper,
             @Nullable Method getter,
             @Nullable Method setter,
-            int invokeOpcode
+            int invokeOpcode,
+            GenerationState state
     ) {
-        return new Property(name, methodOwner, methodOwnerParam, getter, setter, isStatic, isInterface, isSuper, type, invokeOpcode);
+        return new Property(descriptor, methodOwner, methodOwnerParam, getter, setter, isStatic, isInterface, isSuper, type, invokeOpcode,
+                            state);
     }
 
     public static StackValue expression(Type type, JetExpression expression, ExpressionCodegen generator) {
@@ -678,7 +679,7 @@ public abstract class StackValue {
                 throw new UnsupportedOperationException("no getter specified");
             }
             if (getter instanceof CallableMethod) {
-                ((CallableMethod) getter).invoke(v);
+                ((CallableMethod) getter).invokeWithNotNullAssertion(v, state, resolvedGetCall);
             }
             else {
                 ((IntrinsicMethod) getter).generate(codegen, v, type, null, null, null, state);
@@ -696,7 +697,7 @@ public abstract class StackValue {
                 Method asmMethod = method.getSignature().getAsmMethod();
                 Type[] argumentTypes = asmMethod.getArgumentTypes();
                 coerce(topOfStackType, argumentTypes[argumentTypes.length - 1], v);
-                method.invoke(v);
+                method.invokeWithNotNullAssertion(v, state, resolvedSetCall);
                 Type returnType = asmMethod.getReturnType();
                 if (returnType != Type.VOID_TYPE) {
                     pop(returnType, v);
@@ -930,8 +931,6 @@ public abstract class StackValue {
     }
 
     static class Property extends StackValue {
-        @NotNull
-        private final String name;
         @Nullable
         private final Method getter;
         @Nullable
@@ -944,21 +943,27 @@ public abstract class StackValue {
         private final boolean isInterface;
         private final boolean isSuper;
         private final int invokeOpcode;
+        @NotNull
+        private final PropertyDescriptor descriptor;
+        @NotNull
+        private final GenerationState state;
 
         public Property(
-                @NotNull String name, @NotNull JvmClassName methodOwner, @NotNull JvmClassName methodOwnerParam,
-                Method getter, Method setter, boolean aStatic, boolean isInterface, boolean isSuper, Type type, int invokeOpcode
+                @NotNull PropertyDescriptor descriptor, @NotNull JvmClassName methodOwner, @NotNull JvmClassName methodOwnerParam,
+                @Nullable Method getter, @Nullable Method setter, boolean isStatic, boolean isInterface, boolean isSuper,
+                @NotNull Type type, int invokeOpcode, @NotNull GenerationState state
         ) {
             super(type);
-            this.name = name;
             this.methodOwner = methodOwner;
             this.methodOwnerParam = methodOwnerParam;
             this.getter = getter;
             this.setter = setter;
-            isStatic = aStatic;
+            this.isStatic = isStatic;
             this.isInterface = isInterface;
             this.isSuper = isSuper;
             this.invokeOpcode = invokeOpcode;
+            this.descriptor = descriptor;
+            this.state = state;
             if (invokeOpcode == 0) {
                 if (setter != null || getter != null) {
                     throw new IllegalArgumentException();
@@ -975,8 +980,9 @@ public abstract class StackValue {
             }
             else {
                 if (getter == null) {
-                    v.visitFieldInsn(isStatic ? GETSTATIC : GETFIELD, methodOwner.getInternalName(), name,
+                    v.visitFieldInsn(isStatic ? GETSTATIC : GETFIELD, methodOwner.getInternalName(), descriptor.getName().getName(),
                                      this.type.getDescriptor());
+                    genNotNullAssertionForField(v, state, descriptor);
                 }
                 else {
                     v.visitMethodInsn(invokeOpcode, methodOwner.getInternalName(), getter.getName(), getter.getDescriptor());
@@ -994,7 +1000,7 @@ public abstract class StackValue {
                                   setter.getDescriptor().replace("(", "(" + methodOwnerParam.getDescriptor()));
             }
             else if (setter == null) {
-                v.visitFieldInsn(isStatic ? PUTSTATIC : PUTFIELD, methodOwner.getInternalName(), name,
+                v.visitFieldInsn(isStatic ? PUTSTATIC : PUTFIELD, methodOwner.getInternalName(), descriptor.getName().getName(),
                                  this.type.getDescriptor());
             }
             else {

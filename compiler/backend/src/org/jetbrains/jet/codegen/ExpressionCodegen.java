@@ -1613,9 +1613,8 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
             ownerParam = callableMethod.getDefaultImplParam();
         }
 
-        return StackValue
-                .property(propertyDescriptor.getName().getName(), owner, ownerParam, asmType(propertyDescriptor.getType()), isStatic,
-                          isInterface, isSuper, getter, setter, invokeOpcode);
+        return StackValue.property(propertyDescriptor, owner, ownerParam, asmType(propertyDescriptor.getType()),
+                                   isStatic, isInterface, isSuper, getter, setter, invokeOpcode, state);
     }
 
     private static boolean isOverrideForTrait(CallableMemberDescriptor propertyDescriptor) {
@@ -1863,10 +1862,10 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
         int mask = pushMethodArguments(resolvedCall, callableMethod.getValueParameterTypes());
         if (mask == 0) {
-            callableMethod.invoke(v);
+            callableMethod.invokeWithNotNullAssertion(v, state, resolvedCall);
         }
         else {
-            callableMethod.invokeWithDefault(v, mask);
+            callableMethod.invokeDefaultWithNotNullAssertion(v, state, resolvedCall, mask);
         }
     }
 
@@ -2499,7 +2498,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
         }
 
         pushMethodArguments(resolvedCall, callable.getValueParameterTypes());
-        callable.invoke(v);
+        callable.invokeWithNotNullAssertion(v, state, resolvedCall);
         if (keepReturnValue) {
             value.store(callable.getReturnType(), v);
         }
@@ -2570,7 +2569,8 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
                 Type type = expressionType(expression.getBaseExpression());
                 value.put(type, v);
-                callableMethod.invoke(v);
+                callableMethod.invokeWithNotNullAssertion(v, state, resolvedCall);
+
                 value.store(callableMethod.getReturnType(), v);
                 value.put(type, v);
                 return StackValue.onStack(type);
@@ -2588,7 +2588,8 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
         assert resolvedCall != null;
         genThisAndReceiverFromResolvedCall(StackValue.none(), resolvedCall, callable);
         pushMethodArguments(resolvedCall, callable.getValueParameterTypes());
-        callable.invoke(v);
+        callable.invokeWithNotNullAssertion(v, state, resolvedCall);
+
         return returnValueAsStackValue(op, callable.getSignature().getAsmMethod().getReturnType());
     }
 
@@ -2676,7 +2677,8 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
                     }
 
                     CallableMethod callableMethod = (CallableMethod) callable;
-                    callableMethod.invoke(v);
+                    callableMethod.invokeWithNotNullAssertion(v, state, resolvedCall);
+
                     value.store(callableMethod.getReturnType(), v);
                     return StackValue.onStack(type);
                 }
