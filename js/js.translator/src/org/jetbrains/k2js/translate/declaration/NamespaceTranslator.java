@@ -22,6 +22,7 @@ import com.intellij.openapi.util.Trinity;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
@@ -42,7 +43,6 @@ import static org.jetbrains.k2js.translate.declaration.NamespaceDeclarationTrans
 import static org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator.createPlace;
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
-import static org.jetbrains.k2js.translate.utils.TranslationUtils.getQualifiedReference;
 
 /**
  * @author Pavel.Talanov
@@ -75,7 +75,7 @@ final class NamespaceTranslator extends AbstractTranslator {
                     defineInvocation = createDefinitionPlace(null, descriptorToDefineInvocation);
                 }
 
-                return createPlace(getListFromPlace(defineInvocation), getQualifiedReference(context(), descriptor));
+                return createPlace(getListFromPlace(defineInvocation), context().getQualifiedReference(descriptor));
             }
         };
     }
@@ -108,7 +108,7 @@ final class NamespaceTranslator extends AbstractTranslator {
             initializer = visitor.initializer;
             if (!context().isEcma5()) {
                 initializers.add(new JsInvocation(new JsNameRef("call", initializer),
-                                                  getQualifiedReference(context(), descriptor)).makeStmt());
+                                                  context().getQualifiedReference(descriptor)).makeStmt());
             }
         }
 
@@ -180,7 +180,10 @@ final class NamespaceTranslator extends AbstractTranslator {
 
         @Override
         public Void visitClass(@NotNull JetClass declaration, @NotNull TranslationContext context) {
-            result.add(context.classDeclarationTranslator().translate(declaration, context));
+            JsPropertyInitializer entry = context.classDeclarationTranslator().translate(declaration, context);
+            if (entry != null) {
+                result.add(entry);
+            }
             return null;
         }
 
