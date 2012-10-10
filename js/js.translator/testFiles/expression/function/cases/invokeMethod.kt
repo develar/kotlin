@@ -7,6 +7,10 @@ class Foo(val postfix: String) {
 }
 
 fun box() : String {
-    val a = Foo(" world!")
-    return a("hello")
+    // todo KT-2515
+    //val a = Foo(" world!")
+    //return a("hello")
+    var callback = {}
+    callback.invoke()
+    return "hello world!"
 }
