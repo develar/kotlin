@@ -33,8 +33,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.asm4.Opcodes.*;
-import static org.jetbrains.jet.codegen.AsmUtil.genMethodThrow;
-import static org.jetbrains.jet.codegen.AsmUtil.getVisibilityAccessFlag;
+import static org.jetbrains.jet.codegen.AsmUtil.*;
 
 /**
  * @author max
@@ -99,13 +98,7 @@ public abstract class ClassBodyCodegen extends MemberCodegen {
                 PropertyDescriptor propertyDescriptor = state.getBindingContext().get(BindingContext.PRIMARY_CONSTRUCTOR_PARAMETER, p);
                 if (propertyDescriptor != null) {
                     if (!isAnnotation) {
-                        propertyCodegen.generateBackingField(p, propertyDescriptor);
-                        propertyCodegen
-                                .generateDefaultGetter(propertyDescriptor, getVisibilityAccessFlag(propertyDescriptor), p);
-                        if (propertyDescriptor.isVar()) {
-                            propertyCodegen
-                                    .generateDefaultSetter(propertyDescriptor, getVisibilityAccessFlag(propertyDescriptor), p);
-                        }
+                        propertyCodegen.generatePrimaryConstructorProperty(p, propertyDescriptor);
                     }
                     else {
                         Type type = state.getTypeMapper().mapType(propertyDescriptor);
