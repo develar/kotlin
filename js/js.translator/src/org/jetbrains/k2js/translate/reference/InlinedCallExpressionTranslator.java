@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.reference;
 
 import com.google.common.collect.Maps;
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
@@ -152,9 +153,10 @@ public final class InlinedCallExpressionTranslator extends AbstractCallExpressio
     @NotNull
     private JsExpression translateArgument(@NotNull ValueParameterDescriptor parameterDescriptor,
                                            @NotNull ResolvedValueArgument actualArgument) {
-        List<JsExpression> translatedSingleArgument = translateSingleArgument(actualArgument, parameterDescriptor);
-        assert translatedSingleArgument.size() == 1 : "We always wrap varargs in kotlin calls.";
-        return translatedSingleArgument.get(0);
+        List<JsExpression> result = new SmartList<JsExpression>();
+        translateSingleArgument(actualArgument, parameterDescriptor, result);
+        assert result.size() == 1 : "We always wrap varargs in kotlin calls.";
+        return result.get(0);
     }
 
     @Override
