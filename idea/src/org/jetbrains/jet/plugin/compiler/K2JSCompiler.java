@@ -36,6 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.plugin.JetFileType;
 import org.jetbrains.jet.plugin.project.JsModuleDetector;
+import org.jetbrains.jet.plugin.project.K2JSModuleComponent;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -203,6 +204,11 @@ public final class K2JSCompiler implements TranslatingCompiler {
         if (libLocationAndTarget.second != null) {
             args.add("-target");
             args.add(libLocationAndTarget.second);
+        }
+
+        K2JSModuleComponent jsModuleComponent = K2JSModuleComponent.getInstance(module);
+        if (jsModuleComponent.isSourcemap()) {
+            args.add("-sourcemap");
         }
     }
 
