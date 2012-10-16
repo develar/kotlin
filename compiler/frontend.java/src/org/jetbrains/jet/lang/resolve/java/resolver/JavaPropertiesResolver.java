@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiClass;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingContext;
@@ -39,9 +40,44 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeUtils;
 
+import javax.inject.Inject;
 import java.util.*;
 
-public final class PropertiesResolver {
+public final class JavaPropertiesResolver {
+
+    private JavaSemanticServices semanticServices;
+    private JavaSignatureResolver javaSignatureResolver;
+    private BindingTrace trace;
+    private JavaAnnotationResolver annotationResolver;
+    private JavaClassResolver classResolver;
+
+    public JavaPropertiesResolver() {
+    }
+
+    @Inject
+    public void setSemanticServices(JavaSemanticServices semanticServices) {
+        this.semanticServices = semanticServices;
+    }
+
+    @Inject
+    public void setTrace(BindingTrace trace) {
+        this.trace = trace;
+    }
+
+    @Inject
+    public void setJavaSignatureResolver(JavaSignatureResolver javaSignatureResolver) {
+        this.javaSignatureResolver = javaSignatureResolver;
+    }
+
+    @Inject
+    public void setAnnotationResolver(JavaAnnotationResolver annotationResolver) {
+        this.annotationResolver = annotationResolver;
+    }
+
+    @Inject
+    public void setClassResolver(JavaClassResolver classResolver) {
+        this.classResolver = classResolver;
+    }
 
     public Set<VariableDescriptor> resolveFieldGroupByName(
             @NotNull Name fieldName,
@@ -61,7 +97,9 @@ public final class PropertiesResolver {
         resolveNamedGroupProperties(scopeData.getClassOrNamespaceDescriptor(), scopeData, namedMembers, fieldName,
                                     "class or namespace " + qualifiedName);
 
-        return namedMembers.getPropertyDescriptors();
+        Set<VariableDescriptor> result = namedMembers.getPropertyDescriptors();
+        assert result != null;
+        return result;
     }
 
     @NotNull
@@ -84,37 +122,11 @@ public final class PropertiesResolver {
 
         return descriptors;
     }
-
     private static class GroupingValue {
         PropertyAccessorData getter;
         PropertyAccessorData setter;
         PropertyAccessorData field;
         boolean ext;
-    }
-
-    private final JavaDescriptorResolver javaDescriptorResolver;
-    private JavaSemanticServices semanticServices;
-    private JavaDescriptorSignatureResolver javaDescriptorSignatureResolver;
-    private BindingTrace trace;
-
-    /* internal */
-    public PropertiesResolver(JavaDescriptorResolver resolver) {
-        this.javaDescriptorResolver = resolver;
-    }
-
-    /* internal */
-    public void setSemanticServices(JavaSemanticServices semanticServices) {
-        this.semanticServices = semanticServices;
-    }
-
-    /* internal */
-    public void setTrace(BindingTrace trace) {
-        this.trace = trace;
-    }
-
-    /* internal */
-    public void setJavaDescriptorSignatureResolver(JavaDescriptorSignatureResolver javaDescriptorSignatureResolver) {
-        this.javaDescriptorSignatureResolver = javaDescriptorSignatureResolver;
     }
 
     private void resolveNamedGroupProperties(
@@ -163,7 +175,7 @@ public final class PropertiesResolver {
             boolean isPropertyForNamedObject = members.field != null && JvmAbi.INSTANCE_FIELD.equals(members.field.getMember().getName());
             PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
                     realOwner,
-                    javaDescriptorResolver.resolveAnnotations(characteristicMember.getMember().getPsiMember()),
+                    annotationResolver.resolveAnnotations(characteristicMember.getMember().getPsiMember()),
                     DescriptorResolverUtils
                             .resolveModality(characteristicMember.getMember(), isFinal || isEnumEntry || isPropertyForNamedObject),
                     visibility,
@@ -191,7 +203,7 @@ public final class PropertiesResolver {
             if (members.getter != null) {
                 getterDescriptor = new PropertyGetterDescriptor(
                         propertyDescriptor,
-                        javaDescriptorResolver.resolveAnnotations(members.getter.getMember().getPsiMember()),
+                        annotationResolver.resolveAnnotations(members.getter.getMember().getPsiMember()),
                         Modality.OPEN,
                         visibility,
                         true,
@@ -209,7 +221,7 @@ public final class PropertiesResolver {
                 }
                 setterDescriptor = new PropertySetterDescriptor(
                         propertyDescriptor,
-                        javaDescriptorResolver.resolveAnnotations(members.setter.getMember().getPsiMember()),
+                        annotationResolver.resolveAnnotations(members.setter.getMember().getPsiMember()),
                         Modality.OPEN,
                         setterVisibility,
                         true,
@@ -321,7 +333,7 @@ public final class PropertiesResolver {
         // TODO: Can't get type parameters from field - only from accessors
         if (characteristicMember == members.setter || characteristicMember == members.getter) {
             PsiMethodWrapper method = (PsiMethodWrapper) characteristicMember.getMember();
-            return javaDescriptorSignatureResolver.resolveMethodTypeParameters(method, propertyDescriptor);
+            return javaSignatureResolver.resolveMethodTypeParameters(method, propertyDescriptor);
         }
 
         return Collections.emptyList();
@@ -338,8 +350,8 @@ public final class PropertiesResolver {
         }
         else {
             propertyType = semanticServices.getTypeTransformer().transformToType(characteristicMember.getType().getPsiType(), typeVariableResolverForPropertyInternals);
-            if (AnnotationResolver.findAnnotation(characteristicMember.getType().getPsiNotNullOwner(),
-                                                  JvmAbi.JETBRAINS_NOT_NULL_ANNOTATION.getFqName().getFqName()) != null) {
+            if (JavaAnnotationResolver.findAnnotation(characteristicMember.getType().getPsiNotNullOwner(),
+                                                      JvmAbi.JETBRAINS_NOT_NULL_ANNOTATION.getFqName().getFqName()) != null) {
                 propertyType = TypeUtils.makeNullableAsSpecified(propertyType, false);
             }
             else if (members.getter == null && members.setter == null && members.field.getMember().isFinal() && members.field.getMember().isStatic()) {
@@ -350,6 +362,7 @@ public final class PropertiesResolver {
         return propertyType;
     }
 
+    @Nullable
     private JetType getReceiverType(
             PropertyAccessorData characteristicMember,
             TypeVariableResolver typeVariableResolverForPropertyInternals
@@ -426,7 +439,7 @@ public final class PropertiesResolver {
         return r;
     }
 
-    private static String key(TypeSource typeSource) {
+    private static String key(@Nullable TypeSource typeSource) {
         if (typeSource == null) {
             return "";
         }
@@ -454,7 +467,7 @@ public final class PropertiesResolver {
         if (psiClass != null && psiClass.isEnum() && isStatic) {
             final String qualifiedName = psiClass.getQualifiedName();
             assert qualifiedName != null;
-            final ClassDescriptor classDescriptor = javaDescriptorResolver.resolveClass(new FqName(qualifiedName));
+            final ClassDescriptor classDescriptor = classResolver.resolveClass(new FqName(qualifiedName));
             assert classDescriptor != null;
             final ClassDescriptor classObjectDescriptor = classDescriptor.getClassObjectDescriptor();
             assert classObjectDescriptor != null;

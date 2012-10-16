@@ -19,6 +19,7 @@ package org.jetbrains.jet.lang.resolve.java.resolver;
 import com.intellij.psi.PsiEllipsisType;
 import com.intellij.psi.PsiType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptorImpl;
@@ -33,16 +34,16 @@ import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeUtils;
 import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class ValueParameterResolver {
+public final class JavaValueParameterResolver {
 
-    private final JavaDescriptorResolver javaDescriptorResolver;
+    private JavaTypeTransformer typeTransformer;
 
-    public ValueParameterResolver(JavaDescriptorResolver javaDescriptorResolver) {
-        this.javaDescriptorResolver = javaDescriptorResolver;
+    public JavaValueParameterResolver() {
     }
 
     @NotNull
@@ -58,7 +59,7 @@ public final class ValueParameterResolver {
         PsiType psiType = parameter.getPsiParameter().getType();
 
         // TODO: must be very slow, make it lazy?
-        Name name = Name.identifier(parameter.getPsiParameter().getName() != null ? parameter.getPsiParameter().getName() : "p" + i);
+        Name name = Name.identifier(getParameterName(i, parameter));
 
         if (parameter.getJetValueParameter().name().length() > 0) {
             name = Name.identifier(parameter.getJetValueParameter().name());
@@ -70,12 +71,11 @@ public final class ValueParameterResolver {
 
         JetType outType;
         if (typeFromAnnotation.length() > 0) {
-            outType = javaDescriptorResolver.getSemanticServices().getTypeTransformer()
-                    .transformToType(typeFromAnnotation, typeVariableResolver);
+            outType = getTypeTransformer().transformToType(typeFromAnnotation, typeVariableResolver);
         }
         else {
-            outType = javaDescriptorResolver.getSemanticServices().getTypeTransformer()
-                    .transformToType(psiType, JavaTypeTransformer.TypeUsage.MEMBER_SIGNATURE_CONTRAVARIANT, typeVariableResolver);
+            outType = getTypeTransformer().transformToType(psiType, JavaTypeTransformer.TypeUsage.MEMBER_SIGNATURE_CONTRAVARIANT,
+                                                           typeVariableResolver);
         }
 
         JetType varargElementType;
@@ -93,7 +93,7 @@ public final class ValueParameterResolver {
         else {
 
             JetType transformedType;
-            if (AnnotationResolver
+            if (JavaAnnotationResolver
                         .findAnnotation(parameter.getPsiParameter(), JvmAbi.JETBRAINS_NOT_NULL_ANNOTATION.getFqName().getFqName()) !=
                 null) {
                 transformedType = TypeUtils.makeNullableAsSpecified(outType, false);
@@ -112,6 +112,22 @@ public final class ValueParameterResolver {
                     varargElementType
             ));
         }
+    }
+
+    @NotNull
+    private JavaTypeTransformer getTypeTransformer() {
+        return typeTransformer;
+    }
+
+    @Inject
+    public void setTypeTransformer(JavaTypeTransformer typeTransformer) {
+        this.typeTransformer = typeTransformer;
+    }
+
+    @NotNull
+    private static String getParameterName(int number, @NotNull PsiParameterWrapper parameter) {
+        String psiParameterName = parameter.getPsiParameter().getName();
+        return psiParameterName != null ? psiParameterName : "p" + number;
     }
 
     public JavaDescriptorResolver.ValueParameterDescriptors resolveParameterDescriptors(
@@ -156,8 +172,8 @@ public final class ValueParameterResolver {
 
         private JvmMethodParameterMeaning(
                 JvmMethodParameterKind kind,
-                JetType receiverType,
-                ValueParameterDescriptor valueParameterDescriptor
+                @Nullable JetType receiverType,
+                @Nullable ValueParameterDescriptor valueParameterDescriptor
         ) {
             this.kind = kind;
             this.receiverType = receiverType;

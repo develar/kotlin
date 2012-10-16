@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.lang.resolve.java.resolver;
 
+import com.google.common.collect.Lists;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiModifier;
 import org.jetbrains.annotations.NotNull;
@@ -24,67 +25,78 @@ import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.java.DescriptorResolverUtils;
 import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
-import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public final class InnerClassResolver {
-    private final JavaDescriptorResolver javaDescriptorResolver;
+public final class JavaInnerClassResolver {
 
-    public InnerClassResolver(JavaDescriptorResolver javaDescriptorResolver) {
-        this.javaDescriptorResolver = javaDescriptorResolver;
+    private JavaClassResolver classResolver;
+
+    public JavaInnerClassResolver() {
     }
 
-    public List<ClassDescriptor> resolveInnerClasses(DeclarationDescriptor owner, PsiClass psiClass, boolean staticMembers) {
+    @Inject
+    public void setClassResolver(JavaClassResolver classResolver) {
+        this.classResolver = classResolver;
+    }
+
+    @NotNull
+    public List<ClassDescriptor> resolveInnerClasses(@NotNull DeclarationDescriptor owner, @NotNull PsiClass psiClass, boolean staticMembers) {
         if (staticMembers) {
             return resolveInnerClassesOfClassObject(owner, psiClass);
         }
 
+        return resolveInnerClasses(owner, psiClass);
+    }
+
+    @NotNull
+    private List<ClassDescriptor> resolveInnerClasses(@NotNull DeclarationDescriptor owner, @NotNull PsiClass psiClass) {
         PsiClass[] innerPsiClasses = psiClass.getInnerClasses();
-        List<ClassDescriptor> r = new ArrayList<ClassDescriptor>(innerPsiClasses.length);
+        List<ClassDescriptor> result = new ArrayList<ClassDescriptor>(innerPsiClasses.length);
         for (PsiClass innerPsiClass : innerPsiClasses) {
-            if (innerPsiClass.hasModifierProperty(PsiModifier.PRIVATE)) {
-                // TODO: hack against inner classes
-                continue;
-            }
-            if (innerPsiClass.getName().equals(JvmAbi.CLASS_OBJECT_CLASS_NAME)) {
-                continue;
-            }
-            if (DescriptorResolverUtils.isInnerEnum(innerPsiClass, owner)) {
-                // Inner enums will be put later into our class object
+            if (shouldBeIgnored(owner, innerPsiClass)) {
                 continue;
             }
             ClassDescriptor classDescriptor = resolveInnerClass(innerPsiClass);
-            r.add(classDescriptor);
+            result.add(classDescriptor);
         }
-        return r;
+        return result;
     }
 
-    private List<ClassDescriptor> resolveInnerClassesOfClassObject(DeclarationDescriptor owner, PsiClass psiClass) {
-        if (!DescriptorUtils.isClassObject(owner)) {
-            return new ArrayList<ClassDescriptor>(0);
+    private static boolean shouldBeIgnored(DeclarationDescriptor owner, PsiClass innerPsiClass) {
+        // TODO: hack against inner classes
+        return innerPsiClass.hasModifierProperty(PsiModifier.PRIVATE)
+                || innerPsiClass.getName().equals(JvmAbi.CLASS_OBJECT_CLASS_NAME)
+                || DescriptorResolverUtils.isInnerEnum(innerPsiClass, owner);
+    }
+
+    private List<ClassDescriptor> resolveInnerClassesOfClassObject(@NotNull DeclarationDescriptor classObject, @NotNull PsiClass psiClass) {
+        if (!DescriptorUtils.isClassObject(classObject)) {
+            return Collections.emptyList();
         }
 
-        List<ClassDescriptor> r = new ArrayList<ClassDescriptor>(0);
+        List<ClassDescriptor> result = Lists.newArrayList();
         // If we're a class object, inner enums of our parent need to be put into us
-        DeclarationDescriptor containingDeclaration = owner.getContainingDeclaration();
+        DeclarationDescriptor containingDeclaration = classObject.getContainingDeclaration();
         for (PsiClass innerPsiClass : psiClass.getInnerClasses()) {
             if (DescriptorResolverUtils.isInnerEnum(innerPsiClass, containingDeclaration)) {
                 ClassDescriptor classDescriptor = resolveInnerClass(innerPsiClass);
-                r.add(classDescriptor);
+                result.add(classDescriptor);
             }
         }
-        return r;
+        return result;
     }
 
+    @NotNull
     private ClassDescriptor resolveInnerClass(@NotNull PsiClass innerPsiClass) {
         String name = innerPsiClass.getQualifiedName();
         assert name != null : "Inner class has no qualified name";
-        ClassDescriptor classDescriptor =
-                javaDescriptorResolver.resolveClass(new FqName(name), DescriptorSearchRule.IGNORE_IF_FOUND_IN_KOTLIN);
+        ClassDescriptor classDescriptor = classResolver.resolveClass(new FqName(name), DescriptorSearchRule.IGNORE_IF_FOUND_IN_KOTLIN);
         assert classDescriptor != null : "Couldn't resolve class " + name;
         return classDescriptor;
     }
