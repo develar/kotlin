@@ -27,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.JetTestCaseBuilder;
 import org.jetbrains.jet.di.InjectorForJavaSemanticServices;
 import org.jetbrains.jet.di.InjectorForTests;
-import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
@@ -42,7 +41,7 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeProjection;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.parsing.JetParsingTest;
 
 import java.io.File;
@@ -68,14 +67,14 @@ public class JetResolveTest extends ExtensibleResolveTestCase {
     @Override
     protected ExpectedResolveData getExpectedResolveData() {
         Project project = getProject();
-        JetStandardLibrary lib = JetStandardLibrary.getInstance();
+        KotlinBuiltIns builtIns = KotlinBuiltIns.getInstance();
         Map<String, DeclarationDescriptor> nameToDescriptor = new HashMap<String, DeclarationDescriptor>();
-        nameToDescriptor.put("kotlin::Int.plus(Int)", standardFunction(lib.getInt(), "plus", lib.getIntType()));
-        FunctionDescriptor descriptorForGet = standardFunction(lib.getArray(), Collections.singletonList(new TypeProjection(lib.getIntType())), "get", lib.getIntType());
+        nameToDescriptor.put("kotlin::Int.plus(Int)", standardFunction(builtIns.getInt(), "plus", builtIns.getIntType()));
+        FunctionDescriptor descriptorForGet = standardFunction(builtIns.getArray(), Collections.singletonList(new TypeProjection(builtIns.getIntType())), "get", builtIns.getIntType());
         nameToDescriptor.put("kotlin::Array.get(Int)", descriptorForGet.getOriginal());
-        nameToDescriptor.put("kotlin::Int.compareTo(Double)", standardFunction(lib.getInt(), "compareTo", lib.getDoubleType()));
+        nameToDescriptor.put("kotlin::Int.compareTo(Double)", standardFunction(builtIns.getInt(), "compareTo", builtIns.getDoubleType()));
         @NotNull
-        FunctionDescriptor descriptorForSet = standardFunction(lib.getArray(), Collections.singletonList(new TypeProjection(lib.getIntType())), "set", lib.getIntType(), lib.getIntType());
+        FunctionDescriptor descriptorForSet = standardFunction(builtIns.getArray(), Collections.singletonList(new TypeProjection(builtIns.getIntType())), "set", builtIns.getIntType(), builtIns.getIntType());
         nameToDescriptor.put("kotlin::Array.set(Int, Int)", descriptorForSet.getOriginal());
 
         Map<String, PsiElement> nameToDeclaration = new HashMap<String, PsiElement>();
@@ -125,7 +124,7 @@ public class JetResolveTest extends ExtensibleResolveTestCase {
     @NotNull
     private PsiClass findClass(String qualifiedName) {
         Project project = getProject();
-        InjectorForJavaSemanticServices injector = new InjectorForJavaSemanticServices(BuiltinsScopeExtensionMode.ALL, project);
+        InjectorForJavaSemanticServices injector = new InjectorForJavaSemanticServices(project);
         return injector.getPsiClassFinder().findPsiClass(new FqName(qualifiedName), PsiClassFinder.RuntimeClassesHandleMode.THROW);
     }
 

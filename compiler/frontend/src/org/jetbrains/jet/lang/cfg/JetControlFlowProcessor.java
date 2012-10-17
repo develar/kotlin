@@ -34,8 +34,7 @@ import org.jetbrains.jet.lang.resolve.constants.BooleanValue;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstantResolver;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lexer.JetTokens;
 
 import java.util.Iterator;
@@ -170,7 +169,7 @@ public class JetControlFlowProcessor {
             builder.read(expression);
             if (trace.get(BindingContext.PROCESSED, expression)) {
                 JetType type = trace.getBindingContext().get(BindingContext.EXPRESSION_TYPE, expression);
-                if (type != null && JetStandardClasses.isNothing(type)) {
+                if (type != null && KotlinBuiltIns.getInstance().isNothing(type)) {
                     builder.jumpToError(expression);
                 }
             }
@@ -432,7 +431,7 @@ public class JetControlFlowProcessor {
             }
             boolean conditionIsTrueConstant = false;
             if (condition instanceof JetConstantExpression && condition.getNode().getElementType() == JetNodeTypes.BOOLEAN_CONSTANT) {
-                if (BooleanValue.TRUE == new CompileTimeConstantResolver().getBooleanValue(condition.getText(), JetStandardLibrary.getInstance().getBooleanType())) {
+                if (BooleanValue.TRUE == new CompileTimeConstantResolver().getBooleanValue(condition.getText(), KotlinBuiltIns.getInstance().getBooleanType())) {
                     conditionIsTrueConstant = true;
                 }
             }
@@ -627,7 +626,7 @@ public class JetControlFlowProcessor {
             builder.read(expression);
             if (trace.get(BindingContext.PROCESSED, expression)) {
                 JetType type = trace.getBindingContext().get(BindingContext.EXPRESSION_TYPE, expression);
-                if (type != null && JetStandardClasses.isNothing(type)) {
+                if (type != null && KotlinBuiltIns.getInstance().isNothing(type)) {
                     builder.jumpToError(expression);
                 }
             }
@@ -669,7 +668,7 @@ public class JetControlFlowProcessor {
             builder.read(expression);
             if (trace.get(BindingContext.PROCESSED, expression)) {
                 JetType type = trace.getBindingContext().get(BindingContext.EXPRESSION_TYPE, expression);
-                if (type != null && JetStandardClasses.isNothing(type)) {
+                if (type != null && KotlinBuiltIns.getInstance().isNothing(type)) {
                     builder.jumpToError(expression);
                 }
             }

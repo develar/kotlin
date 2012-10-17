@@ -52,8 +52,7 @@ import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.lang.resolve.java.kt.DescriptorKindUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lexer.JetTokens;
 
 import java.util.*;
@@ -148,6 +147,9 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         }
         if (isAnnotation) {
             access |= ACC_ANNOTATION;
+        }
+        if (CodegenUtil.isDeprecated(descriptor)) {
+            access |= ACC_DEPRECATED;
         }
         if (isEnum) {
             for (JetDeclaration declaration : myClass.getDeclarations()) {
@@ -358,7 +360,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
         if (superClassType == null) {
             if (descriptor.getKind() == ClassKind.ENUM_CLASS) {
-                superClassType = JetStandardLibrary.getInstance().getEnumType(descriptor.getDefaultType());
+                superClassType = KotlinBuiltIns.getInstance().getEnumType(descriptor.getDefaultType());
                 superClassAsmType = typeMapper.mapType(superClassType);
             }
             if (descriptor.getKind() == ClassKind.ENUM_ENTRY) {
@@ -410,7 +412,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
     }
 
     private void generateFunctionsForDataClasses() {
-        if (!JetStandardLibrary.isData(descriptor)) return;
+        if (!KotlinBuiltIns.getInstance().isData(descriptor)) return;
 
         generateComponentFunctionsForDataClasses();
 
@@ -423,22 +425,22 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
     }
 
     private void generateDataClassToStringIfNeeded(List<PropertyDescriptor> properties) {
-        ClassDescriptor stringClass = JetStandardLibrary.getInstance().getString();
+        ClassDescriptor stringClass = KotlinBuiltIns.getInstance().getString();
         if (getDeclaredFunctionByRawSignature(descriptor, Name.identifier("toString"), stringClass) == null) {
             generateDataClassToStringMethod(properties);
         }
     }
 
     private void generateDataClassHashCodeIfNeeded(List<PropertyDescriptor> properties) {
-        ClassDescriptor intClass = JetStandardLibrary.getInstance().getInt();
+        ClassDescriptor intClass = KotlinBuiltIns.getInstance().getInt();
         if (getDeclaredFunctionByRawSignature(descriptor, Name.identifier("hashCode"), intClass) == null) {
             generateDataClassHashCodeMethod(properties);
         }
     }
 
     private void generateDataClassEqualsIfNeeded(List<PropertyDescriptor> properties) {
-        ClassDescriptor booleanClass = JetStandardLibrary.getInstance().getBoolean();
-        ClassDescriptor anyClass = JetStandardClasses.getAny();
+        ClassDescriptor booleanClass = KotlinBuiltIns.getInstance().getBoolean();
+        ClassDescriptor anyClass = KotlinBuiltIns.getInstance().getAny();
         FunctionDescriptor equalsFunction = getDeclaredFunctionByRawSignature(descriptor, Name.identifier("equals"), booleanClass, anyClass);
         if (equalsFunction == null) {
             generateDataClassEqualsMethod(properties);
@@ -602,7 +604,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
     }
 
     private void generateComponentFunctionsForDataClasses() {
-        if (!myClass.hasPrimaryConstructor() || !JetStandardLibrary.isData(descriptor)) return;
+        if (!myClass.hasPrimaryConstructor() || !KotlinBuiltIns.getInstance().isData(descriptor)) return;
 
         ConstructorDescriptor constructor = descriptor.getConstructors().iterator().next();
 
@@ -643,7 +645,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         if (myEnumConstants.size() > 0) {
             {
                 Type type =
-                        typeMapper.mapType(JetStandardLibrary.getInstance().getArrayType(descriptor.getDefaultType()),
+                        typeMapper.mapType(KotlinBuiltIns.getInstance().getArrayType(descriptor.getDefaultType()),
                                            JetTypeMapperMode.IMPL);
 
                 MethodVisitor mv =
@@ -1395,7 +1397,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         Type myAsmType = typeMapper.mapType(myType, JetTypeMapperMode.IMPL);
 
         assert myEnumConstants.size() > 0;
-        JetType arrayType = JetStandardLibrary.getInstance().getArrayType(myType);
+        JetType arrayType = KotlinBuiltIns.getInstance().getArrayType(myType);
         Type arrayAsmType = typeMapper.mapType(arrayType, JetTypeMapperMode.IMPL);
         v.newField(myClass, ACC_PRIVATE | ACC_STATIC | ACC_FINAL | ACC_SYNTHETIC, "$VALUES", arrayAsmType.getDescriptor(), null, null);
 

@@ -27,7 +27,6 @@ import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.di.InjectorForJavaSemanticServices;
 import org.jetbrains.jet.di.InjectorForTests;
-import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.psi.*;
@@ -45,8 +44,7 @@ import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeUtils;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lexer.JetTokens;
 
 import java.util.*;
@@ -56,7 +54,7 @@ import java.util.*;
  */
 public class JetTypeCheckerTest extends JetLiteFixture {
 
-    private JetStandardLibrary library;
+    private KotlinBuiltIns builtIns;
     private ClassDefinitions classDefinitions;
     private DescriptorResolver descriptorResolver;
     private JetScope scopeWithImports;
@@ -77,7 +75,7 @@ public class JetTypeCheckerTest extends JetLiteFixture {
     public void setUp() throws Exception {
         super.setUp();
 
-        library          = JetStandardLibrary.getInstance();
+        builtIns = KotlinBuiltIns.getInstance();
         classDefinitions = new ClassDefinitions();
 
         InjectorForTests injector = new InjectorForTests(getProject());
@@ -94,38 +92,38 @@ public class JetTypeCheckerTest extends JetLiteFixture {
     }
 
     public void testConstants() throws Exception {
-        assertType("1", library.getIntType());
-        assertType("0x1", library.getIntType());
-        assertType("0X1", library.getIntType());
-        assertType("0b1", library.getIntType());
-        assertType("0B1", library.getIntType());
+        assertType("1", builtIns.getIntType());
+        assertType("0x1", builtIns.getIntType());
+        assertType("0X1", builtIns.getIntType());
+        assertType("0b1", builtIns.getIntType());
+        assertType("0B1", builtIns.getIntType());
 
-        assertType("1.toLong()", library.getLongType());
+        assertType("1.toLong()", builtIns.getLongType());
 
-        assertType("1.0", library.getDoubleType());
-        assertType("1.0.toDouble()", library.getDoubleType());
-        assertType("0x1.fffffffffffffp1023", library.getDoubleType());
+        assertType("1.0", builtIns.getDoubleType());
+        assertType("1.0.toDouble()", builtIns.getDoubleType());
+        assertType("0x1.fffffffffffffp1023", builtIns.getDoubleType());
 
-        assertType("1.0.toFloat()", library.getFloatType());
-        assertType("0x1.fffffffffffffp1023.toFloat()", library.getFloatType());
+        assertType("1.0.toFloat()", builtIns.getFloatType());
+        assertType("0x1.fffffffffffffp1023.toFloat()", builtIns.getFloatType());
 
-        assertType("true", library.getBooleanType());
-        assertType("false", library.getBooleanType());
+        assertType("true", builtIns.getBooleanType());
+        assertType("false", builtIns.getBooleanType());
 
-        assertType("'d'", library.getCharType());
+        assertType("'d'", builtIns.getCharType());
 
-        assertType("\"d\"", library.getStringType());
-        assertType("\"\"\"d\"\"\"", library.getStringType());
+        assertType("\"d\"", builtIns.getStringType());
+        assertType("\"\"\"d\"\"\"", builtIns.getStringType());
 
-        assertType("#()", JetStandardClasses.getUnitType());
+        assertType("#()", KotlinBuiltIns.getInstance().getUnitType());
 
-        assertType("null", JetStandardClasses.getNullableNothingType());
+        assertType("null", KotlinBuiltIns.getInstance().getNullableNothingType());
     }
 
     public void testTupleConstants() throws Exception {
-        assertType("#()", JetStandardClasses.getUnitType());
+        assertType("#()", KotlinBuiltIns.getInstance().getUnitType());
 
-        assertType("#(1, 'a')", JetStandardClasses.getTupleType(library.getIntType(), library.getCharType()));
+        assertType("#(1, 'a')", KotlinBuiltIns.getInstance().getTupleType(builtIns.getIntType(), builtIns.getCharType()));
     }
 
     public void testTypeInfo() throws Exception {
@@ -135,9 +133,9 @@ public class JetTypeCheckerTest extends JetLiteFixture {
     }
 
     public void testJumps() throws Exception {
-        assertType("throw java.lang.Exception()", JetStandardClasses.getNothingType());
-        assertType("continue", JetStandardClasses.getNothingType());
-        assertType("break", JetStandardClasses.getNothingType());
+        assertType("throw java.lang.Exception()", KotlinBuiltIns.getInstance().getNothingType());
+        assertType("continue", KotlinBuiltIns.getInstance().getNothingType());
+        assertType("break", KotlinBuiltIns.getInstance().getNothingType());
     }
 
     public void testIf() throws Exception {
@@ -598,8 +596,8 @@ public class JetTypeCheckerTest extends JetLiteFixture {
     private WritableScopeImpl addImports(JetScope scope) {
         WritableScopeImpl writableScope = new WritableScopeImpl(
                 scope, scope.getContainingDeclaration(), RedeclarationHandler.DO_NOTHING, "JetTypeCheckerTest.addImports");
-        writableScope.importScope(library.getLibraryScope());
-        InjectorForJavaSemanticServices injector = new InjectorForJavaSemanticServices(BuiltinsScopeExtensionMode.ALL, getProject());
+        writableScope.importScope(builtIns.getBuiltInsScope());
+        InjectorForJavaSemanticServices injector = new InjectorForJavaSemanticServices(getProject());
         JavaDescriptorResolver javaDescriptorResolver = injector.getJavaDescriptorResolver();
         writableScope.importScope(javaDescriptorResolver.resolveNamespace(FqName.ROOT,
                 DescriptorSearchRule.INCLUDE_KOTLIN).getMemberScope());
@@ -658,7 +656,7 @@ public class JetTypeCheckerTest extends JetLiteFixture {
             "fun f<T>(a : Float) : T {a}",
         };
 
-        public JetScope BASIC_SCOPE = new JetScopeAdapter(library.getLibraryScope()) {
+        public JetScope BASIC_SCOPE = new JetScopeAdapter(builtIns.getBuiltInsScope()) {
             @Override
             public ClassifierDescriptor getClassifier(@NotNull Name name) {
                 if (CLASSES.isEmpty()) {
@@ -713,7 +711,7 @@ public class JetTypeCheckerTest extends JetLiteFixture {
             List<JetDelegationSpecifier> delegationSpecifiers = classElement.getDelegationSpecifiers();
             // TODO : assuming that the hierarchy is acyclic
             Collection<JetType> supertypes = delegationSpecifiers.isEmpty()
-                    ? Collections.singleton(JetStandardClasses.getAnyType())
+                    ? Collections.singleton(KotlinBuiltIns.getInstance().getAnyType())
                     : descriptorResolver.resolveDelegationSpecifiers(parameterScope, delegationSpecifiers, typeResolver, JetTestUtils.DUMMY_TRACE, true);
     //        for (JetType supertype: supertypes) {
     //            if (supertype.getConstructor().isSealed()) {

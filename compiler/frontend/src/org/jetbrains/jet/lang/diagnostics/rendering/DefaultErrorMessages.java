@@ -60,8 +60,8 @@ public class DefaultErrorMessages {
 
         MAP.put(UNRESOLVED_REFERENCE, "Unresolved reference: {0}", TO_STRING);
 
-        MAP.put(INVISIBLE_REFERENCE, "Cannot access ''{0}'' in ''{1}''", NAME, NAME);
-        MAP.put(INVISIBLE_MEMBER, "Cannot access ''{0}'' in ''{1}''", NAME, NAME);
+        MAP.put(INVISIBLE_REFERENCE, "Cannot access ''{0}'': it is ''{1}'' in ''{2}''", NAME, TO_STRING, NAME);
+        MAP.put(INVISIBLE_MEMBER, "Cannot access ''{0}'': it is ''{1}'' in ''{2}''", NAME, TO_STRING, NAME);
 
         MAP.put(REDECLARATION, "Redeclaration: {0}", NAME);
         MAP.put(NAME_SHADOWING, "Name shadowed: {0}", NAME);
@@ -184,6 +184,7 @@ public class DefaultErrorMessages {
         MAP.put(UNUSED_FUNCTION_LITERAL, "The function literal is unused. If you mean block, you can use 'run { ... }'");
 
         MAP.put(VAL_REASSIGNMENT, "Val cannot be reassigned", NAME);
+        MAP.put(INVISIBLE_SETTER, "Cannot assign to ''{0}'': the setter is ''{1}'' in ''{2}''", NAME, TO_STRING, NAME);
         MAP.put(INITIALIZATION_BEFORE_DECLARATION, "Variable cannot be initialized before declaration", NAME);
         MAP.put(VARIABLE_EXPECTED, "Variable expected");
 

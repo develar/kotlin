@@ -45,8 +45,7 @@ import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ThisReceiverDescriptor;
 import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lexer.JetTokens;
 
 import java.util.*;
@@ -73,7 +72,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         // TODO : type substitutions???
         JetTypeInfo typeInfo = getSelectorReturnTypeInfo(NO_RECEIVER, null, expression, context);
         JetType type = DataFlowUtils.checkType(typeInfo.getType(), expression, context);
-        ExpressionTypingUtils.checkWrappingInRef(expression, context);
+        ExpressionTypingUtils.checkWrappingInRef(expression, context.trace, context.scope);
         return JetTypeInfo.create(type, typeInfo.getDataFlowInfo()); // TODO : Extensions to this
     }
 
@@ -155,7 +154,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         ASTNode node = expression.getNode();
         IElementType elementType = node.getElementType();
         String text = node.getText();
-        JetStandardLibrary standardLibrary = JetStandardLibrary.getInstance();
+        KotlinBuiltIns builtIns = KotlinBuiltIns.getInstance();
         CompileTimeConstantResolver compileTimeConstantResolver = context.getCompileTimeConstantResolver();
 
         CompileTimeConstant<?> value;
@@ -184,7 +183,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         }
         else {
             context.trace.record(BindingContext.COMPILE_TIME_VALUE, expression, value);
-            return DataFlowUtils.checkType(value.getType(standardLibrary), expression, context, context.dataFlowInfo);
+            return DataFlowUtils.checkType(value.getType(builtIns), expression, context, context.dataFlowInfo);
         }
     }
 
@@ -369,14 +368,14 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         for (JetExpression entry : entries) {
             types.add(context.expressionTypingServices.safeGetType(context.scope, entry, NO_EXPECTED_TYPE, context.dataFlowInfo, context.trace)); // TODO
         }
-        if (context.expectedType != NO_EXPECTED_TYPE && JetStandardClasses.isTupleType(context.expectedType)) {
+        if (context.expectedType != NO_EXPECTED_TYPE && KotlinBuiltIns.getInstance().isTupleType(context.expectedType)) {
             List<JetType> enrichedTypes = checkArgumentTypes(types, entries, context.expectedType.getArguments(), context);
             if (enrichedTypes != types) {
-                return JetTypeInfo.create(JetStandardClasses.getTupleType(enrichedTypes), context.dataFlowInfo);
+                return JetTypeInfo.create(KotlinBuiltIns.getInstance().getTupleType(enrichedTypes), context.dataFlowInfo);
             }
         }
         // TODO : labels
-        return DataFlowUtils.checkType(JetStandardClasses.getTupleType(types), expression, context, context.dataFlowInfo);
+        return DataFlowUtils.checkType(KotlinBuiltIns.getInstance().getTupleType(types), expression, context, context.dataFlowInfo);
     }
 
     @NotNull
@@ -481,7 +480,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 else {
                     // supertypes may be empty when all the supertypes are error types (are not resolved, for example)
                     JetType type = supertypes.isEmpty()
-                                   ? JetStandardClasses.getAnyType()
+                                   ? KotlinBuiltIns.getInstance().getAnyType()
                                    : supertypes.iterator().next();
                     result = substitutor.substitute(type, Variance.INVARIANT);
                 }
@@ -565,7 +564,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
 
         //TODO move further
         if (!(receiverType instanceof NamespaceType) && expression.getOperationSign() == JetTokens.SAFE_ACCESS) {
-            if (selectorReturnType != null && !selectorReturnType.isNullable() && !JetStandardClasses.isUnit(selectorReturnType)) {
+            if (selectorReturnType != null && !selectorReturnType.isNullable() && !KotlinBuiltIns.getInstance().isUnit(selectorReturnType)) {
                 if (receiverType.isNullable()) {
                     selectorReturnType = TypeUtils.makeNullable(selectorReturnType);
                 }
@@ -585,7 +584,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         CompileTimeConstant<?> wholeExpressionValue = context.trace.getBindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
         DeclarationDescriptor declarationDescriptor = context.trace.getBindingContext().get(BindingContext.REFERENCE_TARGET, selectorExpression);
         if (wholeExpressionValue == null && receiverValue != null && !(receiverValue instanceof ErrorValue) && receiverValue.getValue() instanceof Number
-            && JetStandardLibrary.getInstance().getNumber() == declarationDescriptor) {
+            && KotlinBuiltIns.getInstance().getNumber() == declarationDescriptor) {
             Number value = (Number) receiverValue.getValue();
             Name referencedName = selectorExpression.getReferencedNameAsName();
             if (OperatorConventions.NUMBER_CONVERSIONS.contains(referencedName)) {
@@ -847,8 +846,8 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         JetType returnType = resolutionResults.getResultingDescriptor().getReturnType();
         JetType result;
         if (operationType == JetTokens.PLUSPLUS || operationType == JetTokens.MINUSMINUS) {
-            if (JetTypeChecker.INSTANCE.isSubtypeOf(returnType, JetStandardClasses.getUnitType())) {
-                result = ErrorUtils.createErrorType(JetStandardClasses.UNIT_ALIAS.getName());
+            if (JetTypeChecker.INSTANCE.isSubtypeOf(returnType, KotlinBuiltIns.getInstance().getUnitType())) {
+                result = ErrorUtils.createErrorType(KotlinBuiltIns.getInstance().UNIT_ALIAS.getName());
                 context.trace.report(INC_DEC_SHOULD_NOT_RETURN_UNIT.on(operationSign));
             }
             else {
@@ -976,10 +975,10 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             JetType compareToReturnType = getTypeForBinaryCall(context.scope, Name.identifier("compareTo"), context, expression);
             if (compareToReturnType != null && !ErrorUtils.isErrorType(compareToReturnType)) {
                 TypeConstructor constructor = compareToReturnType.getConstructor();
-                JetStandardLibrary standardLibrary = JetStandardLibrary.getInstance();
-                TypeConstructor intTypeConstructor = standardLibrary.getInt().getTypeConstructor();
+                KotlinBuiltIns builtIns = KotlinBuiltIns.getInstance();
+                TypeConstructor intTypeConstructor = builtIns.getInt().getTypeConstructor();
                 if (constructor.equals(intTypeConstructor)) {
-                    result = standardLibrary.getBooleanType();
+                    result = builtIns.getBooleanType();
                 }
                 else {
                     context.trace.report(COMPARE_TO_TYPE_MISMATCH.on(operationSign, compareToReturnType));
@@ -987,14 +986,14 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             }
         }
         else {
-            JetType booleanType = JetStandardLibrary.getInstance().getBooleanType();
+            JetType booleanType = KotlinBuiltIns.getInstance().getBooleanType();
             if (OperatorConventions.EQUALS_OPERATIONS.contains(operationType)) {
                 Name name = Name.identifier("equals");
                 if (right != null) {
                     ExpressionReceiver receiver = ExpressionTypingUtils.safeGetExpressionReceiver(facade, left, context.replaceScope(context.scope));
                     OverloadResolutionResults<FunctionDescriptor> resolutionResults = context.resolveExactSignature(
                             receiver, name,
-                            Collections.singletonList(JetStandardClasses.getNullableAnyType()));
+                            Collections.singletonList(KotlinBuiltIns.getInstance().getNullableAnyType()));
                     if (resolutionResults.isSuccess()) {
                         FunctionDescriptor equals = resolutionResults.getResultingCall().getResultingDescriptor();
                         context.trace.record(REFERENCE_TARGET, operationSign, equals);
@@ -1222,7 +1221,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         if (value[0] != CompileTimeConstantResolver.OUT_OF_RANGE) {
             context.trace.record(BindingContext.COMPILE_TIME_VALUE, expression, new StringValue(builder.toString()));
         }
-        return DataFlowUtils.checkType(JetStandardLibrary.getInstance().getStringType(), expression, contextWithExpectedType, context.dataFlowInfo);
+        return DataFlowUtils.checkType(KotlinBuiltIns.getInstance().getStringType(), expression, contextWithExpectedType, context.dataFlowInfo);
     }
 
     @Override

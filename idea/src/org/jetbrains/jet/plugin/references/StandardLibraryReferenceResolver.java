@@ -16,7 +16,8 @@
 
 package org.jetbrains.jet.plugin.references;
 
-import com.google.common.collect.Lists;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupManager;
@@ -41,7 +42,8 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.RedeclarationHandler;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScopeImpl;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
+import org.jetbrains.jet.plugin.JetStandardLibraryInitializer;
 import org.jetbrains.jet.resolve.DescriptorRenderer;
 
 import java.net.URL;
@@ -54,9 +56,13 @@ public class StandardLibraryReferenceResolver extends AbstractProjectComponent {
     private BindingContext bindingContext = null;
 
     private final Object lock = new Object();
-    private static final FqName TUPLE0_FQ_NAME = DescriptorUtils.getFQName(JetStandardClasses.getTuple(0)).toSafe();
+    private final FqName TUPLE0_FQ_NAME = DescriptorUtils.getFQName(KotlinBuiltIns.getInstance().getTuple(0)).toSafe();
 
-    public StandardLibraryReferenceResolver(Project project) {
+    public StandardLibraryReferenceResolver(
+            Project project,
+            // This parameter is needed to initialize built-ins before this component
+            JetStandardLibraryInitializer makeSureStandardLibraryIsInitialized
+    ) {
         super(project);
     }
 
@@ -78,31 +84,40 @@ public class StandardLibraryReferenceResolver extends AbstractProjectComponent {
 
             BindingTraceContext context = new BindingTraceContext();
             FakeJetNamespaceDescriptor jetNamespace = new FakeJetNamespaceDescriptor();
-            context.record(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR, JetStandardClasses.STANDARD_CLASSES_FQNAME, jetNamespace);
+            context.record(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR, KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), jetNamespace);
 
             WritableScopeImpl scope = new WritableScopeImpl(JetScope.EMPTY, jetNamespace, RedeclarationHandler.THROW_EXCEPTION,
                                                             "Builtin classes scope");
             scope.changeLockLevel(WritableScope.LockLevel.BOTH);
             jetNamespace.setMemberScope(scope);
 
-            TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace, getJetFiles("jet.src"));
+            Predicate<JetFile> jetFilesIndependentOfUnit = new Predicate<JetFile>() {
+                @Override
+                public boolean apply(@Nullable JetFile file) {
+                    return "Unit.jet".equals(file.getName());
+                }
+            };
+            TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace,
+                                                            getJetFiles("jet", jetFilesIndependentOfUnit));
 
             ClassDescriptor tuple0 = context.get(BindingContext.FQNAME_TO_CLASS_DESCRIPTOR, TUPLE0_FQ_NAME);
             assert tuple0 != null;
             scope = new WritableScopeImpl(scope, jetNamespace, RedeclarationHandler.THROW_EXCEPTION,
                                           "Builtin classes scope: needed to analyze builtins which depend on Unit type alias");
             scope.changeLockLevel(WritableScope.LockLevel.BOTH);
-            scope.addClassifierAlias(JetStandardClasses.UNIT_ALIAS, tuple0);
+            scope.addClassifierAlias(KotlinBuiltIns.getInstance().UNIT_ALIAS, tuple0);
             jetNamespace.setMemberScope(scope);
 
-            TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace, getJetFiles("jet"));
+            TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace,
+                                                            getJetFiles("jet", Predicates.not(jetFilesIndependentOfUnit)));
+
             AnalyzingUtils.throwExceptionOnErrors(context.getBindingContext());
 
             bindingContext = context.getBindingContext();
         }
     }
 
-    private List<JetFile> getJetFiles(String dir) {
+    private List<JetFile> getJetFiles(String dir, final Predicate<JetFile> filter) {
         URL url = StandardLibraryReferenceResolver.class.getResource("/" + dir + "/");
         VirtualFile vf = VfsUtil.findFileByURL(url);
         assert vf != null;
@@ -112,7 +127,11 @@ public class StandardLibraryReferenceResolver extends AbstractProjectComponent {
         return ContainerUtil.mapNotNull(psiDirectory.getFiles(), new Function<PsiFile, JetFile>() {
             @Override
             public JetFile fun(PsiFile file) {
-                return file instanceof JetFile ? (JetFile) file : null;
+                if (file instanceof JetFile) {
+                    JetFile jetFile = (JetFile) file;
+                    return filter.apply(jetFile) ? jetFile : null;
+                }
+                return null;
             }
         });
     }
@@ -145,7 +164,7 @@ public class StandardLibraryReferenceResolver extends AbstractProjectComponent {
         }
         for (DeclarationDescriptor member : descriptors) {
             if (renderedOriginal.equals(DescriptorRenderer.TEXT.render(member).replace(TUPLE0_FQ_NAME.getFqName(),
-                                                                                       JetStandardClasses.UNIT_ALIAS.getName()))) {
+                                                                                       KotlinBuiltIns.getInstance().UNIT_ALIAS.getName()))) {
                 return member;
             }
         }
@@ -211,7 +230,7 @@ public class StandardLibraryReferenceResolver extends AbstractProjectComponent {
             super(new NamespaceDescriptorImpl(new ModuleDescriptor(Name.special("<fake_module>")),
                                               Collections.<AnnotationDescriptor>emptyList(), Name.special("<root>")),
                   Collections.<AnnotationDescriptor>emptyList(),
-                  JetStandardClasses.STANDARD_CLASSES_NAMESPACE.getName());
+                  KotlinBuiltIns.getInstance().getBuiltInsPackage().getName());
         }
 
         void setMemberScope(WritableScope memberScope) {

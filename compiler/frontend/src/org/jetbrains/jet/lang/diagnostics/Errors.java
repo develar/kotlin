@@ -39,6 +39,7 @@ import java.util.List;
 import static org.jetbrains.jet.lang.diagnostics.PositioningStrategies.*;
 import static org.jetbrains.jet.lang.diagnostics.Severity.ERROR;
 import static org.jetbrains.jet.lang.diagnostics.Severity.WARNING;
+import static org.jetbrains.jet.lang.resolve.calls.inference.InferenceErrorData.ExtendedInferenceErrorData;
 
 /**
  * For error messages, see DefaultErrorMessages and IdeErrorMessages.
@@ -58,9 +59,10 @@ public interface Errors {
     UnresolvedReferenceDiagnosticFactory UNRESOLVED_REFERENCE = UnresolvedReferenceDiagnosticFactory.create();
 
     //Elements with "INVISIBLE_REFERENCE" error are marked as unresolved, unlike elements with "INVISIBLE_MEMBER" error
-    DiagnosticFactory2<JetSimpleNameExpression, DeclarationDescriptor, DeclarationDescriptor> INVISIBLE_REFERENCE =
-            DiagnosticFactory2.create(ERROR);
-    DiagnosticFactory2<PsiElement, DeclarationDescriptor, DeclarationDescriptor> INVISIBLE_MEMBER = DiagnosticFactory2.create(ERROR, CALL_ELEMENT);
+    //"INVISIBLE_REFERENCE" is used for invisible classes references and references in import
+    DiagnosticFactory3<JetSimpleNameExpression, DeclarationDescriptor, Visibility, DeclarationDescriptor> INVISIBLE_REFERENCE =
+            DiagnosticFactory3.create(ERROR);
+    DiagnosticFactory3<PsiElement, DeclarationDescriptor, Visibility, DeclarationDescriptor> INVISIBLE_MEMBER = DiagnosticFactory3.create(ERROR, CALL_ELEMENT);
 
     RedeclarationDiagnosticFactory REDECLARATION = new RedeclarationDiagnosticFactory(ERROR);
     RedeclarationDiagnosticFactory NAME_SHADOWING = new RedeclarationDiagnosticFactory(WARNING);
@@ -173,6 +175,7 @@ public interface Errors {
     SimpleDiagnosticFactory<JetFunctionLiteralExpression> UNUSED_FUNCTION_LITERAL = SimpleDiagnosticFactory.create(WARNING);
 
     DiagnosticFactory1<JetExpression, DeclarationDescriptor> VAL_REASSIGNMENT = DiagnosticFactory1.create(ERROR);
+    DiagnosticFactory3<JetExpression, DeclarationDescriptor, Visibility, DeclarationDescriptor> INVISIBLE_SETTER = DiagnosticFactory3.create(ERROR);
     DiagnosticFactory1<JetExpression, DeclarationDescriptor> INITIALIZATION_BEFORE_DECLARATION = DiagnosticFactory1.create(ERROR);
     SimpleDiagnosticFactory<JetExpression> VARIABLE_EXPECTED = SimpleDiagnosticFactory.create(ERROR);
 
@@ -349,15 +352,15 @@ public interface Errors {
 
     AmbiguousDescriptorDiagnosticFactory OVERLOAD_RESOLUTION_AMBIGUITY = new AmbiguousDescriptorDiagnosticFactory();
     AmbiguousDescriptorDiagnosticFactory NONE_APPLICABLE = new AmbiguousDescriptorDiagnosticFactory();
-    DiagnosticFactory1<PsiElement, ValueParameterDescriptor> NO_VALUE_FOR_PARAMETER = DiagnosticFactory1.create(ERROR);
+    DiagnosticFactory1<JetElement, ValueParameterDescriptor> NO_VALUE_FOR_PARAMETER = DiagnosticFactory1.create(ERROR, VALUE_ARGUMENTS);
     DiagnosticFactory1<JetReferenceExpression, JetType> MISSING_RECEIVER = DiagnosticFactory1.create(ERROR);
     SimpleDiagnosticFactory<JetReferenceExpression> NO_RECEIVER_ADMITTED = SimpleDiagnosticFactory.create(ERROR);
 
     SimpleDiagnosticFactory<PsiElement> CREATING_AN_INSTANCE_OF_ABSTRACT_CLASS = SimpleDiagnosticFactory.create(ERROR);
 
-    DiagnosticFactory1<PsiElement, InferenceErrorData> TYPE_INFERENCE_NO_INFORMATION_FOR_PARAMETER = DiagnosticFactory1.create(ERROR);
-    DiagnosticFactory1<PsiElement, InferenceErrorData> TYPE_INFERENCE_CONFLICTING_SUBSTITUTIONS = DiagnosticFactory1.create(ERROR);
-    DiagnosticFactory1<PsiElement, InferenceErrorData> TYPE_INFERENCE_TYPE_CONSTRUCTOR_MISMATCH = DiagnosticFactory1.create(ERROR);
+    DiagnosticFactory1<PsiElement, ExtendedInferenceErrorData> TYPE_INFERENCE_NO_INFORMATION_FOR_PARAMETER = DiagnosticFactory1.create(ERROR);
+    DiagnosticFactory1<PsiElement, ExtendedInferenceErrorData> TYPE_INFERENCE_CONFLICTING_SUBSTITUTIONS = DiagnosticFactory1.create(ERROR);
+    DiagnosticFactory1<PsiElement, ExtendedInferenceErrorData> TYPE_INFERENCE_TYPE_CONSTRUCTOR_MISMATCH = DiagnosticFactory1.create(ERROR);
     DiagnosticFactory1<PsiElement, InferenceErrorData> TYPE_INFERENCE_UPPER_BOUND_VIOLATED = DiagnosticFactory1.create(ERROR);
     DiagnosticFactory2<PsiElement, JetType, JetType> TYPE_INFERENCE_EXPECTED_TYPE_MISMATCH = DiagnosticFactory2.create(ERROR);
     Collection<AbstractDiagnosticFactory> TYPE_INFERENCE_ERRORS = Lists.<AbstractDiagnosticFactory>newArrayList(TYPE_INFERENCE_NO_INFORMATION_FOR_PARAMETER,

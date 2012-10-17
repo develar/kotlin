@@ -37,7 +37,7 @@ import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.lang.resolve.java.kt.DescriptorKindUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import static org.jetbrains.asm4.Opcodes.*;
 import static org.jetbrains.jet.codegen.AsmUtil.*;
@@ -81,7 +81,7 @@ public class PropertyCodegen extends GenerationStateAware {
 
     public void generatePrimaryConstructorProperty(JetParameter p, PropertyDescriptor descriptor) {
         generateBackingField(p, descriptor);
-        int accessFlags = getVisibilityAccessFlag(descriptor) | getModalityAccessFlag(descriptor);
+        int accessFlags = getVisibilityAccessFlag(descriptor) | getModalityAccessFlag(descriptor) | getDeprecatedAccessFlag(descriptor);
         generateDefaultGetter(descriptor, accessFlags, p);
         if (descriptor.isVar()) {
             generateDefaultSetter(descriptor, accessFlags, p);
@@ -114,7 +114,8 @@ public class PropertyCodegen extends GenerationStateAware {
             if (!propertyDescriptor.isVar()) {
                 modifiers |= ACC_FINAL;
             }
-            if (JetStandardLibrary.getInstance().isVolatile(propertyDescriptor)) {
+            modifiers |= getDeprecatedAccessFlag(propertyDescriptor);
+            if (KotlinBuiltIns.getInstance().isVolatile(propertyDescriptor)) {
                 modifiers |= ACC_VOLATILE;
             }
             Type type = typeMapper.mapType(propertyDescriptor);
@@ -125,14 +126,16 @@ public class PropertyCodegen extends GenerationStateAware {
 
     private void generateGetter(JetProperty p, PropertyDescriptor propertyDescriptor) {
         JetPropertyAccessor getter = p.getGetter();
+        PropertyGetterDescriptor getterDescriptor = propertyDescriptor.getGetter();
         if (getter != null && getter.getBodyExpression() != null) {
             JvmPropertyAccessorSignature signature = typeMapper.mapGetterSignature(propertyDescriptor, kind);
             functionCodegen.generateMethod(getter, signature.getJvmMethodSignature(), true, signature.getPropertyTypeKotlinSignature(),
-                                           propertyDescriptor.getGetter());
+                                           getterDescriptor);
         }
         else if (isExternallyAccessible(propertyDescriptor)) {
             int flags = getVisibilityAccessFlag(propertyDescriptor);
             flags |= getModalityAccessFlag(propertyDescriptor);
+            flags |= getterDescriptor == null ? getDeprecatedAccessFlag(propertyDescriptor): getDeprecatedAccessFlag(getterDescriptor);
             generateDefaultGetter(propertyDescriptor, flags, p);
         }
     }
@@ -151,8 +154,15 @@ public class PropertyCodegen extends GenerationStateAware {
         }
         else if (isExternallyAccessible(propertyDescriptor) && propertyDescriptor.isVar()) {
             PropertySetterDescriptor setterDescriptor = propertyDescriptor.getSetter();
-            int flags = setterDescriptor == null ? getVisibilityAccessFlag(propertyDescriptor) : getVisibilityAccessFlag(setterDescriptor);
-            flags |= getModalityAccessFlag(propertyDescriptor);
+            int flags = getModalityAccessFlag(propertyDescriptor);
+            if (setterDescriptor == null) {
+                flags |= getVisibilityAccessFlag(propertyDescriptor);
+                flags |= getDeprecatedAccessFlag(propertyDescriptor);
+            }
+            else {
+                flags |= getVisibilityAccessFlag(setterDescriptor);
+                flags |= getDeprecatedAccessFlag(setterDescriptor);
+            }
             generateDefaultSetter(propertyDescriptor, flags, p);
         }
     }

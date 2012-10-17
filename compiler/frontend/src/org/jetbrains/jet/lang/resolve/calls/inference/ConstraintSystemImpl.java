@@ -27,7 +27,7 @@ import org.jetbrains.jet.lang.descriptors.TypeParameterDescriptor;
 import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.TypeCheckingProcedure;
 import org.jetbrains.jet.lang.resolve.calls.inference.TypeConstraintsImpl.ConstraintKind;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.*;
 
@@ -40,6 +40,7 @@ import static org.jetbrains.jet.lang.types.Variance.*;
 public class ConstraintSystemImpl implements ConstraintSystem {
 
     public static final JetType DONT_CARE = ErrorUtils.createErrorTypeWithCustomDebugName("DONT_CARE");
+    private static final JetType CANT_INFER = ErrorUtils.createErrorType("CANT_INFER");
 
     private final Map<TypeParameterDescriptor, TypeConstraintsImpl> typeParameterConstraints = Maps.newLinkedHashMap();
     private final Set<ConstraintPosition> errorConstraintPositions = Sets.newHashSet();
@@ -48,7 +49,7 @@ public class ConstraintSystemImpl implements ConstraintSystem {
     private boolean hasErrorInConstrainingTypes;
 
     public ConstraintSystemImpl() {
-        this.resultingSubstitutor = createTypeSubstitutorWithDefaultForUnknownTypeParameter(null);
+        this.resultingSubstitutor = createTypeSubstitutorWithDefaultForUnknownTypeParameter(new TypeProjection(CANT_INFER));
         this.currentSubstitutor = createTypeSubstitutorWithDefaultForUnknownTypeParameter(new TypeProjection(DONT_CARE));
     }
 
@@ -154,16 +155,20 @@ public class ConstraintSystemImpl implements ConstraintSystem {
             @Nullable JetType constrainingType,
             @NotNull ConstraintPosition constraintPosition) {
 
-        if (constrainingType == null || (ErrorUtils.isErrorType(constrainingType) && constrainingType != DONT_CARE)) {
+        if (constrainingType == TypeUtils.NO_EXPECTED_TYPE
+            || TypeUtils.identityEqualsOrContainsAsArgument(constrainingType, DONT_CARE)
+            || TypeUtils.identityEqualsOrContainsAsArgument(constrainingType, CANT_INFER)) {
+            return;
+        }
+
+        if (constrainingType == null || ErrorUtils.containsErrorType(constrainingType)) {
             hasErrorInConstrainingTypes = true;
             return;
         }
 
         assert subjectType != TypeUtils.NO_EXPECTED_TYPE : "Subject type shouldn't be NO_EXPECTED_TYPE (in position " + constraintPosition + " )";
+        if (ErrorUtils.isErrorType(subjectType)) return;
 
-        if (constrainingType == DONT_CARE || ErrorUtils.isErrorType(subjectType) || constrainingType == TypeUtils.NO_EXPECTED_TYPE) {
-            return;
-        }
 
         DeclarationDescriptor constrainingTypeDescriptor = constrainingType.getConstructor().getDeclarationDescriptor();
         DeclarationDescriptor subjectTypeDescriptor = subjectType.getConstructor().getDeclarationDescriptor();
@@ -191,7 +196,7 @@ public class ConstraintSystemImpl implements ConstraintSystem {
         }
         switch (constraintKind) {
             case SUPER_TYPE: {
-                if (JetStandardClasses.isNothingOrNullableNothing(constrainingType)) break;
+                if (KotlinBuiltIns.getInstance().isNothingOrNullableNothing(constrainingType)) break;
                 JetType correspondingSupertype = TypeCheckingProcedure.findCorrespondingSupertype(constrainingType, subjectType);
                 if (correspondingSupertype != null) {
                     constrainingType = correspondingSupertype;
@@ -199,7 +204,7 @@ public class ConstraintSystemImpl implements ConstraintSystem {
                 break;
             }
             case SUB_TYPE: {
-                if (JetStandardClasses.isNothingOrNullableNothing(subjectType)) break;
+                if (KotlinBuiltIns.getInstance().isNothingOrNullableNothing(subjectType)) break;
                 JetType correspondingSupertype = TypeCheckingProcedure.findCorrespondingSupertype(subjectType, constrainingType);
                 if (correspondingSupertype != null) {
                     subjectType = correspondingSupertype;

@@ -39,7 +39,8 @@ import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
+import org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.jet.util.slicedmap.WritableSlice;
 
@@ -51,6 +52,7 @@ import static org.jetbrains.jet.lang.resolve.BindingContext.*;
 import static org.jetbrains.jet.lang.resolve.calls.ResolutionStatus.*;
 import static org.jetbrains.jet.lang.resolve.calls.ResolvedCallImpl.MAP_TO_CANDIDATE;
 import static org.jetbrains.jet.lang.resolve.calls.ResolvedCallImpl.MAP_TO_RESULT;
+import static org.jetbrains.jet.lang.resolve.calls.inference.InferenceErrorData.ExtendedInferenceErrorData;
 import static org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor.NO_RECEIVER;
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
 
@@ -149,6 +151,8 @@ public class CallResolver {
             JetSimpleNameExpression expression = (JetSimpleNameExpression) calleeExpression;
             functionReference = expression;
 
+            ExpressionTypingUtils.checkWrappingInRef(expression, context.trace, context.scope);
+
             Name name = expression.getReferencedNameAsName();
             if (name == null) return checkArgumentTypesAndFail(context);
 
@@ -231,7 +235,7 @@ public class CallResolver {
                 // Here we handle the case where the callee expression must be something of type function, e.g. (foo.bar())(1, 2)
                 JetType calleeType = expressionTypingServices.safeGetType(context.scope, calleeExpression, NO_EXPECTED_TYPE, context.dataFlowInfo, context.trace); // We are actually expecting a function, but there seems to be no easy way of expressing this
 
-                if (!JetStandardClasses.isFunctionType(calleeType)) {
+                if (!KotlinBuiltIns.getInstance().isFunctionType(calleeType)) {
 //                    checkTypesWithNoCallee(trace, scope, call);
                     if (!ErrorUtils.isErrorType(calleeType)) {
                         context.trace.report(CALLEE_NOT_A_FUNCTION.on(calleeExpression, calleeType));
@@ -378,9 +382,7 @@ public class CallResolver {
 
 
         if (!constraintSystem.isSuccessful()) {
-            if (constraintSystemWithoutExpectedTypeConstraint.isSuccessful()) {
-                resolvedCall.setResultingSubstitutor(constraintSystemWithoutExpectedTypeConstraint.getResultingSubstitutor());
-            }
+            resolvedCall.setResultingSubstitutor(constraintSystemWithoutExpectedTypeConstraint.getResultingSubstitutor());
             List<JetType> argumentTypes = checkValueArgumentTypes(context, resolvedCall, resolvedCall.getTrace()).argumentTypes;
             JetType receiverType = resolvedCall.getReceiverArgument().exists() ? resolvedCall.getReceiverArgument().getType() : null;
             context.tracing.typeInferenceFailed(resolvedCall.getTrace(),
@@ -778,7 +780,7 @@ public class CallResolver {
         ResolutionStatus argumentsStatus = checkingResult.status;
         List<JetType> argumentTypes = checkingResult.argumentTypes;
         JetType receiverType = candidateCall.getReceiverArgument().exists() ? candidateCall.getReceiverArgument().getType() : null;
-        InferenceErrorData inferenceErrorData = InferenceErrorData
+        ExtendedInferenceErrorData inferenceErrorData = InferenceErrorData
                 .create(candidate, constraintSystemWithRightTypeParameters, argumentTypes, receiverType, context.expectedType);
         if (hasContradiction) {
             context.tracing.typeInferenceFailed(candidateCall.getTrace(), inferenceErrorData, constraintSystemWithRightTypeParameters);

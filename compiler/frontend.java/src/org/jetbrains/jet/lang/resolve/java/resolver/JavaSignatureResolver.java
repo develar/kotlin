@@ -31,8 +31,7 @@ import org.jetbrains.jet.lang.resolve.java.wrapper.PsiMethodWrapper;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.Variance;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.rt.signature.JetSignatureAdapter;
 import org.jetbrains.jet.rt.signature.JetSignatureExceptionsAdapter;
 import org.jetbrains.jet.rt.signature.JetSignatureReader;
@@ -141,7 +140,7 @@ public final class JavaSignatureResolver {
 
         @Override
         public JetSignatureVisitor visitClassBound() {
-            return new JetTypeJetSignatureReader(semanticServices, JetStandardLibrary.getInstance(), typeVariableResolver) {
+            return new JetTypeJetSignatureReader(semanticServices, KotlinBuiltIns.getInstance(), typeVariableResolver) {
                 @Override
                 protected void done(@NotNull JetType jetType) {
                     if (isJavaLangObject(jetType)) {
@@ -154,7 +153,7 @@ public final class JavaSignatureResolver {
 
         @Override
         public JetSignatureVisitor visitInterfaceBound() {
-            return new JetTypeJetSignatureReader(semanticServices, JetStandardLibrary.getInstance(), typeVariableResolver) {
+            return new JetTypeJetSignatureReader(semanticServices, KotlinBuiltIns.getInstance(), typeVariableResolver) {
                 @Override
                 protected void done(@NotNull JetType jetType) {
                     upperBounds.add(jetType);
@@ -278,7 +277,7 @@ public final class JavaSignatureResolver {
             final List<JetType> upperBoundsForKotlin = typeParameter.upperBoundsForKotlin;
             assert upperBoundsForKotlin != null;
             if (upperBoundsForKotlin.size() == 0){
-                typeParameterDescriptor.addUpperBound(JetStandardClasses.getNullableAnyType());
+                typeParameterDescriptor.addUpperBound(KotlinBuiltIns.getInstance().getNullableAnyType());
             }
             else {
                 for (JetType upperBound : upperBoundsForKotlin) {
@@ -291,7 +290,7 @@ public final class JavaSignatureResolver {
         else {
             PsiClassType[] referencedTypes = typeParameter.psiTypeParameter.getExtendsList().getReferencedTypes();
             if (referencedTypes.length == 0){
-                typeParameterDescriptor.addUpperBound(JetStandardClasses.getNullableAnyType());
+                typeParameterDescriptor.addUpperBound(KotlinBuiltIns.getInstance().getNullableAnyType());
             }
             else if (referencedTypes.length == 1) {
                 typeParameterDescriptor.addUpperBound(semanticServices.getTypeTransformer().transformToType(referencedTypes[0], JavaTypeTransformer.TypeUsage.UPPER_BOUND, typeVariableByPsiResolver));

@@ -44,14 +44,13 @@ import org.jetbrains.jet.codegen.CompilationErrorHandler;
 import org.jetbrains.jet.codegen.binding.PsiCodegenPredictor;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.codegen.state.GenerationStrategy;
-import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
 import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
 import org.jetbrains.jet.lang.resolve.java.JetJavaMirrorMarker;
 import org.jetbrains.jet.lang.resolve.java.JvmClassName;
 import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.plugin.JetLanguage;
 
 import javax.swing.*;
@@ -94,7 +93,7 @@ public class JetLightClass extends AbstractLightClass implements JetJavaMirrorMa
 
     @Nullable
     public static JetLightClass create(PsiManager manager, JetFile file, FqName qualifiedName) {
-        return JetStandardClasses.isStandardClass(qualifiedName) ? null : new JetLightClass(manager, file, qualifiedName);
+        return KotlinBuiltIns.getInstance().isStandardClass(qualifiedName) ? null : new JetLightClass(manager, file, qualifiedName);
     }
 
     @Override
@@ -200,9 +199,7 @@ public class JetLightClass extends AbstractLightClass implements JetJavaMirrorMa
         // Otherwise, the analyzer gets confused and can't, for example, tell which files come as sources and which
         // must be loaded from .class files
         AnalyzeExhaust context = AnalyzerFacadeForJVM.shallowAnalyzeFiles(
-            JetFilesProvider.getInstance(project).sampleToAllFilesInModule().fun(file),
-                // TODO: wrong environment // stepan.koltsov@ 2012-04-09
-                BuiltinsScopeExtensionMode.ALL);
+            JetFilesProvider.getInstance(project).sampleToAllFilesInModule().fun(file));
 
         if (context.isError()) {
             throw new IllegalStateException("failed to analyze: " + context.getError(), context.getError());

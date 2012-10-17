@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang;
+package org.jetbrains.jet.lang.resolve.lazy;
 
-/**
- * @author Evgeny Gerashchenko
- * @since 7/5/12
- */
-public enum BuiltinsScopeExtensionMode {
-    ALL,
-    ONLY_STANDARD_CLASSES
+public interface LazyDescriptor {
+    void forceResolveAllContents();
 }

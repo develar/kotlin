@@ -26,8 +26,7 @@ import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lang.types.lang.PrimitiveType;
 
 import java.util.*;
@@ -57,20 +56,20 @@ public class JavaToKotlinClassMap extends JavaToKotlinClassMapBuilder implements
     }
 
     private void initPrimitives() {
-        JetStandardLibrary standardLibrary = JetStandardLibrary.getInstance();
+        KotlinBuiltIns builtIns = KotlinBuiltIns.getInstance();
         for (JvmPrimitiveType jvmPrimitiveType : JvmPrimitiveType.values()) {
             PrimitiveType primitiveType = jvmPrimitiveType.getPrimitiveType();
-            register(jvmPrimitiveType.getWrapper().getFqName(), standardLibrary.getPrimitiveClassDescriptor(primitiveType));
+            register(jvmPrimitiveType.getWrapper().getFqName(), builtIns.getPrimitiveClassDescriptor(primitiveType));
         }
 
         for (JvmPrimitiveType jvmPrimitiveType : JvmPrimitiveType.values()) {
             PrimitiveType primitiveType = jvmPrimitiveType.getPrimitiveType();
-            primitiveTypesMap.put(jvmPrimitiveType.getName(), JetStandardLibrary.getInstance().getPrimitiveJetType(primitiveType));
-            primitiveTypesMap.put("[" + jvmPrimitiveType.getName(), JetStandardLibrary.getInstance().getPrimitiveArrayJetType(primitiveType));
-            primitiveTypesMap.put(jvmPrimitiveType.getWrapper().getFqName().getFqName(), JetStandardLibrary.getInstance().getNullablePrimitiveJetType(
+            primitiveTypesMap.put(jvmPrimitiveType.getName(), KotlinBuiltIns.getInstance().getPrimitiveJetType(primitiveType));
+            primitiveTypesMap.put("[" + jvmPrimitiveType.getName(), KotlinBuiltIns.getInstance().getPrimitiveArrayJetType(primitiveType));
+            primitiveTypesMap.put(jvmPrimitiveType.getWrapper().getFqName().getFqName(), KotlinBuiltIns.getInstance().getNullablePrimitiveJetType(
                     primitiveType));
         }
-        primitiveTypesMap.put("void", JetStandardClasses.getUnitType());
+        primitiveTypesMap.put("void", KotlinBuiltIns.getInstance().getUnitType());
     }
 
     @Nullable
@@ -91,7 +90,7 @@ public class JavaToKotlinClassMap extends JavaToKotlinClassMapBuilder implements
     }
 
     private static FqName getJavaClassFqName(@NotNull Class<?> javaClass) {
-        return new FqName(javaClass.getName().replace("$", "."));
+        return new FqName(javaClass.getName().replace('$', '.'));
     }
 
     @Override

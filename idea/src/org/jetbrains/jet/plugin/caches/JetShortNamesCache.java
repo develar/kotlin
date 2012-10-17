@@ -44,8 +44,7 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.plugin.stubindex.JetExtensionFunctionNameIndex;
 import org.jetbrains.jet.plugin.stubindex.JetFullClassNameIndex;
 import org.jetbrains.jet.plugin.stubindex.JetShortClassNameIndex;
@@ -120,16 +119,15 @@ public class JetShortNamesCache extends PsiShortNamesCache {
      */
     @NotNull
     public static Collection<DeclarationDescriptor> getJetOnlyTypes() {
-        Collection<DeclarationDescriptor> standardTypes = JetStandardClasses.getAllStandardClasses();
-        standardTypes.addAll(
-                Collections2.transform(JetStandardLibrary.getInstance().getStandardTypes(),
-                                       new Function<ClassDescriptor, DeclarationDescriptor>() {
+        Collection<DeclarationDescriptor> standardTypes =
+                Collections2.transform(KotlinBuiltIns.getInstance().getAllBuiltInClasses(),
+                                       new Function<DeclarationDescriptor, DeclarationDescriptor>() {
                                            @Override
-                                           public DeclarationDescriptor apply(@Nullable ClassDescriptor classDescriptor) {
+                                           public DeclarationDescriptor apply(@Nullable DeclarationDescriptor classDescriptor) {
                                                assert classDescriptor != null;
                                                return classDescriptor;
                                            }
-                                       }));
+                                       });
 
         return standardTypes;
     }

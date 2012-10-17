@@ -25,8 +25,7 @@ import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.types.*;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.LinkedList;
 
@@ -54,8 +53,8 @@ public class JetPluginUtil {
     }
 
     public static boolean checkTypeIsStandard(JetType type, Project project) {
-        if (JetStandardClasses.isAny(type) || JetStandardClasses.isNothingOrNullableNothing(type) || JetStandardClasses.isUnit(type) ||
-            JetStandardClasses.isTupleType(type) || JetStandardClasses.isFunctionType(type)) {
+        if (KotlinBuiltIns.getInstance().isAny(type) || KotlinBuiltIns.getInstance().isNothingOrNullableNothing(type) || KotlinBuiltIns.getInstance().isUnit(type) ||
+            KotlinBuiltIns.getInstance().isTupleType(type) || KotlinBuiltIns.getInstance().isFunctionType(type)) {
             return true;
         }
 
@@ -64,8 +63,7 @@ public class JetPluginUtil {
             return true;
         }
 
-        JetStandardLibrary standardLibrary = JetStandardLibrary.getInstance();
-        JetScope libraryScope = standardLibrary.getLibraryScope();
+        JetScope libraryScope = KotlinBuiltIns.getInstance().getBuiltInsScope();
 
         DeclarationDescriptor declaration = type.getMemberScope().getContainingDeclaration();
         if (ErrorUtils.isError(declaration)) {

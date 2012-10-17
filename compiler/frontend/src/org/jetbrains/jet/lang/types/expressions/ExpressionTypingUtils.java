@@ -43,8 +43,7 @@ import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.util.slicedmap.WritableSlice;
 
 import java.util.ArrayList;
@@ -88,7 +87,7 @@ public class ExpressionTypingUtils {
     }
 
     public static boolean isBoolean(@NotNull JetType type) {
-        return JetTypeChecker.INSTANCE.isSubtypeOf(type, JetStandardLibrary.getInstance().getBooleanType());
+        return JetTypeChecker.INSTANCE.isSubtypeOf(type, KotlinBuiltIns.getInstance().getBooleanType());
     }
 
     public static boolean ensureBooleanResult(JetExpression operationSign, Name name, JetType resultType, ExpressionTypingContext context) {
@@ -99,7 +98,7 @@ public class ExpressionTypingUtils {
         if (resultType != null) {
             // TODO : Relax?
             if (!isBoolean(resultType)) {
-                context.trace.report(RESULT_TYPE_MISMATCH.on(operationSign, subjectName, JetStandardLibrary.getInstance().getBooleanType(), resultType));
+                context.trace.report(RESULT_TYPE_MISMATCH.on(operationSign, subjectName, KotlinBuiltIns.getInstance().getBooleanType(), resultType));
                 return false;
             }
         }
@@ -109,19 +108,19 @@ public class ExpressionTypingUtils {
     @NotNull
     public static JetType getDefaultType(IElementType constantType) {
         if (constantType == JetNodeTypes.INTEGER_CONSTANT) {
-            return JetStandardLibrary.getInstance().getIntType();
+            return KotlinBuiltIns.getInstance().getIntType();
         }
         else if (constantType == JetNodeTypes.FLOAT_CONSTANT) {
-            return JetStandardLibrary.getInstance().getDoubleType();
+            return KotlinBuiltIns.getInstance().getDoubleType();
         }
         else if (constantType == JetNodeTypes.BOOLEAN_CONSTANT) {
-            return JetStandardLibrary.getInstance().getBooleanType();
+            return KotlinBuiltIns.getInstance().getBooleanType();
         }
         else if (constantType == JetNodeTypes.CHARACTER_CONSTANT) {
-            return JetStandardLibrary.getInstance().getCharType();
+            return KotlinBuiltIns.getInstance().getCharType();
         }
         else if (constantType == JetNodeTypes.NULL) {
-            return JetStandardClasses.getNullableNothingType();
+            return KotlinBuiltIns.getInstance().getNullableNothingType();
         }
         else {
             throw new IllegalArgumentException("Unsupported constant type: " + constantType);
@@ -137,12 +136,12 @@ public class ExpressionTypingUtils {
         ).contains(expression.getNode().getElementType());
     }
 
-    public static void checkWrappingInRef(JetSimpleNameExpression expression, ExpressionTypingContext context) {
-        VariableDescriptor variable = BindingContextUtils.extractVariableDescriptorIfAny(context.trace.getBindingContext(), expression, true);
+    public static void checkWrappingInRef(JetSimpleNameExpression expression, BindingTrace trace, JetScope scope) {
+        VariableDescriptor variable = BindingContextUtils.extractVariableDescriptorIfAny(trace.getBindingContext(), expression, true);
         if (variable != null) {
             DeclarationDescriptor containingDeclaration = variable.getContainingDeclaration();
-            if (context.scope.getContainingDeclaration() != containingDeclaration && containingDeclaration instanceof CallableDescriptor) {
-                context.trace.record(CAPTURED_IN_CLOSURE, variable);
+            if (scope.getContainingDeclaration() != containingDeclaration && containingDeclaration instanceof CallableDescriptor) {
+                trace.record(CAPTURED_IN_CLOSURE, variable);
             }
         }
     }

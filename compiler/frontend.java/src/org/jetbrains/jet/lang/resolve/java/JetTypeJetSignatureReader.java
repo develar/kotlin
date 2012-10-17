@@ -23,8 +23,7 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.types.*;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.rt.signature.JetSignatureExceptionsAdapter;
 import org.jetbrains.jet.rt.signature.JetSignatureVariance;
 import org.jetbrains.jet.rt.signature.JetSignatureVisitor;
@@ -42,13 +41,13 @@ public abstract class JetTypeJetSignatureReader extends JetSignatureExceptionsAd
     
     private final JavaSemanticServices javaSemanticServices;
     private final JavaDescriptorResolver javaDescriptorResolver;
-    private final JetStandardLibrary jetStandardLibrary;
+    private final KotlinBuiltIns kotlinBuiltIns;
     private final TypeVariableResolver typeVariableResolver;
 
-    public JetTypeJetSignatureReader(JavaSemanticServices javaSemanticServices, JetStandardLibrary jetStandardLibrary, TypeVariableResolver typeVariableResolver) {
+    public JetTypeJetSignatureReader(JavaSemanticServices javaSemanticServices, KotlinBuiltIns kotlinBuiltIns, TypeVariableResolver typeVariableResolver) {
         this.javaSemanticServices = javaSemanticServices;
         this.javaDescriptorResolver = javaSemanticServices.getDescriptorResolver();
-        this.jetStandardLibrary = jetStandardLibrary;
+        this.kotlinBuiltIns = kotlinBuiltIns;
         this.typeVariableResolver = typeVariableResolver;
     }
     
@@ -57,17 +56,17 @@ public abstract class JetTypeJetSignatureReader extends JetSignatureExceptionsAd
         if (!nullable) {
             for (JvmPrimitiveType jvmPrimitiveType : JvmPrimitiveType.values()) {
                 if (jvmPrimitiveType.getJvmLetter() == descriptor) {
-                    return jetStandardLibrary.getPrimitiveJetType(jvmPrimitiveType.getPrimitiveType());
+                    return KotlinBuiltIns.getInstance().getPrimitiveJetType(jvmPrimitiveType.getPrimitiveType());
                 }
             }
             if (descriptor == 'V') {
-                return JetStandardClasses.getUnitType();
+                return KotlinBuiltIns.getInstance().getUnitType();
             }
         }
         else {
             for (JvmPrimitiveType jvmPrimitiveType : JvmPrimitiveType.values()) {
                 if (jvmPrimitiveType.getJvmLetter() == descriptor) {
-                    return jetStandardLibrary.getNullablePrimitiveJetType(jvmPrimitiveType.getPrimitiveType());
+                    return KotlinBuiltIns.getInstance().getNullablePrimitiveJetType(jvmPrimitiveType.getPrimitiveType());
                 }
             }
             if (descriptor == 'V') {
@@ -119,12 +118,12 @@ public abstract class JetTypeJetSignatureReader extends JetSignatureExceptionsAd
         // TODO: this is the worst code in Kotlin project
         Matcher functionMatcher = Pattern.compile("jet\\.Function(\\d+)").matcher(ourName.getFqName());
         if (functionMatcher.matches()) {
-            return JetStandardClasses.getFunction(Integer.parseInt(functionMatcher.group(1)));
+            return KotlinBuiltIns.getInstance().getFunction(Integer.parseInt(functionMatcher.group(1)));
         }
 
         Matcher patternMatcher = Pattern.compile("jet\\.Tuple(\\d+)").matcher(ourName.getFqName());
         if (patternMatcher.matches()) {
-            return JetStandardClasses.getTuple(Integer.parseInt(patternMatcher.group(1)));
+            return KotlinBuiltIns.getInstance().getTuple(Integer.parseInt(patternMatcher.group(1)));
         }
 
 
@@ -152,7 +151,7 @@ public abstract class JetTypeJetSignatureReader extends JetSignatureExceptionsAd
 
     @Override
     public JetSignatureVisitor visitTypeArgument(final JetSignatureVariance variance) {
-        return new JetTypeJetSignatureReader(javaSemanticServices, jetStandardLibrary, typeVariableResolver) {
+        return new JetTypeJetSignatureReader(javaSemanticServices, kotlinBuiltIns, typeVariableResolver) {
 
             @Override
             protected void done(@NotNull JetType jetType) {
@@ -163,23 +162,23 @@ public abstract class JetTypeJetSignatureReader extends JetSignatureExceptionsAd
 
     @Override
     public JetSignatureVisitor visitArrayType(final boolean nullable) {
-        return new JetTypeJetSignatureReader(javaSemanticServices, jetStandardLibrary, typeVariableResolver) {
+        return new JetTypeJetSignatureReader(javaSemanticServices, kotlinBuiltIns, typeVariableResolver) {
             @Override
             public void visitBaseType(char descriptor, boolean nullable) {
                 JetType primitiveType = getPrimitiveType(descriptor, nullable);
                 JetType arrayType;
                 if (!nullable) {
-                    arrayType = jetStandardLibrary.getPrimitiveArrayJetTypeByPrimitiveJetType(primitiveType);
+                    arrayType = KotlinBuiltIns.getInstance().getPrimitiveArrayJetTypeByPrimitiveJetType(primitiveType);
                 }
                 else {
-                    arrayType = TypeUtils.makeNullableAsSpecified(jetStandardLibrary.getArrayType(primitiveType), nullable);
+                    arrayType = TypeUtils.makeNullableAsSpecified(KotlinBuiltIns.getInstance().getArrayType(primitiveType), nullable);
                 }
                 JetTypeJetSignatureReader.this.done(arrayType);
             }
 
             @Override
             protected void done(@NotNull JetType jetType) {
-                JetType arrayType = TypeUtils.makeNullableAsSpecified(jetStandardLibrary.getArrayType(jetType), nullable);
+                JetType arrayType = TypeUtils.makeNullableAsSpecified(KotlinBuiltIns.getInstance().getArrayType(jetType), nullable);
                 JetTypeJetSignatureReader.this.done(arrayType);
             }
         };

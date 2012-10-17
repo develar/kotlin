@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.descriptors;
+package org.jetbrains.jet.plugin.presentation;
 
-/**
- * @author Nikolay Krasko
- */
-public interface WithDeferredResolve {
-    void forceResolve();
-    boolean isAlreadyResolved();
+import com.intellij.navigation.ItemPresentation;
+import com.intellij.navigation.ItemPresentationProvider;
+import org.jetbrains.jet.lang.psi.JetProperty;
+
+public class JetPropertyPresenter implements ItemPresentationProvider<JetProperty> {
+    @Override
+    public ItemPresentation getPresentation(final JetProperty item) {
+        return new JetDefaultNamedDeclarationPresentation(item);
+    }
 }

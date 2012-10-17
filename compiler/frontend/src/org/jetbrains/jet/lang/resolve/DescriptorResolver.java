@@ -37,8 +37,7 @@ import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.jet.util.lazy.LazyValue;
 import org.jetbrains.jet.util.lazy.LazyValueWithDefault;
@@ -140,7 +139,7 @@ public class DescriptorResolver {
         }
 
         if (classDescriptor.getKind() == ClassKind.ENUM_CLASS && !containsClass(supertypes)) {
-            supertypes.add(0, JetStandardLibrary.getInstance().getEnumType(classDescriptor.getDefaultType()));
+            supertypes.add(0, KotlinBuiltIns.getInstance().getEnumType(classDescriptor.getDefaultType()));
         }
 
         if (supertypes.isEmpty()) {
@@ -181,9 +180,9 @@ public class DescriptorResolver {
             }
         }
         else if (jetClass instanceof JetClass && ((JetClass) jetClass).isAnnotation()) {
-            return JetStandardLibrary.getInstance().getAnnotationType();
+            return KotlinBuiltIns.getInstance().getAnnotationType();
         }
-        return JetStandardClasses.getAnyType();
+        return KotlinBuiltIns.getInstance().getAnyType();
     }
 
     public Collection<JetType> resolveDelegationSpecifiers(
@@ -267,7 +266,7 @@ public class DescriptorResolver {
             returnType = typeResolver.resolveType(innerScope, returnTypeRef, trace, true);
         }
         else if (function.hasBlockBody()) {
-            returnType = JetStandardClasses.getUnitType();
+            returnType = KotlinBuiltIns.getInstance().getUnitType();
         }
         else {
             final JetExpression bodyExpression = function.getBodyExpression();
@@ -425,12 +424,12 @@ public class DescriptorResolver {
     }
 
     private JetType getVarargParameterType(JetType type) {
-        JetType arrayType = JetStandardLibrary.getInstance().getPrimitiveArrayJetTypeByPrimitiveJetType(type);
+        JetType arrayType = KotlinBuiltIns.getInstance().getPrimitiveArrayJetTypeByPrimitiveJetType(type);
         if (arrayType != null) {
             return arrayType;
         }
         else {
-            return JetStandardLibrary.getInstance().getArrayType(type);
+            return KotlinBuiltIns.getInstance().getArrayType(type);
         }
     }
 
@@ -574,7 +573,7 @@ public class DescriptorResolver {
 
             parameter.setInitialized();
 
-            if (JetStandardClasses.isNothing(parameter.getUpperBoundsAsType())) {
+            if (KotlinBuiltIns.getInstance().isNothing(parameter.getUpperBoundsAsType())) {
                 PsiElement nameIdentifier = typeParameters.get(parameter.getIndex()).getNameIdentifier();
                 if (nameIdentifier != null) {
                     trace.report(CONFLICTING_UPPER_BOUNDS.on(nameIdentifier, parameter));
@@ -582,7 +581,7 @@ public class DescriptorResolver {
             }
 
             JetType classObjectType = parameter.getClassObjectType();
-            if (classObjectType != null && JetStandardClasses.isNothing(classObjectType)) {
+            if (classObjectType != null && KotlinBuiltIns.getInstance().isNothing(classObjectType)) {
                 PsiElement nameIdentifier = typeParameters.get(parameter.getIndex()).getNameIdentifier();
                 if (nameIdentifier != null) {
                     trace.report(CONFLICTING_CLASS_OBJECT_UPPER_BOUNDS.on(nameIdentifier, parameter));
@@ -1179,7 +1178,7 @@ public class DescriptorResolver {
         JetType type = DeferredType.create(trace, new LazyValue<JetType>() {
             @Override
             protected JetType compute() {
-                return JetStandardLibrary.getInstance().getArrayType(enumClassDescriptor.getDefaultType());
+                return KotlinBuiltIns.getInstance().getArrayType(enumClassDescriptor.getDefaultType());
             }
         });
         values.initialize(null, classReceiver, Collections.<TypeParameterDescriptor>emptyList(),
@@ -1213,7 +1212,7 @@ public class DescriptorResolver {
                 Collections.<AnnotationDescriptor>emptyList(),
                 Name.identifier("value"),
                 false,
-                JetStandardLibrary.getInstance().getStringType(),
+                KotlinBuiltIns.getInstance().getStringType(),
                 false,
                 null);
         values.initialize(null, classReceiver,

@@ -32,8 +32,7 @@ import org.jetbrains.jet.lang.types.DescriptorSubstitutor;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeUtils;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.*;
 
@@ -272,7 +271,7 @@ public class DescriptorUtils {
     }
 
     public static boolean isNotAny(@NotNull DeclarationDescriptor superClassDescriptor) {
-        return !superClassDescriptor.equals(JetStandardClasses.getAny());
+        return !superClassDescriptor.equals(KotlinBuiltIns.getInstance().getAny());
     }
 
     public static boolean inStaticContext(@NotNull DeclarationDescriptor descriptor) {
@@ -292,8 +291,8 @@ public class DescriptorUtils {
     }
 
     public static boolean isIteratorWithoutRemoveImpl(@NotNull ClassDescriptor classDescriptor) {
-        ClassDescriptor iteratorOfT = JetStandardLibrary.getInstance().getIterator();
-        JetType iteratorOfAny = TypeUtils.substituteParameters(iteratorOfT, Collections.singletonList(JetStandardClasses.getAnyType()));
+        ClassDescriptor iteratorOfT = KotlinBuiltIns.getInstance().getIterator();
+        JetType iteratorOfAny = TypeUtils.substituteParameters(iteratorOfT, Collections.singletonList(KotlinBuiltIns.getInstance().getAnyType()));
         boolean isIterator = JetTypeChecker.INSTANCE.isSubtypeOf(classDescriptor.getDefaultType(), iteratorOfAny);
         boolean hasRemove = hasMethod(classDescriptor, Name.identifier("remove"));
         return isIterator && !hasRemove;

@@ -19,7 +19,6 @@ package org.jetbrains.k2js.analyze;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.BuiltinsScopeExtensionMode;
 import org.jetbrains.jet.lang.DefaultModuleConfiguration;
 import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
@@ -33,8 +32,7 @@ import org.jetbrains.jet.lang.resolve.ImportPath;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
-import org.jetbrains.jet.lang.types.lang.JetStandardLibrary;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,7 +49,7 @@ public class JsConfiguration implements ModuleConfiguration {
     public static final List<ImportPath> DEFAULT_IMPORT_PATHS = Arrays.asList(
             new ImportPath("js.*"),
             new ImportPath("java.lang.*"),
-            new ImportPath(JetStandardClasses.STANDARD_CLASSES_FQNAME, true),
+            new ImportPath(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), true),
             new ImportPath("kotlin.*"));
 
     @NotNull
@@ -77,12 +75,12 @@ public class JsConfiguration implements ModuleConfiguration {
     @Override
     public void extendNamespaceScope(@NotNull BindingTrace trace, @NotNull NamespaceDescriptor namespaceDescriptor,
             @NotNull WritableScope namespaceMemberScope) {
-        DefaultModuleConfiguration.createStandardConfiguration(project, BuiltinsScopeExtensionMode.ALL)
+        DefaultModuleConfiguration.createStandardConfiguration(project)
                 .extendNamespaceScope(trace, namespaceDescriptor, namespaceMemberScope);
 
         // Extend root namespace with standard classes
         if (namespaceDescriptor.getQualifiedName().shortNameOrSpecial().equals(FqNameUnsafe.ROOT_NAME)) {
-            namespaceMemberScope.importScope(JetStandardLibrary.getInstance().getLibraryScope());
+            namespaceMemberScope.importScope(KotlinBuiltIns.getInstance().getBuiltInsScope());
         }
 
         if (hasPreanalyzedContextForTests()) {

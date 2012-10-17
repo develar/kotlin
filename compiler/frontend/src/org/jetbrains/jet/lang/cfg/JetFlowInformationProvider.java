@@ -35,7 +35,7 @@ import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.lang.JetStandardClasses;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.jet.plugin.JetMainDetector;
 
@@ -135,7 +135,7 @@ public class JetFlowInformationProvider {
 
         returnedExpressions.remove(function); // This will be the only "expression" if the body is empty
 
-        if (expectedReturnType != NO_EXPECTED_TYPE && !JetStandardClasses.isUnit(expectedReturnType) && returnedExpressions.isEmpty() && !nothingReturned) {
+        if (expectedReturnType != NO_EXPECTED_TYPE && !KotlinBuiltIns.getInstance().isUnit(expectedReturnType) && returnedExpressions.isEmpty() && !nothingReturned) {
             trace.report(RETURN_TYPE_MISMATCH.on(bodyExpression, expectedReturnType));
         }
         final boolean blockBody = function.hasBlockBody();
@@ -157,7 +157,7 @@ public class JetFlowInformationProvider {
 
                 @Override
                 public void visitExpression(JetExpression expression) {
-                    if (blockBody && expectedReturnType != NO_EXPECTED_TYPE && !JetStandardClasses.isUnit(expectedReturnType) && !rootUnreachableElements.contains(expression)) {
+                    if (blockBody && expectedReturnType != NO_EXPECTED_TYPE && !KotlinBuiltIns.getInstance().isUnit(expectedReturnType) && !rootUnreachableElements.contains(expression)) {
                         noReturnError[0] = true;
                     }
                 }
@@ -255,10 +255,12 @@ public class JetFlowInformationProvider {
         }
     }
 
-    private boolean checkValReassignment(@NotNull VariableDescriptor variableDescriptor,
-                                         @NotNull JetExpression expression,
-                                         @NotNull VariableInitState enterInitState,
-                                         @NotNull Collection<VariableDescriptor> varWithValReassignErrorGenerated) {
+    private boolean checkValReassignment(
+            @NotNull VariableDescriptor variableDescriptor,
+            @NotNull JetExpression expression,
+            @NotNull VariableInitState enterInitState,
+            @NotNull Collection<VariableDescriptor> varWithValReassignErrorGenerated
+    ) {
         boolean isInitializedNotHere = enterInitState.isInitialized;
         if (expression.getParent() instanceof JetProperty && ((JetProperty)expression).getInitializer() != null) {
             isInitializedNotHere = false;
@@ -266,6 +268,14 @@ public class JetFlowInformationProvider {
         boolean hasBackingField = true;
         if (variableDescriptor instanceof PropertyDescriptor) {
             hasBackingField = trace.get(BindingContext.BACKING_FIELD_REQUIRED, (PropertyDescriptor) variableDescriptor);
+        }
+        if (variableDescriptor.isVar() && variableDescriptor instanceof PropertyDescriptor) {
+            DeclarationDescriptor descriptor = BindingContextUtils.getEnclosingDescriptor(trace.getBindingContext(), expression);
+            PropertySetterDescriptor setterDescriptor = ((PropertyDescriptor) variableDescriptor).getSetter();
+            if (Visibilities.isVisible(variableDescriptor, descriptor) && !Visibilities.isVisible(setterDescriptor, descriptor) && setterDescriptor != null) {
+                trace.report(Errors.INVISIBLE_SETTER.on(expression, variableDescriptor, setterDescriptor.getVisibility(), variableDescriptor.getContainingDeclaration()));
+                return true;
+            }
         }
         if ((isInitializedNotHere || !hasBackingField) && !variableDescriptor.isVar() && !varWithValReassignErrorGenerated.contains(variableDescriptor)) {
             boolean hasReassignMethodReturningUnit = false;
@@ -280,7 +290,7 @@ public class JetFlowInformationProvider {
             if (operationReference != null) {
                 DeclarationDescriptor descriptor = trace.get(BindingContext.REFERENCE_TARGET, operationReference);
                 if (descriptor instanceof FunctionDescriptor) {
-                    if (JetStandardClasses.isUnit(((FunctionDescriptor) descriptor).getReturnType())) {
+                    if (KotlinBuiltIns.getInstance().isUnit(((FunctionDescriptor) descriptor).getReturnType())) {
                         hasReassignMethodReturningUnit = true;
                     }
                 }
@@ -288,7 +298,7 @@ public class JetFlowInformationProvider {
                     Collection<? extends DeclarationDescriptor> descriptors = trace.get(BindingContext.AMBIGUOUS_REFERENCE_TARGET, operationReference);
                     if (descriptors != null) {
                         for (DeclarationDescriptor referenceDescriptor : descriptors) {
-                            if (JetStandardClasses.isUnit(((FunctionDescriptor) referenceDescriptor).getReturnType())) {
+                            if (KotlinBuiltIns.getInstance().isUnit(((FunctionDescriptor) referenceDescriptor).getReturnType())) {
                                 hasReassignMethodReturningUnit = true;
                             }
                         }
@@ -365,9 +375,7 @@ public class JetFlowInformationProvider {
         }
         if (insideSelfAccessors) return false;
 
-        JetNamedDeclaration parentDeclaration = PsiTreeUtil.getParentOfType(element, JetNamedDeclaration.class);
-        DeclarationDescriptor declarationDescriptor = trace.get(BindingContext.DECLARATION_TO_DESCRIPTOR, parentDeclaration);
-        if (declarationDescriptor == null) return false;
+        DeclarationDescriptor declarationDescriptor = BindingContextUtils.getEnclosingDescriptor(trace.getBindingContext(), element);
 
         DeclarationDescriptor containingDeclaration = variableDescriptor.getContainingDeclaration();
         if ((containingDeclaration instanceof ClassDescriptor) && DescriptorUtils.isAncestor(containingDeclaration, declarationDescriptor, false)) {
