@@ -25,6 +25,7 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.JetNodeTypes;
 import org.jetbrains.jet.lang.resolve.ImportPath;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -183,6 +184,35 @@ public class JetPsiUtil {
         }
 
         return firstPart.child(name);
+    }
+
+    @Nullable
+    public static Name getShortName(JetAnnotationEntry annotation) {
+        JetTypeReference typeReference = annotation.getTypeReference();
+        assert typeReference != null : "Annotation entry hasn't typeReference " + annotation.getText();
+        JetTypeElement typeElement = typeReference.getTypeElement();
+        if (typeElement instanceof JetUserType) {
+            JetUserType userType = (JetUserType) typeElement;
+            String shortName = userType.getReferencedName();
+            if (shortName != null) {
+                return Name.identifier(shortName);
+            }
+        }
+        return null;
+    }
+
+    public static boolean isDeprecated(JetModifierListOwner owner) {
+        JetModifierList modifierList = owner.getModifierList();
+        if (modifierList != null) {
+            List<JetAnnotationEntry> annotationEntries = modifierList.getAnnotationEntries();
+            for (JetAnnotationEntry annotation : annotationEntries) {
+                Name shortName = getShortName(annotation);
+                if (KotlinBuiltIns.getInstance().getDeprecatedAnnotation().getName().equals(shortName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Nullable @IfNotParsed
@@ -382,5 +412,10 @@ public class JetPsiUtil {
         }
 
         return result;
+    }
+
+    public static boolean isNullConstant(@NotNull JetExpression expression) {
+        JetExpression deparenthesized = deparenthesize(expression);
+        return deparenthesized instanceof JetConstantExpression && deparenthesized.getNode().getElementType() == JetNodeTypes.NULL;
     }
 }

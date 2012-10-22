@@ -17,11 +17,13 @@
 package org.jetbrains.jet.lang.resolve.java;
 
 import com.google.common.collect.*;
+import com.intellij.psi.CommonClassNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
@@ -89,6 +91,15 @@ public class JavaToKotlinClassMap extends JavaToKotlinClassMapBuilder implements
         return classDescriptorMap.get(fqName);
     }
 
+    @Nullable
+    public AnnotationDescriptor mapToAnnotationClass(@NotNull FqName fqName) {
+        ClassDescriptor classDescriptor = classDescriptorMap.get(fqName);
+        if (classDescriptor != null && fqName.getFqName().equals(CommonClassNames.JAVA_LANG_DEPRECATED)) {
+            return DescriptorResolverUtils.getAnnotationDescriptorForJavaLangDeprecated(classDescriptor);
+        }
+        return null;
+    }
+
     private static FqName getJavaClassFqName(@NotNull Class<?> javaClass) {
         return new FqName(javaClass.getName().replace('$', '.'));
     }
@@ -96,20 +107,26 @@ public class JavaToKotlinClassMap extends JavaToKotlinClassMapBuilder implements
     @Override
     /*package*/ void register(
             @NotNull Class<?> javaClass,
-            @NotNull ClassDescriptor kotlinDescriptor
+            @NotNull ClassDescriptor kotlinDescriptor,
+            @NotNull Direction direction
     ) {
-        register(getJavaClassFqName(javaClass), kotlinDescriptor);
+        if (direction == Direction.BOTH || direction == Direction.JAVA_TO_KOTLIN) {
+            register(getJavaClassFqName(javaClass), kotlinDescriptor);
+        }
     }
 
     @Override
     /*package*/ void register(
             @NotNull Class<?> javaClass,
             @NotNull ClassDescriptor kotlinDescriptor,
-            @NotNull ClassDescriptor kotlinMutableDescriptor
+            @NotNull ClassDescriptor kotlinMutableDescriptor,
+            @NotNull Direction direction
     ) {
-        FqName javaClassName = getJavaClassFqName(javaClass);
-        register(javaClassName, kotlinDescriptor);
-        registerCovariant(javaClassName, kotlinMutableDescriptor);
+        if (direction == Direction.BOTH || direction == Direction.JAVA_TO_KOTLIN) {
+            FqName javaClassName = getJavaClassFqName(javaClass);
+            register(javaClassName, kotlinDescriptor);
+            registerCovariant(javaClassName, kotlinMutableDescriptor);
+        }
     }
 
     private void register(@NotNull FqName javaClassName, @NotNull ClassDescriptor kotlinDescriptor) {

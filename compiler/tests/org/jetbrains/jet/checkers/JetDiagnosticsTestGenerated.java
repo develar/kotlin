@@ -30,7 +30,7 @@ import org.jetbrains.jet.checkers.AbstractDiagnosticsTestWithEagerResolve;
 @InnerTestClasses({JetDiagnosticsTestGenerated.Tests.class, JetDiagnosticsTestGenerated.Script.class})
 public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEagerResolve {
     @TestMetadata("compiler/testData/diagnostics/tests")
-    @InnerTestClasses({Tests.Annotations.class, Tests.BackingField.class, Tests.Cast.class, Tests.CheckArguments.class, Tests.ControlFlowAnalysis.class, Tests.ControlStructures.class, Tests.DataClasses.class, Tests.DataFlow.class, Tests.DataFlowInfoTraversal.class, Tests.DeclarationChecks.class, Tests.Enum.class, Tests.Extensions.class, Tests.FunctionLiterals.class, Tests.Generics.class, Tests.IncompleteCode.class, Tests.Inference.class, Tests.Infos.class, Tests.J_k.class, Tests.Jdk_annotations.class, Tests.Library.class, Tests.NullabilityAndAutoCasts.class, Tests.Objects.class, Tests.OperatorsOverloading.class, Tests.Overload.class, Tests.Override.class, Tests.Redeclarations.class, Tests.Regressions.class, Tests.Scopes.class, Tests.Shadowing.class, Tests.Substitutions.class, Tests.Subtyping.class, Tests.Tuples.class, Tests.Varargs.class})
+    @InnerTestClasses({Tests.Annotations.class, Tests.BackingField.class, Tests.Cast.class, Tests.CheckArguments.class, Tests.ControlFlowAnalysis.class, Tests.ControlStructures.class, Tests.DataClasses.class, Tests.DataFlow.class, Tests.DataFlowInfoTraversal.class, Tests.DeclarationChecks.class, Tests.Enum.class, Tests.Extensions.class, Tests.FunctionLiterals.class, Tests.Generics.class, Tests.IncompleteCode.class, Tests.Inference.class, Tests.Infos.class, Tests.J_k.class, Tests.Jdk_annotations.class, Tests.Library.class, Tests.NullabilityAndAutoCasts.class, Tests.NullableTypes.class, Tests.Objects.class, Tests.OperatorsOverloading.class, Tests.Overload.class, Tests.Override.class, Tests.Redeclarations.class, Tests.Regressions.class, Tests.Scopes.class, Tests.SenselessComparison.class, Tests.Shadowing.class, Tests.Substitutions.class, Tests.Subtyping.class, Tests.Tuples.class, Tests.Varargs.class})
     public static class Tests extends AbstractDiagnosticsTestWithEagerResolve {
         @TestMetadata("Abstract.kt")
         public void testAbstract() throws Exception {
@@ -2288,6 +2288,29 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             
         }
         
+        @TestMetadata("compiler/testData/diagnostics/tests/nullableTypes")
+        public static class NullableTypes extends AbstractDiagnosticsTestWithEagerResolve {
+            public void testAllFilesPresentInNullableTypes() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.checkers.AbstractDiagnosticsTestWithEagerResolve", new File("compiler/testData/diagnostics/tests/nullableTypes"), "kt", true);
+            }
+            
+            @TestMetadata("baseWithNullableUpperBound.kt")
+            public void testBaseWithNullableUpperBound() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/nullableTypes/baseWithNullableUpperBound.kt");
+            }
+            
+            @TestMetadata("redundantNullable.kt")
+            public void testRedundantNullable() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/nullableTypes/redundantNullable.kt");
+            }
+            
+            @TestMetadata("redundantNullableInSupertype.kt")
+            public void testRedundantNullableInSupertype() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/nullableTypes/redundantNullableInSupertype.kt");
+            }
+            
+        }
+        
         @TestMetadata("compiler/testData/diagnostics/tests/objects")
         public static class Objects extends AbstractDiagnosticsTestWithEagerResolve {
             public void testAllFilesPresentInObjects() throws Exception {
@@ -3329,6 +3352,19 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             
         }
         
+        @TestMetadata("compiler/testData/diagnostics/tests/senselessComparison")
+        public static class SenselessComparison extends AbstractDiagnosticsTestWithEagerResolve {
+            public void testAllFilesPresentInSenselessComparison() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.checkers.AbstractDiagnosticsTestWithEagerResolve", new File("compiler/testData/diagnostics/tests/senselessComparison"), "kt", true);
+            }
+            
+            @TestMetadata("parenthesized.kt")
+            public void testParenthesized() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/senselessComparison/parenthesized.kt");
+            }
+            
+        }
+        
         @TestMetadata("compiler/testData/diagnostics/tests/shadowing")
         public static class Shadowing extends AbstractDiagnosticsTestWithEagerResolve {
             public void testAllFilesPresentInShadowing() throws Exception {
@@ -3523,6 +3559,7 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             suite.addTest(Jdk_annotations.innerSuite());
             suite.addTestSuite(Library.class);
             suite.addTestSuite(NullabilityAndAutoCasts.class);
+            suite.addTestSuite(NullableTypes.class);
             suite.addTestSuite(Objects.class);
             suite.addTestSuite(OperatorsOverloading.class);
             suite.addTestSuite(Overload.class);
@@ -3530,6 +3567,7 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             suite.addTestSuite(Redeclarations.class);
             suite.addTestSuite(Regressions.class);
             suite.addTestSuite(Scopes.class);
+            suite.addTestSuite(SenselessComparison.class);
             suite.addTestSuite(Shadowing.class);
             suite.addTestSuite(Substitutions.class);
             suite.addTestSuite(Subtyping.class);

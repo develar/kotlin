@@ -47,6 +47,7 @@ import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.lang.resolve.java.kt.DescriptorKindUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.*;
 
@@ -343,6 +344,12 @@ public class FunctionCodegen extends GenerationStateAware {
         InstructionAdapter iv = new InstructionAdapter(mv);
         Type[] argTypes = asmMethod.getArgumentTypes();
 
+        // The first line of some namespace file is written to the line number attribute of a static delegate to allow to 'step into' it
+        // This is similar to what javac does with bridge methods
+        Label label = new Label();
+        iv.visitLabel(label);
+        iv.visitLineNumber(1, label);
+
         int k = 0;
         for (Type argType : argTypes) {
             iv.load(k, argType);
@@ -386,7 +393,7 @@ public class FunctionCodegen extends GenerationStateAware {
 
         if (isAbstract) flags |= ACC_ABSTRACT;
 
-        if (CodegenUtil.isDeprecated(functionDescriptor)) {
+        if (KotlinBuiltIns.getInstance().isDeprecated(functionDescriptor)) {
             flags |= ACC_DEPRECATED;
         }
         return flags;

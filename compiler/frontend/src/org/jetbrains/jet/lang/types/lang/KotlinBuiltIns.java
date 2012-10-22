@@ -58,25 +58,26 @@ public class KotlinBuiltIns {
     public static final Name UNIT_ALIAS = Name.identifier("Unit");
     public static final JetScope STUB = JetScope.EMPTY;
 
+    public static final String BUILT_INS_DIR = "jet";
     private static final String BUILT_INS_PACKAGE_NAME_STRING = "jet";
     private static final Name BUILT_INS_PACKAGE_NAME = Name.identifier(BUILT_INS_PACKAGE_NAME_STRING);
     public static final FqName BUILT_INS_PACKAGE_FQ_NAME = FqName.topLevel(BUILT_INS_PACKAGE_NAME);
 
     private static final List<String> LIBRARY_FILES = Arrays.asList(
-            "jet/Library.jet",
-            "jet/Numbers.jet",
-            "jet/Ranges.jet",
-            "jet/Iterables.jet",
-            "jet/Iterators.jet",
-            "jet/Arrays.jet",
-            "jet/Enum.jet",
-            "jet/Collections.jet",
-            "jet/Any.jet",
-            "jet/ExtensionFunctions.jet",
-            "jet/Functions.jet",
-            "jet/Nothing.jet",
-            "jet/Tuples.jet",
-            "jet/Unit.jet"
+            BUILT_INS_DIR + "/Library.jet",
+            BUILT_INS_DIR + "/Numbers.jet",
+            BUILT_INS_DIR + "/Ranges.jet",
+            BUILT_INS_DIR + "/Iterables.jet",
+            BUILT_INS_DIR + "/Iterators.jet",
+            BUILT_INS_DIR + "/Arrays.jet",
+            BUILT_INS_DIR + "/Enum.jet",
+            BUILT_INS_DIR + "/Collections.jet",
+            BUILT_INS_DIR + "/Any.jet",
+            BUILT_INS_DIR + "/ExtensionFunctions.jet",
+            BUILT_INS_DIR + "/Functions.jet",
+            BUILT_INS_DIR + "/Nothing.jet",
+            BUILT_INS_DIR + "/Tuples.jet",
+            BUILT_INS_DIR + "/Unit.jet"
     );
 
     private static final Map<FqName, Name> ALIASES = ImmutableMap.<FqName, Name>builder()
@@ -120,7 +121,7 @@ public class KotlinBuiltIns {
     public static KotlinBuiltIns getInstance() {
         if (initializing) {
             synchronized (KotlinBuiltIns.class) {
-                assert instance != null : "We are under the same lock as initializing and instance";
+                assert instance != null : "Built-ins are not initialized (note: We are under the same lock as initializing and instance)";
                 return instance;
             }
         }
@@ -135,14 +136,12 @@ public class KotlinBuiltIns {
     private final ResolveSession resolveSession;
     private final ModuleDescriptor builtInsModule;
 
-    private final ImmutableList<ClassDescriptor> functionClasses;
+    private volatile ImmutableSet<ClassDescriptor> nonPhysicalClasses;
+
     private final ImmutableSet<ClassDescriptor> functionClassesSet;
 
-    private final ImmutableList<ClassDescriptor> extensionFunctionClasses;
     private final ImmutableSet<ClassDescriptor> extensionFunctionClassesSet;
 
-    @Deprecated
-    private final ImmutableList<ClassDescriptor> tupleClasses;
     @Deprecated
     private final ImmutableSet<ClassDescriptor> tupleClassesSet;
 
@@ -154,17 +153,28 @@ public class KotlinBuiltIns {
     private final Map<JetType, JetType> primitiveJetTypeToJetArrayType;
     private final Map<JetType, JetType> jetArrayTypeToPrimitiveJetType;
 
+    private final ClassDescriptor nothingClass;
+    private final ClassDescriptor arrayClass;
+    private final ClassDescriptor deprecatedAnnotationClass;
+    private final ClassDescriptor dataAnnotationClass;
+    private final ClassDescriptor[] functionClasses;
+
+    private volatile JetType anyType;
+    private volatile JetType nullableAnyType;
+    private volatile JetType nothingType;
+    private volatile JetType nullableNothingType;
+    private volatile JetType unitType;
+    private volatile JetType stringType;
+    private volatile JetType annotationType;
+
     private KotlinBuiltIns(@NotNull Project project) {
         try {
             this.builtInsModule = new ModuleDescriptor(Name.special("<built-ins lazy module>"));
             this.resolveSession = createLazyResolveSession(project);
 
-            this.functionClasses = computeIndexedClasses("Function", getFunctionTraitCount());
-            this.functionClassesSet = ImmutableSet.copyOf(functionClasses);
-            this.extensionFunctionClasses = computeIndexedClasses("ExtensionFunction", getFunctionTraitCount());
-            this.extensionFunctionClassesSet = ImmutableSet.copyOf(extensionFunctionClasses);
-            this.tupleClasses = computeIndexedClasses("Tuple", getFunctionTraitCount());
-            this.tupleClassesSet = ImmutableSet.copyOf(tupleClasses);
+            this.functionClassesSet = computeIndexedClasses("Function", getFunctionTraitCount());
+            this.extensionFunctionClassesSet = computeIndexedClasses("ExtensionFunction", getFunctionTraitCount());
+            this.tupleClassesSet = computeIndexedClasses("Tuple", getFunctionTraitCount());
 
             this.primitiveTypeToClass = new EnumMap<PrimitiveType, ClassDescriptor>(PrimitiveType.class);
             this.primitiveTypeToJetType = new EnumMap<PrimitiveType, JetType>(PrimitiveType.class);
@@ -173,19 +183,36 @@ public class KotlinBuiltIns {
             this.primitiveTypeToArrayJetType = new EnumMap<PrimitiveType, JetType>(PrimitiveType.class);
             this.primitiveJetTypeToJetArrayType = new HashMap<JetType, JetType>();
             this.jetArrayTypeToPrimitiveJetType = new HashMap<JetType, JetType>();
+
+            this.nothingClass = getBuiltInClassByName("Nothing");
+            this.arrayClass = getBuiltInClassByName("Array");
+            this.deprecatedAnnotationClass = getBuiltInClassByName("deprecated");
+            this.dataAnnotationClass = getBuiltInClassByName("data");
+            this.functionClasses = new ClassDescriptor[getFunctionTraitCount()];
+            for (int i = 0; i < functionClasses.length; i++) {
+                functionClasses[i] = getBuiltInClassByName("Function" + i);
+            }
         }
         catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        catch (ProcessCanceledException e) {
-            throw e;
-        }
     }
 
     private void initialize() {
+        anyType = getBuiltInTypeByClassName("Any");
+        nullableAnyType = TypeUtils.makeNullable(anyType);
+        nothingType = getBuiltInTypeByClassName("Nothing");
+        nullableNothingType = TypeUtils.makeNullable(nothingType);
+        unitType = getBuiltInTypeByClassName("Tuple0");
+        stringType = getBuiltInTypeByClassName("String");
+        annotationType = getBuiltInTypeByClassName("Annotation");
+
         for (PrimitiveType primitive : PrimitiveType.values()) {
             makePrimitive(primitive);
         }
+
+        nonPhysicalClasses = computeNonPhysicalClasses();
+
         resolveSession.forceResolveAll();
     }
 
@@ -207,7 +234,7 @@ public class KotlinBuiltIns {
     }
 
     @NotNull
-    private List<JetFile> loadResourcesAsJetFiles(@NotNull Project project, @NotNull List<String> libraryFiles)
+    private static List<JetFile> loadResourcesAsJetFiles(@NotNull Project project, @NotNull List<String> libraryFiles)
             throws IOException, ProcessCanceledException
     {
         List<JetFile> files = new LinkedList<JetFile>();
@@ -257,15 +284,15 @@ public class KotlinBuiltIns {
     }
 
     private void makePrimitive(PrimitiveType primitiveType) {
-        ClassDescriptor clazz = (ClassDescriptor) getBuiltInsScope().getClassifier(primitiveType.getTypeName());
-        ClassDescriptor arrayClazz = (ClassDescriptor) getBuiltInsScope().getClassifier(primitiveType.getArrayTypeName());
-        JetTypeImpl type = new JetTypeImpl(clazz);
-        JetTypeImpl arrayType = new JetTypeImpl(arrayClazz);
+        ClassDescriptor theClass = getBuiltInClassByName(primitiveType.getTypeName().getName());
+        JetType type = new JetTypeImpl(theClass);
+        ClassDescriptor arrayClass = getBuiltInClassByName(primitiveType.getArrayTypeName().getName());
+        JetType arrayType = new JetTypeImpl(arrayClass);
 
-        primitiveTypeToClass.put(primitiveType, clazz);
+        primitiveTypeToClass.put(primitiveType, theClass);
         primitiveTypeToJetType.put(primitiveType, type);
         primitiveTypeToNullableJetType.put(primitiveType, TypeUtils.makeNullable(type));
-        primitiveTypeToArrayClass.put(primitiveType, arrayClazz);
+        primitiveTypeToArrayClass.put(primitiveType, arrayClass);
         primitiveTypeToArrayJetType.put(primitiveType, arrayType);
         primitiveJetTypeToJetArrayType.put(type, arrayType);
         jetArrayTypeToPrimitiveJetType.put(arrayType, type);
@@ -291,19 +318,8 @@ public class KotlinBuiltIns {
     }
 
     @NotNull
-    public Collection<DeclarationDescriptor> getAllBuiltInClasses() {
-        // TODO: used once, but incorrectly in JetShortNamesCache
-        return getBuiltInsScope().getAllDescriptors();
-    }
-
-    @NotNull
     public JetScope getBuiltInsScope() {
         return getBuiltInsPackage().getMemberScope();
-    }
-
-    public boolean isStandardClass(@NotNull FqName fqName) {
-        // TODO: this seems to be wrong for ranges, and will certainly be wrong upon renaming jet -> kotlin
-        return getBuiltInsPackageFqName().equals(fqName.parent());
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -432,6 +448,11 @@ public class KotlinBuiltIns {
     }
 
     @NotNull
+    public ClassDescriptor getDeprecatedAnnotation() {
+        return getBuiltInClassByName("deprecated");
+    }
+
+    @NotNull
     public ClassDescriptor getString() {
         return getBuiltInClassByName("String");
     }
@@ -518,12 +539,16 @@ public class KotlinBuiltIns {
 
     @NotNull
     public ClassDescriptor getMapEntry() {
-        return DescriptorUtils.getInnerClassByName(getBuiltInClassByName("Map"), "Entry");
+        ClassDescriptor classDescriptor = DescriptorUtils.getInnerClassByName(getBuiltInClassByName("Map"), "Entry");
+        assert classDescriptor != null : "Can't find Map.Entry";
+        return classDescriptor;
     }
 
     @NotNull
     public ClassDescriptor getMutableMapEntry() {
-        return DescriptorUtils.getInnerClassByName(getBuiltInClassByName("MutableMap"), "MutableEntry");
+        ClassDescriptor classDescriptor = DescriptorUtils.getInnerClassByName(getBuiltInClassByName("MutableMap"), "MutableEntry");
+        assert classDescriptor != null : "Can't find MutableMap.MutableEntry";
+        return classDescriptor;
     }
 
     @NotNull
@@ -534,6 +559,63 @@ public class KotlinBuiltIns {
     @NotNull
     public ClassDescriptor getMutableListIterator() {
         return getBuiltInClassByName("MutableListIterator");
+    }
+
+    /**
+     * Classes that only exist for the Kotlin compiler: they are erased at runtime.
+     * As a consequence they, for example, shouldn't be referred to by other languages
+     * (e.g. Java).
+     */
+    @NotNull
+    public Set<ClassDescriptor> getNonPhysicalClasses() {
+        return nonPhysicalClasses;
+    }
+
+    @NotNull
+    private ImmutableSet<ClassDescriptor> computeNonPhysicalClasses() {
+        ImmutableSet.Builder<ClassDescriptor> nonPhysical = ImmutableSet.builder();
+        nonPhysical.add(
+                getAny(),
+                getNothing(),
+
+                getNumber(),
+                getString(),
+                getCharSequence(),
+                getThrowable(),
+                getBuiltInClassByName("Hashable"),
+
+                getIterator(),
+                getIterable(),
+                getCollection(),
+                getList(),
+                getListIterator(),
+                getSet(),
+                getMap(),
+                getMapEntry(),
+
+                getMutableIterator(),
+                getMutableIterable(),
+                getMutableCollection(),
+                getMutableList(),
+                getMutableListIterator(),
+                getMutableSet(),
+                getMutableMap(),
+                getMutableMapEntry(),
+
+                getVolatileAnnotationClass(),
+                getDataClassAnnotation(),
+                getAnnotation(),
+                getComparable(),
+                getEnum(),
+                getArray()
+        );
+
+        for (PrimitiveType primitiveType : values()) {
+            nonPhysical.add(getPrimitiveClassDescriptor(primitiveType));
+            nonPhysical.add(getPrimitiveArrayClassDescriptor(primitiveType));
+        }
+
+        return nonPhysical.build();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -722,7 +804,7 @@ public class KotlinBuiltIns {
         return new JetTypeImpl(annotations, constructor, false, arguments, classDescriptor.getMemberScope(arguments));
     }
 
-    private TypeProjection defaultProjection(JetType returnType) {
+    private static TypeProjection defaultProjection(JetType returnType) {
         return new TypeProjection(Variance.INVARIANT, returnType);
     }
 
@@ -743,8 +825,8 @@ public class KotlinBuiltIns {
     }
 
     @NotNull
-    private ImmutableList<ClassDescriptor> computeIndexedClasses(@NotNull String prefix, int count) {
-        ImmutableList.Builder<ClassDescriptor> builder = ImmutableList.builder();
+    private ImmutableSet<ClassDescriptor> computeIndexedClasses(@NotNull String prefix, int count) {
+        ImmutableSet.Builder<ClassDescriptor> builder = ImmutableSet.builder();
         for (int i = 0; i < count; i++) {
             builder.add(getBuiltInClassByName(prefix + i));
         }
@@ -752,14 +834,13 @@ public class KotlinBuiltIns {
     }
 
     public boolean isFunctionType(@NotNull JetType type) {
-        DeclarationDescriptor constructor = type.getConstructor().getDeclarationDescriptor();
-        return functionClassesSet.contains(constructor) || extensionFunctionClassesSet.contains(constructor);
+        return setContainsClassOf(functionClassesSet, type) || setContainsClassOf(extensionFunctionClassesSet, type);
     }
 
     @Nullable
     public JetType getReceiverType(@NotNull JetType type) {
         assert isFunctionType(type) : type;
-        if (extensionFunctionClassesSet.contains(type.getConstructor().getDeclarationDescriptor())) {
+        if (setContainsClassOf(extensionFunctionClassesSet, type)) {
             return type.getArguments().get(0).getType();
         }
         return null;
@@ -791,7 +872,7 @@ public class KotlinBuiltIns {
     public List<TypeProjection> getParameterTypeProjectionsFromFunctionType(@NotNull JetType type) {
         assert isFunctionType(type);
         List<TypeProjection> arguments = type.getArguments();
-        int first = extensionFunctionClassesSet.contains(type.getConstructor().getDeclarationDescriptor()) ? 1 : 0;
+        int first = setContainsClassOf(extensionFunctionClassesSet, type) ? 1 : 0;
         int last = arguments.size() - 2;
         List<TypeProjection> parameterTypes = Lists.newArrayList();
         for (int i = first; i <= last; i++) {
@@ -831,7 +912,11 @@ public class KotlinBuiltIns {
         return containsAnnotation(classDescriptor, getDataClassAnnotation());
     }
 
-    private boolean containsAnnotation(DeclarationDescriptor descriptor, ClassDescriptor annotationClass) {
+    public boolean isDeprecated(@NotNull DeclarationDescriptor declarationDescriptor) {
+        return containsAnnotation(declarationDescriptor, getDeprecatedAnnotation());
+    }
+
+    private static boolean containsAnnotation(DeclarationDescriptor descriptor, ClassDescriptor annotationClass) {
         List<AnnotationDescriptor> annotations = descriptor.getOriginal().getAnnotations();
         if (annotations != null) {
             for (AnnotationDescriptor annotation : annotations) {
@@ -880,7 +965,7 @@ public class KotlinBuiltIns {
 
     @Deprecated
     public boolean isTupleType(@NotNull JetType type) {
-        return tupleClassesSet.contains(type.getConstructor().getDeclarationDescriptor());
+        return setContainsClassOf(tupleClassesSet, type);
     }
 
     @NotNull
@@ -905,11 +990,16 @@ public class KotlinBuiltIns {
         return new JetTypeImpl(annotations, tuple.getTypeConstructor(), false, typeArguments, tuple.getMemberScope(typeArguments));
     }
 
-    private List<TypeProjection> toProjections(List<JetType> arguments) {
+    private static List<TypeProjection> toProjections(List<JetType> arguments) {
         List<TypeProjection> result = new ArrayList<TypeProjection>();
         for (JetType argument : arguments) {
             result.add(new TypeProjection(Variance.OUT_VARIANCE, argument));
         }
         return result;
+    }
+
+    private static boolean setContainsClassOf(ImmutableSet<ClassDescriptor> set, JetType type) {
+        //noinspection SuspiciousMethodCalls
+        return set.contains(type.getConstructor().getDeclarationDescriptor());
     }
 }
