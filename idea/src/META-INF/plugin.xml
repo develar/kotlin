@@ -9,7 +9,7 @@
   <idea-version since-build="122.327" until-build="122.9999" />
 
   <depends optional="true">JUnit</depends>
-  <depends optional="true">JavaScriptDebugger</depends>
+  <depends optional="true" config-file="javaScriptDebug.xml">JavaScriptDebugger</depends>
 
   <project-components>
       <component>
@@ -244,9 +244,5 @@
       </intentionAction>
 
       <project.converterProvider implementation="org.jetbrains.jet.plugin.converters.JetRunConfigurationSettingsFormatConverterProvider"/>
-
-  </extensions>
-  <extensions defaultExtensionNs="com.jetbrains">
-    <javaScriptBreakpointAware implementation="org.jetbrains.jet.plugin.debugger.KotlinJavaScriptBreakpointAware"/>
   </extensions>
 </idea-plugin>
