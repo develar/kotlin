@@ -16,7 +16,6 @@
 
 package org.jetbrains.k2js.translate.reference;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +29,7 @@ import org.jetbrains.jet.lang.resolve.calls.ResolvedCallImpl;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -46,7 +46,7 @@ public final class CallBuilder {
     @Nullable
     private /*var*/ JsExpression receiver = null;
     @NotNull
-    private final List<JsExpression> args = Lists.newArrayList();
+    private List<JsExpression> args = Collections.emptyList();
     @NotNull
     private /*var*/ CallType callType = CallType.NORMAL;
     @Nullable
@@ -69,8 +69,8 @@ public final class CallBuilder {
 
     @NotNull
     public CallBuilder args(@NotNull List<JsExpression> args) {
-        assert this.args.isEmpty();
-        this.args.addAll(args);
+        assert this.args == Collections.EMPTY_LIST;
+        this.args = args;
         return this;
     }
 
