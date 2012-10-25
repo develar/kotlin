@@ -26,6 +26,7 @@ import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 /**

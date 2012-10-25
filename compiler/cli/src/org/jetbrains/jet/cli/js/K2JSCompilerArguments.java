@@ -21,19 +21,20 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.cli.common.CompilerArguments;
 import org.jetbrains.k2js.facade.MainCallParameters;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Pavel Talanov
  */
 
 /**
  * NOTE: for now K2JSCompiler supports only minimal amount of parameters required to launch it from the plugin.
- * You can specify path to the file where generated file will be stored, path to zipped library sources.
  */
 public class K2JSCompilerArguments extends CompilerArguments {
     @Argument(value = "output", description = "Output file path")
     public String outputFile;
 
-    //NOTE: may well be a subject to change soon
     @Argument(value = "libraryFiles", description = "Path to zipped lib sources or kotlin files")
     public String[] libraryFiles;
 
