@@ -21,6 +21,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFileFactory;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.LocalTimeCounter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,9 +78,13 @@ public class JetPsiFactory {
         return createWhiteSpace(project, " ");
     }
 
-    public static PsiElement createWhiteSpace(Project project, String text) {
+    private static PsiElement createWhiteSpace(Project project, String text) {
         JetProperty property = createProperty(project, "val" + text + "x");
         return property.findElementAt(3);
+    }
+
+    public static PsiElement createNewLine(Project project) {
+        return createWhiteSpace(project, "\n");
     }
 
     public static JetClass createClass(Project project, String text) {
@@ -145,6 +150,17 @@ public class JetPsiFactory {
     public static JetParameter createParameter(Project project, String name, String type) {
         JetNamedFunction function = createFunction(project, "fun foo(" + name + " : " + type + ") {}");
         return function.getValueParameters().get(0);
+    }
+
+    @NotNull
+    public static JetWhenEntry createWhenEntry(@NotNull Project project, @NotNull String entryText) {
+        JetNamedFunction function = createFunction(project, "fun foo() { when(12) { " + entryText + " } }");
+        JetWhenEntry whenEntry = PsiTreeUtil.findChildOfType(function, JetWhenEntry.class);
+
+        assert whenEntry != null : "Couldn't generate when entry";
+        assert entryText.equals(whenEntry.getText()) : "Generate when entry text differs from the given text";
+
+        return whenEntry;
     }
 
     @NotNull

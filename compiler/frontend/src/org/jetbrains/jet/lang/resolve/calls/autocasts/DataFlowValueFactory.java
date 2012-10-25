@@ -94,12 +94,11 @@ public class DataFlowValueFactory {
                 return createTransientDataFlowValue(receiver);
             }
 
+            @NotNull
             private DataFlowValue createTransientDataFlowValue(ReceiverDescriptor receiver) {
                 JetType type = receiver.getType();
-                if (type.isNullable() || TypeUtils.hasNullableSuperType(type)) {
-                    return DataFlowValue.NULLABLE;
-                }
-                return new DataFlowValue(receiver, type, false, Nullability.NOT_NULL);
+                boolean nullable = type.isNullable() || TypeUtils.hasNullableSuperType(type);
+                return new DataFlowValue(receiver, type, nullable, Nullability.NOT_NULL);
             }
         }, bindingContext);
     }
