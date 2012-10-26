@@ -71,7 +71,7 @@ public class JsSourceGenerationVisitor extends JsToStringGenerationVisitor imple
         if (sourceMapBuilder != null) {
             Object sourceInfo = node.getSource();
             if (sourceInfo != null) {
-                assert pendingSourceInfo == null;
+                //assert pendingSourceInfo == null;
                 if (p.isJustNewlined()) {
                     //System.out.println(node.toString());
                     pendingSourceInfo = sourceInfo;
