@@ -36,7 +36,6 @@ import static org.jetbrains.k2js.translate.reference.CallParametersResolver.reso
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.isConstructorDescriptor;
 
 /**
  * @author Pavel Talanov
@@ -84,7 +83,7 @@ public final class CallTranslator extends AbstractTranslator {
         if (result != null) {
             return result;
         }
-        if (isConstructor()) {
+        if ((descriptor instanceof ConstructorDescriptor)) {
             return createConstructorCallExpression(translateAsFunctionWithNoThisObject(descriptor));
         }
         if (resolvedCall.getReceiverArgument().exists()) {
@@ -123,10 +122,6 @@ public final class CallTranslator extends AbstractTranslator {
             }
         }
         return null;
-    }
-
-    private boolean isConstructor() {
-        return isConstructorDescriptor(descriptor);
     }
 
     @NotNull
