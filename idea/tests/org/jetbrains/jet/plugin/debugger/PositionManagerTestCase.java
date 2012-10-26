@@ -25,21 +25,22 @@ import com.intellij.debugger.engine.DebugProcess;
 import com.intellij.debugger.engine.DebugProcessEvents;
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.testFramework.PlatformTestCase;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.refactoring.MultiFileTestCase;
+import com.intellij.testFramework.PsiTestUtil;
+import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.codegen.ClassFileFactory;
 import org.jetbrains.jet.codegen.GenerationUtils;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
 import org.jetbrains.jet.utils.ExceptionUtils;
 
-import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,7 +48,7 @@ import java.util.regex.Pattern;
 /**
  * @author udalov
  */
-public abstract class PositionManagerTestCase extends PlatformTestCase {
+public abstract class PositionManagerTestCase extends MultiFileTestCase {
 
     // Breakpoint is given as a line comment on a specific line, containing the name of the class, where that line can be found.
     // This pattern matches against these line comments and saves the class name in the first group
@@ -59,76 +60,44 @@ public abstract class PositionManagerTestCase extends PlatformTestCase {
     @NotNull
     protected abstract PositionManager createPositionManager(DebugProcess process, List<JetFile> files, GenerationState state);
 
-    @Override
-    protected final void setUp() throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    PositionManagerTestCase.super.setUp();
-                }
-                catch (Exception e) {
-                    ExceptionUtils.rethrow(e);
-                }
-            }
-        });
-    }
-
-    @Override
-    protected final void tearDown() throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    PositionManagerTestCase.super.tearDown();
-                }
-                catch (Exception e) {
-                    ExceptionUtils.rethrow(e);
-                }
-            }
-        });
-    }
-
-    @Override
-    protected void runBareRunnable(Runnable runnable) {
-        runnable.run();
-    }
-
     protected void doTest() {
-        doTest(getTestDataPath() + "/" + getTestName(true) + ".kt");
-    }
-
-    protected void doMultiTest(String... filenames) {
-        for (int i = 0; i < filenames.length; i++) {
-            filenames[i] = getTestDataPath() + "/" + filenames[i];
+        String path = getTestRoot() + getTestName(true) + ".kt";
+        try {
+            configureByFile(path);
         }
-        doTest(filenames);
+        catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+        performTest();
     }
 
-    private void doTest(String... filenames) {
-        final List<JetFile> files = Lists.newArrayList();
+    protected void doMultiTest() {
+        String path = getTestDataPath() + getTestRoot() + getTestName(true);
+        try {
+            VirtualFile rootDir = PsiTestUtil.createTestProjectStructure(myProject, myModule, path, myFilesToDelete, false);
+            prepareProject(rootDir);
+            PsiDocumentManager.getInstance(myProject).commitAllDocuments();
+        }
+        catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+        performTest();
+    }
+
+    private void performTest() {
+        List<JetFile> files = Lists.newArrayList(
+                JetFilesProvider.getInstance(getProject()).allInScope(GlobalSearchScope.allScope(getProject())));
+
         final List<Breakpoint> breakpoints = Lists.newArrayList();
-
-        for (String filename : filenames) {
-            File file = new File(filename);
-            String fileContent;
-            try {
-                fileContent = FileUtil.loadFile(file);
-            }
-            catch (IOException e) {
-                throw ExceptionUtils.rethrow(e);
-            }
-            final JetFile jetFile = JetTestUtils.createFile(file.getAbsolutePath(), fileContent, getProject());
-
-            files.add(jetFile);
-            breakpoints.addAll(extractBreakpointsInfo(jetFile, fileContent));
+        for (JetFile file : files) {
+            breakpoints.addAll(extractBreakpointsInfo(file, file.getText()));
         }
 
         GenerationState state = GenerationUtils.compileManyFilesGetGenerationStateForTest(getProject(), files);
 
         Map<String, ReferenceType> referencesByName = getReferenceMap(state.getFactory());
 
-        final DebugProcess debugProcess = createDebugProcess(referencesByName);
+        DebugProcess debugProcess = createDebugProcess(referencesByName);
 
         final PositionManager positionManager = createPositionManager(debugProcess, files, state);
 
@@ -136,8 +105,7 @@ public abstract class PositionManagerTestCase extends PlatformTestCase {
             public void run() {
                 try {
                     for (Breakpoint breakpoint : breakpoints) {
-                        SourcePosition position = SourcePosition.createFromLine(breakpoint.file, breakpoint.lineNumber);
-                        assertPositionIsValid(position, breakpoint.className, positionManager);
+                        assertBreakpointIsHandledCorrectly(breakpoint, positionManager);
                     }
                 }
                 catch (NoDataException e) {
@@ -154,8 +122,7 @@ public abstract class PositionManagerTestCase extends PlatformTestCase {
         for (int i = 0; i < lines.length; i++) {
             Matcher matcher = BREAKPOINT_PATTERN.matcher(lines[i]);
             if (matcher.matches()) {
-                // Line breakpoint numbers are 1-based
-                breakpoints.add(new Breakpoint(file, i + 1, matcher.group(1)));
+                breakpoints.add(new Breakpoint(file, i, matcher.group(1)));
             }
         }
 
@@ -187,20 +154,30 @@ public abstract class PositionManagerTestCase extends PlatformTestCase {
         return events;
     }
 
-    private static void assertPositionIsValid(SourcePosition position, String className, PositionManager positionManager) throws NoDataException {
+    private static void assertBreakpointIsHandledCorrectly(Breakpoint breakpoint, PositionManager positionManager) throws NoDataException {
+        SourcePosition position = SourcePosition.createFromLine(breakpoint.file, breakpoint.lineNumber);
         List<ReferenceType> classes = positionManager.getAllClasses(position);
         assertNotNull(classes);
         assertEquals(1, classes.size());
         ReferenceType type = classes.get(0);
-        if (!className.contains("$src$")) // don't want to deal with hashCodes in test
-            assertEquals(className, type.name());
+        if (!breakpoint.className.contains("$src$")) // don't want to deal with hashCodes in test
+            assertEquals(breakpoint.className, type.name());
         else
-            assertTrue(type.name().startsWith(className));
+            assertTrue(type.name().startsWith(breakpoint.className));
+
+        // JDI names are of form "package.Class$InnerClass"
+        ReferenceType typeWithFqName = new MockReferenceType(type.name().replace('/', '.'));
+        Location location = new MockLocation(typeWithFqName, breakpoint.file.getName(), breakpoint.lineNumber + 1);
+
+        SourcePosition actualPosition = positionManager.getSourcePosition(location);
+        assertNotNull(actualPosition);
+        assertEquals(position.getFile(), actualPosition.getFile());
+        assertEquals(position.getLine(), actualPosition.getLine());
     }
 
     private static class Breakpoint {
         private final JetFile file;
-        private final int lineNumber;
+        private final int lineNumber; // 0-based
         private final String className;
 
         private Breakpoint(JetFile file, int lineNumber, String className) {
