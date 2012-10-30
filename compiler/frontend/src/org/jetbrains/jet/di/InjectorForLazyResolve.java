@@ -28,7 +28,9 @@ import org.jetbrains.jet.lang.resolve.lazy.ScopeProvider;
 import org.jetbrains.jet.lang.resolve.AnnotationResolver;
 import org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver;
 import org.jetbrains.jet.lang.resolve.calls.CallResolver;
-import org.jetbrains.jet.lang.resolve.calls.OverloadingConflictResolver;
+import org.jetbrains.jet.lang.resolve.calls.CandidateResolver;
+import org.jetbrains.jet.lang.resolve.calls.results.ResolutionResultsHandler;
+import org.jetbrains.jet.lang.resolve.calls.results.OverloadingConflictResolver;
 import org.jetbrains.annotations.NotNull;
 import javax.annotation.PreDestroy;
 
@@ -46,6 +48,8 @@ public class InjectorForLazyResolve {
     private AnnotationResolver annotationResolver;
     private QualifiedExpressionResolver qualifiedExpressionResolver;
     private CallResolver callResolver;
+    private CandidateResolver candidateResolver;
+    private ResolutionResultsHandler resolutionResultsHandler;
     private OverloadingConflictResolver overloadingConflictResolver;
 
     public InjectorForLazyResolve(
@@ -65,6 +69,8 @@ public class InjectorForLazyResolve {
         this.annotationResolver = new AnnotationResolver();
         this.qualifiedExpressionResolver = new QualifiedExpressionResolver();
         this.callResolver = new CallResolver();
+        this.candidateResolver = new CandidateResolver();
+        this.resolutionResultsHandler = new ResolutionResultsHandler();
         this.overloadingConflictResolver = new OverloadingConflictResolver();
 
         this.descriptorResolver.setAnnotationResolver(annotationResolver);
@@ -84,10 +90,15 @@ public class InjectorForLazyResolve {
         this.annotationResolver.setCallResolver(callResolver);
         this.annotationResolver.setExpressionTypingServices(expressionTypingServices);
 
-        callResolver.setDescriptorResolver(descriptorResolver);
+        callResolver.setCandidateResolver(candidateResolver);
         callResolver.setExpressionTypingServices(expressionTypingServices);
-        callResolver.setOverloadingConflictResolver(overloadingConflictResolver);
+        callResolver.setResolutionResultsHandler(resolutionResultsHandler);
         callResolver.setTypeResolver(typeResolver);
+
+        candidateResolver.setExpressionTypingServices(expressionTypingServices);
+        candidateResolver.setTypeResolver(typeResolver);
+
+        resolutionResultsHandler.setOverloadingConflictResolver(overloadingConflictResolver);
 
     }
 

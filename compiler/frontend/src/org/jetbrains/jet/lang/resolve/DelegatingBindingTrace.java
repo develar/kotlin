@@ -36,6 +36,7 @@ public class DelegatingBindingTrace implements BindingTrace {
     private final BindingContext parentContext;
     private final MutableSlicedMap map = SlicedMapImpl.create();
     private final List<Diagnostic> diagnostics = Lists.newArrayList();
+    private final String name;
 
     private final BindingContext bindingContext = new BindingContext() {
         @Override
@@ -67,8 +68,13 @@ public class DelegatingBindingTrace implements BindingTrace {
         }
     };
 
-    public DelegatingBindingTrace(BindingContext parentContext) {
+    public DelegatingBindingTrace(BindingContext parentContext, String debugName) {
         this.parentContext = parentContext;
+        this.name = debugName;
+    }
+
+    public DelegatingBindingTrace(BindingContext parentContext, String debugName, @Nullable Object resolutionSubjectForMessage) {
+        this(parentContext, AnalyzingUtils.formDebugNameForBindingTrace(debugName, resolutionSubjectForMessage));
     }
 
     @Override
@@ -118,6 +124,11 @@ public class DelegatingBindingTrace implements BindingTrace {
         addAllMyDataTo(trace, null, true);
     }
 
+    public void moveAllMyDataTo(@NotNull BindingTrace trace) {
+        addAllMyDataTo(trace, null, true);
+        clear();
+    }
+
     public void addAllMyDataTo(@NotNull BindingTrace trace, @Nullable TraceEntryFilter filter, boolean commitDiagnostics) {
         for (Map.Entry<SlicedMapKey<?, ?>, ?> entry : map) {
             SlicedMapKey slicedMapKey = entry.getKey();
@@ -147,5 +158,10 @@ public class DelegatingBindingTrace implements BindingTrace {
     @Override
     public void report(@NotNull Diagnostic diagnostic) {
         diagnostics.add(diagnostic);
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

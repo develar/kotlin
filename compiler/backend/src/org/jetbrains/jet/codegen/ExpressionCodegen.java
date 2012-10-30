@@ -46,7 +46,10 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.resolve.calls.*;
+import org.jetbrains.jet.lang.resolve.calls.autocasts.AutoCastReceiver;
+import org.jetbrains.jet.lang.resolve.calls.model.*;
+import org.jetbrains.jet.lang.resolve.calls.util.CallMaker;
+import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.resolve.java.AsmTypeConstants;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
@@ -1828,6 +1831,10 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
     public void invokeMethodWithArguments(CallableMethod callableMethod, JetCallElement expression, StackValue receiver) {
         JetExpression calleeExpression = expression.getCalleeExpression();
+        invokeMethodWithArguments(callableMethod, receiver, calleeExpression);
+    }
+
+    public void invokeMethodWithArguments(CallableMethod callableMethod, StackValue receiver, JetExpression calleeExpression) {
         Call call = bindingContext.get(CALL, calleeExpression);
         ResolvedCall<? extends CallableDescriptor> resolvedCall = bindingContext.get(BindingContext.RESOLVED_CALL, calleeExpression);
 
@@ -1835,6 +1842,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
         assert call != null;
         invokeMethodWithArguments(callableMethod, resolvedCall, call, receiver);
     }
+
 
     protected void invokeMethodWithArguments(
             @NotNull CallableMethod callableMethod,

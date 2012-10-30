@@ -26,6 +26,15 @@ import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.*;
+import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCallImpl;
+import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCallWithTrace;
+import org.jetbrains.jet.lang.resolve.calls.model.VariableAsFunctionResolvedCall;
+import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResults;
+import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResultsImpl;
+import org.jetbrains.jet.lang.resolve.calls.tasks.ExplicitReceiverKind;
+import org.jetbrains.jet.lang.resolve.calls.tasks.ResolutionCandidate;
+import org.jetbrains.jet.lang.resolve.calls.tasks.ResolutionTask;
+import org.jetbrains.jet.lang.resolve.calls.util.DelegatingCall;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
@@ -115,7 +124,7 @@ public class CallTransformer<D extends CallableDescriptor, F extends D> {
         private CallResolutionContext<CallableDescriptor, FunctionDescriptor> createContextWithChainedTrace(ResolutionCandidate<CallableDescriptor> candidate,
                 Call call, TemporaryBindingTrace temporaryTrace, ResolutionTask<CallableDescriptor, FunctionDescriptor> task) {
 
-            ChainedTemporaryBindingTrace chainedTrace = ChainedTemporaryBindingTrace.create(temporaryTrace);
+            ChainedTemporaryBindingTrace chainedTrace = ChainedTemporaryBindingTrace.create(temporaryTrace, "chained trace to resolve candidate", candidate);
             ResolvedCallImpl<CallableDescriptor> resolvedCall = ResolvedCallImpl.create(candidate, chainedTrace);
             return CallResolutionContext.create(resolvedCall, task, chainedTrace, task.tracing, call);
         }
@@ -182,7 +191,7 @@ public class CallTransformer<D extends CallableDescriptor, F extends D> {
 
             Call functionCall = createFunctionCall(context, task, returnType);
 
-            final TemporaryBindingTrace variableCallTrace = context.candidateCall.getTrace();
+            final DelegatingBindingTrace variableCallTrace = context.candidateCall.getTrace();
             BasicResolutionContext basicResolutionContext = BasicResolutionContext.create(variableCallTrace, context.scope, functionCall, context.expectedType, context.dataFlowInfo);
 
             // 'invoke' call resolve

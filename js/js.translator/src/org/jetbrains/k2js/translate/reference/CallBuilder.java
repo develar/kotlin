@@ -22,10 +22,10 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingTraceContext;
 import org.jetbrains.jet.lang.resolve.TemporaryBindingTrace;
-import org.jetbrains.jet.lang.resolve.calls.ExplicitReceiverKind;
-import org.jetbrains.jet.lang.resolve.calls.ResolutionCandidate;
-import org.jetbrains.jet.lang.resolve.calls.ResolvedCall;
-import org.jetbrains.jet.lang.resolve.calls.ResolvedCallImpl;
+import org.jetbrains.jet.lang.resolve.calls.tasks.ExplicitReceiverKind;
+import org.jetbrains.jet.lang.resolve.calls.tasks.ResolutionCandidate;
+import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
+import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCallImpl;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
 import java.util.Arrays;
@@ -110,7 +110,7 @@ public final class CallBuilder {
             resolvedCall = ResolvedCallImpl.create(ResolutionCandidate.create(descriptor, descriptor.getExpectedThisObject(),
                                                                               descriptor.getReceiverParameter(),
                                                                               ExplicitReceiverKind.THIS_OBJECT, false),
-                                                   TemporaryBindingTrace.create(new BindingTraceContext()));
+                                                   TemporaryBindingTrace.create(new BindingTraceContext(), "trace to resolve call (in js)"));
         }
         if (descriptor == null) {
             descriptor = resolvedCall.getCandidateDescriptor().getOriginal();

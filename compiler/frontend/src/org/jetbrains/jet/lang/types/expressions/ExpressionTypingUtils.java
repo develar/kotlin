@@ -29,8 +29,8 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.diagnostics.Errors;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.*;
-import org.jetbrains.jet.lang.resolve.calls.CallMaker;
-import org.jetbrains.jet.lang.resolve.calls.OverloadResolutionResults;
+import org.jetbrains.jet.lang.resolve.calls.util.CallMaker;
+import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResults;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
 import org.jetbrains.jet.lang.resolve.calls.inference.ConstraintPosition;
 import org.jetbrains.jet.lang.resolve.calls.inference.ConstraintSystem;
@@ -252,7 +252,7 @@ public class ExpressionTypingUtils {
             }
         }
 
-        constraintSystem.addSupertypeConstraint(callReceiver.getType(), receiverType, ConstraintPosition.RECEIVER_POSITION);
+        constraintSystem.addSubtypeConstraint(callReceiver.getType(), receiverType, ConstraintPosition.RECEIVER_POSITION);
         return constraintSystem.isSuccessful() && ConstraintsUtil.checkBoundsAreSatisfied(constraintSystem);
     }
 
@@ -287,7 +287,7 @@ public class ExpressionTypingUtils {
             @NotNull Name name
     ) {
         final JetReferenceExpression fake = JetPsiFactory.createSimpleName(context.expressionTypingServices.getProject(), "fake");
-        TemporaryBindingTrace fakeTrace = TemporaryBindingTrace.create(context.trace);
+        TemporaryBindingTrace fakeTrace = TemporaryBindingTrace.create(context.trace, "trace for resolve fake call for", name);
         Call call = CallMaker.makeCall(fake, receiver, null, fake, Collections.<ValueArgument>emptyList());
         OverloadResolutionResults<FunctionDescriptor> results =
                 context.replaceBindingTrace(fakeTrace).resolveCallWithGivenName(call, fake, name);

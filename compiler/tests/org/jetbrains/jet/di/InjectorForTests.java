@@ -26,7 +26,9 @@ import org.jetbrains.jet.lang.ModuleConfiguration;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.jet.lang.resolve.AnnotationResolver;
 import org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver;
-import org.jetbrains.jet.lang.resolve.calls.OverloadingConflictResolver;
+import org.jetbrains.jet.lang.resolve.calls.CandidateResolver;
+import org.jetbrains.jet.lang.resolve.calls.results.ResolutionResultsHandler;
+import org.jetbrains.jet.lang.resolve.calls.results.OverloadingConflictResolver;
 import org.jetbrains.annotations.NotNull;
 import javax.annotation.PreDestroy;
 
@@ -42,6 +44,8 @@ public class InjectorForTests {
     private final Project project;
     private AnnotationResolver annotationResolver;
     private QualifiedExpressionResolver qualifiedExpressionResolver;
+    private CandidateResolver candidateResolver;
+    private ResolutionResultsHandler resolutionResultsHandler;
     private OverloadingConflictResolver overloadingConflictResolver;
 
     public InjectorForTests(
@@ -56,6 +60,8 @@ public class InjectorForTests {
         this.project = project;
         this.annotationResolver = new AnnotationResolver();
         this.qualifiedExpressionResolver = new QualifiedExpressionResolver();
+        this.candidateResolver = new CandidateResolver();
+        this.resolutionResultsHandler = new ResolutionResultsHandler();
         this.overloadingConflictResolver = new OverloadingConflictResolver();
 
         this.descriptorResolver.setAnnotationResolver(annotationResolver);
@@ -72,13 +78,18 @@ public class InjectorForTests {
         this.typeResolver.setModuleConfiguration(moduleConfiguration);
         this.typeResolver.setQualifiedExpressionResolver(qualifiedExpressionResolver);
 
-        this.callResolver.setDescriptorResolver(descriptorResolver);
+        this.callResolver.setCandidateResolver(candidateResolver);
         this.callResolver.setExpressionTypingServices(expressionTypingServices);
-        this.callResolver.setOverloadingConflictResolver(overloadingConflictResolver);
+        this.callResolver.setResolutionResultsHandler(resolutionResultsHandler);
         this.callResolver.setTypeResolver(typeResolver);
 
         annotationResolver.setCallResolver(callResolver);
         annotationResolver.setExpressionTypingServices(expressionTypingServices);
+
+        candidateResolver.setExpressionTypingServices(expressionTypingServices);
+        candidateResolver.setTypeResolver(typeResolver);
+
+        resolutionResultsHandler.setOverloadingConflictResolver(overloadingConflictResolver);
 
     }
 

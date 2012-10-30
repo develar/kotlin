@@ -56,6 +56,7 @@ import com.intellij.ui.EditorNotificationPanel;
 import com.intellij.ui.EditorNotifications;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.plugin.JetFileType;
 import org.jetbrains.jet.utils.PathUtil;
@@ -82,6 +83,7 @@ public class ConfigureKotlinLibraryNotificationProvider extends EditorNotificati
     }
 
     @Override
+    @Nullable
     public EditorNotificationPanel createNotificationPanel(VirtualFile file, FileEditor fileEditor) {
         try {
             if (file.getFileType() != JetFileType.INSTANCE) return null;
