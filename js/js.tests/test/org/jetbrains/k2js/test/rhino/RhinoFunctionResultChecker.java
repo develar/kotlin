@@ -17,10 +17,9 @@
 package org.jetbrains.k2js.test.rhino;
 
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.k2js.config.Config;
+import org.jetbrains.k2js.test.config.TestConfig;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Scriptable;
 
 import static org.jetbrains.k2js.test.rhino.RhinoUtils.flushSystemOut;
@@ -37,7 +36,7 @@ public class RhinoFunctionResultChecker implements RhinoResultChecker {
     private final Object expectedResult;
 
     public RhinoFunctionResultChecker(@Nullable String namespaceName, String functionName, Object expectedResult) {
-        this(Config.REWRITABLE_MODULE_NAME, namespaceName, functionName, expectedResult);
+        this(TestConfig.TEST_MODULE_NAME, namespaceName, functionName, expectedResult);
     }
 
     public RhinoFunctionResultChecker(@Nullable String moduleId, @Nullable String namespaceName, String functionName, Object expectedResult) {
@@ -53,7 +52,7 @@ public class RhinoFunctionResultChecker implements RhinoResultChecker {
 
     @Override
     public void runChecks(Context context, Scriptable scope) throws Exception {
-        Object result = null;
+        Object result;
         //try {
             result = evaluateFunction(context, scope);
         //}
