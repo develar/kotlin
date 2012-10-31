@@ -57,7 +57,6 @@ import static org.jetbrains.jet.codegen.CodegenUtil.*;
 import static org.jetbrains.jet.codegen.binding.CodegenBinding.isLocalFun;
 import static org.jetbrains.jet.lang.resolve.BindingContextUtils.callableDescriptorToDeclaration;
 import static org.jetbrains.jet.lang.resolve.BindingContextUtils.descriptorToDeclaration;
-import static org.jetbrains.jet.lang.resolve.java.AsmTypeConstants.JAVA_ARRAY_GENERIC_TYPE;
 import static org.jetbrains.jet.lang.resolve.java.AsmTypeConstants.OBJECT_TYPE;
 
 /**
@@ -94,10 +93,6 @@ public class FunctionCodegen extends GenerationStateAware {
         checkMustGenerateCode(functionDescriptor);
 
         OwnerKind kind = owner.getContextKind();
-        if (!isStatic(kind) &&
-                (kind instanceof OwnerKind.DelegateKind) != (functionDescriptor.getKind() == FunctionDescriptor.Kind.DELEGATION)) {
-            throw new IllegalStateException("Mismatching kind in " + functionDescriptor + "; context kind: " + kind);
-        }
 
         if (kind == OwnerKind.TRAIT_IMPL) {
             needJetAnnotations = false;
@@ -108,7 +103,7 @@ public class FunctionCodegen extends GenerationStateAware {
             generateMethodHeaderAndBody(fun, jvmSignature, needJetAnnotations, propertyTypeSignature, functionDescriptor, context);
 
             if (state.getClassBuilderMode() == ClassBuilderMode.FULL && !isAbstract(functionDescriptor, kind)) {
-                generateBridgeIfNeeded(owner, state, v, jvmSignature.getAsmMethod(), functionDescriptor, kind);
+                generateBridgeIfNeeded(owner, state, v, jvmSignature.getAsmMethod(), functionDescriptor);
             }
         }
 
@@ -188,9 +183,6 @@ public class FunctionCodegen extends GenerationStateAware {
         OwnerKind kind = context.getContextKind();
         if (kind instanceof OwnerKind.StaticDelegateKind) {
             generateStaticDelegateMethodBody(mv, asmMethod, (OwnerKind.StaticDelegateKind) kind);
-        }
-        else if (kind instanceof OwnerKind.DelegateKind) {
-            generateDelegateMethodBody(mv, asmMethod, (OwnerKind.DelegateKind) kind);
         }
         else {
             FrameMap frameMap = context.prepareFrame(typeMapper);
@@ -316,24 +308,6 @@ public class FunctionCodegen extends GenerationStateAware {
 
             mv.visitVarInsn(sharedVarType.getOpcode(ISTORE), index);
         }
-    }
-
-    private void generateDelegateMethodBody(
-            @NotNull MethodVisitor mv,
-            @NotNull Method asmMethod,
-            @NotNull OwnerKind.DelegateKind dk
-    ) {
-        InstructionAdapter iv = new InstructionAdapter(mv);
-        Type[] argTypes = asmMethod.getArgumentTypes();
-
-        iv.load(0, OBJECT_TYPE);
-        dk.getDelegate().put(OBJECT_TYPE, iv);
-        for (int i = 0; i < argTypes.length; i++) {
-            Type argType = argTypes[i];
-            iv.load(i + 1, argType);
-        }
-        iv.invokeinterface(dk.getOwnerClass(), asmMethod.getName(), asmMethod.getDescriptor());
-        iv.areturn(asmMethod.getReturnType());
     }
 
     private void generateStaticDelegateMethodBody(
@@ -497,10 +471,9 @@ public class FunctionCodegen extends GenerationStateAware {
             GenerationState state,
             ClassBuilder v,
             Method jvmSignature,
-            FunctionDescriptor functionDescriptor,
-            OwnerKind kind
+            FunctionDescriptor functionDescriptor
     ) {
-        if (kind == OwnerKind.TRAIT_IMPL) {
+        if (owner.getContextKind() == OwnerKind.TRAIT_IMPL) {
             return;
         }
 
@@ -772,20 +745,13 @@ public class FunctionCodegen extends GenerationStateAware {
 
             Type[] argTypes = overridden.getArgumentTypes();
             Type[] originalArgTypes = jvmSignature.getArgumentTypes();
+
             InstructionAdapter iv = new InstructionAdapter(mv);
             iv.load(0, OBJECT_TYPE);
             for (int i = 0, reg = 1; i < argTypes.length; i++) {
-                Type argType = argTypes[i];
-                iv.load(reg, argType);
-                if (argType.getSort() == Type.OBJECT) {
-                    StackValue.onStack(OBJECT_TYPE).put(originalArgTypes[i], iv);
-                }
-                else if (argType.getSort() == Type.ARRAY) {
-                    StackValue.onStack(JAVA_ARRAY_GENERIC_TYPE).put(originalArgTypes[i], iv);
-                }
-
+                StackValue.local(reg, argTypes[i]).put(originalArgTypes[i], iv);
                 //noinspection AssignmentToForLoopParameter
-                reg += argType.getSize();
+                reg += argTypes[i].getSize();
             }
 
             iv.invokevirtual(state.getTypeMapper().mapType(
@@ -802,16 +768,16 @@ public class FunctionCodegen extends GenerationStateAware {
         }
     }
 
-    public void genDelegate(FunctionDescriptor functionDescriptor, CallableMemberDescriptor overriddenDescriptor, StackValue field) {
-        genDelegate(functionDescriptor, overriddenDescriptor, field,
+    public void genDelegate(FunctionDescriptor functionDescriptor, FunctionDescriptor overriddenDescriptor, StackValue field) {
+        genDelegate(functionDescriptor, (ClassDescriptor) overriddenDescriptor.getContainingDeclaration(), field,
                     typeMapper.mapSignature(functionDescriptor.getName(), functionDescriptor),
-                    typeMapper.mapSignature(overriddenDescriptor.getName(), (FunctionDescriptor) overriddenDescriptor.getOriginal())
+                    typeMapper.mapSignature(overriddenDescriptor.getName(), overriddenDescriptor.getOriginal())
         );
     }
 
     public void genDelegate(
-            CallableMemberDescriptor functionDescriptor,
-            CallableMemberDescriptor overriddenDescriptor,
+            FunctionDescriptor functionDescriptor,
+            ClassDescriptor toClass,
             StackValue field,
             JvmMethodSignature jvmDelegateMethodSignature,
             JvmMethodSignature jvmOverriddenMethodSignature
@@ -828,28 +794,20 @@ public class FunctionCodegen extends GenerationStateAware {
         else if (state.getClassBuilderMode() == ClassBuilderMode.FULL) {
             mv.visitCode();
 
-            Type[] argTypes = overriddenMethod.getArgumentTypes();
+            Type[] argTypes = delegateMethod.getArgumentTypes();
+            Type[] originalArgTypes = overriddenMethod.getArgumentTypes();
+
             InstructionAdapter iv = new InstructionAdapter(mv);
             iv.load(0, OBJECT_TYPE);
             field.put(field.type, iv);
             for (int i = 0, reg = 1; i < argTypes.length; i++) {
-                Type argType = argTypes[i];
-                iv.load(reg, argType);
-                if (argType.getSort() == Type.OBJECT) {
-                    StackValue.onStack(OBJECT_TYPE).put(overriddenMethod.getArgumentTypes()[i], iv);
-                }
-                else if (argType.getSort() == Type.ARRAY) {
-                    StackValue.onStack(JAVA_ARRAY_GENERIC_TYPE).put(overriddenMethod.getArgumentTypes()[i], iv);
-                }
-
+                StackValue.local(reg, argTypes[i]).put(originalArgTypes[i], iv);
                 //noinspection AssignmentToForLoopParameter
-                reg += argType.getSize();
+                reg += argTypes[i].getSize();
             }
 
-            ClassDescriptor classDescriptor = (ClassDescriptor) overriddenDescriptor.getContainingDeclaration();
-            String internalName =
-                    state.getTypeMapper().mapType(classDescriptor).getInternalName();
-            if (classDescriptor.getKind() == ClassKind.TRAIT) {
+            String internalName = typeMapper.mapType(toClass).getInternalName();
+            if (toClass.getKind() == ClassKind.TRAIT) {
                 iv.invokeinterface(internalName, overriddenMethod.getName(), overriddenMethod.getDescriptor());
             }
             else {
@@ -860,6 +818,8 @@ public class FunctionCodegen extends GenerationStateAware {
 
             iv.areturn(delegateMethod.getReturnType());
             endVisit(mv, "delegate method", descriptorToDeclaration(bindingContext, functionDescriptor));
+
+            generateBridgeIfNeeded(owner, state, v, jvmDelegateMethodSignature.getAsmMethod(), functionDescriptor);
         }
     }
 }

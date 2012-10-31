@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.lang.resolve;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +28,7 @@ import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.DescriptorSubstitutor;
 import org.jetbrains.jet.lang.types.JetType;
@@ -362,15 +364,5 @@ public class DescriptorUtils {
                 "Inner class " + innerClassName + " in " + classDescriptor + " should be instance of ClassDescriptor, but was: "
                 + (classifier == null ? "null" : classifier.getClass());
         return (ClassDescriptor) classifier;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static Collection<ClassDescriptor> getInnerClasses(ClassDescriptor classDescriptor) {
-        Collection<DeclarationDescriptor> innerClasses = classDescriptor.getUnsubstitutedInnerClassesScope().getAllDescriptors();
-        for (DeclarationDescriptor inner : innerClasses) {
-            assert inner instanceof ClassDescriptor
-                    : "Not a class in inner classes scope of " + classDescriptor + ": " + inner;
-        }
-        return (Collection) innerClasses;
     }
 }

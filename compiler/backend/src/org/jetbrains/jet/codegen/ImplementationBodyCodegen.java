@@ -41,7 +41,6 @@ import org.jetbrains.jet.codegen.state.JetTypeMapperMode;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.OverridingUtil;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
@@ -191,7 +190,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         // Inner enums are moved by frontend to a class object of outer class, but we want them to be inner for the outer class itself
         // (to avoid publicly visible names like A$ClassObject$$B), so they are handled specially in this method
 
-        for (ClassDescriptor innerClass : DescriptorUtils.getInnerClasses(descriptor)) {
+        for (ClassDescriptor innerClass : getInnerClassesAndObjects(descriptor)) {
             // If it's an inner enum inside a class object, don't write it
             // (instead write it to inner classes of this class object's containing class)
             if (!isEnumMovedToClassObject(innerClass)) {
@@ -202,7 +201,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         ClassDescriptor classObjectDescriptor = descriptor.getClassObjectDescriptor();
         if (classObjectDescriptor != null) {
             // Process all enums here which were moved to our class object
-            for (ClassDescriptor innerClass : DescriptorUtils.getInnerClasses(classObjectDescriptor)) {
+            for (ClassDescriptor innerClass : getInnerClassesAndObjects(classObjectDescriptor)) {
                 if (isEnumMovedToClassObject(innerClass)) {
                     writeInnerClass(innerClass, true);
                 }
@@ -1093,10 +1092,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
             field.store(fieldType, iv);
         }
 
-        final CodegenContext delegateContext = context.intoClass(superClassDescriptor,
-                                                                 new OwnerKind.DelegateKind(field, superTypeAsmType.getInternalName()),
-                                                                 state);
-        generateDelegates(superClassDescriptor, delegateContext, field);
+        generateDelegates(superClassDescriptor, field);
     }
 
     private void lookupConstructorExpressionsInClosureIfPresent(final ConstructorContext constructorContext) {
@@ -1273,14 +1269,13 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
                     Type[] argTypes = function.getArgumentTypes();
                     List<Type> originalArgTypes = jvmSignature.getValueParameterTypes();
+
                     InstructionAdapter iv = new InstructionAdapter(mv);
                     iv.load(0, OBJECT_TYPE);
                     for (int i = 0, reg = 1; i < argTypes.length; i++) {
-                        Type argType = argTypes[i];
-                        iv.load(reg, argType);
-                        StackValue.coerce(argType, originalArgTypes.get(i), iv);
+                        StackValue.local(reg, argTypes[i]).put(originalArgTypes.get(i), iv);
                         //noinspection AssignmentToForLoopParameter
-                        reg += argType.getSize();
+                        reg += argTypes[i].getSize();
                     }
 
                     JetType jetType = CodegenUtil.getSuperClass(declaration);
@@ -1302,7 +1297,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                     FunctionCodegen.endVisit(iv, "trait method", callableDescriptorToDeclaration(bindingContext, fun));
                 }
 
-                FunctionCodegen.generateBridgeIfNeeded(context, state, v, function, fun, kind);
+                FunctionCodegen.generateBridgeIfNeeded(context, state, v, function, fun);
             }
         }
     }
@@ -1528,9 +1523,9 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         return false;
     }
 
-    protected void generateDelegates(ClassDescriptor toClass, CodegenContext delegateContext, StackValue field) {
-        final FunctionCodegen functionCodegen = new FunctionCodegen(delegateContext, v, state);
-        final PropertyCodegen propertyCodegen = new PropertyCodegen(delegateContext, v, functionCodegen);
+    protected void generateDelegates(ClassDescriptor toClass, StackValue field) {
+        final FunctionCodegen functionCodegen = new FunctionCodegen(context, v, state);
+        final PropertyCodegen propertyCodegen = new PropertyCodegen(context, v, functionCodegen);
 
         for (DeclarationDescriptor declaration : descriptor.getDefaultType().getMemberScope().getAllDescriptors()) {
             if (declaration instanceof CallableMemberDescriptor) {
@@ -1543,19 +1538,15 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                                 propertyCodegen
                                         .genDelegate((PropertyDescriptor) declaration, (PropertyDescriptor) overriddenDescriptor, field);
                             }
-                            else if (declaration instanceof SimpleFunctionDescriptor) {
-                                functionCodegen.genDelegate((SimpleFunctionDescriptor) declaration, overriddenDescriptor, field);
+                            else if (declaration instanceof FunctionDescriptor) {
+                                functionCodegen
+                                        .genDelegate((FunctionDescriptor) declaration, (FunctionDescriptor) overriddenDescriptor, field);
                             }
                         }
                     }
                 }
             }
         }
-    }
-
-    @Nullable
-    private JetClassObject getClassObject() {
-        return myClass instanceof JetClass ? ((JetClass) myClass).getClassObject() : null;
     }
 
 
