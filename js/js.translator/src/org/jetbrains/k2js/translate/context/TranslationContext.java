@@ -20,9 +20,7 @@ import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.Named;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
@@ -32,6 +30,7 @@ import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 import java.util.Map;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForElement;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
 /**
@@ -102,14 +101,6 @@ public class TranslationContext {
     }
 
     @NotNull
-    private TranslationContext contextWithScope(@NotNull JsScope newScope,
-            @NotNull JsBlock block,
-            @NotNull AliasingContext aliasingContext,
-            @Nullable UsageTracker usageTracker) {
-        return new TranslationContext(staticContext, DynamicContext.newContext(newScope, block), aliasingContext, usageTracker);
-    }
-
-    @NotNull
     public TranslationContext newFunctionBody(
             @NotNull JsFunction fun,
             @Nullable AliasingContext aliasingContext,
@@ -122,11 +113,6 @@ public class TranslationContext {
     @NotNull
     public TranslationContext innerBlock(@NotNull JsBlock block) {
         return new TranslationContext(staticContext, dynamicContext.innerBlock(block), aliasingContext, usageTracker);
-    }
-
-    @NotNull
-    public TranslationContext newDeclaration(@NotNull DeclarationDescriptor descriptor) {
-        return contextWithScope(getScopeForDescriptor(descriptor), getBlockForDescriptor(descriptor), aliasingContext, usageTracker);
     }
 
     @NotNull
@@ -145,23 +131,8 @@ public class TranslationContext {
     }
 
     @NotNull
-    public JsBlock getBlockForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-        if (descriptor instanceof CallableDescriptor) {
-            return getFunctionObject((CallableDescriptor)descriptor).getBody();
-        }
-        else {
-            return new JsBlock();
-        }
-    }
-
-    @NotNull
     public BindingContext bindingContext() {
         return staticContext.getBindingContext();
-    }
-
-    @NotNull
-    public JsScope getScopeForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-        return staticContext.getScopeForDescriptor(descriptor);
     }
 
     @NotNull
@@ -172,7 +143,13 @@ public class TranslationContext {
 
     @NotNull
     public JsName getNameForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-        return staticContext.getNameForDescriptor(descriptor);
+        assert !(descriptor instanceof PropertyGetterDescriptor);
+        return staticContext.getNameForDescriptor(descriptor, this);
+    }
+
+    @NotNull
+    public JsNameRef getNameRefForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+        return staticContext.getNameRefForDescriptor(descriptor, this);
     }
 
     @NotNull
@@ -182,7 +159,7 @@ public class TranslationContext {
 
     @NotNull
     public JsNameRef getQualifiedReference(@NotNull DeclarationDescriptor descriptor) {
-        return staticContext.getQualifiedReference(descriptor);
+        return staticContext.getQualifiedReference(descriptor, this);
     }
 
     @Nullable
@@ -228,11 +205,6 @@ public class TranslationContext {
     @NotNull
     public ClassDeclarationTranslator classDeclarationTranslator() {
         return staticContext.getClassDeclarationTranslator();
-    }
-
-    @NotNull
-    public JsFunction getFunctionObject(@NotNull CallableDescriptor descriptor) {
-        return staticContext.getFunctionWithScope(descriptor);
     }
 
     public void addStatementToCurrentBlock(@NotNull JsStatement statement) {
