@@ -23,6 +23,7 @@ import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptorFromSource;
 import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
@@ -60,7 +61,7 @@ public final class ClassTranslator extends AbstractTranslator {
     private final JetClassOrObject classDeclaration;
 
     @NotNull
-    private final ClassDescriptor descriptor;
+    private final ClassDescriptorFromSource descriptor;
 
     @Nullable
     private final ClassAliasingMap aliasingMap;
@@ -100,7 +101,7 @@ public final class ClassTranslator extends AbstractTranslator {
             @NotNull TranslationContext context) {
         super(context);
         this.aliasingMap = aliasingMap;
-        this.descriptor = descriptor;
+        this.descriptor = (ClassDescriptorFromSource) descriptor;
         this.classDeclaration = classDeclaration;
     }
 

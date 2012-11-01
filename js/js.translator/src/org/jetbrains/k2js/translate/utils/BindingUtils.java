@@ -236,14 +236,6 @@ public final class BindingUtils {
         return BindingContextUtils.getNotNull(context, isGet ? INDEXED_LVALUE_GET : INDEXED_LVALUE_SET, arrayAccessExpression);
     }
 
-    public static ConstructorDescriptor getConstructor(@NotNull BindingContext bindingContext,
-            @NotNull JetClassOrObject declaration) {
-        ConstructorDescriptor primaryConstructor =
-                ((ClassDescriptorFromSource) getClassDescriptor(bindingContext, declaration)).getUnsubstitutedPrimaryConstructor();
-        assert primaryConstructor != null : message(declaration, "Traits do not have initialize methods");
-        return primaryConstructor;
-    }
-
     @Nullable
     public static SimpleFunctionDescriptor getNullableDescriptorForFunction(@NotNull BindingContext bindingContext,
             @NotNull JetNamedFunction function) {
