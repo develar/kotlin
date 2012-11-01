@@ -69,7 +69,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         JsFunction result = context().getFunctionObject(primaryConstructor);
         //NOTE: while we translate constructor parameters we also add property initializer statements
         // for properties declared as constructor parameters
-       translatePrimaryConstructorParameters(result.getParameters());
+        translatePrimaryConstructorParameters(result.getParameters());
         mayBeAddCallToSuperMethod(result);
         new InitializerVisitor(initializerStatements).traverseContainer(classDeclaration, context());
 
@@ -99,24 +99,19 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     }
 
     private void addCallToSuperMethod(@NotNull JetDelegatorToSuperCall superCall, JsFunction initializer) {
-        List<JsExpression> arguments = translateArguments(superCall);
+        JsInvocation call;
         if (context().isEcma5()) {
             JsName ref = context().scope().declareName(Namer.CALLEE_NAME);
             initializer.setName(ref);
-            JsInvocation call = new JsInvocation(new JsNameRef("call", new JsNameRef("baseInitializer", ref.makeRef())));
+            call = new JsInvocation(new JsNameRef("call", new JsNameRef("baseInitializer", ref.makeRef())));
             call.getArguments().add(JsLiteral.THIS);
-            call.getArguments().addAll(arguments);
-            initializerStatements.add(call.makeStmt());
         }
         else {
             JsName superMethodName = context().scope().declareName(Namer.superMethodName());
-            initializerStatements.add(convertToStatement(new JsInvocation(new JsNameRef(superMethodName, JsLiteral.THIS), arguments)));
+            call = new JsInvocation(new JsNameRef(superMethodName, JsLiteral.THIS));
         }
-    }
-
-    @NotNull
-    private List<JsExpression> translateArguments(@NotNull JetDelegatorToSuperCall superCall) {
-        return translateArgumentList(context(), superCall.getValueArguments());
+        translateArgumentList(context(), superCall.getValueArguments(), call.getArguments());
+        initializerStatements.add(call.makeStmt());
     }
 
     @Nullable
