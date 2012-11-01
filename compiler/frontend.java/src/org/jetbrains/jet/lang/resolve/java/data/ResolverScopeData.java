@@ -24,11 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassOrNamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.java.DescriptorResolverUtils;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
-import org.jetbrains.jet.lang.resolve.java.NamedMembers;
+import org.jetbrains.jet.lang.resolve.java.MembersCache;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-
-import java.util.Map;
 
 /**
 * @author Pavel Talanov
@@ -120,13 +118,13 @@ public abstract class ResolverScopeData {
         }
     }
 
-    private Map<Name, NamedMembers> namedMembersMap;
+    private MembersCache membersCache = null;
 
-    public Map<Name, NamedMembers> getNamedMembersMap() {
-        return namedMembersMap;
-    }
-
-    public void setNamedMembersMap(Map<Name, NamedMembers> namedMembersMap) {
-        this.namedMembersMap = namedMembersMap;
+    @NotNull
+    public MembersCache getMembersCache() {
+        if (membersCache == null) {
+            membersCache = MembersCache.buildMembersByNameCache(psiClass, psiPackage, staticMembers, kotlin);
+        }
+        return membersCache;
     }
 }

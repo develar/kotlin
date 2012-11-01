@@ -59,7 +59,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         }
     };
 
-    private JavaPropertiesResolver propertiesResolver;
+    private JavaPropertyResolver propertiesResolver;
     private JavaClassResolver classResolver;
     private JavaConstructorResolver constructorResolver;
     private JavaFunctionResolver functionResolver;
@@ -82,7 +82,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
     }
 
     @Inject
-    public void setPropertiesResolver(JavaPropertiesResolver propertiesResolver) {
+    public void setPropertiesResolver(JavaPropertyResolver propertiesResolver) {
         this.propertiesResolver = propertiesResolver;
     }
 
@@ -126,12 +126,9 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         return namespaceResolver.getJavaPackageScope(fqName, ns);
     }
 
+    @NotNull
     public Set<VariableDescriptor> resolveFieldGroupByName(Name name, ResolverScopeData data) {
         return propertiesResolver.resolveFieldGroupByName(name, data);
-    }
-
-    public Set<VariableDescriptor> resolveFieldGroup(ResolverScopeData data) {
-        return propertiesResolver.resolveFieldGroup(data);
     }
 
     @Nullable
@@ -164,10 +161,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
         return functionResolver.resolveFunctionGroup(methodName, scopeData);
     }
 
-    public List<FunctionDescriptor> resolveMethods(@NotNull ResolverScopeData scopeData) {
-        return functionResolver.resolveMethods(scopeData);
-    }
-
+    @NotNull
     public List<ClassDescriptor> resolveInnerClasses(DeclarationDescriptor owner, PsiClass psiClass, boolean staticMembers) {
         return innerClassResolver.resolveInnerClasses(owner, psiClass, staticMembers);
     }

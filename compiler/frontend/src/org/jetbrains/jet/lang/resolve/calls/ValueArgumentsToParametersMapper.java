@@ -21,6 +21,7 @@ import com.google.common.collect.Sets;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
+import org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.DelegatingBindingTrace;
@@ -28,7 +29,7 @@ import org.jetbrains.jet.lang.resolve.calls.model.*;
 import org.jetbrains.jet.lang.resolve.calls.tasks.TracingStrategy;
 import org.jetbrains.jet.lang.resolve.calls.util.CallMaker;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 
 import java.util.List;
 import java.util.Map;
@@ -211,8 +212,8 @@ import static org.jetbrains.jet.lang.resolve.calls.ValueArgumentsToParametersMap
             }
         }
 
-        ReceiverDescriptor receiverParameter = candidate.getReceiverParameter();
-        ReceiverDescriptor receiverArgument = candidateCall.getReceiverArgument();
+        ReceiverParameterDescriptor receiverParameter = candidate.getReceiverParameter();
+        ReceiverValue receiverArgument = candidateCall.getReceiverArgument();
         if (receiverParameter.exists() &&!receiverArgument.exists()) {
             tracing.missingReceiver(traceForCall, receiverParameter);
             status = ERROR;

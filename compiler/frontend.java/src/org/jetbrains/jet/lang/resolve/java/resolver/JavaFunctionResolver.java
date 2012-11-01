@@ -37,7 +37,10 @@ import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public final class JavaFunctionResolver {
 
@@ -80,16 +83,13 @@ public final class JavaFunctionResolver {
             @NotNull final PsiClass psiClass, final PsiMethodWrapper method,
             @NotNull ResolverScopeData scopeData
     ) {
-
-        DescriptorResolverUtils.getResolverScopeData(scopeData);
-
         PsiType returnPsiType = method.getReturnType();
         if (returnPsiType == null) {
             return null;
         }
 
         // TODO: ugly
-        if (method.getJetMethod().hasPropertyFlag()) {
+        if (method.getJetMethodAnnotation().hasPropertyFlag()) {
             return null;
         }
 
@@ -112,7 +112,7 @@ public final class JavaFunctionResolver {
                 scopeData.getClassOrNamespaceDescriptor(),
                 annotationResolver.resolveAnnotations(psiMethod),
                 Name.identifier(method.getName()),
-                DescriptorKindUtils.flagsToKind(method.getJetMethod().kind())
+                DescriptorKindUtils.flagsToKind(method.getJetMethodAnnotation().kind())
         );
 
         String context = "method " + method.getName() + " in class " + psiClass.getQualifiedName();
@@ -150,7 +150,7 @@ public final class JavaFunctionResolver {
                 valueParameterDescriptors.getDescriptors(),
                 returnType,
                 DescriptorResolverUtils.resolveModality(method, method.isFinal()),
-                DescriptorResolverUtils.resolveVisibility(psiMethod, method.getJetMethod()),
+                DescriptorResolverUtils.resolveVisibility(psiMethod, method.getJetMethodAnnotation()),
                 /*isInline = */ false
         );
 
@@ -168,14 +168,11 @@ public final class JavaFunctionResolver {
         return functionDescriptorImpl;
     }
 
-    private void resolveNamedGroupFunctions(
+    @NotNull
+    private Set<FunctionDescriptor> resolveNamedGroupFunctions(
             @NotNull ClassOrNamespaceDescriptor owner, @NotNull PsiClass psiClass,
             NamedMembers namedMembers, Name methodName, ResolverScopeData scopeData
     ) {
-        if (namedMembers.getFunctionDescriptors() != null) {
-            return;
-        }
-
         final Set<FunctionDescriptor> functions = new HashSet<FunctionDescriptor>();
 
         Set<SimpleFunctionDescriptor> functionsFromCurrent = Sets.newHashSet();
@@ -192,20 +189,20 @@ public final class JavaFunctionResolver {
             Set<SimpleFunctionDescriptor> functionsFromSupertypes = getFunctionsFromSupertypes(scopeData, methodName);
 
             OverrideResolver.generateOverridesInFunctionGroup(methodName, functionsFromSupertypes, functionsFromCurrent, classDescriptor,
-                                                              new OverrideResolver.DescriptorSink() {
-                                                                  @Override
-                                                                  public void addToScope(@NotNull CallableMemberDescriptor fakeOverride) {
-                                                                      functions.add((FunctionDescriptor) fakeOverride);
-                                                                  }
+                  new OverrideResolver.DescriptorSink() {
+                      @Override
+                      public void addToScope(@NotNull CallableMemberDescriptor fakeOverride) {
+                          functions.add((FunctionDescriptor) fakeOverride);
+                      }
 
-                                                                  @Override
-                                                                  public void conflict(
-                                                                          @NotNull CallableMemberDescriptor fromSuper,
-                                                                          @NotNull CallableMemberDescriptor fromCurrent
-                                                                  ) {
-                                                                      // nop
-                                                                  }
-                                                              });
+                      @Override
+                      public void conflict(
+                              @NotNull CallableMemberDescriptor fromSuper,
+                              @NotNull CallableMemberDescriptor fromCurrent
+                      ) {
+                          // nop
+                      }
+                  });
         }
 
         OverrideResolver.resolveUnknownVisibilities(functions, trace);
@@ -219,38 +216,29 @@ public final class JavaFunctionResolver {
             }
         }
 
-        namedMembers.setFunctionDescriptors(functions);
+        return functions;
     }
 
     @NotNull
     public Set<FunctionDescriptor> resolveFunctionGroup(Name methodName, ResolverScopeData scopeData) {
-        DescriptorResolverUtils.getResolverScopeData(scopeData);
-
-        Map<Name, NamedMembers> namedMembersMap = scopeData.getNamedMembersMap();
+        MembersCache namedMembersMap = scopeData.getMembersCache();
 
         NamedMembers namedMembers = namedMembersMap.get(methodName);
-        if (namedMembers != null) {
-
-            PsiClass psiClass = scopeData.getPsiClass();
-            assert psiClass != null;
-            resolveNamedGroupFunctions(scopeData.getClassOrNamespaceDescriptor(), psiClass, namedMembers,
-                                       methodName, scopeData);
-
-            Set<FunctionDescriptor> result = namedMembers.getFunctionDescriptors();
-            assert result != null;
-            return result;
-        }
-        else {
+        if (namedMembers == null) {
             return Collections.emptySet();
         }
+        PsiClass psiClass = scopeData.getPsiClass();
+        assert psiClass != null;
+        return resolveNamedGroupFunctions(scopeData.getClassOrNamespaceDescriptor(), psiClass, namedMembers, methodName, scopeData);
     }
 
+    @NotNull
     private JetType makeReturnType(
             PsiType returnType, PsiMethodWrapper method,
             @NotNull TypeVariableResolver typeVariableResolver
     ) {
 
-        String returnTypeFromAnnotation = method.getJetMethod().returnType();
+        String returnTypeFromAnnotation = method.getJetMethodAnnotation().returnType();
 
         JetType transformedType;
         if (returnTypeFromAnnotation.length() > 0) {
@@ -270,7 +258,8 @@ public final class JavaFunctionResolver {
         }
     }
 
-    public static Set<SimpleFunctionDescriptor> getFunctionsFromSupertypes(
+    @NotNull
+    private static Set<SimpleFunctionDescriptor> getFunctionsFromSupertypes(
             ResolverScopeData scopeData,
             Name methodName
     ) {
@@ -281,25 +270,6 @@ public final class JavaFunctionResolver {
             }
         }
         return r;
-    }
-
-    public List<FunctionDescriptor> resolveMethods(@NotNull ResolverScopeData scopeData) {
-
-        DescriptorResolverUtils.getResolverScopeData(scopeData);
-
-        List<FunctionDescriptor> functions = new ArrayList<FunctionDescriptor>();
-
-        for (Map.Entry<Name, NamedMembers> entry : scopeData.getNamedMembersMap().entrySet()) {
-            Name methodName = entry.getKey();
-            NamedMembers namedMembers = entry.getValue();
-            PsiClass psiClass = scopeData.getPsiClass();
-            assert psiClass != null;
-            resolveNamedGroupFunctions(scopeData.getClassOrNamespaceDescriptor(), psiClass,
-                                       namedMembers, methodName, scopeData);
-            functions.addAll(namedMembers.getFunctionDescriptors());
-        }
-
-        return functions;
     }
 
     private static boolean isEnumSpecialMethod(@NotNull FunctionDescriptor functionDescriptor) {

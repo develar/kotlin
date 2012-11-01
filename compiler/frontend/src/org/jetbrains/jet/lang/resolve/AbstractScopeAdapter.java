@@ -21,11 +21,9 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Introduces a simple wrapper for internal scope.
@@ -38,13 +36,8 @@ public abstract class AbstractScopeAdapter implements JetScope {
 
     @NotNull
     @Override
-    public ReceiverDescriptor getImplicitReceiver() {
-        return getWorkerScope().getImplicitReceiver();
-    }
-
-    @Override
-    public void getImplicitReceiversHierarchy(@NotNull List<ReceiverDescriptor> result) {
-        getWorkerScope().getImplicitReceiversHierarchy(result);
+    public List<ReceiverParameterDescriptor> getImplicitReceiversHierarchy() {
+        return getWorkerScope().getImplicitReceiversHierarchy();
     }
 
     @NotNull

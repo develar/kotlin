@@ -16,12 +16,12 @@
 
 package org.jetbrains.jet.lang.resolve.scopes;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,17 +33,12 @@ import java.util.Set;
  */
 public class ChainedScope implements JetScope {
     private final DeclarationDescriptor containingDeclaration;
-    private final ReceiverDescriptor implicitReceiver;
     private final JetScope[] scopeChain;
     private Collection<DeclarationDescriptor> allDescriptors;
+    private List<ReceiverParameterDescriptor> implicitReceiverHierarchy;
 
     public ChainedScope(DeclarationDescriptor containingDeclaration, JetScope... scopes) {
-        this(containingDeclaration, ReceiverDescriptor.NO_RECEIVER, scopes);
-    }
-
-    public ChainedScope(DeclarationDescriptor containingDeclaration, ReceiverDescriptor implicitReceiver, JetScope... scopes) {
         this.containingDeclaration = containingDeclaration;
-        this.implicitReceiver = implicitReceiver;
         scopeChain = scopes.clone();
     }
 
@@ -123,15 +118,14 @@ public class ChainedScope implements JetScope {
 
     @NotNull
     @Override
-    public ReceiverDescriptor getImplicitReceiver() {
-        return implicitReceiver;
-    }
-
-    @Override
-    public void getImplicitReceiversHierarchy(@NotNull List<ReceiverDescriptor> result) {
-        for (JetScope jetScope : scopeChain) {
-            jetScope.getImplicitReceiversHierarchy(result);
+    public List<ReceiverParameterDescriptor> getImplicitReceiversHierarchy() {
+        if (implicitReceiverHierarchy == null) {
+            implicitReceiverHierarchy = Lists.newArrayList();
+            for (JetScope jetScope : scopeChain) {
+                implicitReceiverHierarchy.addAll(jetScope.getImplicitReceiversHierarchy());
+            }
         }
+        return implicitReceiverHierarchy;
     }
 
     @NotNull

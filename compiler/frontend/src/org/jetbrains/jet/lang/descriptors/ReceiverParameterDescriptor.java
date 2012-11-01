@@ -14,29 +14,35 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.resolve.scopes.receivers;
+package org.jetbrains.jet.lang.descriptors;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.JetType;
+import org.jetbrains.jet.lang.types.TypeSubstitutor;
 
 /**
  * @author abreslav
  */
-public abstract class AbstractReceiverDescriptor implements ReceiverDescriptor {
-    protected final JetType receiverType;
+public interface ReceiverParameterDescriptor extends DeclarationDescriptor {
 
-    public AbstractReceiverDescriptor(@NotNull JetType receiverType) {
-        this.receiverType = receiverType;
-    }
+    // NOTE: Instead of comparing to NO_RECEIVER_PARAMETER, call exists()
+    ReceiverParameterDescriptor NO_RECEIVER_PARAMETER = NoReceiverParameter.INSTANCE;
+
+    @NotNull
+    JetType getType();
+
+    @NotNull
+    ReceiverValue getValue();
 
     @Override
     @NotNull
-    public JetType getType() {
-        return receiverType;
-    }
+    DeclarationDescriptor getContainingDeclaration();
 
+    boolean exists();
+
+    @Nullable
     @Override
-    public boolean exists() {
-        return true;
-    }
+    ReceiverParameterDescriptor substitute(TypeSubstitutor substitutor);
 }

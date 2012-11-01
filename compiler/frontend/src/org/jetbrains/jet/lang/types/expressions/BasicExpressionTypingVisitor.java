@@ -41,10 +41,8 @@ import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScopeImpl;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ClassReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ThisReceiverDescriptor;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
@@ -54,7 +52,7 @@ import java.util.*;
 
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
 import static org.jetbrains.jet.lang.resolve.BindingContext.*;
-import static org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor.NO_RECEIVER;
+import static org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue.NO_RECEIVER;
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
 import static org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils.*;
 import static org.jetbrains.jet.lang.types.expressions.OperatorConventions.*;
@@ -397,7 +395,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     @Override
     public JetTypeInfo visitThisExpression(JetThisExpression expression, ExpressionTypingContext context) {
         JetType result = null;
-        ReceiverDescriptor thisReceiver = resolveToReceiver(expression, context, false);
+        ReceiverParameterDescriptor thisReceiver = resolveToReceiver(expression, context, false);
 
         if (thisReceiver != null) {
             if (!thisReceiver.exists()) {
@@ -419,7 +417,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         }
         JetType result = null;
 
-        ReceiverDescriptor thisReceiver = resolveToReceiver(expression, context, true);
+        ReceiverParameterDescriptor thisReceiver = resolveToReceiver(expression, context, true);
         if (thisReceiver == null) return JetTypeInfo.create(null, context.dataFlowInfo);
 
         if (!thisReceiver.exists()) {
@@ -501,29 +499,31 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     @Nullable // No class receivers
-    private ReceiverDescriptor resolveToReceiver(JetLabelQualifiedInstanceExpression expression, ExpressionTypingContext context, boolean onlyClassReceivers) {
-        ReceiverDescriptor thisReceiver = null;
+    private ReceiverParameterDescriptor resolveToReceiver(JetLabelQualifiedInstanceExpression expression, ExpressionTypingContext context, boolean onlyClassReceivers) {
+        ReceiverParameterDescriptor thisReceiver = null;
         String labelName = expression.getLabelName();
         if (labelName != null) {
             thisReceiver = context.labelResolver.resolveThisLabel(
                     expression.getInstanceReference(), expression.getTargetLabel(), context, thisReceiver, new LabelName(labelName));
         }
         else {
+            List<ReceiverParameterDescriptor> receivers = context.scope.getImplicitReceiversHierarchy();
             if (onlyClassReceivers) {
-                List<ReceiverDescriptor> receivers = Lists.newArrayList();
-                context.scope.getImplicitReceiversHierarchy(receivers);
-                for (ReceiverDescriptor receiver : receivers) {
-                    if (receiver instanceof ClassReceiver) {
+                for (ReceiverParameterDescriptor receiver : receivers) {
+                    if (receiver.getContainingDeclaration() instanceof ClassDescriptor) {
                         thisReceiver = receiver;
                         break;
                     }
                 }
             }
-            else {
-                thisReceiver = context.scope.getImplicitReceiver();
+            else if (!receivers.isEmpty()) {
+                thisReceiver = receivers.get(0);
             }
-            if (thisReceiver instanceof ThisReceiverDescriptor) {
-                context.trace.record(REFERENCE_TARGET, expression.getInstanceReference(), ((ThisReceiverDescriptor) thisReceiver).getDeclarationDescriptor());
+            else {
+                thisReceiver = ReceiverParameterDescriptor.NO_RECEIVER_PARAMETER;
+            }
+            if (thisReceiver != null && thisReceiver.exists()) {
+                context.trace.record(REFERENCE_TARGET, expression.getInstanceReference(), thisReceiver.getContainingDeclaration());
             }
         }
         return thisReceiver;
@@ -615,7 +615,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     @Nullable
-    private FunctionDescriptor getFunctionDescriptor(@NotNull Call call, @NotNull JetExpression callExpression, @NotNull ReceiverDescriptor receiver,
+    private FunctionDescriptor getFunctionDescriptor(@NotNull Call call, @NotNull JetExpression callExpression, @NotNull ReceiverValue receiver,
             @NotNull ExpressionTypingContext context, @NotNull boolean[] result) {
 
         OverloadResolutionResults<FunctionDescriptor> results = context.resolveFunctionCall(call);
@@ -632,7 +632,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     @Nullable
-    private JetType getVariableType(@NotNull JetSimpleNameExpression nameExpression, @NotNull ReceiverDescriptor receiver,
+    private JetType getVariableType(@NotNull JetSimpleNameExpression nameExpression, @NotNull ReceiverValue receiver,
             @Nullable ASTNode callOperationNode, @NotNull ExpressionTypingContext context, @NotNull boolean[] result) {
 
         TemporaryBindingTrace traceForVariable = TemporaryBindingTrace.create(
@@ -667,7 +667,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     @NotNull
-    public JetTypeInfo getSelectorReturnTypeInfo(@NotNull ReceiverDescriptor receiver, @Nullable ASTNode callOperationNode, @NotNull JetExpression selectorExpression, @NotNull ExpressionTypingContext context) {
+    public JetTypeInfo getSelectorReturnTypeInfo(@NotNull ReceiverValue receiver, @Nullable ASTNode callOperationNode, @NotNull JetExpression selectorExpression, @NotNull ExpressionTypingContext context) {
         if (selectorExpression instanceof JetCallExpression) {
             return getCallExpressionTypeInfo((JetCallExpression) selectorExpression, receiver, callOperationNode, context);
         }
@@ -692,7 +692,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     @NotNull
-    private JetTypeInfo getSimpleNameExpressionTypeInfo(@NotNull JetSimpleNameExpression nameExpression, @NotNull ReceiverDescriptor receiver,
+    private JetTypeInfo getSimpleNameExpressionTypeInfo(@NotNull JetSimpleNameExpression nameExpression, @NotNull ReceiverValue receiver,
             @Nullable ASTNode callOperationNode, @NotNull ExpressionTypingContext context) {
 
         boolean[] result = new boolean[1];
@@ -720,7 +720,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     @NotNull
-    private JetTypeInfo getCallExpressionTypeInfo(@NotNull JetCallExpression callExpression, @NotNull ReceiverDescriptor receiver,
+    private JetTypeInfo getCallExpressionTypeInfo(@NotNull JetCallExpression callExpression, @NotNull ReceiverValue receiver,
             @Nullable ASTNode callOperationNode, @NotNull ExpressionTypingContext context) {
 
         boolean[] result = new boolean[1];
@@ -772,11 +772,11 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         return JetTypeInfo.create(null, context.dataFlowInfo);
     }
 
-    private static void checkSuper(@NotNull ReceiverDescriptor receiverDescriptor, @NotNull OverloadResolutionResults<? extends CallableDescriptor> results,
+    private static void checkSuper(@NotNull ReceiverValue receiverValue, @NotNull OverloadResolutionResults<? extends CallableDescriptor> results,
             @NotNull BindingTrace trace, @NotNull JetExpression expression) {
         if (!results.isSingleResult()) return;
-        if (!(receiverDescriptor instanceof ExpressionReceiver)) return;
-        JetExpression receiver = ((ExpressionReceiver) receiverDescriptor).getExpression();
+        if (!(receiverValue instanceof ExpressionReceiver)) return;
+        JetExpression receiver = ((ExpressionReceiver) receiverValue).getExpression();
         CallableDescriptor descriptor = results.getResultingDescriptor();
         if (receiver instanceof JetSuperExpression && descriptor instanceof MemberDescriptor) {
             if (((MemberDescriptor) descriptor).getModality() == Modality.ABSTRACT) {
@@ -992,9 +992,15 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 Name name = Name.identifier("equals");
                 if (right != null) {
                     ExpressionReceiver receiver = ExpressionTypingUtils.safeGetExpressionReceiver(facade, left, context.replaceScope(context.scope));
-                    OverloadResolutionResults<FunctionDescriptor> resolutionResults = context.resolveExactSignature(
-                            receiver, name,
-                            Collections.singletonList(KotlinBuiltIns.getInstance().getNullableAnyType()));
+
+                    final JetReferenceExpression fakeArgument = JetPsiFactory.createSimpleName(
+                            context.expressionTypingServices.getProject(), "fakeArgument");
+                    TemporaryBindingTrace traceWithFakeArgumentInfo = TemporaryBindingTrace.create(context.trace, "trace to store fake argument for", name);
+                    traceWithFakeArgumentInfo.record(EXPRESSION_TYPE, fakeArgument, KotlinBuiltIns.getInstance().getNullableAnyType());
+
+                    OverloadResolutionResults<FunctionDescriptor> resolutionResults = resolveFakeCall(
+                            receiver, context.replaceBindingTrace(traceWithFakeArgumentInfo), Collections.<JetExpression>singletonList(fakeArgument), name);
+
                     if (resolutionResults.isSuccess()) {
                         FunctionDescriptor equals = resolutionResults.getResultingCall().getResultingDescriptor();
                         context.trace.record(REFERENCE_TARGET, operationSign, equals);

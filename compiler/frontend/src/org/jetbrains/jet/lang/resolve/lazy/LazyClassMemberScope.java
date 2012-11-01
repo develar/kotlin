@@ -27,7 +27,6 @@ import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.lazy.data.JetClassLikeInfo;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.DeferredType;
 import org.jetbrains.jet.lang.types.ErrorUtils;
 import org.jetbrains.jet.lang.types.JetType;
@@ -174,6 +173,12 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
                 break;
             }
         }
+        if (!constructor.getValueParameters().isEmpty() && name.equals(DescriptorResolver.COPY_METHOD_NAME)) {
+            SimpleFunctionDescriptor copyFunctionDescriptor = DescriptorResolver.createCopyFunctionDescriptor(
+                    constructor.getValueParameters(),
+                    thisDescriptor, resolveSession.getTrace());
+            result.add(copyFunctionDescriptor);
+        }
     }
 
     private void generateEnumClassObjectMethods(@NotNull Collection<? super FunctionDescriptor> result, @NotNull Name name) {
@@ -307,6 +312,7 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
             if (functions.isEmpty()) break;
             n++;
         }
+        getFunctions(Name.identifier("copy"));
     }
 
     @Override
@@ -316,8 +322,8 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
 
     @NotNull
     @Override
-    public ReceiverDescriptor getImplicitReceiver() {
-        return thisDescriptor.getImplicitReceiver();
+    protected ReceiverParameterDescriptor getImplicitReceiver() {
+        return thisDescriptor.getThisAsReceiverParameter();
     }
 
     @NotNull

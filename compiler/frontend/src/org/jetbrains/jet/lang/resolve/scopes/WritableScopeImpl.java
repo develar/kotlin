@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.util.CommonSuppliers;
 
@@ -63,7 +62,7 @@ public class WritableScopeImpl extends WritableScopeWithImports {
     private Map<Name, ClassDescriptor> objectDescriptors;
 
     @Nullable
-    private ReceiverDescriptor implicitReceiver;
+    private ReceiverParameterDescriptor implicitReceiver;
 
     public WritableScopeImpl(@NotNull JetScope scope, @NotNull DeclarationDescriptor owner,
             @NotNull RedeclarationHandler redeclarationHandler, @NotNull String debugName) {
@@ -372,9 +371,9 @@ public class WritableScopeImpl extends WritableScopeWithImports {
     
     private void checkForPropertyRedeclaration(@NotNull Name name, VariableDescriptor variableDescriptor) {
         Set<VariableDescriptor> properties = getPropertyGroups().get(name);
-        ReceiverDescriptor receiverParameter = variableDescriptor.getReceiverParameter();
+        ReceiverParameterDescriptor receiverParameter = variableDescriptor.getReceiverParameter();
         for (VariableDescriptor oldProperty : properties) {
-            ReceiverDescriptor receiverParameterForOldVariable = oldProperty.getReceiverParameter();
+            ReceiverParameterDescriptor receiverParameterForOldVariable = oldProperty.getReceiverParameter();
             if (((receiverParameter.exists() && receiverParameterForOldVariable.exists()) &&
                  (JetTypeChecker.INSTANCE.equalTypes(receiverParameter.getType(), receiverParameterForOldVariable.getType())))) {
                 redeclarationHandler.handleRedeclaration(oldProperty, variableDescriptor);
@@ -452,19 +451,8 @@ public class WritableScopeImpl extends WritableScopeWithImports {
         return super.getNamespace(name);
     }
 
-    @NotNull
     @Override
-    public ReceiverDescriptor getImplicitReceiver() {
-        checkMayRead();
-
-        if (implicitReceiver == null) {
-            return super.getImplicitReceiver();
-        }
-        return implicitReceiver;
-    }
-
-    @Override
-    public void setImplicitReceiver(@NotNull ReceiverDescriptor implicitReceiver) {
+    public void setImplicitReceiver(@NotNull ReceiverParameterDescriptor implicitReceiver) {
         checkMayWrite();
 
         if (this.implicitReceiver != null) {
@@ -474,14 +462,13 @@ public class WritableScopeImpl extends WritableScopeWithImports {
     }
 
     @Override
-    public void getImplicitReceiversHierarchy(@NotNull List<ReceiverDescriptor> result) {
-        checkMayRead();
-
-        super.getImplicitReceiversHierarchy(result);
-
+    protected List<ReceiverParameterDescriptor> computeImplicitReceiversHierarchy() {
+        List<ReceiverParameterDescriptor> implicitReceiverHierarchy = Lists.newArrayList();
         if (implicitReceiver != null && implicitReceiver.exists()) {
-            result.add(0, implicitReceiver);
+            implicitReceiverHierarchy.add(implicitReceiver);
         }
+        implicitReceiverHierarchy.addAll(super.computeImplicitReceiversHierarchy());
+        return implicitReceiverHierarchy;
     }
 
 //    @SuppressWarnings({"NullableProblems"})

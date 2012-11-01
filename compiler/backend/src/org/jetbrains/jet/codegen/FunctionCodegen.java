@@ -33,12 +33,12 @@ import org.jetbrains.jet.codegen.signature.kotlin.JetMethodAnnotationWriter;
 import org.jetbrains.jet.codegen.signature.kotlin.JetValueParameterAnnotationWriter;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.codegen.state.GenerationStateAware;
+import org.jetbrains.jet.codegen.state.JetTypeMapper;
 import org.jetbrains.jet.codegen.state.JetTypeMapperMode;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetDeclarationWithBody;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
 import org.jetbrains.jet.lang.psi.JetNamedFunction;
-import org.jetbrains.jet.lang.psi.JetParameter;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
@@ -46,7 +46,6 @@ import org.jetbrains.jet.lang.resolve.java.JvmClassName;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.lang.resolve.java.kt.DescriptorKindUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.*;
@@ -107,7 +106,7 @@ public class FunctionCodegen extends GenerationStateAware {
             }
         }
 
-        generateDefaultIfNeeded(context, state, v, jvmSignature.getAsmMethod(), functionDescriptor, kind);
+        generateDefaultIfNeeded(context, state, v, jvmSignature.getAsmMethod(), functionDescriptor, kind, DefaultParameterValueLoader.DEFAULT);
     }
 
     private void generateMethodHeaderAndBody(
@@ -142,15 +141,12 @@ public class FunctionCodegen extends GenerationStateAware {
             return;
         }
 
-        LocalVariablesInfo localVariablesInfo = new LocalVariablesInfo();
-        for (ValueParameterDescriptor parameter : functionDescriptor.getValueParameters()) {
-            localVariablesInfo.names.add(parameter.getName().getName());
-        }
+        LocalVariablesInfo localVariablesInfo = generateLocalVariablesInfo(functionDescriptor);
 
         MethodBounds methodBounds = generateMethodBody(mv, fun, functionDescriptor, context, asmMethod, localVariablesInfo);
 
         Type thisType;
-        ReceiverDescriptor expectedThisObject = functionDescriptor.getExpectedThisObject();
+        ReceiverParameterDescriptor expectedThisObject = functionDescriptor.getExpectedThisObject();
         if (expectedThisObject.exists()) {
             thisType = typeMapper.mapType(expectedThisObject.getType());
         }
@@ -161,7 +157,7 @@ public class FunctionCodegen extends GenerationStateAware {
             thisType = null;
         }
 
-        generateLocalVariableTable(mv, functionDescriptor, thisType, localVariablesInfo, methodBounds);
+        generateLocalVariableTable(typeMapper, mv, functionDescriptor, thisType, localVariablesInfo, methodBounds);
 
         endVisit(mv, null, fun);
     }
@@ -218,24 +214,33 @@ public class FunctionCodegen extends GenerationStateAware {
         return new MethodBounds(methodBegin, methodEnd);
     }
 
-    private static class MethodBounds {
+    public static class MethodBounds {
         @NotNull private final Label begin;
 
         @NotNull private final Label end;
 
-        private MethodBounds(@NotNull Label begin, @NotNull Label end) {
+        public MethodBounds(@NotNull Label begin, @NotNull Label end) {
             this.begin = begin;
             this.end = end;
         }
     }
 
-    private static class LocalVariablesInfo {
-        @NotNull private final Collection<String> names = new HashSet<String>();
+    public static class LocalVariablesInfo {
+        @NotNull public final Collection<String> names = new HashSet<String>();
 
-        @NotNull private final Map<Name, Label> labelsForSharedVars = new HashMap<Name, Label>();
+        @NotNull public final Map<Name, Label> labelsForSharedVars = new HashMap<Name, Label>();
     }
 
-    private void generateLocalVariableTable(
+    public static LocalVariablesInfo generateLocalVariablesInfo(FunctionDescriptor functionDescriptor) {
+        LocalVariablesInfo localVariablesInfo = new LocalVariablesInfo();
+        for (ValueParameterDescriptor parameter : functionDescriptor.getValueParameters()) {
+            localVariablesInfo.names.add(parameter.getName().getName());
+        }
+        return localVariablesInfo;
+    }
+
+    public static void generateLocalVariableTable(
+            @NotNull JetTypeMapper typeMapper,
             @NotNull MethodVisitor mv,
             @NotNull FunctionDescriptor functionDescriptor,
             @Nullable Type thisType,
@@ -390,7 +395,7 @@ public class FunctionCodegen extends GenerationStateAware {
 
         List<ValueParameterDescriptor> paramDescrs = functionDescriptor.getValueParameters();
         Modality modality = functionDescriptor.getModality();
-        ReceiverDescriptor receiverParameter = functionDescriptor.getReceiverParameter();
+        ReceiverParameterDescriptor receiverParameter = functionDescriptor.getReceiverParameter();
 
         int start = 0;
         if (functionDescriptor instanceof PropertyAccessorDescriptor) {
@@ -525,7 +530,8 @@ public class FunctionCodegen extends GenerationStateAware {
             ClassBuilder v,
             Method jvmSignature,
             @NotNull FunctionDescriptor functionDescriptor,
-            OwnerKind kind
+            OwnerKind kind,
+            DefaultParameterValueLoader loadStrategy
     ) {
         DeclarationDescriptor contextClass = owner.getContextDescriptor().getContainingDeclaration();
 
@@ -539,7 +545,7 @@ public class FunctionCodegen extends GenerationStateAware {
             return;
         }
 
-        ReceiverDescriptor receiverParameter = functionDescriptor.getReceiverParameter();
+        ReceiverParameterDescriptor receiverParameter = functionDescriptor.getReceiverParameter();
         boolean hasReceiver = receiverParameter.exists();
         boolean isStatic = isStatic(kind);
 
@@ -575,7 +581,7 @@ public class FunctionCodegen extends GenerationStateAware {
         else if (state.getClassBuilderMode() == ClassBuilderMode.FULL) {
             generateDefaultImpl(owner, state, jvmSignature, functionDescriptor, kind, receiverParameter, hasReceiver, isStatic,
                                 ownerInternalName,
-                                isConstructor, mv, iv);
+                                isConstructor, mv, iv, loadStrategy);
         }
     }
 
@@ -585,13 +591,14 @@ public class FunctionCodegen extends GenerationStateAware {
             Method jvmSignature,
             FunctionDescriptor functionDescriptor,
             OwnerKind kind,
-            ReceiverDescriptor receiverParameter,
+            ReceiverParameterDescriptor receiverParameter,
             boolean hasReceiver,
             boolean aStatic,
             JvmClassName ownerInternalName,
             boolean constructor,
             MethodVisitor mv,
-            InstructionAdapter iv
+            InstructionAdapter iv,
+            DefaultParameterValueLoader loadStrategy
     ) {
         mv.visitCode();
 
@@ -656,9 +663,7 @@ public class FunctionCodegen extends GenerationStateAware {
                 Label loadArg = new Label();
                 iv.ifeq(loadArg);
 
-                JetParameter jetParameter = (JetParameter) descriptorToDeclaration(state.getBindingContext(), parameterDescriptor);
-                assert jetParameter != null;
-                codegen.gen(jetParameter.getDefaultValue(), t);
+                loadStrategy.putValueOnStack(parameterDescriptor, codegen);
 
                 int ind = frameMap.getIndex(parameterDescriptor);
                 iv.store(ind, t);

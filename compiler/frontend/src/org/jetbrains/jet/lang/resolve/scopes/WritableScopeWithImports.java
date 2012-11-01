@@ -16,18 +16,14 @@
 
 package org.jetbrains.jet.lang.resolve.scopes;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author abreslav
@@ -41,6 +37,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     private List<JetScope> imports;
     private WritableScope currentIndividualImportScope;
     protected final RedeclarationHandler redeclarationHandler;
+    private List<ReceiverParameterDescriptor> implicitReceiverHierarchy;
 
     public WritableScopeWithImports(@NotNull JetScope scope, @NotNull RedeclarationHandler redeclarationHandler, @NotNull String debugName) {
         super(scope);
@@ -102,20 +99,27 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
         currentIndividualImportScope = null;
     }
 
+    @NotNull
     @Override
-    public void getImplicitReceiversHierarchy(@NotNull List<ReceiverDescriptor> result) {
+    public List<ReceiverParameterDescriptor> getImplicitReceiversHierarchy() {
         checkMayRead();
 
-        super.getImplicitReceiversHierarchy(result);
+        if (implicitReceiverHierarchy == null) {
+            implicitReceiverHierarchy = computeImplicitReceiversHierarchy();
+        }
+        return implicitReceiverHierarchy;
+    }
+
+    protected List<ReceiverParameterDescriptor> computeImplicitReceiversHierarchy() {
+        List<ReceiverParameterDescriptor> implicitReceiverHierarchy = Lists.newArrayList();
         // Imported scopes come with their receivers
         // Example: class member resolution scope imports a scope of it's class object
         //          members of the class object must be able to find it as an implicit receiver
         for (JetScope scope : getImports()) {
-            ReceiverDescriptor definedReceiver = scope.getImplicitReceiver();
-            if (definedReceiver.exists()) {
-                result.add(0, definedReceiver);
-            }
+            implicitReceiverHierarchy.addAll(scope.getImplicitReceiversHierarchy());
         }
+        implicitReceiverHierarchy.addAll(super.getImplicitReceiversHierarchy());
+        return implicitReceiverHierarchy;
     }
 
     @NotNull

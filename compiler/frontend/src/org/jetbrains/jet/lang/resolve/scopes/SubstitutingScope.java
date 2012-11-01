@@ -23,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.TypeSubstitutor;
 
 import java.util.Collection;
@@ -121,12 +120,7 @@ public class SubstitutingScope implements JetScope {
 
     @NotNull
     @Override
-    public ReceiverDescriptor getImplicitReceiver() {
-        throw new UnsupportedOperationException(); // TODO
-    }
-
-    @Override
-    public void getImplicitReceiversHierarchy(@NotNull List<ReceiverDescriptor> result) {
+    public List<ReceiverParameterDescriptor> getImplicitReceiversHierarchy() {
         throw new UnsupportedOperationException(); // TODO
     }
 

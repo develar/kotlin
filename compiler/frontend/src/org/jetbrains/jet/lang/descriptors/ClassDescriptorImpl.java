@@ -19,11 +19,10 @@ package org.jetbrains.jet.lang.descriptors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
+import org.jetbrains.jet.lang.resolve.DescriptorResolver;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.SubstitutingScope;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ClassReceiver;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.*;
 
 import java.util.Collection;
@@ -40,7 +39,7 @@ public class ClassDescriptorImpl extends DeclarationDescriptorNonRootImpl implem
     private JetScope memberDeclarations;
     private Set<ConstructorDescriptor> constructors;
     private ConstructorDescriptor primaryConstructor;
-    private ReceiverDescriptor implicitReceiver;
+    private ReceiverParameterDescriptor thisAsReceiverParameter;
     private final Modality modality;
     private ClassDescriptor classObjectDescriptor;
     private final  ClassKind kind;
@@ -171,11 +170,11 @@ public class ClassDescriptorImpl extends DeclarationDescriptorNonRootImpl implem
 
     @NotNull
     @Override
-    public ReceiverDescriptor getImplicitReceiver() {
-        if (implicitReceiver == null) {
-            implicitReceiver = new ClassReceiver(this);
+    public ReceiverParameterDescriptor getThisAsReceiverParameter() {
+        if (thisAsReceiverParameter == null) {
+            thisAsReceiverParameter = DescriptorResolver.createLazyReceiverParameterDescriptor(this);
         }
-        return implicitReceiver;
+        return thisAsReceiverParameter;
     }
 
     @NotNull

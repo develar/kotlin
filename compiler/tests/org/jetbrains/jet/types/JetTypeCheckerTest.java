@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.types;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
@@ -32,12 +33,12 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
-import org.jetbrains.jet.lang.resolve.java.*;
+import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
+import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.*;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.CommonSupertypes;
 import org.jetbrains.jet.lang.types.ErrorUtils;
 import org.jetbrains.jet.lang.types.JetType;
@@ -574,8 +575,12 @@ public class JetTypeCheckerTest extends JetLiteFixture {
         JetScope scope = new JetScopeAdapter(classDefinitions.BASIC_SCOPE) {
             @NotNull
             @Override
-            public ReceiverDescriptor getImplicitReceiver() {
-                return new ExpressionReceiver(JetPsiFactory.createExpression(getProject(), expression), thisType);
+            public List<ReceiverParameterDescriptor> getImplicitReceiversHierarchy() {
+                return Lists.<ReceiverParameterDescriptor>newArrayList(new ReceiverParameterDescriptorImpl(
+                        classDefinitions.BASIC_SCOPE.getContainingDeclaration(),
+                        thisType,
+                        new ExpressionReceiver(JetPsiFactory.createExpression(getProject(), expression), thisType)
+                ));
             }
         };
         assertType(scope, expression, expectedType);

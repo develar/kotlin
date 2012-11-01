@@ -23,12 +23,13 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor;
 import org.jetbrains.jet.lang.resolve.AbstractScopeAdapter;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -84,13 +85,8 @@ public class InnerClassesScopeWrapper extends AbstractScopeAdapter {
 
     @NotNull
     @Override
-    public ReceiverDescriptor getImplicitReceiver() {
-        return ReceiverDescriptor.NO_RECEIVER;
-    }
-
-    @Override
-    public void getImplicitReceiversHierarchy(@NotNull List<ReceiverDescriptor> result) {
-        // Do nothing
+    public List<ReceiverParameterDescriptor> getImplicitReceiversHierarchy() {
+        return Collections.emptyList();
     }
 
     @Override

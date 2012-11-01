@@ -26,17 +26,12 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.psi.*;
-import org.jetbrains.jet.lang.resolve.AnnotationResolver;
-import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.resolve.ModifiersChecker;
+import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.lazy.data.FilteringClassLikeInfo;
 import org.jetbrains.jet.lang.resolve.lazy.data.JetClassInfoUtil;
 import org.jetbrains.jet.lang.resolve.lazy.data.JetClassLikeInfo;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.*;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ClassReceiver;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.ErrorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeConstructor;
@@ -70,7 +65,7 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements LazyDesc
     private final Visibility visibility;
     private final ClassKind kind;
 
-    private ClassReceiver implicitReceiver;
+    private ReceiverParameterDescriptor thisAsReceiverParameter;
     private List<AnnotationDescriptor> annotations;
     private ClassDescriptor classObjectDescriptor;
     private boolean classObjectDescriptorResolved = false;
@@ -153,8 +148,7 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements LazyDesc
             scope.addLabeledDeclaration(this);
             scope.changeLockLevel(WritableScope.LockLevel.READING);
 
-            scopeForMemberDeclarationResolution = new ChainedScope(this, getScopeForMemberLookup().getImplicitReceiver(),
-                                                                   scope, getScopeForMemberLookup(), getScopeForClassHeaderResolution());
+            scopeForMemberDeclarationResolution = new ChainedScope(this, scope, getScopeForMemberLookup(), getScopeForClassHeaderResolution());
         }
         return scopeForMemberDeclarationResolution;
     }
@@ -273,11 +267,11 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements LazyDesc
 
     @NotNull
     @Override
-    public ReceiverDescriptor getImplicitReceiver() {
-        if (implicitReceiver == null) {
-            implicitReceiver = new ClassReceiver(this);
+    public ReceiverParameterDescriptor getThisAsReceiverParameter() {
+        if (thisAsReceiverParameter == null) {
+            thisAsReceiverParameter = DescriptorResolver.createLazyReceiverParameterDescriptor(this);
         }
-        return implicitReceiver;
+        return thisAsReceiverParameter;
     }
 
     @Override
@@ -315,7 +309,7 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements LazyDesc
         getClassObjectType();
         getConstructors();
         getContainingDeclaration();
-        getImplicitReceiver();
+        getThisAsReceiverParameter();
         getKind();
         getModality();
         getName();

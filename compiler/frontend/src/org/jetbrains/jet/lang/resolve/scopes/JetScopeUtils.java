@@ -16,12 +16,15 @@
 
 package org.jetbrains.jet.lang.resolve.scopes;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
+import org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 
 import java.util.Collection;
 import java.util.List;
@@ -33,18 +36,18 @@ import java.util.Set;
 public final class JetScopeUtils {
     private JetScopeUtils() {}
 
-    /**
-     * Get receivers in order of locality, so that the closest (the most local) receiver goes first
-     * A wrapper for {@link JetScope#getImplicitReceiversHierarchy(List)}
-     *
-     * @param scope Scope for getting receivers hierarchy.
-     * @return receivers hierarchy.
-     */
-    @NotNull
-    public static Collection<ReceiverDescriptor> getImplicitReceiversHierarchy(@NotNull JetScope scope) {
-        List<ReceiverDescriptor> descriptors = Lists.newArrayList();
-        scope.getImplicitReceiversHierarchy(descriptors);
-        return descriptors;
+    public static List<ReceiverValue> getImplicitReceiversHierarchyValues(@NotNull JetScope scope) {
+        Collection<ReceiverParameterDescriptor> hierarchy = scope.getImplicitReceiversHierarchy();
+
+        return Lists.newArrayList(
+                Collections2.transform(hierarchy,
+                       new Function<ReceiverParameterDescriptor, ReceiverValue>() {
+                           @Override
+                           public ReceiverValue apply(ReceiverParameterDescriptor receiverParameterDescriptor) {
+                               return receiverParameterDescriptor.getValue();
+                           }
+                       })
+        );
     }
 
     /**

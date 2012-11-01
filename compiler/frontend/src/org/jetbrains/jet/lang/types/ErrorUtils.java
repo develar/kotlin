@@ -23,7 +23,6 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
 import org.jetbrains.jet.lang.types.error.ErrorSimpleFunctionDescriptorImpl;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
@@ -79,12 +78,8 @@ public class ErrorUtils {
 
         @NotNull
         @Override
-        public ReceiverDescriptor getImplicitReceiver() {
-            return ReceiverDescriptor.NO_RECEIVER;
-        }
-
-        @Override
-        public void getImplicitReceiversHierarchy(@NotNull List<ReceiverDescriptor> result) {
+        public List<ReceiverParameterDescriptor> getImplicitReceiversHierarchy() {
+            return Collections.emptyList();
         }
 
         @NotNull
@@ -163,7 +158,7 @@ public class ErrorUtils {
             Visibilities.INTERNAL,
             true,
             null,
-            ReceiverDescriptor.NO_RECEIVER,
+            ReceiverParameterDescriptor.NO_RECEIVER_PARAMETER,
             Name.special("<ERROR PROPERTY>"),
             ERROR_PROPERTY_TYPE,
             CallableMemberDescriptor.Kind.DECLARATION);
@@ -173,7 +168,7 @@ public class ErrorUtils {
         ErrorSimpleFunctionDescriptorImpl function = new ErrorSimpleFunctionDescriptorImpl(ownerScope);
         function.initialize(
                 null,
-                ReceiverDescriptor.NO_RECEIVER,
+                ReceiverParameterDescriptor.NO_RECEIVER_PARAMETER,
                 Collections.<TypeParameterDescriptorImpl>emptyList(), // TODO
                 Collections.<ValueParameterDescriptor>emptyList(), // TODO
                 createErrorType("<ERROR FUNCTION RETURN TYPE>"),

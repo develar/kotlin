@@ -21,12 +21,10 @@ import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
+import org.jetbrains.jet.lang.resolve.DescriptorResolver;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.OverridingUtil;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ExtensionReceiver;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor;
-import org.jetbrains.jet.lang.resolve.scopes.receivers.TransientReceiver;
 import org.jetbrains.jet.lang.types.DescriptorSubstitutor;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeSubstitutor;
@@ -35,8 +33,6 @@ import org.jetbrains.jet.lang.types.Variance;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import static org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverDescriptor.NO_RECEIVER;
 
 /**
  * @author abreslav
@@ -50,8 +46,8 @@ public class PropertyDescriptor extends VariableDescriptorImpl implements Callab
     private final PropertyDescriptor original;
     private final Kind kind;
 
-    private ReceiverDescriptor expectedThisObject;
-    private ReceiverDescriptor receiver;
+    private ReceiverParameterDescriptor expectedThisObject;
+    private ReceiverParameterDescriptor receiverParameter;
     private List<TypeParameterDescriptor> typeParameters;
     private PropertyGetterDescriptor getter;
     private PropertySetterDescriptor setter;
@@ -93,7 +89,7 @@ public class PropertyDescriptor extends VariableDescriptorImpl implements Callab
             @NotNull Visibility visibility,
             boolean isVar,
             @Nullable JetType receiverType,
-            @NotNull ReceiverDescriptor expectedThisObject,
+            @NotNull ReceiverParameterDescriptor expectedThisObject,
             @NotNull Name name,
             @NotNull JetType outType,
             @NotNull Kind kind
@@ -102,19 +98,27 @@ public class PropertyDescriptor extends VariableDescriptorImpl implements Callab
         setType(outType, Collections.<TypeParameterDescriptor>emptyList(), expectedThisObject, receiverType);
     }
 
-    public void setType(@NotNull JetType outType, @NotNull List<? extends TypeParameterDescriptor> typeParameters, @NotNull ReceiverDescriptor expectedThisObject, @Nullable JetType receiverType) {
-        ReceiverDescriptor receiver = receiverType == null
-                ? NO_RECEIVER
-                : new ExtensionReceiver(this, receiverType);
-        setType(outType, typeParameters, expectedThisObject, receiver);
+    public void setType(
+            @NotNull JetType outType,
+            @NotNull List<? extends TypeParameterDescriptor> typeParameters,
+            @NotNull ReceiverParameterDescriptor expectedThisObject,
+            @Nullable JetType receiverType
+    ) {
+        ReceiverParameterDescriptor receiverParameter = DescriptorResolver.resolveReceiverParameterFor(this, receiverType);
+        setType(outType, typeParameters, expectedThisObject, receiverParameter);
     }
 
-    public void setType(@NotNull JetType outType, @NotNull List<? extends TypeParameterDescriptor> typeParameters, @NotNull ReceiverDescriptor expectedThisObject, @NotNull ReceiverDescriptor receiver) {
+    public void setType(
+            @NotNull JetType outType,
+            @NotNull List<? extends TypeParameterDescriptor> typeParameters,
+            @NotNull ReceiverParameterDescriptor expectedThisObject,
+            @NotNull ReceiverParameterDescriptor receiverParameter
+    ) {
         setOutType(outType);
 
         this.typeParameters = Lists.newArrayList(typeParameters);
 
-        this.receiver = receiver;
+        this.receiverParameter = receiverParameter;
         this.expectedThisObject = expectedThisObject;
     }
 
@@ -135,13 +139,13 @@ public class PropertyDescriptor extends VariableDescriptorImpl implements Callab
 
     @Override
     @NotNull
-    public ReceiverDescriptor getReceiverParameter() {
-        return receiver;
+    public ReceiverParameterDescriptor getReceiverParameter() {
+        return receiverParameter;
     }
 
     @NotNull
     @Override
-    public ReceiverDescriptor getExpectedThisObject() {
+    public ReceiverParameterDescriptor getExpectedThisObject() {
         return expectedThisObject;
     }
 
@@ -212,18 +216,11 @@ public class PropertyDescriptor extends VariableDescriptorImpl implements Callab
             return null; // TODO : tell the user that the property was projected out
         }
 
-        ReceiverDescriptor substitutedExpectedThisObject;
-        if (expectedThisObject.exists()) {
-            JetType substitutedExpectedThisObjectType = substitutor.substitute(getExpectedThisObject().getType(), Variance.INVARIANT);
-            substitutedExpectedThisObject = new TransientReceiver(substitutedExpectedThisObjectType);
-        }
-        else {
-            substitutedExpectedThisObject = NO_RECEIVER;
-        }
+        ReceiverParameterDescriptor substitutedExpectedThisObject = getExpectedThisObject().substitute(substitutor);
 
         JetType substitutedReceiverType;
-        if (receiver.exists()) {
-            substitutedReceiverType = substitutor.substitute(receiver.getType(), Variance.IN_VARIANCE);
+        if (receiverParameter.exists()) {
+            substitutedReceiverType = substitutor.substitute(receiverParameter.getType(), Variance.IN_VARIANCE);
             if (substitutedReceiverType == null) return null;
         }
         else {
