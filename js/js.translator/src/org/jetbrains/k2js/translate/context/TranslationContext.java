@@ -30,7 +30,6 @@ import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 import java.util.Map;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForElement;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
 /**
@@ -143,13 +142,13 @@ public class TranslationContext {
 
     @NotNull
     public JsName getNameForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-        assert !(descriptor instanceof PropertyGetterDescriptor);
         return staticContext.getNameForDescriptor(descriptor, this);
     }
 
     @NotNull
     public JsNameRef getNameRefForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-        return staticContext.getNameRefForDescriptor(descriptor, this);
+        final JsNameRef descriptor1 = staticContext.getNameRefForDescriptor(descriptor, this);
+        return descriptor1;
     }
 
     @NotNull
