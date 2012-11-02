@@ -130,7 +130,7 @@ final class OverloadedMemberNameGenerator {
         int counter = -1;
         boolean isGetter = accessor instanceof PropertyGetterDescriptor;
         for (VariableDescriptor variable : properties) {
-            if (!(variable instanceof PropertyDescriptor) || !variable.getReceiverParameter().exists()) {
+            if (!(variable instanceof PropertyDescriptor) || variable.getReceiverParameter() == null) {
                 continue;
             }
 
