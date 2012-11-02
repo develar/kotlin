@@ -389,7 +389,7 @@ class KModel(val context: BindingContext, val config: KDocConfig, val sourceDirs
                     val returnType = getType(descriptor.getReturnType())
                     if (returnType != null) {
                         val receiver = descriptor.getReceiverParameter()
-                        val extensionClass = if (receiver is ExtensionReceiver) {
+                        val extensionClass = if (receiver != null) {
                             getType(receiver.getType())
                         } else null
 
@@ -428,7 +428,7 @@ class KModel(val context: BindingContext, val config: KDocConfig, val sourceDirs
             addTypeParameters(function.typeParameters, descriptor.getTypeParameters())
             configureComments(function, descriptor)
             val receiver = descriptor.getReceiverParameter()
-            if (receiver is ExtensionReceiver) {
+            if (receiver != null) {
                 val receiverType = getType(receiver.getType())
                 function.receiverType = receiverType
                 function.extensionClass = receiverType?.klass

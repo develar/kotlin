@@ -385,7 +385,12 @@ public class JetTypeMapper extends BindingTraceAware {
         }
     }
 
-    public CallableMethod mapToCallableMethod(@NotNull FunctionDescriptor functionDescriptor, boolean superCall, OwnerKind kind) {
+    public CallableMethod mapToCallableMethod(
+            @NotNull FunctionDescriptor functionDescriptor,
+            boolean superCall,
+            boolean isInsideClass,
+            OwnerKind kind
+    ) {
         final DeclarationDescriptor functionParent = functionDescriptor.getOriginal().getContainingDeclaration();
 
         functionDescriptor = unwrapFakeOverride(functionDescriptor);
@@ -444,10 +449,19 @@ public class JetTypeMapper extends BindingTraceAware {
             ownerForDefaultParam = JvmClassName.byType(mapType(declarationOwner.getDefaultType(), JetTypeMapperMode.TYPE_PARAMETER));
             ownerForDefaultImpl = JvmClassName.byInternalName(
                     ownerForDefaultParam.getInternalName() + (originalIsInterface ? JvmAbi.TRAIT_IMPL_SUFFIX : ""));
+            if (isInterface) {
+                invokeOpcode = superCall ? INVOKESTATIC : INVOKEINTERFACE;
+            }
+            else {
+                if (isAccessor) {
+                    invokeOpcode = INVOKESTATIC;
+                }
+                else {
+                    boolean isPrivateFunInvocation = isInsideClass && functionDescriptor.getVisibility() == Visibilities.PRIVATE;
+                    invokeOpcode = superCall || isPrivateFunInvocation ? INVOKESPECIAL : INVOKEVIRTUAL;
+                }
+            }
 
-            invokeOpcode = isInterface
-                           ? (superCall ? INVOKESTATIC : INVOKEINTERFACE)
-                           : (isAccessor ? INVOKESTATIC : (superCall ? INVOKESPECIAL : INVOKEVIRTUAL));
             if (isInterface && superCall) {
                 descriptor = mapSignature(functionDescriptor, false, OwnerKind.TRAIT_IMPL);
                 owner = JvmClassName.byInternalName(owner.getInternalName() + JvmAbi.TRAIT_IMPL_SUFFIX);
@@ -460,8 +474,9 @@ public class JetTypeMapper extends BindingTraceAware {
 
 
         Type receiverParameterType;
-        if (functionDescriptor.getReceiverParameter().exists()) {
-            receiverParameterType = mapType(functionDescriptor.getOriginal().getReceiverParameter().getType());
+        ReceiverParameterDescriptor receiverParameter = functionDescriptor.getOriginal().getReceiverParameter();
+        if (receiverParameter != null) {
+            receiverParameterType = mapType(receiverParameter.getType());
         }
         else {
             receiverParameterType = null;
@@ -499,8 +514,7 @@ public class JetTypeMapper extends BindingTraceAware {
 
         writeFormalTypeParameters(f.getTypeParameters(), signatureVisitor);
 
-        final ReceiverParameterDescriptor receiverTypeRef = f.getReceiverParameter();
-        final JetType receiverType = !receiverTypeRef.exists() ? null : receiverTypeRef.getType();
+        final JetType receiverType = DescriptorUtils.getReceiverParameterType(f.getReceiverParameter());
         final List<ValueParameterDescriptor> parameters = f.getValueParameters();
 
         signatureVisitor.writeParametersStart();
@@ -547,7 +561,7 @@ public class JetTypeMapper extends BindingTraceAware {
     }
 
     private void writeThisForAccessorIfNeeded(FunctionDescriptor f, BothSignatureWriter signatureVisitor) {
-        if (isAccessor(f) && f.getExpectedThisObject().exists()) {
+        if (isAccessor(f) && f.getExpectedThisObject() != null) {
             signatureVisitor.writeParameterType(JvmMethodParameterKind.THIS);
             mapType(((ClassifierDescriptor) f.getContainingDeclaration()).getDefaultType(), signatureVisitor, JetTypeMapperMode.VALUE);
             signatureVisitor.writeParameterTypeEnd();
@@ -637,8 +651,8 @@ public class JetTypeMapper extends BindingTraceAware {
         return signatureWriter.makeJvmMethodSignature(name.getName());
     }
 
-    private void writeReceiverIfNeeded(ReceiverParameterDescriptor receiver, BothSignatureWriter signatureWriter) {
-        if (receiver.exists()) {
+    private void writeReceiverIfNeeded(@Nullable ReceiverParameterDescriptor receiver, BothSignatureWriter signatureWriter) {
+        if (receiver != null) {
             signatureWriter.writeParameterType(JvmMethodParameterKind.RECEIVER);
             mapType(receiver.getType(), signatureWriter, JetTypeMapperMode.VALUE);
             signatureWriter.writeParameterTypeEnd();
@@ -895,8 +909,9 @@ public class JetTypeMapper extends BindingTraceAware {
         JvmMethodSignature descriptor = erasedInvokeSignature(fd);
         JvmClassName owner = getInternalClassName(fd);
         Type receiverParameterType;
-        if (fd.getReceiverParameter().exists()) {
-            receiverParameterType = mapType(fd.getOriginal().getReceiverParameter().getType());
+        ReceiverParameterDescriptor receiverParameter = fd.getOriginal().getReceiverParameter();
+        if (receiverParameter != null) {
+            receiverParameterType = mapType(receiverParameter.getType());
         }
         else {
             receiverParameterType = null;

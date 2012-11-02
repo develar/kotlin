@@ -366,4 +366,22 @@ public class PropertyGenTest extends CodegenTestCase {
         blackBoxFile("properties/kt2892.kt");
     }
 
+    public void testAccessToPrivateProperty() throws Exception {
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
+        blackBoxFile("properties/accessToPrivateProperty.kt");
+    }
+
+    public void testAccessToPrivateSetter() throws Exception {
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
+        blackBoxFile("properties/accessToPrivateSetter.kt");
+    }
+
+    public void testKt2202() throws Exception {
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
+        loadFile("properties/kt2202.kt");
+        String text = generateToText();
+        assertFalse(text.contains("INVOKEVIRTUAL"));
+        assertTrue(text.contains("INVOKESPECIAL"));
+    }
+
 }

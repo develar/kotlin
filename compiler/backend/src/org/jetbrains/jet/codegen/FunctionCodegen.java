@@ -77,8 +77,11 @@ public class FunctionCodegen extends GenerationStateAware {
         final SimpleFunctionDescriptor functionDescriptor = bindingContext.get(BindingContext.FUNCTION, f);
         assert functionDescriptor != null;
         JvmMethodSignature method =
-                typeMapper.mapToCallableMethod(functionDescriptor, false, owner.getContextKind())
-                        .getSignature();
+                typeMapper.mapToCallableMethod(
+                        functionDescriptor,
+                        false,
+                        isCallInsideSameClassAsDeclared(functionDescriptor, owner),
+                        owner.getContextKind()).getSignature();
         generateMethod(f, method, true, null, functionDescriptor);
     }
 
@@ -147,7 +150,7 @@ public class FunctionCodegen extends GenerationStateAware {
 
         Type thisType;
         ReceiverParameterDescriptor expectedThisObject = functionDescriptor.getExpectedThisObject();
-        if (expectedThisObject.exists()) {
+        if (expectedThisObject != null) {
             thisType = typeMapper.mapType(expectedThisObject.getType());
         }
         else if (fun instanceof JetFunctionLiteralExpression || isLocalFun(bindingContext, functionDescriptor)) {
@@ -188,7 +191,7 @@ public class FunctionCodegen extends GenerationStateAware {
                 add++;
             }
 
-            if (functionDescriptor.getReceiverParameter().exists()) {
+            if (functionDescriptor.getReceiverParameter() != null) {
                 add++;
             }
 
@@ -258,8 +261,9 @@ public class FunctionCodegen extends GenerationStateAware {
             mv.visitLocalVariable("this", thisType.getDescriptor(), null, methodBegin, methodEnd, k++);
         }
 
-        if (functionDescriptor.getReceiverParameter().exists()) {
-            Type type = typeMapper.mapType(functionDescriptor.getReceiverParameter().getType());
+        ReceiverParameterDescriptor receiverParameter = functionDescriptor.getReceiverParameter();
+        if (receiverParameter != null) {
+            Type type = typeMapper.mapType(receiverParameter.getType());
             mv.visitLocalVariable(JvmAbi.RECEIVER_PARAMETER, type.getDescriptor(), null, methodBegin, methodEnd, k);
             k += type.getSize();
         }
@@ -390,7 +394,7 @@ public class FunctionCodegen extends GenerationStateAware {
             MethodVisitor mv
     ) {
         if (jvmSignature == null) {
-            jvmSignature = state.getTypeMapper().mapToCallableMethod(functionDescriptor, false, OwnerKind.IMPLEMENTATION).getSignature();
+            jvmSignature = state.getTypeMapper().mapToCallableMethod(functionDescriptor, false, false, OwnerKind.IMPLEMENTATION).getSignature();
         }
 
         List<ValueParameterDescriptor> paramDescrs = functionDescriptor.getValueParameters();
@@ -430,7 +434,7 @@ public class FunctionCodegen extends GenerationStateAware {
         final List<JvmMethodParameterSignature> kotlinParameterTypes = jvmSignature.getKotlinParameterTypes();
         assert kotlinParameterTypes != null;
 
-        if (receiverParameter.exists()) {
+        if (receiverParameter != null) {
             JetValueParameterAnnotationWriter av = JetValueParameterAnnotationWriter.visitParameterAnnotation(mv, start++);
             av.writeName(JvmAbi.RECEIVER_PARAMETER);
             av.writeReceiver();
@@ -546,7 +550,7 @@ public class FunctionCodegen extends GenerationStateAware {
         }
 
         ReceiverParameterDescriptor receiverParameter = functionDescriptor.getReceiverParameter();
-        boolean hasReceiver = receiverParameter.exists();
+        boolean hasReceiver = receiverParameter != null;
         boolean isStatic = isStatic(kind);
 
         if (kind == OwnerKind.TRAIT_IMPL) {
