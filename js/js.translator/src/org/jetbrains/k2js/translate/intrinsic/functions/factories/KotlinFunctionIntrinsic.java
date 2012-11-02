@@ -17,7 +17,7 @@ public final class KotlinFunctionIntrinsic extends FunctionIntrinsic {
     private final JsNameRef function;
 
     public KotlinFunctionIntrinsic(@NotNull String functionName) {
-        function = new JsNameRef(functionName, Namer.KOTLIN_OBJECT_NAME);
+        function = new JsNameRef(functionName, Namer.KOTLIN_OBJECT_NAME_REF);
     }
 
     @NotNull
