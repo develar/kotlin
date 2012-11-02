@@ -21,10 +21,7 @@ import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
-import org.jetbrains.jet.lang.descriptors.Modality;
-import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetDeclarationWithBody;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteralExpression;
@@ -32,7 +29,6 @@ import org.jetbrains.k2js.translate.context.AliasingContext;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
-import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.Collections;
@@ -133,6 +129,6 @@ public final class FunctionTranslator extends AbstractTranslator {
     }
 
     private boolean isExtensionFunction() {
-        return JsDescriptorUtils.isExtension(descriptor) && !(functionDeclaration instanceof JetFunctionLiteralExpression);
+        return descriptor.getReceiverParameter() != null && !(functionDeclaration instanceof JetFunctionLiteralExpression);
     }
 }
