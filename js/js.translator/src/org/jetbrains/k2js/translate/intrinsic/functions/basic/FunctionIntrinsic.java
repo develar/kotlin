@@ -53,22 +53,11 @@ public abstract class FunctionIntrinsic {
     }
 
     @NotNull
-    public abstract JsExpression apply(
-            @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments,
-            @NotNull TranslationContext context
-    );
+    public JsExpression apply(@Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context) {
+        throw new AbstractMethodError();
+    }
 
     public boolean exists() {
         return true;
-    }
-
-    public abstract static class CallParametersAwareFunctionIntrinsic extends FunctionIntrinsic {
-        @NotNull
-        @Override
-        public JsExpression apply(
-                @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
-        ) {
-            throw new IllegalStateException();
-        }
     }
 }
