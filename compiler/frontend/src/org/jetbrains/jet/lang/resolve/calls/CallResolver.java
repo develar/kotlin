@@ -16,6 +16,8 @@
 
 package org.jetbrains.jet.lang.resolve.calls;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
@@ -36,7 +38,8 @@ import org.jetbrains.jet.lang.resolve.calls.util.JetFakeReference;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
-import org.jetbrains.jet.lang.types.*;
+import org.jetbrains.jet.lang.types.ErrorUtils;
+import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils;
@@ -50,7 +53,6 @@ import java.util.*;
 import static org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor.NO_RECEIVER_PARAMETER;
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
 import static org.jetbrains.jet.lang.resolve.BindingContext.*;
-import static org.jetbrains.jet.lang.resolve.calls.results.ResolutionStatus.*;
 import static org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue.NO_RECEIVER;
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
 
@@ -61,18 +63,11 @@ public class CallResolver {
     private final JetTypeChecker typeChecker = JetTypeChecker.INSTANCE;
 
     @NotNull
-    private ResolutionResultsHandler resolutionResultsHandler;
-    @NotNull
     private ExpressionTypingServices expressionTypingServices;
     @NotNull
     private TypeResolver typeResolver;
     @NotNull
     private CandidateResolver candidateResolver;
-
-    @Inject
-    public void setResolutionResultsHandler(@NotNull ResolutionResultsHandler resolutionResultsHandler) {
-        this.resolutionResultsHandler = resolutionResultsHandler;
-    }
 
     @Inject
     public void setExpressionTypingServices(@NotNull ExpressionTypingServices expressionTypingServices) {
@@ -309,27 +304,42 @@ public class CallResolver {
             @NotNull OverloadResolutionResults<D> resultsWithIncompleteTypeInference,
             @NotNull TracingStrategy tracing
     ) {
-        if (resultsWithIncompleteTypeInference.getResultCode() != OverloadResolutionResults.Code.INCOMPLETE_TYPE_INFERENCE)
+        if (resultsWithIncompleteTypeInference.getResultCode() != OverloadResolutionResults.Code.INCOMPLETE_TYPE_INFERENCE) {
             return resultsWithIncompleteTypeInference;
-        Set<ResolvedCallWithTrace<D>> successful = Sets.newLinkedHashSet();
-        Set<ResolvedCallWithTrace<D>> failed = Sets.newLinkedHashSet();
-        for (ResolvedCall<? extends D> call : resultsWithIncompleteTypeInference.getResultingCalls()) {
-            if (!(call instanceof ResolvedCallImpl)) continue;
-            ResolvedCallImpl<D> resolvedCall = CallResolverUtil.copy((ResolvedCallImpl<D>) call, context);
-            if (!resolvedCall.hasUnknownTypeParameters()) {
-                if (resolvedCall.getStatus().isSuccess()) {
-                    successful.add(resolvedCall);
-                }
-                else {
-                    failed.add(resolvedCall);
-                }
-                continue;
-            }
-            candidateResolver.completeTypeInferenceDependentOnExpectedTypeForCall(
-                    CallResolutionContext.create(context, tracing, resolvedCall), successful, failed);
         }
-        OverloadResolutionResultsImpl<D> results = resolutionResultsHandler.computeResultAndReportErrors(context.trace, tracing, successful,
-                                                                                                         failed);
+
+        Set<ResolvedCallWithTrace<D>> candidates = Sets.newLinkedHashSet();
+        Set<ResolvedCallWithTrace<D>> incompleteCalls = Sets.newLinkedHashSet();
+        for (ResolvedCall<? extends D> cachedCall : resultsWithIncompleteTypeInference.getResultingCalls()) {
+            if (cachedCall instanceof ResolvedCallImpl) {
+                ResolvedCallImpl<D> resolvedCall = (ResolvedCallImpl<D>) cachedCall;
+                if (resolvedCall.hasUnknownTypeParameters()) {
+                    ResolvedCallImpl<D> copy = CallResolverUtil.copy(resolvedCall, context);
+                    incompleteCalls.add(copy);
+                    candidates.add(copy);
+                    continue;
+                }
+            }
+            candidates.add((ResolvedCallWithTrace<D>) cachedCall);
+        }
+        ResolvedCallWithTrace<D> maximallySpecific = OverloadingConflictResolver.INSTANCE.findMaximallySpecific(incompleteCalls, false);
+        if (maximallySpecific != null) {
+            candidateResolver.completeTypeInferenceDependentOnExpectedTypeForCall(
+                CallResolutionContext.create(context, tracing, (ResolvedCallImpl<D>) maximallySpecific));
+            for (ResolvedCallWithTrace<D> callWithUnknownTypeParameters : incompleteCalls) {
+                if (callWithUnknownTypeParameters != maximallySpecific) {
+                    ((ResolvedCallImpl<D>) callWithUnknownTypeParameters).addStatus(ResolutionStatus.OTHER_ERROR);
+                }
+            }
+        }
+        else {
+            for (ResolvedCallWithTrace<D> callWithUnknownTypeParameters : incompleteCalls) {
+                ResolvedCallImpl<D> resolvedCall = (ResolvedCallImpl<D>) callWithUnknownTypeParameters;
+                resolvedCall.addStatus(ResolutionStatus.INCOMPLETE_TYPE_INFERENCE);
+            }
+        }
+        OverloadResolutionResultsImpl<D> results = ResolutionResultsHandler.INSTANCE.computeResultAndReportErrors(
+                context.trace, tracing, candidates);
         if (!results.isSingleResult()) {
             candidateResolver.checkTypesWithNoCallee(context);
         }
@@ -502,115 +512,11 @@ public class CallResolver {
             }
         }
 
-        Set<ResolvedCallWithTrace<F>> successfulCandidates = Sets.newLinkedHashSet();
-        Set<ResolvedCallWithTrace<F>> failedCandidates = Sets.newLinkedHashSet();
-        for (ResolvedCallWithTrace<F> candidateCall : task.getResolvedCalls()) {
-            ResolutionStatus status = candidateCall.getStatus();
-            if (status.isSuccess()) {
-                successfulCandidates.add(candidateCall);
-            }
-            else {
-                assert status != UNKNOWN_STATUS : "No resolution for " + candidateCall.getCandidateDescriptor();
-                if (candidateCall.getStatus() != STRONG_ERROR) {
-                    failedCandidates.add(candidateCall);
-                }
-            }
-        }
-        
-        OverloadResolutionResultsImpl<F> results = resolutionResultsHandler.computeResultAndReportErrors(task.trace, task.tracing,
-                                                                                                         successfulCandidates,
-                                                                                                         failedCandidates);
+        OverloadResolutionResultsImpl<F> results = ResolutionResultsHandler.INSTANCE.computeResultAndReportErrors(
+                task.trace, task.tracing, task.getResolvedCalls());
         if (!results.isSingleResult() && !results.isIncomplete()) {
             candidateResolver.checkTypesWithNoCallee(task.toBasic());
         }
         return results;
-    }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// to be removed
-
-    @Deprecated // Creates wrong resolved calls, should be removed
-    @NotNull
-    public OverloadResolutionResults<FunctionDescriptor> resolveExactSignature(@NotNull JetScope scope, @NotNull ReceiverValue receiver, @NotNull Name name, @NotNull List<JetType> parameterTypes) {
-        List<ResolutionCandidate<FunctionDescriptor>> candidates = findCandidatesByExactSignature(scope, receiver, name, parameterTypes);
-
-        BindingTraceContext trace = new BindingTraceContext();
-        TemporaryBindingTrace temporaryBindingTrace = TemporaryBindingTrace.create(trace, "trace for resolve exact signature call", name);
-        Set<ResolvedCallWithTrace<FunctionDescriptor>> calls = Sets.newLinkedHashSet();
-        for (ResolutionCandidate<FunctionDescriptor> candidate : candidates) {
-            ResolvedCallImpl<FunctionDescriptor> call = ResolvedCallImpl.create(candidate, temporaryBindingTrace);
-            calls.add(call);
-        }
-        return resolutionResultsHandler.computeResultAndReportErrors(trace, TracingStrategy.EMPTY, calls,
-                                                                     Collections.<ResolvedCallWithTrace<FunctionDescriptor>>emptySet());
-    }
-
-    private List<ResolutionCandidate<FunctionDescriptor>> findCandidatesByExactSignature(JetScope scope, ReceiverValue receiver,
-                                                                                      Name name, List<JetType> parameterTypes) {
-        List<ResolutionCandidate<FunctionDescriptor>> result = Lists.newArrayList();
-        if (receiver.exists()) {
-            Collection<ResolutionCandidate<FunctionDescriptor>> extensionFunctionDescriptors = ResolutionCandidate.convertCollection(scope.getFunctions(name), false);
-            List<ResolutionCandidate<FunctionDescriptor>> nonlocal = Lists.newArrayList();
-            List<ResolutionCandidate<FunctionDescriptor>> local = Lists.newArrayList();
-            TaskPrioritizer.splitLexicallyLocalDescriptors(extensionFunctionDescriptors, scope.getContainingDeclaration(), local, nonlocal);
-
-
-            if (findExtensionFunctions(local, receiver, parameterTypes, result)) {
-                return result;
-            }
-
-            Collection<ResolutionCandidate<FunctionDescriptor>> functionDescriptors = ResolutionCandidate.convertCollection(receiver.getType().getMemberScope().getFunctions(name), false);
-            if (lookupExactSignature(functionDescriptors, parameterTypes, result)) {
-                return result;
-
-            }
-            findExtensionFunctions(nonlocal, receiver, parameterTypes, result);
-            return result;
-        }
-        else {
-            lookupExactSignature(ResolutionCandidate.convertCollection(scope.getFunctions(name), false), parameterTypes, result);
-            return result;
-        }
-    }
-
-    private static boolean lookupExactSignature(Collection<ResolutionCandidate<FunctionDescriptor>> candidates, List<JetType> parameterTypes,
-                                                List<ResolutionCandidate<FunctionDescriptor>> result) {
-        boolean found = false;
-        for (ResolutionCandidate<FunctionDescriptor> resolvedCall : candidates) {
-            FunctionDescriptor functionDescriptor = resolvedCall.getDescriptor();
-            if (functionDescriptor.getReceiverParameter() != null) continue;
-            if (!functionDescriptor.getTypeParameters().isEmpty()) continue;
-            if (!checkValueParameters(functionDescriptor, parameterTypes)) continue;
-            result.add(resolvedCall);
-            found = true;
-        }
-        return found;
-    }
-
-    private boolean findExtensionFunctions(Collection<ResolutionCandidate<FunctionDescriptor>> candidates, ReceiverValue receiver,
-                                           List<JetType> parameterTypes, List<ResolutionCandidate<FunctionDescriptor>> result) {
-        boolean found = false;
-        for (ResolutionCandidate<FunctionDescriptor> candidate : candidates) {
-            FunctionDescriptor functionDescriptor = candidate.getDescriptor();
-            ReceiverParameterDescriptor functionReceiver = functionDescriptor.getReceiverParameter();
-            if (functionReceiver == null) continue;
-            if (!functionDescriptor.getTypeParameters().isEmpty()) continue;
-            if (!typeChecker.isSubtypeOf(receiver.getType(), functionReceiver.getType())) continue;
-            if (!checkValueParameters(functionDescriptor, parameterTypes))continue;
-            result.add(candidate);
-            found = true;
-        }
-        return found;
-    }
-
-    private static boolean checkValueParameters(@NotNull FunctionDescriptor functionDescriptor, @NotNull List<JetType> parameterTypes) {
-        List<ValueParameterDescriptor> valueParameters = functionDescriptor.getValueParameters();
-        if (valueParameters.size() != parameterTypes.size()) return false;
-        for (int i = 0; i < valueParameters.size(); i++) {
-            ValueParameterDescriptor valueParameter = valueParameters.get(i);
-            JetType expectedType = parameterTypes.get(i);
-            if (!TypeUtils.equalTypes(expectedType, valueParameter.getType())) return false;
-        }
-        return true;
     }
 }

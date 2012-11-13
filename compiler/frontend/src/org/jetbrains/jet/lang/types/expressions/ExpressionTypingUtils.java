@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.lang.types.expressions;
 
+import com.google.common.collect.Lists;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiElement;
@@ -273,12 +274,29 @@ public class ExpressionTypingUtils {
 
     @NotNull
     public static OverloadResolutionResults<FunctionDescriptor> resolveFakeCall(
-            @NotNull ReceiverValue receiver,
             @NotNull ExpressionTypingContext context,
-            @NotNull List<JetExpression> valueArguments,
+            @NotNull ReceiverValue receiver,
+            @NotNull Name name,
+            @NotNull JetType... argumentTypes
+    ) {
+        TemporaryBindingTrace traceWithFakeArgumentInfo = TemporaryBindingTrace.create(context.trace, "trace to store fake argument for", name);
+        int index = 0;
+        List<JetExpression> fakeArguments = Lists.newArrayList();
+        for (JetType type : argumentTypes) {
+            final JetReferenceExpression fakeArgument = JetPsiFactory.createSimpleName(context.expressionTypingServices.getProject(), "fakeArgument" + index++);
+            fakeArguments.add(fakeArgument);
+            traceWithFakeArgumentInfo.record(EXPRESSION_TYPE, fakeArgument, type);
+        }
+        return makeAndResolveFakeCall(receiver, context.replaceBindingTrace(traceWithFakeArgumentInfo), fakeArguments, name).getSecond();
+    }
+
+    @NotNull
+    public static OverloadResolutionResults<FunctionDescriptor> resolveFakeCall(
+            @NotNull ExpressionTypingContext context,
+            @NotNull ReceiverValue receiver,
             @NotNull Name name
     ) {
-        return makeAndResolveFakeCall(receiver, context, valueArguments, name).getSecond();
+        return makeAndResolveFakeCall(receiver, context, Collections.<JetExpression>emptyList(), name).getSecond();
     }
 
     @NotNull
@@ -320,7 +338,7 @@ public class ExpressionTypingUtils {
 
             JetType expectedType = getExpectedTypeForComponent(context, entry);
             OverloadResolutionResults<FunctionDescriptor> results =
-                    resolveFakeCall(receiver, context.replaceExpectedType(expectedType), Collections.<JetExpression>emptyList(), componentName);
+                    resolveFakeCall(context.replaceExpectedType(expectedType), receiver, componentName);
 
             JetType componentType = null;
             if (results.isSuccess()) {

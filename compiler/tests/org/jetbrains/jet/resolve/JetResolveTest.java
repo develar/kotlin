@@ -32,24 +32,28 @@ import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.lang.resolve.calls.CallResolver;
-import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResults;
+import org.jetbrains.jet.lang.resolve.BindingTraceContext;
+import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
+import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResults;
 import org.jetbrains.jet.lang.resolve.java.PsiClassFinder;
+import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.TypeProjection;
+import org.jetbrains.jet.lang.types.TypeUtils;
+import org.jetbrains.jet.lang.types.expressions.ExpressionTypingContext;
+import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.parsing.JetParsingTest;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils.resolveFakeCall;
 
 /**
  * @author abreslav
@@ -70,11 +74,11 @@ public class JetResolveTest extends ExtensibleResolveTestCase {
         KotlinBuiltIns builtIns = KotlinBuiltIns.getInstance();
         Map<String, DeclarationDescriptor> nameToDescriptor = new HashMap<String, DeclarationDescriptor>();
         nameToDescriptor.put("kotlin::Int.plus(Int)", standardFunction(builtIns.getInt(), "plus", builtIns.getIntType()));
-        FunctionDescriptor descriptorForGet = standardFunction(builtIns.getArray(), Collections.singletonList(new TypeProjection(builtIns.getIntType())), "get", builtIns.getIntType());
+        FunctionDescriptor descriptorForGet = standardFunction(builtIns.getArray(), "get", builtIns.getIntType());
         nameToDescriptor.put("kotlin::Array.get(Int)", descriptorForGet.getOriginal());
         nameToDescriptor.put("kotlin::Int.compareTo(Double)", standardFunction(builtIns.getInt(), "compareTo", builtIns.getDoubleType()));
         @NotNull
-        FunctionDescriptor descriptorForSet = standardFunction(builtIns.getArray(), Collections.singletonList(new TypeProjection(builtIns.getIntType())), "set", builtIns.getIntType(), builtIns.getIntType());
+        FunctionDescriptor descriptorForSet = standardFunction(builtIns.getArray(), "set", builtIns.getIntType(), builtIns.getIntType());
         nameToDescriptor.put("kotlin::Array.set(Int, Int)", descriptorForSet.getOriginal());
 
         Map<String, PsiElement> nameToDeclaration = new HashMap<String, PsiElement>();
@@ -129,30 +133,28 @@ public class JetResolveTest extends ExtensibleResolveTestCase {
     }
 
     @NotNull
-    private FunctionDescriptor standardFunction(ClassDescriptor classDescriptor, String name, JetType parameterType) {
-        List<TypeProjection> typeArguments = Collections.emptyList();
-        return standardFunction(classDescriptor, typeArguments, name, parameterType);
-    }
+    private FunctionDescriptor standardFunction(ClassDescriptor classDescriptor, String name, JetType... parameterTypes) {
 
-    @NotNull
-    private FunctionDescriptor standardFunction(ClassDescriptor classDescriptor, List<TypeProjection> typeArguments, String name, JetType... parameterType) {
-        List<JetType> parameterTypeList = Arrays.asList(parameterType);
-//        JetTypeInferrer.Services typeInferrerServices = JetSemanticServices.createSemanticServices(getProject()).getTypeInferrerServices(new BindingTraceContext());
+        ExpressionTypingServices expressionTypingServices = new InjectorForTests(getProject()).getExpressionTypingServices();
 
+        ExpressionTypingContext context = ExpressionTypingContext.newContext(
+                expressionTypingServices, new BindingTraceContext(), classDescriptor.getDefaultType().getMemberScope(),
+                DataFlowInfo.EMPTY, TypeUtils.NO_EXPECTED_TYPE, false);
 
-        CallResolver callResolver = new InjectorForTests(getProject()).getCallResolver();
-        OverloadResolutionResults<FunctionDescriptor> functions = callResolver.resolveExactSignature(
-                classDescriptor.getMemberScope(typeArguments), ReceiverValue.NO_RECEIVER, Name.identifier(name), parameterTypeList);
+        OverloadResolutionResults<FunctionDescriptor> functions = resolveFakeCall(
+                context, ReceiverValue.NO_RECEIVER, Name.identifier(name), parameterTypes);
+
         for (ResolvedCall<? extends FunctionDescriptor> resolvedCall : functions.getResultingCalls()) {
             List<ValueParameterDescriptor> unsubstitutedValueParameters = resolvedCall.getResultingDescriptor().getValueParameters();
             for (int i = 0, unsubstitutedValueParametersSize = unsubstitutedValueParameters.size(); i < unsubstitutedValueParametersSize; i++) {
                 ValueParameterDescriptor unsubstitutedValueParameter = unsubstitutedValueParameters.get(i);
-                if (unsubstitutedValueParameter.getType().equals(parameterType[i])) {
+                if (unsubstitutedValueParameter.getType().equals(parameterTypes[i])) {
                     return resolvedCall.getResultingDescriptor();
                 }
             }
         }
-        throw new IllegalArgumentException("Not found: kotlin::" + classDescriptor.getName() + "." + name + "(" + parameterTypeList + ")");
+        throw new IllegalArgumentException("Not found: kotlin::" + classDescriptor.getName() + "." + name + "(" +
+                                           Arrays.toString(parameterTypes) + ")");
     }
 
     @Override

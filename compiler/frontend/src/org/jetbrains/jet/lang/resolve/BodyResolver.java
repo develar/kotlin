@@ -399,7 +399,7 @@ public class BodyResolver {
                 if (initializer != null) {
                     ConstructorDescriptor primaryConstructor = classDescriptor.getUnsubstitutedPrimaryConstructor();
                     if (primaryConstructor != null) {
-                        JetScope declaringScopeForPropertyInitializer = this.context.getDeclaringScopes().get(property);
+                        JetScope declaringScopeForPropertyInitializer = this.context.getDeclaringScopes().apply(property);
                         resolvePropertyInitializer(property, propertyDescriptor, initializer, declaringScopeForPropertyInitializer);
                     }
                 }
@@ -419,7 +419,7 @@ public class BodyResolver {
 
             computeDeferredType(propertyDescriptor.getReturnType());
 
-            JetScope declaringScope = this.context.getDeclaringScopes().get(property);
+            JetScope declaringScope = this.context.getDeclaringScopes().apply(property);
 
             JetExpression initializer = property.getInitializer();
             if (initializer != null) {
@@ -431,10 +431,10 @@ public class BodyResolver {
     }
 
     private JetScope makeScopeForPropertyAccessor(@NotNull JetPropertyAccessor accessor, PropertyDescriptor propertyDescriptor) {
-        JetScope declaringScope = context.getDeclaringScopes().get(accessor);
+        JetScope declaringScope = context.getDeclaringScopes().apply(accessor);
 
         JetScope propertyDeclarationInnerScope = descriptorResolver.getPropertyDeclarationInnerScope(
-                declaringScope, propertyDescriptor.getTypeParameters(), propertyDescriptor.getReceiverParameter(), trace);
+                propertyDescriptor, declaringScope, propertyDescriptor.getTypeParameters(), propertyDescriptor.getReceiverParameter(), trace);
         WritableScope accessorScope = new WritableScopeImpl(
                 propertyDeclarationInnerScope, declaringScope.getContainingDeclaration(), new TraceBasedRedeclarationHandler(trace), "Accessor scope");
         accessorScope.changeLockLevel(WritableScope.LockLevel.READING);
@@ -479,7 +479,8 @@ public class BodyResolver {
 
     public void resolvePropertyInitializer(JetProperty property, PropertyDescriptor propertyDescriptor, JetExpression initializer, JetScope scope) {
         JetType expectedTypeForInitializer = property.getTypeRef() != null ? propertyDescriptor.getType() : NO_EXPECTED_TYPE;
-        JetScope propertyDeclarationInnerScope = descriptorResolver.getPropertyDeclarationInnerScope(scope, propertyDescriptor.getTypeParameters(), NO_RECEIVER_PARAMETER, trace);
+        JetScope propertyDeclarationInnerScope = descriptorResolver.getPropertyDeclarationInnerScopeForInitializer(
+                scope, propertyDescriptor.getTypeParameters(), NO_RECEIVER_PARAMETER, trace);
         expressionTypingServices.getType(propertyDeclarationInnerScope, initializer, expectedTypeForInitializer, DataFlowInfo.EMPTY, trace);
     }
 
@@ -490,7 +491,7 @@ public class BodyResolver {
 
             computeDeferredType(descriptor.getReturnType());
 
-            JetScope declaringScope = this.context.getDeclaringScopes().get(declaration);
+            JetScope declaringScope = this.context.getDeclaringScopes().apply(declaration);
             assert declaringScope != null;
 
             resolveFunctionBody(trace, declaration, descriptor, declaringScope);

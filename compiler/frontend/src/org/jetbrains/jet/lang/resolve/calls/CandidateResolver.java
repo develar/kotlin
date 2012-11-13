@@ -198,9 +198,7 @@ public class CandidateResolver {
     }
 
     public <D extends CallableDescriptor> void completeTypeInferenceDependentOnExpectedTypeForCall(
-            CallResolutionContext<D, D> context,
-            Set<ResolvedCallWithTrace<D>> successful,
-            Set<ResolvedCallWithTrace<D>> failed
+            CallResolutionContext<D, D> context
     ) {
         ResolvedCallImpl<D> resolvedCall = context.candidateCall;
         assert resolvedCall.hasUnknownTypeParameters();
@@ -246,8 +244,7 @@ public class CandidateResolver {
                                                         .create(descriptor, constraintSystem, argumentTypes, receiverType,
                                                                 context.expectedType),
                                                 constraintSystemWithoutExpectedTypeConstraint);
-            resolvedCall.addStatus(ResolutionStatus.TYPE_INFERENCE_ERROR);
-            failed.add(resolvedCall);
+            resolvedCall.addStatus(ResolutionStatus.OTHER_ERROR);
             return;
         }
 
@@ -257,12 +254,8 @@ public class CandidateResolver {
 
         checkBounds(resolvedCall, constraintSystem, resolvedCall.getTrace(), context.tracing);
         resolvedCall.setHasUnknownTypeParameters(false);
-        if (resolvedCall.getStatus().isSuccess() || resolvedCall.getStatus() == ResolutionStatus.UNKNOWN_STATUS) {
+        if (resolvedCall.getStatus() == ResolutionStatus.UNKNOWN_STATUS) {
             resolvedCall.addStatus(ResolutionStatus.SUCCESS);
-            successful.add(resolvedCall);
-        }
-        else {
-            failed.add(resolvedCall);
         }
     }
 
@@ -351,7 +344,7 @@ public class CandidateResolver {
         else {
             context.tracing.upperBoundViolated(candidateCall.getTrace(), inferenceErrorData);
         }
-        return TYPE_INFERENCE_ERROR.combine(argumentsStatus);
+        return OTHER_ERROR.combine(argumentsStatus);
     }
 
     private void addConstraintForValueArgument(
