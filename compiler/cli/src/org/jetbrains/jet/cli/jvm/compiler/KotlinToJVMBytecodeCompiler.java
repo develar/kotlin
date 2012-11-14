@@ -36,6 +36,7 @@ import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.codegen.*;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.codegen.state.GenerationStrategy;
+import org.jetbrains.jet.codegen.state.Progress;
 import org.jetbrains.jet.config.CommonConfigurationKeys;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.parsing.JetScriptDefinition;
@@ -51,7 +52,6 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.plugin.JetMainDetector;
 import org.jetbrains.jet.utils.ExceptionUtils;
 import org.jetbrains.jet.utils.PathUtil;
-import org.jetbrains.jet.utils.Progress;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -336,8 +336,16 @@ public class KotlinToJVMBytecodeCompiler {
         final CompilerConfiguration configuration = environment.getConfiguration();
         Progress backendProgress = new Progress() {
             @Override
-            public void log(String message) {
-                configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY).report(CompilerMessageSeverity.LOGGING, message, CompilerMessageLocation.NO_LOCATION);
+            public void reportOutput(@NotNull Collection<File> sourceFiles, @Nullable File outputFile) {
+                if (outputFile == null) return;
+
+                MessageCollector messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY);
+                if (messageCollector == null) return;
+
+                messageCollector.report(
+                        CompilerMessageSeverity.OUTPUT,
+                        OutputMessageUtil.formatOutputMessage(sourceFiles, outputFile),
+                        CompilerMessageLocation.NO_LOCATION);
             }
         };
         GenerationState generationState = new GenerationState(
@@ -367,6 +375,7 @@ public class KotlinToJVMBytecodeCompiler {
             CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
             compilerConfiguration.put(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, messageCollector);
             compilerConfiguration.addAll(JVMConfigurationKeys.CLASSPATH_KEY, getClasspath(parentLoader));
+            compilerConfiguration.add(JVMConfigurationKeys.CLASSPATH_KEY, PathUtil.findRtJar());
             compilerConfiguration.addAll(JVMConfigurationKeys.ANNOTATIONS_PATH_KEY, Collections.singletonList(
                     PathUtil.getJdkAnnotationsPath()));
             compilerConfiguration.add(CommonConfigurationKeys.SOURCE_ROOTS_KEY, scriptPath);

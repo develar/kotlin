@@ -17,13 +17,24 @@
 /*
  * @author max
  */
-package org.jetbrains.jet.utils;
+package org.jetbrains.jet.codegen.state;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.File;
+import java.util.Collection;
 
 public interface Progress {
     Progress DEAF = new Progress() {
         @Override
-        public void log(String message) {
+        public void reportOutput(@NotNull Collection<File> sourceFiles, @Nullable File outputFile) {
         }
     };
-    void log(String message);
+
+    /**
+     * @param sourceFiles a (possibly empty) collection of source files {@code outputFile} was generated from
+     * @param outputFile an output file
+     */
+    void reportOutput(@NotNull Collection<File> sourceFiles, @Nullable File outputFile);
 }
