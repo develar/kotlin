@@ -30,7 +30,7 @@ import org.jetbrains.jet.checkers.AbstractDiagnosticsTestWithEagerResolve;
 @InnerTestClasses({JetDiagnosticsTestGenerated.Tests.class, JetDiagnosticsTestGenerated.Script.class})
 public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEagerResolve {
     @TestMetadata("compiler/testData/diagnostics/tests")
-    @InnerTestClasses({Tests.Annotations.class, Tests.BackingField.class, Tests.Cast.class, Tests.CheckArguments.class, Tests.ControlFlowAnalysis.class, Tests.ControlStructures.class, Tests.DataClasses.class, Tests.DataFlow.class, Tests.DataFlowInfoTraversal.class, Tests.DeclarationChecks.class, Tests.Enum.class, Tests.Extensions.class, Tests.FunctionLiterals.class, Tests.Generics.class, Tests.IncompleteCode.class, Tests.Inference.class, Tests.Infos.class, Tests.J_k.class, Tests.Jdk_annotations.class, Tests.Library.class, Tests.NullabilityAndAutoCasts.class, Tests.NullableTypes.class, Tests.Objects.class, Tests.OperatorsOverloading.class, Tests.Overload.class, Tests.Override.class, Tests.Redeclarations.class, Tests.Regressions.class, Tests.Scopes.class, Tests.SenselessComparison.class, Tests.Shadowing.class, Tests.Substitutions.class, Tests.Subtyping.class, Tests.ThisAndSuper.class, Tests.Tuples.class, Tests.Varargs.class})
+    @InnerTestClasses({Tests.Annotations.class, Tests.BackingField.class, Tests.Cast.class, Tests.CheckArguments.class, Tests.ControlFlowAnalysis.class, Tests.ControlStructures.class, Tests.DataClasses.class, Tests.DataFlow.class, Tests.DataFlowInfoTraversal.class, Tests.DeclarationChecks.class, Tests.Deparenthesize.class, Tests.Enum.class, Tests.Extensions.class, Tests.FunctionLiterals.class, Tests.Generics.class, Tests.IncompleteCode.class, Tests.Inference.class, Tests.Infos.class, Tests.J_k.class, Tests.Jdk_annotations.class, Tests.Library.class, Tests.NullabilityAndAutoCasts.class, Tests.NullableTypes.class, Tests.Objects.class, Tests.OperatorsOverloading.class, Tests.Overload.class, Tests.Override.class, Tests.Redeclarations.class, Tests.Regressions.class, Tests.Scopes.class, Tests.SenselessComparison.class, Tests.Shadowing.class, Tests.Substitutions.class, Tests.Subtyping.class, Tests.ThisAndSuper.class, Tests.Tuples.class, Tests.Varargs.class})
     public static class Tests extends AbstractDiagnosticsTestWithEagerResolve {
         @TestMetadata("Abstract.kt")
         public void testAbstract() throws Exception {
@@ -1141,9 +1141,89 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/ArrayAccess.kt");
             }
             
+            @TestMetadata("ArrayExpression.kt")
+            public void testArrayExpression() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/ArrayExpression.kt");
+            }
+            
+            @TestMetadata("ArrayGetSetConvention.kt")
+            public void testArrayGetSetConvention() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/ArrayGetSetConvention.kt");
+            }
+            
+            @TestMetadata("ArrayIndices.kt")
+            public void testArrayIndices() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/ArrayIndices.kt");
+            }
+            
+            @TestMetadata("Assignment.kt")
+            public void testAssignment() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/Assignment.kt");
+            }
+            
+            @TestMetadata("AssignmentInInitializer.kt")
+            public void testAssignmentInInitializer() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/AssignmentInInitializer.kt");
+            }
+            
+            @TestMetadata("AssignmentOperation.kt")
+            public void testAssignmentOperation() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/AssignmentOperation.kt");
+            }
+            
+            @TestMetadata("AssignmentToArrayElement.kt")
+            public void testAssignmentToArrayElement() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/AssignmentToArrayElement.kt");
+            }
+            
             @TestMetadata("BinaryExpression.kt")
             public void testBinaryExpression() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/BinaryExpression.kt");
+            }
+            
+            @TestMetadata("BinaryExpressionBooleanOperations.kt")
+            public void testBinaryExpressionBooleanOperations() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/BinaryExpressionBooleanOperations.kt");
+            }
+            
+            @TestMetadata("BinaryExpressionCompareToConvention.kt")
+            public void testBinaryExpressionCompareToConvention() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/BinaryExpressionCompareToConvention.kt");
+            }
+            
+            @TestMetadata("BinaryExpressionContainsConvention.kt")
+            public void testBinaryExpressionContainsConvention() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/BinaryExpressionContainsConvention.kt");
+            }
+            
+            @TestMetadata("BinaryExpressionElvis.kt")
+            public void testBinaryExpressionElvis() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/BinaryExpressionElvis.kt");
+            }
+            
+            @TestMetadata("BinaryExpressionEqualsConvention.kt")
+            public void testBinaryExpressionEqualsConvention() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/BinaryExpressionEqualsConvention.kt");
+            }
+            
+            @TestMetadata("BinaryExpressionIdentifier.kt")
+            public void testBinaryExpressionIdentifier() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/BinaryExpressionIdentifier.kt");
+            }
+            
+            @TestMetadata("BinaryExpressionPlusConvention.kt")
+            public void testBinaryExpressionPlusConvention() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/BinaryExpressionPlusConvention.kt");
+            }
+            
+            @TestMetadata("Condition.kt")
+            public void testCondition() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/Condition.kt");
+            }
+            
+            @TestMetadata("ContinueOuterLoop.kt")
+            public void testContinueOuterLoop() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/ContinueOuterLoop.kt");
             }
             
             @TestMetadata("DeepIf.kt")
@@ -1154,6 +1234,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("DoWhile.kt")
             public void testDoWhile() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/DoWhile.kt");
+            }
+            
+            @TestMetadata("DoWhileCondition.kt")
+            public void testDoWhileCondition() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/DoWhileCondition.kt");
             }
             
             @TestMetadata("Elvis.kt")
@@ -1171,9 +1256,19 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/For.kt");
             }
             
+            @TestMetadata("ForLoopRange.kt")
+            public void testForLoopRange() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/ForLoopRange.kt");
+            }
+            
             @TestMetadata("FunctionLiteral.kt")
             public void testFunctionLiteral() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/FunctionLiteral.kt");
+            }
+            
+            @TestMetadata("IfStatement.kt")
+            public void testIfStatement() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/IfStatement.kt");
             }
             
             @TestMetadata("IfThenElse.kt")
@@ -1184,6 +1279,21 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("IfThenElseBothInvalid.kt")
             public void testIfThenElseBothInvalid() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/IfThenElseBothInvalid.kt");
+            }
+            
+            @TestMetadata("IsExpression.kt")
+            public void testIsExpression() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/IsExpression.kt");
+            }
+            
+            @TestMetadata("ManyIfs.kt")
+            public void testManyIfs() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/ManyIfs.kt");
+            }
+            
+            @TestMetadata("MultiDeclaration.kt")
+            public void testMultiDeclaration() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/MultiDeclaration.kt");
             }
             
             @TestMetadata("ObjectExpression.kt")
@@ -1201,6 +1311,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/Return.kt");
             }
             
+            @TestMetadata("StringTemplate.kt")
+            public void testStringTemplate() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/StringTemplate.kt");
+            }
+            
             @TestMetadata("ThisSuper.kt")
             public void testThisSuper() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/ThisSuper.kt");
@@ -1216,6 +1331,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/TryCatch.kt");
             }
             
+            @TestMetadata("TryFinally.kt")
+            public void testTryFinally() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/TryFinally.kt");
+            }
+            
             @TestMetadata("UnaryExpression.kt")
             public void testUnaryExpression() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/UnaryExpression.kt");
@@ -1226,9 +1346,29 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/When.kt");
             }
             
+            @TestMetadata("WhenEntry.kt")
+            public void testWhenEntry() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/WhenEntry.kt");
+            }
+            
+            @TestMetadata("WhenIn.kt")
+            public void testWhenIn() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/WhenIn.kt");
+            }
+            
+            @TestMetadata("WhenSubject.kt")
+            public void testWhenSubject() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/WhenSubject.kt");
+            }
+            
             @TestMetadata("While.kt")
             public void testWhile() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/While.kt");
+            }
+            
+            @TestMetadata("WhileCondition.kt")
+            public void testWhileCondition() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/dataFlowInfoTraversal/WhileCondition.kt");
             }
             
         }
@@ -1384,6 +1524,19 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 suite.addTestSuite(MultiDeclarations.class);
                 return suite;
             }
+        }
+        
+        @TestMetadata("compiler/testData/diagnostics/tests/deparenthesize")
+        public static class Deparenthesize extends AbstractDiagnosticsTestWithEagerResolve {
+            public void testAllFilesPresentInDeparenthesize() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/deparenthesize"), "kt", true);
+            }
+            
+            @TestMetadata("ArrayAccessAssignment.kt")
+            public void testArrayAccessAssignment() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/deparenthesize/ArrayAccessAssignment.kt");
+            }
+            
         }
         
         @TestMetadata("compiler/testData/diagnostics/tests/enum")
@@ -3686,6 +3839,7 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             suite.addTestSuite(DataFlow.class);
             suite.addTestSuite(DataFlowInfoTraversal.class);
             suite.addTest(DeclarationChecks.innerSuite());
+            suite.addTestSuite(Deparenthesize.class);
             suite.addTest(Enum.innerSuite());
             suite.addTestSuite(Extensions.class);
             suite.addTestSuite(FunctionLiterals.class);

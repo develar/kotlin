@@ -23,8 +23,8 @@ class A<E>() : C(), T {
         super<<!SYNTAX!><!>>.foo()
         super<<!NOT_A_SUPERTYPE!>() -> Unit<!>>.foo()
         super<<!NOT_A_SUPERTYPE!>Unit<!>>.foo()
-        super<T><!UNRESOLVED_REFERENCE!>@B<!>.foo()
-        super<C><!UNRESOLVED_REFERENCE!>@B<!>.bar()
+        <!DEBUG_INFO_MISSING_UNRESOLVED!>super<!><T><!UNRESOLVED_REFERENCE!>@B<!>.foo()
+        <!DEBUG_INFO_MISSING_UNRESOLVED!>super<!><C><!UNRESOLVED_REFERENCE!>@B<!>.bar()
     }
 
     class B : T {

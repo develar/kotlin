@@ -19,6 +19,7 @@ package org.jetbrains.jet.lang.types.expressions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.intellij.lang.ASTNode;
+import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
@@ -221,7 +222,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                     dataFlowInfo = typeInfo.getDataFlowInfo();
                     if (operationType == JetTokens.AS_KEYWORD) {
                         DataFlowValue value = DataFlowValueFactory.INSTANCE.createDataFlowValue(left, typeInfo.getType(), context.trace.getBindingContext());
-                        dataFlowInfo = dataFlowInfo.establishSubtyping(new DataFlowValue[]{value}, targetType);
+                        dataFlowInfo = dataFlowInfo.establishSubtyping(value, targetType);
                     }
                 }
             }
@@ -481,19 +482,19 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
 
     @Override
     public JetTypeInfo visitSuperExpression(JetSuperExpression expression, ExpressionTypingContext context) {
+        LabelResolver.LabeledReceiverResolutionResult resolutionResult = resolveToReceiver(expression, context, true);
+
         if (!context.namespacesAllowed) {
             context.trace.report(SUPER_IS_NOT_AN_EXPRESSION.on(expression, expression.getText()));
-            return JetTypeInfo.create(null, context.dataFlowInfo);
+            return errorInSuper(expression, context);
         }
-
-        LabelResolver.LabeledReceiverResolutionResult resolutionResult = resolveToReceiver(expression, context, true);
         switch (resolutionResult.getCode()) {
             case LABEL_RESOLUTION_ERROR:
                 // The error is already reported
-                return JetTypeInfo.create(null, context.dataFlowInfo);
+                return errorInSuper(expression, context);
             case NO_THIS:
                 context.trace.report(SUPER_NOT_AVAILABLE.on(expression));
-                return JetTypeInfo.create(null, context.dataFlowInfo);
+                return errorInSuper(expression, context);
             case SUCCESS:
                 JetType result = checkPossiblyQualifiedSuper(expression, context, resolutionResult.getReceiverParameterDescriptor());
                 if (result != null) {
@@ -502,6 +503,14 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 return DataFlowUtils.checkType(result, expression, context, context.dataFlowInfo);
         }
         throw new IllegalStateException("Unknown code: " + resolutionResult.getCode());
+    }
+
+    private JetTypeInfo errorInSuper(JetSuperExpression expression, ExpressionTypingContext context) {
+        JetTypeReference superTypeQualifier = expression.getSuperTypeQualifier();
+        if (superTypeQualifier != null) {
+            context.expressionTypingServices.getTypeResolver().resolveType(context.scope, superTypeQualifier, context.trace, true);
+        }
+        return JetTypeInfo.create(null, context.dataFlowInfo);
     }
 
     private JetType checkPossiblyQualifiedSuper(
@@ -1031,7 +1040,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     }
 
     private void checkLValue(BindingTrace trace, JetExpression expressionWithParenthesis, boolean canBeThis) {
-        JetExpression expression = JetPsiUtil.deparenthesize(expressionWithParenthesis);
+        JetExpression expression = JetPsiUtil.deparenthesizeWithNoTypeResolution(expressionWithParenthesis);
         if (expression instanceof JetArrayAccessExpression) {
             checkLValue(trace, ((JetArrayAccessExpression) expression).getArrayExpression(), true);
             return;
@@ -1050,17 +1059,23 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
 
         JetExpression left = expression.getLeft();
         JetExpression right = expression.getRight();
+        IElementType operationType = operationSign.getReferencedNameElementType();
 
         JetType result = null;
-        IElementType operationType = operationSign.getReferencedNameElementType();
+        DataFlowInfo dataFlowInfo = context.dataFlowInfo;
         if (operationType == JetTokens.IDENTIFIER) {
             Name referencedName = operationSign.getReferencedNameAsName();
             if (referencedName != null) {
-                result = getTypeForBinaryCall(context.scope, referencedName, context, expression);
+                JetTypeInfo typeInfo = getTypeInfoForBinaryCall(context.scope, referencedName, context, expression);
+                result = typeInfo.getType();
+                dataFlowInfo = typeInfo.getDataFlowInfo();
             }
         }
         else if (OperatorConventions.BINARY_OPERATION_NAMES.containsKey(operationType)) {
-            result = getTypeForBinaryCall(context.scope, OperatorConventions.BINARY_OPERATION_NAMES.get(operationType), context, expression);
+            JetTypeInfo typeInfo = getTypeInfoForBinaryCall(context.scope, OperatorConventions.BINARY_OPERATION_NAMES.get(operationType),
+                                                            context, expression);
+            result = typeInfo.getType();
+            dataFlowInfo = typeInfo.getDataFlowInfo();
         }
         else if (operationType == JetTokens.EQ) {
             result = visitAssignment(expression, contextWithExpectedType);
@@ -1069,7 +1084,9 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             result = visitAssignmentOperation(expression, contextWithExpectedType);
         }
         else if (OperatorConventions.COMPARISON_OPERATIONS.contains(operationType)) {
-            JetType compareToReturnType = getTypeForBinaryCall(context.scope, Name.identifier("compareTo"), context, expression);
+            JetTypeInfo typeInfo = getTypeInfoForBinaryCall(context.scope, OperatorConventions.COMPARE_TO, context, expression);
+            dataFlowInfo = typeInfo.getDataFlowInfo();
+            JetType compareToReturnType = typeInfo.getType();
             if (compareToReturnType != null && !ErrorUtils.isErrorType(compareToReturnType)) {
                 TypeConstructor constructor = compareToReturnType.getConstructor();
                 KotlinBuiltIns builtIns = KotlinBuiltIns.getInstance();
@@ -1085,18 +1102,22 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         else {
             JetType booleanType = KotlinBuiltIns.getInstance().getBooleanType();
             if (OperatorConventions.EQUALS_OPERATIONS.contains(operationType)) {
-                Name name = Name.identifier("equals");
                 if (right != null) {
-                    ExpressionReceiver receiver = ExpressionTypingUtils.safeGetExpressionReceiver(facade, left, context.replaceScope(context.scope));
+                    ExpressionReceiver receiver = ExpressionTypingUtils.safeGetExpressionReceiver(facade, left, context);
+
+                    dataFlowInfo = facade.getTypeInfo(left, context).getDataFlowInfo();
+                    ExpressionTypingContext contextWithDataFlow = context.replaceDataFlowInfo(dataFlowInfo);
 
                     OverloadResolutionResults<FunctionDescriptor> resolutionResults = resolveFakeCall(
-                            context, receiver, name, KotlinBuiltIns.getInstance().getNullableAnyType());
+                            contextWithDataFlow, receiver, OperatorConventions.EQUALS, KotlinBuiltIns.getInstance().getNullableAnyType());
+
+                    dataFlowInfo = facade.getTypeInfo(right, contextWithDataFlow).getDataFlowInfo();
 
                     if (resolutionResults.isSuccess()) {
                         FunctionDescriptor equals = resolutionResults.getResultingCall().getResultingDescriptor();
                         context.trace.record(REFERENCE_TARGET, operationSign, equals);
                         context.trace.record(RESOLVED_CALL, operationSign, resolutionResults.getResultingCall());
-                        if (ensureBooleanResult(operationSign, name, equals.getReturnType(), context)) {
+                        if (ensureBooleanResult(operationSign, OperatorConventions.EQUALS, equals.getReturnType(), context)) {
                             ensureNonemptyIntersectionOfOperandTypes(expression, context);
                         }
                     }
@@ -1120,15 +1141,21 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             else if (OperatorConventions.IN_OPERATIONS.contains(operationType)) {
                 if (right == null) {
                     result = ErrorUtils.createErrorType("No right argument"); // TODO
-                    return JetTypeInfo.create(null, context.dataFlowInfo);
+                    return JetTypeInfo.create(null, dataFlowInfo);
                 }
-                checkInExpression(expression, expression.getOperationReference(), expression.getLeft(), expression.getRight(), context);
-                result = booleanType;
+                JetTypeInfo typeInfo = checkInExpression(expression, expression.getOperationReference(), left, right, context);
+                dataFlowInfo = typeInfo.getDataFlowInfo();
+                result = typeInfo.getType();
             }
             else if (OperatorConventions.BOOLEAN_OPERATIONS.containsKey(operationType)) {
-                JetType leftType = facade.getTypeInfo(left, context.replaceScope(context.scope)).getType();
+                JetTypeInfo leftTypeInfo = facade.getTypeInfo(left, context);
+                JetType leftType = leftTypeInfo.getType();
+                dataFlowInfo = leftTypeInfo.getDataFlowInfo();
+
                 WritableScopeImpl leftScope = newWritableScopeImpl(context, "Left scope of && or ||");
-                DataFlowInfo flowInfoLeft = DataFlowUtils.extractDataFlowInfoFromCondition(left, operationType == JetTokens.ANDAND, context);  // TODO: This gets computed twice: here and in extractDataFlowInfoFromCondition() for the whole condition
+                // TODO: This gets computed twice: here and in extractDataFlowInfoFromCondition() for the whole condition
+                DataFlowInfo flowInfoLeft =
+                        DataFlowUtils.extractDataFlowInfoFromCondition(left, operationType == JetTokens.ANDAND, context).and(dataFlowInfo);
                 WritableScopeImpl rightScope = operationType == JetTokens.ANDAND
                                                ? leftScope
                                                : newWritableScopeImpl(context, "Right scope of && or ||");
@@ -1144,10 +1171,12 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 result = booleanType;
             }
             else if (operationType == JetTokens.ELVIS) {
-                JetType leftType = facade.getTypeInfo(left, context.replaceScope(context.scope)).getType();
-                JetType rightType = right == null
-                                    ? null
-                                    : facade.getTypeInfo(right, contextWithExpectedType.replaceScope(context.scope)).getType();
+                JetTypeInfo leftTypeInfo = facade.getTypeInfo(left, context);
+                JetType leftType = leftTypeInfo.getType();
+                dataFlowInfo = leftTypeInfo.getDataFlowInfo();
+
+                ExpressionTypingContext newContext = contextWithExpectedType.replaceDataFlowInfo(dataFlowInfo).replaceScope(context.scope);
+                JetType rightType = right == null ? null : facade.getTypeInfo(right, newContext).getType();
                 if (leftType != null) {
                     if (!leftType.isNullable()) {
                         context.trace.report(USELESS_ELVIS.on(left, leftType));
@@ -1156,7 +1185,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                         DataFlowUtils.checkType(TypeUtils.makeNullableAsSpecified(leftType, rightType.isNullable()), left, contextWithExpectedType);
                         return JetTypeInfo.create(TypeUtils.makeNullableAsSpecified(
                                 CommonSupertypes.commonSupertype(Arrays.asList(leftType, rightType)), rightType.isNullable()),
-                                                  context.dataFlowInfo);
+                                                  dataFlowInfo);
                     }
                 }
             }
@@ -1164,19 +1193,35 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 context.trace.report(UNSUPPORTED.on(operationSign, "Unknown operation"));
             }
         }
-        return DataFlowUtils.checkType(result, expression, contextWithExpectedType, context.dataFlowInfo);
+        return DataFlowUtils.checkType(result, expression, contextWithExpectedType, dataFlowInfo);
     }
 
-    public boolean checkInExpression(JetElement callElement, @NotNull JetSimpleNameExpression operationSign, @Nullable JetExpression left, @NotNull JetExpression right, ExpressionTypingContext context) {
-        Name name = Name.identifier("contains");
-        ExpressionReceiver receiver = safeGetExpressionReceiver(facade, right, context.replaceExpectedType(NO_EXPECTED_TYPE));
-        OverloadResolutionResults<FunctionDescriptor> resolutionResult = context.resolveCallWithGivenName(
+    @NotNull
+    public JetTypeInfo checkInExpression(
+            JetElement callElement,
+            @NotNull JetSimpleNameExpression operationSign,
+            @Nullable JetExpression left,
+            @NotNull JetExpression right,
+            ExpressionTypingContext context
+    ) {
+        ExpressionTypingContext contextWithNoExpectedType = context.replaceExpectedType(NO_EXPECTED_TYPE);
+        DataFlowInfo dataFlowInfo = facade.getTypeInfo(right, contextWithNoExpectedType).getDataFlowInfo();
+
+        ExpressionReceiver receiver = safeGetExpressionReceiver(facade, right, contextWithNoExpectedType);
+        ExpressionTypingContext contextWithDataFlow = context.replaceDataFlowInfo(dataFlowInfo);
+
+        OverloadResolutionResults<FunctionDescriptor> resolutionResult = contextWithDataFlow.resolveCallWithGivenName(
                 CallMaker.makeCallWithExpressions(callElement, receiver, null, operationSign, Collections.singletonList(left)),
                 operationSign,
-                name);
+                OperatorConventions.CONTAINS);
         JetType containsType = OverloadResolutionResultsUtil.getResultType(resolutionResult);
-        ensureBooleanResult(operationSign, name, containsType, context);
-        return resolutionResult.isSuccess();
+        ensureBooleanResult(operationSign, OperatorConventions.CONTAINS, containsType, context);
+
+        if (left != null) {
+            dataFlowInfo = facade.getTypeInfo(left, contextWithDataFlow).getDataFlowInfo().and(dataFlowInfo);
+        }
+
+        return JetTypeInfo.create(resolutionResult.isSuccess() ? KotlinBuiltIns.getInstance().getBooleanType() : null, dataFlowInfo);
     }
 
     private void ensureNonemptyIntersectionOfOperandTypes(JetBinaryExpression expression, ExpressionTypingContext context) {
@@ -1242,15 +1287,32 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
 
     @Override
     public JetTypeInfo visitArrayAccessExpression(JetArrayAccessExpression expression, ExpressionTypingContext context) {
-        JetType type = resolveArrayAccessGetMethod(expression, context.replaceExpectedType(NO_EXPECTED_TYPE));
-        DataFlowUtils.checkType(type, expression, context);
-        return JetTypeInfo.create(type, context.dataFlowInfo);
+        JetTypeInfo typeInfo = resolveArrayAccessGetMethod(expression, context.replaceExpectedType(NO_EXPECTED_TYPE));
+        return DataFlowUtils.checkType(typeInfo.getType(), expression, context, typeInfo.getDataFlowInfo());
     }
 
-    @Nullable
-    public JetType getTypeForBinaryCall(JetScope scope, Name name, ExpressionTypingContext context, JetBinaryExpression binaryExpression) {
-        ExpressionReceiver receiver = safeGetExpressionReceiver(facade, binaryExpression.getLeft(), context.replaceScope(scope));
-        return OverloadResolutionResultsUtil.getResultType(getResolutionResultsForBinaryCall(scope, name, context, binaryExpression, receiver));
+    @NotNull
+    public JetTypeInfo getTypeInfoForBinaryCall(
+            JetScope scope,
+            Name name,
+            ExpressionTypingContext contextWithOldScope,
+            JetBinaryExpression binaryExpression
+    ) {
+        ExpressionTypingContext context = contextWithOldScope.replaceScope(scope);
+        JetExpression left = binaryExpression.getLeft();
+        DataFlowInfo dataFlowInfo = facade.getTypeInfo(left, context).getDataFlowInfo();
+
+        ExpressionReceiver receiver = safeGetExpressionReceiver(facade, left, context);
+        ExpressionTypingContext contextWithDataFlow = context.replaceDataFlowInfo(dataFlowInfo);
+        OverloadResolutionResults<FunctionDescriptor> resolutionResults =
+                getResolutionResultsForBinaryCall(scope, name, contextWithDataFlow, binaryExpression, receiver);
+
+        JetExpression right = binaryExpression.getRight();
+        if (right != null) {
+            dataFlowInfo = facade.getTypeInfo(right, contextWithDataFlow).getDataFlowInfo();
+        }
+
+        return JetTypeInfo.create(OverloadResolutionResultsUtil.getResultType(resolutionResults), dataFlowInfo);
     }
 
     @NotNull
@@ -1284,6 +1346,9 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         final ExpressionTypingContext context = contextWithExpectedType.replaceExpectedType(NO_EXPECTED_TYPE);
         final StringBuilder builder = new StringBuilder();
         final CompileTimeConstant<?>[] value = new CompileTimeConstant<?>[1];
+        final DataFlowInfo[] dataFlowInfo = new DataFlowInfo[1];
+        dataFlowInfo[0] = context.dataFlowInfo;
+
         for (JetStringTemplateEntry entry : expression.getEntries()) {
             entry.accept(new JetVisitorVoid() {
 
@@ -1291,7 +1356,8 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 public void visitStringTemplateEntryWithExpression(JetStringTemplateEntryWithExpression entry) {
                     JetExpression entryExpression = entry.getExpression();
                     if (entryExpression != null) {
-                        facade.getTypeInfo(entryExpression, context);
+                        JetTypeInfo typeInfo = facade.getTypeInfo(entryExpression, context.replaceDataFlowInfo(dataFlowInfo[0]));
+                        dataFlowInfo[0] = typeInfo.getDataFlowInfo();
                     }
                     value[0] = CompileTimeConstantResolver.OUT_OF_RANGE;
                 }
@@ -1319,7 +1385,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         if (value[0] != CompileTimeConstantResolver.OUT_OF_RANGE) {
             context.trace.record(BindingContext.COMPILE_TIME_VALUE, expression, new StringValue(builder.toString()));
         }
-        return DataFlowUtils.checkType(KotlinBuiltIns.getInstance().getStringType(), expression, contextWithExpectedType, context.dataFlowInfo);
+        return DataFlowUtils.checkType(KotlinBuiltIns.getInstance().getStringType(), expression, contextWithExpectedType, dataFlowInfo[0]);
     }
 
     @Override
@@ -1337,38 +1403,51 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         return JetTypeInfo.create(null, context.dataFlowInfo);
     }
 
-    @Nullable
-        /*package*/ JetType resolveArrayAccessSetMethod(@NotNull JetArrayAccessExpression arrayAccessExpression, @NotNull JetExpression rightHandSide, @NotNull ExpressionTypingContext context, @NotNull BindingTrace traceForResolveResult) {
+    @NotNull
+        /*package*/ JetTypeInfo resolveArrayAccessSetMethod(@NotNull JetArrayAccessExpression arrayAccessExpression, @NotNull JetExpression rightHandSide, @NotNull ExpressionTypingContext context, @NotNull BindingTrace traceForResolveResult) {
         return resolveArrayAccessSpecialMethod(arrayAccessExpression, rightHandSide, context, traceForResolveResult, false);
     }
 
-    @Nullable
-        /*package*/ JetType resolveArrayAccessGetMethod(@NotNull JetArrayAccessExpression arrayAccessExpression, @NotNull ExpressionTypingContext context) {
+    @NotNull
+        /*package*/ JetTypeInfo resolveArrayAccessGetMethod(@NotNull JetArrayAccessExpression arrayAccessExpression, @NotNull ExpressionTypingContext context) {
         return resolveArrayAccessSpecialMethod(arrayAccessExpression, null, context, context.trace, true);
     }
 
-    @Nullable
-    private JetType resolveArrayAccessSpecialMethod(@NotNull JetArrayAccessExpression arrayAccessExpression,
+    @NotNull
+    private JetTypeInfo resolveArrayAccessSpecialMethod(@NotNull JetArrayAccessExpression arrayAccessExpression,
                                                     @Nullable JetExpression rightHandSide, //only for 'set' method
-                                                    @NotNull ExpressionTypingContext context,
+                                                    @NotNull ExpressionTypingContext oldContext,
                                                     @NotNull BindingTrace traceForResolveResult,
                                                     boolean isGet) {
-        JetType arrayType = facade.getTypeInfo(arrayAccessExpression.getArrayExpression(), context).getType();
-        if (arrayType == null) return null;
+        JetTypeInfo arrayTypeInfo = facade.getTypeInfo(arrayAccessExpression.getArrayExpression(), oldContext);
+        JetType arrayType = arrayTypeInfo.getType();
+        if (arrayType == null) return arrayTypeInfo;
 
+        DataFlowInfo dataFlowInfo = arrayTypeInfo.getDataFlowInfo();
+        ExpressionTypingContext context = oldContext.replaceDataFlowInfo(dataFlowInfo);
         ExpressionReceiver receiver = new ExpressionReceiver(arrayAccessExpression.getArrayExpression(), arrayType);
         if (!isGet) assert rightHandSide != null;
+
         OverloadResolutionResults<FunctionDescriptor> functionResults = context.resolveCallWithGivenName(
                 isGet
                 ? CallMaker.makeArrayGetCall(receiver, arrayAccessExpression, Call.CallType.ARRAY_GET_METHOD)
                 : CallMaker.makeArraySetCall(receiver, arrayAccessExpression, rightHandSide, Call.CallType.ARRAY_SET_METHOD),
                 arrayAccessExpression,
                 Name.identifier(isGet ? "get" : "set"));
+
+        List<JetExpression> indices = arrayAccessExpression.getIndexExpressions();
+        // The accumulated data flow info of all index expressions is saved on the last index
+        dataFlowInfo = facade.getTypeInfo(indices.get(indices.size() - 1), context).getDataFlowInfo();
+
+        if (!isGet) {
+            dataFlowInfo = facade.getTypeInfo(rightHandSide, context.replaceDataFlowInfo(dataFlowInfo)).getDataFlowInfo();
+        }
+
         if (!functionResults.isSuccess()) {
             traceForResolveResult.report(isGet ? NO_GET_METHOD.on(arrayAccessExpression) : NO_SET_METHOD.on(arrayAccessExpression));
-            return null;
+            return JetTypeInfo.create(null, dataFlowInfo);
         }
         traceForResolveResult.record(isGet ? INDEXED_LVALUE_GET : INDEXED_LVALUE_SET, arrayAccessExpression, functionResults.getResultingCall());
-        return functionResults.getResultingDescriptor().getReturnType();
+        return JetTypeInfo.create(functionResults.getResultingDescriptor().getReturnType(), dataFlowInfo);
     }
 }
