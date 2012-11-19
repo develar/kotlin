@@ -4,6 +4,1080 @@
 
 package html
 
+public native trait Object {
+	public fun __defineGetter__(): Unit
+	public fun __defineSetter__(): Unit
+	public fun __lookupGetter__(): ()->Unit
+	public fun __lookupSetter__(): ()->Unit
+	public fun __proto__(): ()->Unit
+}
+
+public native trait Image : HTMLImageElement {
+	public var constructor: Unit
+	public var naturalWidth: Number
+	public var naturalHeight: Number
+}
+
+public native trait Navigator {
+	public var userAgent: String
+	public var product: String
+	public var appVersion: String
+	public var appName: String
+	public var appCodeName: String
+	public var language: String
+	public var systemLanguage: String
+	public var userLanguage: String
+	public var mimeTypes: Array<Any>
+	public var platform: String
+	public var plugins: Array<Any>
+	public var onLine: Boolean
+	public var cookieEnabled: Boolean
+
+	public fun taintEnabled(): Boolean
+	public fun javaEnabled(): Boolean
+	public fun preference(): String
+
+	public val geolocation: Geolocation
+}
+
+public native trait Screen {
+	public var width: Number
+	public var height: Number
+	public var availHeight: Number
+	public var availWidth: Number
+	public var pixelDepth: Number
+	public var colorDepth: Number
+}
+
+public native trait Option {
+	public var defaultSelected: Boolean
+	public var selected: Boolean
+	public var text: String
+	public var value: String
+}
+
+public native trait Location {
+	public var href: String
+	public var hash: String
+	public var port: String
+	public var host: String
+	public var hostname: String
+	public var pathname: String
+	public var protocol: String
+	public var search: String
+	public var target: String
+
+	public fun reload(): Unit
+	public fun replace(): Unit
+
+	public fun assign(): Unit
+	public fun resolveURL(): String
+}
+
+public native trait XSLTProcessor {
+	public var constructor: Unit
+
+	public fun importStylesheet(): Unit
+	public fun transformToDocument(): Document
+	public fun transformToFragment(): DocumentFragment
+}
+
+public native trait DOMParser {
+	public var constructor: Unit
+
+	public fun parseFromString(): Document
+}
+
+public native trait XMLSerializer {
+	public var constructor: Unit
+
+	public fun serializeToStream(): Unit
+	public fun serializeToString(): String
+}
+
+public native trait Event {
+	public var data: Array<Object>
+	public var height: Number
+	public var x: Number
+	public var screenX: Number
+	public var clientX: Number
+	public var offsetX: Number
+	public var layerX: Number
+	public var fromElement: Any
+	public var wheelDelta: Number
+	public var repeat: Boolean
+	public var pageX: Number
+	public var y: Number
+	public var screenY: Number
+	public var clientY: Number
+	public var offsetY: Number
+	public var layerY: Number
+	public var pageY: Number
+	public var width: Number
+	public var modifiers: Number
+	public var keyCode: Number
+	public var `type`: String
+	public var which: Any
+	public var srcElement: Any
+	public var toElement: Any
+	public var cancelBubble: Boolean
+	public var returnValue: Boolean
+	public var altKey: Boolean
+	public var ctrlKey: Boolean
+	public var shiftKey: Boolean
+	public var button: Boolean
+	public var charCode: String
+
+	public class object {
+		public val CAPTURING_PHASE: Int = 1
+		public val AT_TARGET: Int = 2
+		public val BUBBLING_PHASE: Int = 2
+	}
+
+	public val target: EventTarget
+	public val currentTarget: EventTarget
+	public val eventPhase: Int
+	public val bubbles: Boolean
+	public val cancelable: Boolean
+	public val timeStamp: Date
+	public val namespaceURI: String
+
+	public fun stopPropagation(): Unit
+	public fun preventDefault(): Unit
+	public fun initEvent(): Unit
+	public fun isCustom(): Boolean
+	public fun stopImmediatePropagation(): Unit
+	public fun isDefaultPrevented(): Boolean
+	public fun initEventNS(): Unit
+}
+
+public native trait Selection {
+	public var anchorNode: Node
+	public var anchorOffset: Number
+	public var focusNode: Node
+	public var focusOffset: Number
+	public var isCollapsed: Boolean
+	public var rangeCount: Number
+	public var `type`: string
+
+	public fun getRangeAt(): Range
+	public fun collapse(): Unit
+	public fun extend(): Unit
+	public fun collapseToStart(): Unit
+	public fun collapseToEnd(): Unit
+	public fun selectAllChildren(): Unit
+	public fun addRange(): Unit
+	public fun removeRange(): Unit
+	public fun removeAllRanges(): Unit
+	public fun containsNode(): Boolean
+	public fun clear(): Boolean
+	public fun empty(): Boolean
+	public fun createRange(): TextRange
+}
+
+public native trait TextRange {
+	public var htmlText: String
+	public var text: String
+	public var boundingWidth: Number
+	public var boundingHeight: Number
+	public var boundingLeft: Number
+	public var offsetLeft: Number
+	public var boundingTop: Number
+	public var offsetTop: Number
+
+	public fun getBookmark(): String
+	public fun moveToBookmark(): Boolean
+	public fun collapse(): Unit
+	public fun expand(): Unit
+	public fun duplicate(): TextRange
+	public fun select(): Unit
+	public fun parentElement(): Node
+	public fun inRange(): Boolean
+	public fun isEqual(): Boolean
+	public fun scrollIntoView(): Unit
+	public fun setEndPoint(): Unit
+	public fun compareEndPoint(): Unit
+	public fun move(): Unit
+	public fun moveStart(): Unit
+	public fun moveEnd(): Unit
+	public fun pasteHTML(): Unit
+	public fun moveToElementText(): Unit
+	public fun compareEndPoints(): Number
+}
+
+public native trait document {
+	public var selection: Selection
+	public var namespaces: Array<Any>
+	public var all: All
+	public var styleSheets: Array<Stylesheet>
+
+	publ
+
+	public val length: Number
+	public val state: Any
+
+	public fun pushState(): Unit
+	public fun replaceState(): Unitic fun execCommand(): Boolean
+}
+
+public native trait CssRule {
+	public var selectorText: String
+}
+
+public native trait Stylesheet {
+	public var cssRules: Array<CssRule>
+	public var rules: Array<CssRule>
+	public var owningElement: HtmlElement
+
+	public fun addRule(): Unit
+	public fun insertRule(): Unit
+	public fun removeRule(): Unit
+	public fun deleteRule(): Unit
+}
+
+public native trait MozillaSideBar {
+	public fun addPanel(): Unit
+}
+
+public native trait IEExternal {
+	public fun AddFavorite(): Unit
+}
+
+public native trait History {
+	public fun back(): Unit
+	public fun forward(): Unit
+	public fun go(): Unit
+}
+
+public native trait Console {
+	public fun log(): Unit
+}
+
+public native trait Window {
+}
+
+public native trait window {
+	public val document: HTMLDocument
+	public val event: Event
+	public val navigator: Navigator
+	public val screen: Screen
+	public val location: Location
+	public var console: Console
+	public var frameElement: Any
+	public var opener: window
+	public var window: window
+	public var parent: window
+	public var top: window
+	public var self: Any
+	public var frames: Array<Any>
+	public var innerHeight: Number
+	public var innerWidth: Number
+	public var outerHeight: Number
+	public var outerWidth: Number
+	public var screenLeft: Number
+	public var screenTop: Number
+	public var scrollX: Number
+	public var scrollY: Number
+	public var pageXOffset: Number
+	public var pageYOffset: Number
+	public var scrollMaxX: Number
+	public var scrollMaxY: Number
+	public var status: String
+	public var defaultStatus: String
+	public var toolbar: Any
+	public var menubar: Any
+	public var scrollbars: Any
+	public var directories: Any
+	public var history: History
+	public var sidebar: MozillaSideBar
+	public var external: IEExternal
+	public var opera: Boolean
+	public var clipboardData: ClipboardData
+	public var onload: ()->Unit
+	public var onunload: ()->Unit
+
+	public fun getSelection(): Selection
+	public fun open(): window
+	public fun print(): Unit
+	public fun alert(): Unit
+	public fun atob(): Unit
+	public fun btoa(): Unit
+	public fun confirm(): Unit
+	public fun pro
+
+	public val localStorage: Storage
+	public val sessionStorage: Storage
+
+	public fun webkitRequestAnimationFrame(): Number
+	public fun webkitCancelRequestAnimationFrame(): Unit
+	public fun msRequestAnimationFrame(): Number
+	public fun msCancelRequestAnimationFrame(): Unit
+	public fun oRequestAnimationFrame(): Number
+	public fun oCancelRequestAnimationFrame(): Unit
+	public fun mozRequestAnimationFrame(): Number
+	public fun mozCancelRequestAnimationFrame(): Unit
+	public fun requestAnimationFrame(): Number
+	public fun cancelRequestAnimationFrame(): Unit
+	public fun importScripts(): Unit
+	public fun openDatabase(): Database
+	public fun openDatabaseSync(): Databasempt(): Unit
+	public fun clearInterval(): Unit
+	public fun clearTimeout(): Unit
+	public fun setInterval(): Number
+	public fun setTimeout(): Number
+	public fun ScriptEngine(): String
+	public fun ScriptEngineBuildVersion(): String
+	public fun ScriptEngineMajorVersion(): String
+	public fun ScriptEngineMinorVersion(): String
+	public fun scrollTo(): Unit
+	public fun scrollBy(): Unit
+	public fun moveTo(): Unit
+	public fun moveBy(): Unit
+	public fun resizeTo(): Unit
+	public fun resizeBy(): Unit
+	public fun getComputedStyle(): CSSStyleDeclaration
+	public fun showModalDialog(): Any
+	public fun attachEvent(): Unit
+	public fun detachEvent(): Unit
+	public fun addEventListener(): Unit
+	public fun removeEventListener(): Unit
+	public fun execScript(): Unit
+	public fun CollectGarbage(): Unit
+}
+
+public native trait ClipboardData {
+	public fun setData(): Boolean
+	public fun getData(): String
+	public fun clearData(): Boolean
+}
+
+public native trait Global {
+	public val window: window
+}
+
+public native trait HTMLCollection {
+	public val length: Number
+
+	public fun item(): Node
+	public fun namedItem(): Node
+}
+
+public native trait HTMLOptionsCollection {
+	public val length: Number
+
+	public fun item(): Node
+	public fun namedItem(): Node
+}
+
+public native trait HTMLDocument : Document {
+	public var title: String
+	public val referrer: String
+	public val domain: String
+	public val URL: String
+	public var body: HTMLElement
+	public val images: HTMLCollection
+	public val applets: HTMLCollection
+	public val links: HTMLCollection
+	public val forms: HTMLCollection
+	public val anchors: HTMLCollection
+	public var cookie: HTMLCollection
+	public var defaultView: DocumentView
+	public var activeElement: DocumentView
+	public var compatMode: String
+	public var parentWindow: window
+	public var commandDispatcher: CommandDispatcher
+	public var documentMode: Number
+	public var onload: ()->Unit
+	public var onunload: ()->Unit
+
+	public fun open(): Unit
+	public fun close(): Unit
+	public fun write(): Unit
+	public fun writeln(): Unit
+	public fun getElementsByName(): NodeList
+	public fun getElementsByClassName(): NodeList
+	public fun createStyleSheet(): Stylesheet
+	public fun getBoxObjectFor(): Node
+	public fun querySelectorAll(): NodeList
+	public fun querySelector(): Node
+	public fun getAnonymousNodes(): Array<Node>
+	public fun getAnonymousElementByAttribute(): NodeList
+	public fun elementFromPoint(): HTMLElement
+	public fun createEventObject(): Event
+}
+
+public native trait CommandDispatcher {
+	public var focusedElement: HTMLElement
+}
+
+public native trait AbstractView {
+}
+
+public native trait DocumentView : AbstractView {
+	public fun getComputedStyle(): CssStyle
+}
+
+public native trait CssStyle {
+	public fun getPropertyValue(): String
+}
+
+public native trait HTMLElement : Element {
+	public var id: String
+	public var title: String
+	public var lang: String
+	public var dir: String
+	public var className: String
+	public var children: Array<HTMLElement>
+	public var style: CSSStyleDeclaration
+	public var clientWidth: Number
+	public var clientHeight: Number
+	public var clientTop: Number
+	public var clientLeft: Number
+	public var innerHTML: String
+	public var innerText: String
+	public var offsetWidth: Number
+	public var offsetHeight: Number
+	public var offsetTop: Number
+	public var offsetLeft: Number
+	public var offsetParent: HTMLElement
+	public var scrollWidth: Number
+	public var scrollHeight: Number
+	public var scrollTop: Number
+	public var scrollLeft: Number
+	public var stylesheet: Stylesheet
+	public val sourceIndex: Number
+	public var onblur: ()->Unit
+	public var onclick: ()->Unit
+	public var ondblclick: ()->Unit
+	public var onfocus: ()->Unit
+	public var onkeydown: ()->Unit
+	public var onkeyup: ()->Unit
+	public var onmouseup: ()->Unit
+	public var onmousedown: ()->Unit
+	public var onmouseout: ()->Unit
+	public var onmouseover: ()->Unit
+	public var onmousemove: ()->Unit
+	public var onresize: ()->Unit
+	public var currentStyle: IEElementStyle
+	public var runtimeStyle: IEElementStyle
+	public var filters: Array<Any>
+	public var boxObject: HTMLElement
+	public var propertyName: String
+	public var isDisabled: Boolean
+
+	public fun insertAdjacentHTML(): Unit
+	public fun doScroll(): Unit
+	public fun insertAdjacentText(): Unit
+	public fun attachEvent(): Unit
+	public fun detachEvent(): Unit
+	public fun fireEvent(): Unit
+	public fun addBehavior(): Number
+	public fun removeBehavior(): Boolean
+	public fun getBoundingClientRect(): TextRange
+	public fun showPopup(): Unit
+	public fun hidePopup(): Unit
+	public fun setCapture(): Unit
+	public fun releaseCapture(): Unit
+	public fun clearAttributes(): Unit
+	public fun mergeAttributes(): Unit
+}
+
+public native trait CSSStyleDeclaration {
+	public var cssText: String
+	public var length: Number
+	public var parentRule: CSSRule
+
+	public fun getPropertyCSSValue(): CSSValue
+	public fun getPropertyPriority(): String
+	public fun getPropertyValue(): String
+	public fun item(): String
+	public fun removeProperty(): String
+	public fun setProperty(): Unit
+}
+
+public native trait IEElementStyle : CSSStyleDeclaration {
+	public var hasLayout: Boolean
+}
+
+public native trait HTMLHtmlElement : HTMLElement {
+	public var version: String
+}
+
+public native trait HTMLHeadElement : HTMLElement {
+	public var profile: String
+}
+
+public native trait HTMLLinkElement : HTMLElement {
+	public var disabled: Boolean
+	public var charset: String
+	public var href: String
+	public var hreflang: String
+	public var media: String
+	public var rel: String
+	public var rev: String
+	public var target: String
+	public var `type`: String
+}
+
+public native trait HTMLTitleElement : HTMLElement {
+	public var text: String
+}
+
+public native trait HTMLMetaElement : HTMLElement {
+	public var content: String
+	public var httpEquiv: String
+	public var name: String
+	public var scheme: String
+}
+
+public native trait HTMLBaseElement : HTMLElement {
+	public var href: String
+	public var target: String
+}
+
+public native trait HTMLIsIndexElement : HTMLElement {
+	public val form: HTMLFormElement
+	public var prompt: String
+}
+
+public native trait HTMLStyleElement : HTMLElement {
+	public var disabled: Boolean
+	public var media: String
+	public var `type`: String
+	public var styleSheet: Stylesheet
+}
+
+public native trait HTMLBodyElement : HTMLElement {
+	public var aLink: String
+	public var background: String
+	public var bgColor: String
+	public var link: String
+	public var text: String
+	public var vLink: String
+	public var onload: ()->Unit
+	public var onunload: ()->Unit
+}
+
+public native trait HTMLFormElement : HTMLElement {
+	public val elements: HTMLCollection
+	public val length: Number
+	public var name: String
+	public var acceptCharset: String
+	public var action: String
+	public var enctype: String
+	public var method: String
+	public var target: String
+
+	public fun submit(): Unit
+	public fun reset(): Unit
+}
+
+public native trait HTMLSelectElement : HTMLElement {
+	public val `type`: String
+	public var selectedIndex: Number
+	public var value: String
+	public var length: Number
+	public val form: HTMLFormElement
+	public val options: HTMLOptionsCollection
+	public var disabled: Boolean
+	public var multiple: Boolean
+	public var name: String
+	public var size: Number
+	public var tabIndex: Number
+
+	public fun add(): Unit
+	public fun remove(): Unit
+	public fun blur(): Unit
+	public fun focus(): Unit
+}
+
+public native trait HTMLOptGroupElement : HTMLElement {
+	public var disabled: Boolean
+	public var label: String
+}
+
+public native trait HTMLOptionElement : HTMLElement {
+	public val form: HTMLFormElement
+	public var defaultSelected: Boolean
+	public var text: String
+	public var index: Number
+	public var disabled: Boolean
+	public var label: String
+	public var selected: Boolean
+	public var value: String
+}
+
+public native trait HTMLInputElement : HTMLElement {
+	public var defaultValue: String
+	public var defaultChecked: Boolean
+	public val form: HTMLFormElement
+	public var accept: String
+	public var accessKey: S
+
+	public val files: FileListtring
+	public var align: String
+	public var alt: String
+	public var checked: Boolean
+	public var disabled: Boolean
+	public var maxLength: Number
+	public var name: String
+	public var readOnly: Boolean
+	public var size: Number
+	public var src: String
+	public var tabIndex: Number
+	public var `type`: String
+	public var useMap: String
+	public var value: String
+	public var selectionStart: Number
+	public var selectionEnd: Number
+
+	public fun blur(): Unit
+	public fun focus(): Unit
+	public fun select(): Unit
+	public fun click(): Unit
+	public fun setSelectionRange(): Unit
+	public fun createTextRange(): TextRange
+}
+
+public native trait HTMLTextAreaElement : HTMLElement {
+	public var defaultValue: String
+	public val form: HTMLFormElement
+	public var accessKey: String
+	public var cols: Number
+	public var disabled: Boolean
+	public var name: String
+	public var readOnly: Boolean
+	public var rows: Number
+	public var tabIndex: Number
+	public var `type`: String
+	public var value: String
+
+	public fun blur(): Unit
+	public fun focus(): Unit
+	public fun select(): Unit
+}
+
+public native trait HTMLButtonElement : HTMLElement {
+	public val form: HTMLFormElement
+	public var accessKey: String
+	public var disabled: Boolean
+	public var name: String
+	public var tabIndex: Number
+	public var `type`: String
+	public var value: String
+}
+
+public native trait HTMLLabelElement : HTMLElement {
+	public val form: HTMLFormElement
+	public var accessKey: String
+	public var htmlFor: Unit
+}
+
+public native trait HTMLFieldSetElement : HTMLElement {
+	public val form: HTMLFormElement
+}
+
+public native trait HTMLLegendElement : HTMLElement {
+	public val form: HTMLFormElement
+	public var accessKey: String
+	public var align: String
+}
+
+public native trait HTMLUListElement : HTMLElement {
+	public var compact: Boolean
+	public var `type`: String
+}
+
+public native trait HTMLOListElement : HTMLElement {
+	public var compact: Boolean
+	public var start: Number
+	public var `type`: String
+}
+
+public native trait HTMLDListElement : HTMLElement {
+	public var compact: Boolean
+}
+
+public native trait HTMLDirectoryElement : HTMLElement {
+	public var compact: Boolean
+}
+
+public native trait HTMLMenuElement : HTMLElement {
+	public var compact: Boolean
+}
+
+public native trait HTMLLIElement : HTMLElement {
+	public var `type`: String
+	public var value: Number
+}
+
+public native trait HTMLDivElement : HTMLElement {
+	public var align: String
+}
+
+public native trait HTMLParagraphElement : HTMLElement {
+	public var align: String
+}
+
+public native trait HTMLHeadingElement : HTMLElement {
+	public var align: String
+}
+
+public native trait HTMLQuoteElement : HTMLElement {
+	public var cite: String
+}
+
+public native trait HTMLPreElement : HTMLElement {
+	public var width: Number
+}
+
+public native trait HTMLBRElement : HTMLElement {
+	public var clear: String
+}
+
+public native trait HTMLBaseFontElement : HTMLElement {
+	public var color: String
+	public var face: String
+	public var size: Number
+}
+
+public native trait HTMLFontElement : HTMLElement {
+	public var color: String
+	public var face: String
+	public var size: String
+}
+
+public native trait HTMLHRElement : HTMLElement {
+	public var align: String
+	public var noShade: Boolean
+	public var size: String
+	public var width: String
+}
+
+public native trait HTMLModElement : HTMLElement {
+	public var cite: String
+	public var dateTime: String
+}
+
+public native trait HTMLAnchorElement : HTML
+
+	public var crossOrigin: StringElement {
+	public var accessKey: String
+	public var charset: String
+	public var coords: String
+	public var href: String
+	public var hreflang: String
+	public var name: String
+	public var rel: String
+	public var rev: String
+	public var shape: String
+	public var tabIndex: Number
+	public var target: String
+	public var `type`: String
+
+	public fun blur(): Unit
+	public fun focus(): Unit
+}
+
+public native trait HTMLImageElement : HTMLElement {
+	public var name: String
+	public var align: String
+	public var alt: String
+	public var border: String
+	public var height: Number
+	public var hspace: Number
+	public var isMap: Boolean
+	public var longDesc: String
+	public var src: String
+	public var useMap: String
+	public var vspace: Number
+	public var width: Number
+	public var onload: ()->Unit
+	public var onunload: ()->Unit
+}
+
+public native trait HTMLObjectElement : HTMLElement {
+	public val form: HTMLFormElement
+	public var code: String
+	public var align: String
+	public var archive: String
+	public var border: String
+	public var codeBase: String
+	public var codeType: String
+	public var data: String
+	public var declare: Boolean
+	public var height: String
+	public var hspace: Number
+	public var name: String
+	public var standby: String
+	public var tabIndex: Number
+	public var `type`: String
+	public var useMap: String
+	public var vspace: Number
+	public var width: String
+	public val contentDocument: Document
+}
+
+public native trait HTMLParamElement : HTMLElement {
+	public var name: String
+	public var `type`: String
+	public var value: String
+	public var valueType: String
+}
+
+public native trait HTMLAppletElement : HTMLElement {
+	public var align: String
+	public var alt: String
+	public var archive: String
+	public var code: String
+	public var codeBase: String
+	public var height: String
+	public var hspace: Number
+	public var name: String
+	public var object: String
+	public var vspace: Number
+	public var width: String
+}
+
+public native trait HTMLMapElement : HTMLElement {
+	public val areas: HTMLCollection
+	public var name: String
+}
+
+public native trait HTMLAreaElement : HTMLElement {
+	public var accessKey: String
+	public var alt: String
+	public var coords: String
+	public var href: String
+	public var noHref: Boolean
+	public var shape: String
+	public var tabIndex: Number
+	public var target: String
+}
+
+public native trait HTMLScriptElement : HTMLElement {
+	public var text: String
+	public var htmlFor: String
+	public var event: String
+	public var charset: String
+	public var defer: Boolean
+	public var src: String
+	public var `type`: String
+}
+
+public native trait HTMLTableElement : HTMLElement {
+	public var caption: HTMLTableCaptionElement
+	public var tHead: HTMLTableSectionElement
+	public var tFoot: HTMLTableSectionElement
+	public val rows: HTMLCollection
+	public val tBodies: HTMLCollection
+	public var align: String
+	public var bgColor: String
+	public var border: String
+	public var cellPadding: String
+	public var cellSpacing: String
+	public var frame: String
+	public var rules: String
+	public var summary: String
+	public var width: String
+
+	public fun createTHead(): HTMLElement
+	public fun deleteTHead(): Unit
+	public fun createTFoot(): HTMLElement
+	public fun deleteTFoot(): Unit
+	public fun createCaption(): HTMLElement
+	public fun deleteCaption(): Unit
+	public fun insertRow(): HTMLElement
+	public fun deleteRow(): Unit
+}
+
+public native trait HTMLTableCaptionElement : HTMLElement {
+	public var align: String
+}
+
+public native trait HTMLTableColElement : HTMLElement {
+	public var align: String
+	public var ch: String
+	public var chOff: String
+	public var span: Number
+	public var vAlign: String
+	public var width: String
+}
+
+public native trait HTMLTableSectionElement : HTMLElement {
+	public var align: String
+	public var ch: String
+	public var chOff: String
+	public var vAlign: String
+	public val rows: HTMLCollection
+
+	public fun insertRow(): HTMLElement
+	public fun deleteRow(): Unit
+}
+
+public native trait HTMLTableRowElement : HTMLElement {
+	public val rowIndex: Number
+	public val sectionRowIndex: Number
+	public val cells: HTMLCollection
+	public var align: String
+	public var bgColor: String
+	public var ch: String
+	public var chOff: String
+	public var vAlign: String
+
+	public fun insertCell(): HTMLElement
+	public fun deleteCell(): Unit
+}
+
+public native trait HTMLTableCellElement : HTMLElement {
+	public val cellIndex: Number
+	public var abbr: String
+	public var align: String
+	public var axis: String
+	public var bgColor: String
+	public var ch: String
+	public var chOff: String
+	public var colSpan: Number
+	public var headers: String
+	public var height: String
+	public var noWrap: Boolean
+	public var rowSpan: Number
+	public var scope: String
+	public var vAlign: String
+	public var width: String
+}
+
+public native trait HTMLFrameSetElement : HTMLElement {
+	public var cols: String
+	public var rows: String
+}
+
+public native trait HTMLFrameElement : HTMLElement {
+	public var frameBorder: String
+	public var longDesc: String
+	public var marginHeight: String
+	public var marginWidth: String
+	public var name: String
+	public var noResize: Boolean
+	public var scrolling: String
+	public var src: String
+	public val contentDocument: Document
+}
+
+public native trait HTMLIFrameElement : HTMLElement {
+	public var align: String
+	public var frameBorder: String
+	public var height: String
+	public var longDesc: String
+	public var marginHeight: String
+	public var marginWidth: String
+	public var name: String
+	public var scrolling: String
+	public var src: String
+	public var width: String
+	public val contentDocument: Document
+	public val contentWindow: window
+}
+
+public native trait EventTarget {
+	public fun addEventListener(): Unit
+	public fun removeEventListener(): Unit
+	public fun dispatchEvent(): Boolean
+	public fun addEventListenerNS(): Unit
+	public fun removeEventListenerNS(): Unit
+	public fun willTriggerNS(): Boolean
+	public fun hasEventListenerNS(): Boolean
+}
+
+public native trait EventListener {
+	public fun handleEvent(): Unit
+}
+
+public native trait EventException {
+	public var code: Number
+}
+
+public native trait DocumentEvent {
+	public fun createEvent(): Event
+	public fun canDispatch(): String
+}
+
+public native trait CustomEvent : Event {
+	public fun setDispatchState(): Unit
+	public fun isPropagationStopped(): Boolean
+	public fun isImmediatePropagationStopped(): Boolean
+}
+
+public native trait UIEvent : Event {
+	public val view: AbstractView
+	public val detail: Long
+
+	public fun initUIEvent(): Unit
+	public fun initUIEventNS(): Unit
+}
+
+public native trait TextEvent : UIEvent {
+	public val data: String
+
+	public fun initTextEvent(): Unit
+	public fun initTextEventNS(): Unit
+}
+
+public native trait MouseEvent : UIEvent {
+	public val screenX: Long
+	public val screenY: Long
+	public val clientX: Long
+	public val clientY: Long
+	public val ctrlKey: Boolean
+	public val shiftKey: Boolean
+	public val altKey: Boolean
+	public val metaKey: Boolean
+	public val button: Number
+	public val relatedTarget: EventTarget
+
+	public fun getModifierState(): Boolean
+	public fun initMouseEvent(): Unit
+	public fun initMouseEventNS(): Unit
+}
+
+public native trait KeyboardEvent : UIEvent {
+	public val keyIdentifier: String
+	public val keyLocation: Number
+	public val ctrlKey: Boolean
+	public val shiftKey: Boolean
+	public val altKey: Boolean
+	public val metaKey: Boolean
+
+	public fun getModifierState(): Boolean
+	public fun initKeyboardEvent(): Unit
+	public fun initKeyboardEventNS(): Unit
+}
+
+public native trait MutationEvent : UIEvent {
+	public class object {
+		public val MODIFICATION: Int = 1
+		public val ADDITION: Int = 2
+		public val REMOVAL: Int = 3
+	}
+
+	public val relatedNode: Node
+	public val prevValue: String
+	public val newValue: String
+	public val attrName: String
+	public val attrChange: Number
+
+	public fun initMutationEvent(): Unit
+	public fun initMutationEventNS(): Unit
+}
+
+public native trait MutationNameEvent : MutationEvent {
+	public val prevNamespaceURI: String
+	public val prevNodeName: String
+
+	public fun initMutationNameEvent(): Unit
+	public fun initMutationNameEventNS(): Unit
+}
+
 public native trait Blob {
 	public val size: Long
 	public val `type`: String
@@ -17,10 +1091,6 @@ public native trait FileList {
 	public fun item(): File
 }
 
-public native trait HTMLInputElement {
-	public val files: FileList
-}
-
 public native trait File : Blob {
 	public val name: String
 	public val lastModifiedDate: Date
@@ -31,7 +1101,7 @@ public native trait FileReader : EventTarget {
 	public val LOADING: Number = 1
 	public val DONE: Number = 2
 	public val readyState: Number
-	public val result: Object
+	public val result: Any
 	public val error: Error
 	public var onloadstart: ()->Unit
 	public var onprogress: ()->Unit
@@ -78,6 +1148,12 @@ public native trait Notification : EventTarget {
 }
 
 public native trait MediaError {
+
+	public val MEDIA_ERR_ABORTED: Number = 1
+	public val MEDIA_ERR_NETWORK: Number = 2
+	public val MEDIA_ERR_DECODE: Number = 3
+	public val MEDIA_ERR_SRC_NOT_SUPPORTED: Number = 4
+	public val code: Number
 }
 
 public native trait HTMLMediaElement : HTMLElement {
@@ -112,21 +1188,13 @@ public native trait HTMLMediaElement : HTMLElement {
 	public var controls: Boolean
 	public var volume: Number
 	public var muted: Boolean
-	public val tracks: Array
+	public val tracks: Array<Any>
 
 	public fun load(): Unit
 	public fun canPlayType(): String
 	public fun play(): Unit
 	public fun pause(): Unit
 	public fun addTrack(): MutableTimedTrack
-}
-
-public native trait MediaError {
-	public val MEDIA_ERR_ABORTED: Number = 1
-	public val MEDIA_ERR_NETWORK: Number = 2
-	public val MEDIA_ERR_DECODE: Number = 3
-	public val MEDIA_ERR_SRC_NOT_SUPPORTED: Number = 4
-	public val code: Number
 }
 
 public native trait TimeRanges {
@@ -268,19 +1336,6 @@ public native trait MessageEvent : Event {
 	public val ports: MessagePortArray
 }
 
-public native trait History {
-	public val length: Number
-	public val state: Object
-
-	public fun pushState(): Unit
-	public fun replaceState(): Unit
-}
-
-public native trait Location {
-	public fun assign(): Unit
-	public fun resolveURL(): String
-}
-
 public native trait SQLException : Error {
 	public val UNKNOWN_ERR: Number = 0
 	public val DATABASE_ERR: Number = 1
@@ -292,10 +1347,6 @@ public native trait SQLException : Error {
 	public val TIMEOUT_ERR: Number = 7
 	public val code: Number
 	public val message: String
-}
-
-public native trait HTMLImageElement {
-	public var crossOrigin: String
 }
 
 public native trait HTMLCanvasElement : HtmlElement {
@@ -378,26 +1429,6 @@ public native trait TextMetrics {
 	public val width: Number
 }
 
-public native trait window {
-	public val navigator: WorkerNavigator
-	public val localStorage: Storage
-	public val sessionStorage: Storage
-
-	public fun webkitRequestAnimationFrame(): Number
-	public fun webkitCancelRequestAnimationFrame(): Unit
-	public fun msRequestAnimationFrame(): Number
-	public fun msCancelRequestAnimationFrame(): Unit
-	public fun oRequestAnimationFrame(): Number
-	public fun oCancelRequestAnimationFrame(): Unit
-	public fun mozRequestAnimationFrame(): Number
-	public fun mozCancelRequestAnimationFrame(): Unit
-	public fun requestAnimationFrame(): Number
-	public fun cancelRequestAnimationFrame(): Unit
-	public fun importScripts(): Unit
-	public fun openDatabase(): Database
-	public fun openDatabaseSync(): Database
-}
-
 public native trait WorkerNavigator {
 }
 
@@ -427,12 +1458,15 @@ public native trait Storage {
 }
 
 public native trait WebSocket {
+	public class object {
+		public val CONNECTING: Int = 0
+		public val OPEN: Int = 1
+		public val CLOSING: Int = 2
+		public val CLOSED: Int = 3
+	}
+
 	public var url: String
-	public val CONNECTING: Number = 0
-	public val OPEN: Number = 1
-	public val CLOSING: Number = 2
-	public val CLOSED: Number = 3
-	public val readyState: Number
+	public val readyState: Int
 	public val bufferedAmount: Number
 	public var onopen: ()->Unit
 	public var onmessage: ()->Unit
@@ -444,108 +1478,117 @@ public native trait WebSocket {
 }
 
 public native trait ArrayBuffer {
-	public var byteLength: Number
+	public var byteLength: Long
 
-	public fun __constructor__(): Unit
 }
 
 public native trait DataView {
 	public val buffer: ArrayBuffer
-	public val byteOffset: Number
-	public val byteLength: Number
+	public val byteOffset: Long
+	public val byteLength: Long
 
-	public fun __constructor__(): Unit
-	public fun getInt8(): Number
+	public fun getInt8(): Byte
 }
 
 public native trait ArrayBufferView {
 	public val buffer: ArrayBuffer
-	public val byteOffset: Number
-	public val byteLength: Number
+	public val byteOffset: Long
+	public val byteLength: Long
 
-	public fun __constructor__(): Unit
 }
 
 public native trait Int8Array : ArrayBufferView {
-	public val length: Unit
-	public val BYTES_PER_ELEMENT: Number = 8
+	public class object {
+		public val BYTES_PER_ELEMENT: Int = 8
+	}
 
-	public fun __constructor__(): Unit
+	public val length: Unit
+
 	public fun set(): Unit
-	public fun subarray(): $__Type__$
+	public fun subarray(): Int8Array
 }
 
 public native trait Uint8Array : ArrayBufferView {
-	public val length: Unit
-	public val BYTES_PER_ELEMENT: Number = 8
+	public class object {
+		public val BYTES_PER_ELEMENT: Int = 8
+	}
 
-	public fun __constructor__(): Unit
+	public val length: Long
+
 	public fun set(): Unit
-	public fun subarray(): $__Type__$
+	public fun subarray(): Uint8Array
 }
 
 public native trait Int16Array : ArrayBufferView {
-	public val length: Unit
-	public val BYTES_PER_ELEMENT: Number = 16
+	public class object {
+		public val BYTES_PER_ELEMENT: Int = 16
+	}
 
-	public fun __constructor__(): Unit
+	public val length: Long
+
 	public fun set(): Unit
-	public fun subarray(): $__Type__$
+	public fun subarray(): Int16Array
 }
 
 public native trait Uint16Array : ArrayBufferView {
-	public val length: Unit
-	public val BYTES_PER_ELEMENT: Number = 16
+	public class object {
+		public val BYTES_PER_ELEMENT: Int = 16
+	}
 
-	public fun __constructor__(): Unit
+	public val length: Long
+
 	public fun set(): Unit
-	public fun subarray(): $__Type__$
+	public fun subarray(): Uint16Array
 }
 
 public native trait Int32Array : ArrayBufferView {
-	public val length: Unit
-	public val BYTES_PER_ELEMENT: Number = 32
+	public class object {
+		public val BYTES_PER_ELEMENT: Int = 32
+	}
 
-	public fun __constructor__(): Unit
+	public val length: Long
+
 	public fun set(): Unit
-	public fun subarray(): $__Type__$
+	public fun subarray(): Int32Array
 }
 
 public native trait Uint32Array : ArrayBufferView {
-	public val length: Unit
-	public val BYTES_PER_ELEMENT: Number = 32
+	public class object {
+		public val BYTES_PER_ELEMENT: Int = 32
+	}
 
-	public fun __constructor__(): Unit
+	public val length: Long
+
 	public fun set(): Unit
-	public fun subarray(): $__Type__$
+	public fun subarray(): Uint32Array
 }
 
 public native trait Float32Array : ArrayBufferView {
-	public val length: Unit
-	public val BYTES_PER_ELEMENT: Number = 32
+	public class object {
+		public val BYTES_PER_ELEMENT: Int = 32
+	}
 
-	public fun __constructor__(): Unit
+	public val length: Long
+
 	public fun set(): Unit
-	public fun subarray(): $__Type__$
+	public fun subarray(): Float32Array
 }
 
 public native trait Float64Array : ArrayBufferView {
-	public val length: Unit
-	public val BYTES_PER_ELEMENT: Number = 64
+	public class object {
+		public val BYTES_PER_ELEMENT: Int = 64
+	}
 
-	public fun __constructor__(): Unit
+	public val length: Long
+
 	public fun set(): Unit
-	public fun subarray(): $__Type__$
+	public fun subarray(): Float64Array
 }
 
 public native trait Geolocation {
 	public fun getCurrentPosition(): Unit
 	public fun watchPosition(): Number
 	public fun clearWatch(): Unit
-}
-
-public native trait Navigator {
-	public val geolocation: Geolocation
 }
 
 public native trait PositionOptions {
@@ -570,16 +1613,19 @@ public native trait Coordinates {
 }
 
 public native trait PositionError {
-	public val PERMISSION_DENIED: Number = 1
-	public val POSITION_UNAVAILABLE: Number = 2
-	public val TIMEOUT: Number = 3
-	public val code: Number
+	public class object {
+		public val PERMISSION_DENIED: Int = 1
+		public val POSITION_UNAVAILABLE: Int = 2
+		public val TIMEOUT: Int = 3
+	}
+
+	public val code: Int
 	public val message: String
 }
 
 public native trait XMLHttpRequest {
 	public var responseType: String
-	public var response: Object
+	public var response: Any
 }
 
 public native trait FormData {
