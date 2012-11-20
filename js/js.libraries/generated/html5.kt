@@ -160,12 +160,6 @@ public native trait TextRange {
 	public fun compareEndPoints(sType: String? = null, oRange: TextRange? = null): Number
 }
 
-public native trait Document {
-	public var styleSheets: Array<Stylesheet>
-}
-
-public native val document: Document = noImpl
-
 public native trait CssRule {
 	public var selectorText: String
 }
@@ -198,11 +192,11 @@ public native trait History {
 }
 
 public native trait Console {
-	public fun dir(message: Any? = null): Unit
-	public fun info(message: Any? = null): Unit
-	public fun warn(message: Any? = null): Unit
-	public fun error(message: Any? = null): Unit
-	public fun log(message: Any? = null): Unit
+	public fun dir(vararg message: Any?): Unit
+	public fun info(vararg message: Any?): Unit
+	public fun warn(vararg message: Any?): Unit
+	public fun error(vararg message: Any?): Unit
+	public fun log(vararg message: Any?): Unit
 }
 
 public native val console: Console = noImpl
@@ -255,10 +249,10 @@ public native trait Window {
 	public fun prompt(message: String, defaultValue: String? = null): Unit
 	public fun clearInterval(intervalId: Long): Unit
 	public fun clearTimeout(intervalId: Long): Unit
-	public fun setInterval(code: String, delay: Long): Long
-	public fun setInterval(code: ()->Unit, delay: Long): Long
-	public fun setTimeout(code: String, delay: Long): Long
-	public fun setTimeout(code: ()->Unit, delay: Long): Long
+	public fun setInterval(code: String, delay: Int): Long
+	public fun setInterval(code: ()->Unit, delay: Int): Long
+	public fun setTimeout(code: String, delay: Int): Long
+	public fun setTimeout(code: ()->Unit, delay: Int): Long
 	public fun scrollTo(x: Number, y: Number): Unit
 	public fun scrollBy(xDelta: Number, yDelta: Number): Unit
 	public fun moveTo(x: Number, y: Number): Unit
@@ -282,7 +276,7 @@ public native trait Window {
 	public fun mozCancelRequestAnimationFrame(callback: ()->Unit): Unit
 	public fun requestAnimationFrame(callback: ()->Unit, element: Element): Number
 	public fun cancelRequestAnimationFrame(callback: ()->Unit): Unit
-	public fun importScripts(urls: String? = null): Unit
+	public fun importScripts(vararg urls: String?): Unit
 	public fun openDatabase(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: DatabaseCallback? = null): Database
 	public fun openDatabase(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: (()->Unit)? = null): Database
 	public fun openDatabaseSync(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: DatabaseCallback? = null): Database
@@ -327,6 +321,7 @@ public native trait HTMLDocument : Document {
 	public val forms: HTMLCollection
 	public val anchors: HTMLCollection
 	public var cookie: HTMLCollection
+	public val styleSheets: Array<Stylesheet>
 	public var defaultView: DocumentView
 	public var compatMode: String
 	public var commandDispatcher: CommandDispatcher
@@ -345,6 +340,8 @@ public native trait HTMLDocument : Document {
 	public fun getAnonymousNodes(node: HTMLElement): Array<Node>
 	public fun getAnonymousElementByAttribute(node: HTMLElement, attrName: String, attrValue: String): NodeList
 }
+
+public native val document: HTMLDocument = noImpl
 
 public native trait CommandDispatcher {
 	public var focusedElement: HTMLElement
@@ -1246,7 +1243,7 @@ public native trait HTMLCanvasElement : HtmlElement {
 	public var width: Long
 	public var height: Long
 
-	public fun getContext(contextId: String, args: Any? = null): CanvasRenderingContext2D
+	public fun getContext(contextId: String, vararg args: Any?): CanvasRenderingContext2D
 	public fun toDataURL(String: String? = null, args: Any? = null): String
 }
 
