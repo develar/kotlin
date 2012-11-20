@@ -4,13 +4,7 @@
 
 package html
 
-public native trait Object {
-	public fun __defineGetter__(): Unit
-	public fun __defineSetter__(): Unit
-	public fun __lookupGetter__(): ()->Unit
-	public fun __lookupSetter__(): ()->Unit
-	public fun __proto__(): ()->Unit
-}
+import org.w3c.dom.*
 
 public native trait Image : HTMLImageElement {
 	public var constructor: Unit
@@ -25,8 +19,6 @@ public native trait Navigator {
 	public var appName: String
 	public var appCodeName: String
 	public var language: String
-	public var systemLanguage: String
-	public var userLanguage: String
 	public var mimeTypes: Array<Any>
 	public var platform: String
 	public var plugins: Array<Any>
@@ -35,7 +27,7 @@ public native trait Navigator {
 
 	public fun taintEnabled(): Boolean
 	public fun javaEnabled(): Boolean
-	public fun preference(): String
+	public fun preference(prefName: String, prefValue: String? = null): String
 
 	public val geolocation: Geolocation
 }
@@ -68,49 +60,42 @@ public native trait Location {
 	public var target: String
 
 	public fun reload(): Unit
-	public fun replace(): Unit
+	public fun replace(url: String): Unit
 
-	public fun assign(): Unit
-	public fun resolveURL(): String
+	public fun assign(url: String? = null): Unit
+	public fun resolveURL(url: String? = null): String
 }
 
 public native trait XSLTProcessor {
 	public var constructor: Unit
 
-	public fun importStylesheet(): Unit
-	public fun transformToDocument(): Document
-	public fun transformToFragment(): DocumentFragment
+	public fun importStylesheet(domNode: Node): Unit
+	public fun transformToDocument(domNode: Node): Document
+	public fun transformToFragment(domToBeTransformed: Node, ownerDocument: Document): DocumentFragment
 }
 
 public native trait DOMParser {
 	public var constructor: Unit
 
-	public fun parseFromString(): Document
+	public fun parseFromString(stringToParse: String, contentType: String): Document
 }
 
 public native trait XMLSerializer {
 	public var constructor: Unit
 
-	public fun serializeToStream(): Unit
-	public fun serializeToString(): String
+	public fun serializeToStream(domNode: Document, stream: Any, encoding: String): Unit
+	public fun serializeToString(domNode: Document): String
 }
 
 public native trait Event {
-	public var data: Array<Object>
+	public var data: Array<Any>
 	public var height: Number
-	public var x: Number
 	public var screenX: Number
 	public var clientX: Number
-	public var offsetX: Number
 	public var layerX: Number
-	public var fromElement: Any
-	public var wheelDelta: Number
-	public var repeat: Boolean
 	public var pageX: Number
-	public var y: Number
 	public var screenY: Number
 	public var clientY: Number
-	public var offsetY: Number
 	public var layerY: Number
 	public var pageY: Number
 	public var width: Number
@@ -118,37 +103,11 @@ public native trait Event {
 	public var keyCode: Number
 	public var `type`: String
 	public var which: Any
-	public var srcElement: Any
-	public var toElement: Any
-	public var cancelBubble: Boolean
-	public var returnValue: Boolean
 	public var altKey: Boolean
 	public var ctrlKey: Boolean
 	public var shiftKey: Boolean
 	public var button: Boolean
 	public var charCode: String
-
-	public class object {
-		public val CAPTURING_PHASE: Int = 1
-		public val AT_TARGET: Int = 2
-		public val BUBBLING_PHASE: Int = 2
-	}
-
-	public val target: EventTarget
-	public val currentTarget: EventTarget
-	public val eventPhase: Int
-	public val bubbles: Boolean
-	public val cancelable: Boolean
-	public val timeStamp: Date
-	public val namespaceURI: String
-
-	public fun stopPropagation(): Unit
-	public fun preventDefault(): Unit
-	public fun initEvent(): Unit
-	public fun isCustom(): Boolean
-	public fun stopImmediatePropagation(): Unit
-	public fun isDefaultPrevented(): Boolean
-	public fun initEventNS(): Unit
 }
 
 public native trait Selection {
@@ -158,21 +117,17 @@ public native trait Selection {
 	public var focusOffset: Number
 	public var isCollapsed: Boolean
 	public var rangeCount: Number
-	public var `type`: string
 
-	public fun getRangeAt(): Range
-	public fun collapse(): Unit
-	public fun extend(): Unit
+	public fun getRangeAt(index: Number): org.w3c.dom.Range
+	public fun collapse(parentNode: Node, offset: Number): Unit
+	public fun extend(parentNode: Node, offset: Number): Unit
 	public fun collapseToStart(): Unit
 	public fun collapseToEnd(): Unit
-	public fun selectAllChildren(): Unit
-	public fun addRange(): Unit
-	public fun removeRange(): Unit
+	public fun selectAllChildren(parentNode: Node): Unit
+	public fun addRange(range: org.w3c.dom.Range): Unit
+	public fun removeRange(range: org.w3c.dom.Range): Unit
 	public fun removeAllRanges(): Unit
-	public fun containsNode(): Boolean
-	public fun clear(): Boolean
-	public fun empty(): Boolean
-	public fun createRange(): TextRange
+	public fun containsNode(node: Node, partlyContained: Boolean): Boolean
 }
 
 public native trait TextRange {
@@ -186,39 +141,30 @@ public native trait TextRange {
 	public var offsetTop: Number
 
 	public fun getBookmark(): String
-	public fun moveToBookmark(): Boolean
-	public fun collapse(): Unit
-	public fun expand(): Unit
+	public fun moveToBookmark(sBookmark: String? = null): Boolean
+	public fun collapse(start: Boolean? = null): Unit
+	public fun expand(unit: String? = null): Unit
 	public fun duplicate(): TextRange
 	public fun select(): Unit
 	public fun parentElement(): Node
-	public fun inRange(): Boolean
-	public fun isEqual(): Boolean
-	public fun scrollIntoView(): Unit
-	public fun setEndPoint(): Unit
-	public fun compareEndPoint(): Unit
-	public fun move(): Unit
-	public fun moveStart(): Unit
-	public fun moveEnd(): Unit
-	public fun pasteHTML(): Unit
-	public fun moveToElementText(): Unit
-	public fun compareEndPoints(): Number
+	public fun inRange(other: TextRange): Boolean
+	public fun isEqual(other: TextRange): Boolean
+	public fun scrollIntoView(start: Boolean? = null): Unit
+	public fun setEndPoint(`type`: String, range: TextRange): Unit
+	public fun compareEndPoint(`type`: String, range: TextRange): Unit
+	public fun move(unit: String, count: Number? = null): Unit
+	public fun moveStart(unit: String, count: Number? = null): Unit
+	public fun moveEnd(unit: String, count: Number? = null): Unit
+	public fun pasteHTML(htmlText: String): Unit
+	public fun moveToElementText(element: HTMLElement? = null): Unit
+	public fun compareEndPoints(sType: String? = null, oRange: TextRange? = null): Number
 }
 
-public native trait document {
-	public var selection: Selection
-	public var namespaces: Array<Any>
-	public var all: All
+public native trait Document {
 	public var styleSheets: Array<Stylesheet>
-
-	publ
-
-	public val length: Number
-	public val state: Any
-
-	public fun pushState(): Unit
-	public fun replaceState(): Unitic fun execCommand(): Boolean
 }
+
+public native val document: Document = noImpl
 
 public native trait CssRule {
 	public var selectorText: String
@@ -226,37 +172,43 @@ public native trait CssRule {
 
 public native trait Stylesheet {
 	public var cssRules: Array<CssRule>
-	public var rules: Array<CssRule>
-	public var owningElement: HtmlElement
 
-	public fun addRule(): Unit
-	public fun insertRule(): Unit
-	public fun removeRule(): Unit
-	public fun deleteRule(): Unit
+	public fun insertRule(ruleText: String, index: Number): Unit
+	public fun deleteRule(index: Number): Unit
 }
 
 public native trait MozillaSideBar {
-	public fun addPanel(): Unit
+	public fun addPanel(title: String, url: String, param3: String): Unit
 }
 
 public native trait IEExternal {
-	public fun AddFavorite(): Unit
+	public fun AddFavorite(title: String, url: String? = null): Unit
 }
 
 public native trait History {
 	public fun back(): Unit
 	public fun forward(): Unit
-	public fun go(): Unit
+	public fun go(count: Number): Unit
+
+	public val length: Int
+	public val state: Any
+
+	public fun pushState(data: Any? = null, title: String? = null, url: String? = null): Unit
+	public fun replaceState(data: Any? = null, title: String? = null, url: String? = null): Unit
 }
 
 public native trait Console {
-	public fun log(): Unit
+	public fun dir(message: Any? = null): Unit
+	public fun info(message: Any? = null): Unit
+	public fun warn(message: Any? = null): Unit
+	public fun error(message: Any? = null): Unit
+	public fun log(message: Any? = null): Unit
 }
+
+public native val console: Console = noImpl
 
 public native trait Window {
-}
 
-public native trait window {
 	public val document: HTMLDocument
 	public val event: Event
 	public val navigator: Navigator
@@ -264,18 +216,16 @@ public native trait window {
 	public val location: Location
 	public var console: Console
 	public var frameElement: Any
-	public var opener: window
-	public var window: window
-	public var parent: window
-	public var top: window
+	public var opener: Window
+	public var window: Window
+	public var parent: Window
+	public var top: Window
 	public var self: Any
 	public var frames: Array<Any>
 	public var innerHeight: Number
 	public var innerWidth: Number
 	public var outerHeight: Number
 	public var outerWidth: Number
-	public var screenLeft: Number
-	public var screenTop: Number
 	public var scrollX: Number
 	public var scrollY: Number
 	public var pageXOffset: Number
@@ -290,83 +240,79 @@ public native trait window {
 	public var directories: Any
 	public var history: History
 	public var sidebar: MozillaSideBar
-	public var external: IEExternal
 	public var opera: Boolean
 	public var clipboardData: ClipboardData
 	public var onload: ()->Unit
 	public var onunload: ()->Unit
 
 	public fun getSelection(): Selection
-	public fun open(): window
+	public fun open(strUrl: String? = null, strWindowName: String? = null, strWindowFeatures: String? = null, bReplace: Boolean? = null): Window
 	public fun print(): Unit
-	public fun alert(): Unit
-	public fun atob(): Unit
-	public fun btoa(): Unit
-	public fun confirm(): Unit
-	public fun pro
+	public fun alert(message: String): Unit
+	public fun atob(encodedData: String): Unit
+	public fun btoa(decodedData: String): Unit
+	public fun confirm(message: String): Unit
+	public fun prompt(message: String, defaultValue: String? = null): Unit
+	public fun clearInterval(intervalId: Long): Unit
+	public fun clearTimeout(intervalId: Long): Unit
+	public fun setInterval(code: String, delay: Long): Long
+	public fun setInterval(code: ()->Unit, delay: Long): Long
+	public fun setTimeout(code: String, delay: Long): Long
+	public fun setTimeout(code: ()->Unit, delay: Long): Long
+	public fun scrollTo(x: Number, y: Number): Unit
+	public fun scrollBy(xDelta: Number, yDelta: Number): Unit
+	public fun moveTo(x: Number, y: Number): Unit
+	public fun moveBy(xDelta: Number, yDelta: Number): Unit
+	public fun resizeTo(width: Number, height: Number): Unit
+	public fun resizeBy(widthDelta: Number, heightDelta: Number): Unit
+	public fun getComputedStyle(element: Element, pseudoElt: String): CSSStyleDeclaration
+	public fun addEventListener(`type`: String, listener: ()->Unit, useCapture: Boolean? = null): Unit
+	public fun removeEventListener(`type`: String, listener: ()->Unit, useCapture: Boolean? = null): Unit
 
 	public val localStorage: Storage
 	public val sessionStorage: Storage
 
-	public fun webkitRequestAnimationFrame(): Number
-	public fun webkitCancelRequestAnimationFrame(): Unit
-	public fun msRequestAnimationFrame(): Number
-	public fun msCancelRequestAnimationFrame(): Unit
-	public fun oRequestAnimationFrame(): Number
-	public fun oCancelRequestAnimationFrame(): Unit
-	public fun mozRequestAnimationFrame(): Number
-	public fun mozCancelRequestAnimationFrame(): Unit
-	public fun requestAnimationFrame(): Number
-	public fun cancelRequestAnimationFrame(): Unit
-	public fun importScripts(): Unit
-	public fun openDatabase(): Database
-	public fun openDatabaseSync(): Databasempt(): Unit
-	public fun clearInterval(): Unit
-	public fun clearTimeout(): Unit
-	public fun setInterval(): Number
-	public fun setTimeout(): Number
-	public fun ScriptEngine(): String
-	public fun ScriptEngineBuildVersion(): String
-	public fun ScriptEngineMajorVersion(): String
-	public fun ScriptEngineMinorVersion(): String
-	public fun scrollTo(): Unit
-	public fun scrollBy(): Unit
-	public fun moveTo(): Unit
-	public fun moveBy(): Unit
-	public fun resizeTo(): Unit
-	public fun resizeBy(): Unit
-	public fun getComputedStyle(): CSSStyleDeclaration
-	public fun showModalDialog(): Any
-	public fun attachEvent(): Unit
-	public fun detachEvent(): Unit
-	public fun addEventListener(): Unit
-	public fun removeEventListener(): Unit
-	public fun execScript(): Unit
-	public fun CollectGarbage(): Unit
+	public fun webkitRequestAnimationFrame(callback: ()->Unit, element: Element): Number
+	public fun webkitCancelRequestAnimationFrame(callback: ()->Unit): Unit
+	public fun msRequestAnimationFrame(callback: ()->Unit): Number
+	public fun msCancelRequestAnimationFrame(callback: ()->Unit): Unit
+	public fun oRequestAnimationFrame(callback: ()->Unit): Number
+	public fun oCancelRequestAnimationFrame(callback: ()->Unit): Unit
+	public fun mozRequestAnimationFrame(callback: ()->Unit): Number
+	public fun mozCancelRequestAnimationFrame(callback: ()->Unit): Unit
+	public fun requestAnimationFrame(callback: ()->Unit, element: Element): Number
+	public fun cancelRequestAnimationFrame(callback: ()->Unit): Unit
+	public fun importScripts(urls: String? = null): Unit
+	public fun openDatabase(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: DatabaseCallback? = null): Database
+	public fun openDatabase(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: (()->Unit)? = null): Database
+	public fun openDatabaseSync(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: DatabaseCallback? = null): Database
+	public fun openDatabaseSync(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: (()->Unit)? = null): Database
 }
 
+public native val window: Window = noImpl
+
 public native trait ClipboardData {
-	public fun setData(): Boolean
-	public fun getData(): String
-	public fun clearData(): Boolean
+	public fun setData(sDataFormat: String, sData: String): Boolean
+	public fun getData(sDataFormat: String): String
+	public fun clearData(sDataFormat: String? = null): Boolean
 }
 
 public native trait Global {
-	public val window: window
+	public val window: Window
 }
 
 public native trait HTMLCollection {
 	public val length: Number
 
-	public fun item(): Node
-	public fun namedItem(): Node
+	public fun item(index: Number): Node
+	public fun namedItem(name: String): Node
 }
 
 public native trait HTMLOptionsCollection {
 	public val length: Number
 
-	public fun item(): Node
-	public fun namedItem(): Node
+	public fun item(index: Number): Node
+	public fun namedItem(name: String): Node
 }
 
 public native trait HTMLDocument : Document {
@@ -382,28 +328,22 @@ public native trait HTMLDocument : Document {
 	public val anchors: HTMLCollection
 	public var cookie: HTMLCollection
 	public var defaultView: DocumentView
-	public var activeElement: DocumentView
 	public var compatMode: String
-	public var parentWindow: window
 	public var commandDispatcher: CommandDispatcher
-	public var documentMode: Number
 	public var onload: ()->Unit
 	public var onunload: ()->Unit
 
 	public fun open(): Unit
 	public fun close(): Unit
-	public fun write(): Unit
-	public fun writeln(): Unit
-	public fun getElementsByName(): NodeList
-	public fun getElementsByClassName(): NodeList
-	public fun createStyleSheet(): Stylesheet
-	public fun getBoxObjectFor(): Node
-	public fun querySelectorAll(): NodeList
-	public fun querySelector(): Node
-	public fun getAnonymousNodes(): Array<Node>
-	public fun getAnonymousElementByAttribute(): NodeList
-	public fun elementFromPoint(): HTMLElement
-	public fun createEventObject(): Event
+	public fun write(text: String): Unit
+	public fun writeln(text: String): Unit
+	public fun getElementsByName(elementName: String): NodeList
+	public fun getElementsByClassName(className: String): NodeList
+	public fun getBoxObjectFor(element: HTMLElement): Node
+	public fun querySelectorAll(String: String): NodeList
+	public fun querySelector(String: String): Node
+	public fun getAnonymousNodes(node: HTMLElement): Array<Node>
+	public fun getAnonymousElementByAttribute(node: HTMLElement, attrName: String, attrValue: String): NodeList
 }
 
 public native trait CommandDispatcher {
@@ -413,12 +353,12 @@ public native trait CommandDispatcher {
 public native trait AbstractView {
 }
 
-public native trait DocumentView : AbstractView {
-	public fun getComputedStyle(): CssStyle
+public native trait DocumentView : html.AbstractView {
+	public fun getComputedStyle(element: Node, `type`: String): CssStyle
 }
 
 public native trait CssStyle {
-	public fun getPropertyValue(): String
+	public fun getPropertyValue(propertyName: String): String
 }
 
 public native trait HTMLElement : Element {
@@ -427,14 +367,12 @@ public native trait HTMLElement : Element {
 	public var lang: String
 	public var dir: String
 	public var className: String
-	public var children: Array<HTMLElement>
 	public var style: CSSStyleDeclaration
 	public var clientWidth: Number
 	public var clientHeight: Number
 	public var clientTop: Number
 	public var clientLeft: Number
 	public var innerHTML: String
-	public var innerText: String
 	public var offsetWidth: Number
 	public var offsetHeight: Number
 	public var offsetTop: Number
@@ -445,7 +383,6 @@ public native trait HTMLElement : Element {
 	public var scrollTop: Number
 	public var scrollLeft: Number
 	public var stylesheet: Stylesheet
-	public val sourceIndex: Number
 	public var onblur: ()->Unit
 	public var onclick: ()->Unit
 	public var ondblclick: ()->Unit
@@ -458,41 +395,75 @@ public native trait HTMLElement : Element {
 	public var onmouseover: ()->Unit
 	public var onmousemove: ()->Unit
 	public var onresize: ()->Unit
-	public var currentStyle: IEElementStyle
-	public var runtimeStyle: IEElementStyle
-	public var filters: Array<Any>
 	public var boxObject: HTMLElement
-	public var propertyName: String
-	public var isDisabled: Boolean
 
-	public fun insertAdjacentHTML(): Unit
-	public fun doScroll(): Unit
-	public fun insertAdjacentText(): Unit
-	public fun attachEvent(): Unit
-	public fun detachEvent(): Unit
-	public fun fireEvent(): Unit
-	public fun addBehavior(): Number
-	public fun removeBehavior(): Boolean
-	public fun getBoundingClientRect(): TextRange
 	public fun showPopup(): Unit
 	public fun hidePopup(): Unit
-	public fun setCapture(): Unit
-	public fun releaseCapture(): Unit
-	public fun clearAttributes(): Unit
-	public fun mergeAttributes(): Unit
 }
 
 public native trait CSSStyleDeclaration {
 	public var cssText: String
-	public var length: Number
+	public var length: Int
 	public var parentRule: CSSRule
 
-	public fun getPropertyCSSValue(): CSSValue
-	public fun getPropertyPriority(): String
-	public fun getPropertyValue(): String
-	public fun item(): String
-	public fun removeProperty(): String
-	public fun setProperty(): Unit
+	public fun getPropertyCSSValue(propertyName: String): CSSValue
+	public fun getPropertyPriority(propertyName: String): String
+	public fun getPropertyValue(propertyName: String): String
+	public fun item(index: Number): String
+	public fun removeProperty(propertyName: String): String
+	public fun setProperty(propertyName: String, value: String, priority: String): Unit
+}
+
+public native trait CSSRule {
+	public class object {
+		public val STYLE_RULE: Int = 1
+		public val MEDIA_RULE: Int = 4
+		public val FONT_FACE_RULE: Int = 5
+		public val PAGE_RULE: Int = 6
+		public val IMPORT_RULE: Int = 3
+		public val CHARSET_RULE: Int = 2
+		public val UNKNOWN_RULE: Int = 0
+		public val KEYFRAMES_RULE: Int = 7
+		public val KEYFRAME_RULE: Int = 8
+		public val NAMESPACE_RULE: Int = 10
+		public val COUNTER_STYLE_RULE: Int = 11
+		public val SUPPORTS_RULE: Int = 12
+		public val DOCUMENT_RULE: Int = 13
+		public val FONT_FEATURE_VALUES_RULE: Int = 14
+		public val VIEWPORT_RULE: Int = 15
+		public val REGION_STYLE_RULE: Int = 16
+	}
+
+	public var cssText: String
+	public var parentRule: CSSRule
+	public var parentStyleSheet: CSSStyleSheet
+	public var `type`: Int
+}
+
+public native trait CSSValue {
+	public class object {
+		public val CSS_INHERIT: Int = 0
+		public val CSS_PRIMITIVE_VALUE: Int = 1
+		public val CSS_VALUE_LIST: Int = 2
+		public val CSS_CUSTOM: Int = 3
+	}
+
+	public var cssText: String
+	public var cssValueType: Int
+}
+
+public native trait CSSStyleSheet {
+	public val cssRules: Array<CSSRule>
+	public val ownerRule: CSSImportRule?
+
+	public fun insertRule(rule: String, index: Int): Unit
+	public fun deleteRule(index: Int): Unit
+}
+
+public native trait CSSImportRule {
+	public var href: String
+	public var media: Any
+	public var styleSheet: CSSStyleSheet
 }
 
 public native trait IEElementStyle : CSSStyleDeclaration {
@@ -544,7 +515,6 @@ public native trait HTMLStyleElement : HTMLElement {
 	public var disabled: Boolean
 	public var media: String
 	public var `type`: String
-	public var styleSheet: Stylesheet
 }
 
 public native trait HTMLBodyElement : HTMLElement {
@@ -585,8 +555,8 @@ public native trait HTMLSelectElement : HTMLElement {
 	public var size: Number
 	public var tabIndex: Number
 
-	public fun add(): Unit
-	public fun remove(): Unit
+	public fun add(element: HTMLElement, before: HTMLElement): Unit
+	public fun remove(index: Number): Unit
 	public fun blur(): Unit
 	public fun focus(): Unit
 }
@@ -612,9 +582,7 @@ public native trait HTMLInputElement : HTMLElement {
 	public var defaultChecked: Boolean
 	public val form: HTMLFormElement
 	public var accept: String
-	public var accessKey: S
-
-	public val files: FileListtring
+	public var accessKey: String
 	public var align: String
 	public var alt: String
 	public var checked: Boolean
@@ -635,8 +603,9 @@ public native trait HTMLInputElement : HTMLElement {
 	public fun focus(): Unit
 	public fun select(): Unit
 	public fun click(): Unit
-	public fun setSelectionRange(): Unit
-	public fun createTextRange(): TextRange
+	public fun setSelectionRange(start: Number? = null, end: Number? = null): Unit
+
+	public val files: FileList
 }
 
 public native trait HTMLTextAreaElement : HTMLElement {
@@ -759,9 +728,7 @@ public native trait HTMLModElement : HTMLElement {
 	public var dateTime: String
 }
 
-public native trait HTMLAnchorElement : HTML
-
-	public var crossOrigin: StringElement {
+public native trait HTMLAnchorElement : HTMLElement {
 	public var accessKey: String
 	public var charset: String
 	public var coords: String
@@ -794,6 +761,8 @@ public native trait HTMLImageElement : HTMLElement {
 	public var width: Number
 	public var onload: ()->Unit
 	public var onunload: ()->Unit
+
+	public var crossOrigin: String
 }
 
 public native trait HTMLObjectElement : HTMLElement {
@@ -834,7 +803,7 @@ public native trait HTMLAppletElement : HTMLElement {
 	public var height: String
 	public var hspace: Number
 	public var name: String
-	public var object: String
+	public var `object`: String
 	public var vspace: Number
 	public var width: String
 }
@@ -887,8 +856,8 @@ public native trait HTMLTableElement : HTMLElement {
 	public fun deleteTFoot(): Unit
 	public fun createCaption(): HTMLElement
 	public fun deleteCaption(): Unit
-	public fun insertRow(): HTMLElement
-	public fun deleteRow(): Unit
+	public fun insertRow(index: Number): HTMLElement
+	public fun deleteRow(index: Number): Unit
 }
 
 public native trait HTMLTableCaptionElement : HTMLElement {
@@ -911,8 +880,8 @@ public native trait HTMLTableSectionElement : HTMLElement {
 	public var vAlign: String
 	public val rows: HTMLCollection
 
-	public fun insertRow(): HTMLElement
-	public fun deleteRow(): Unit
+	public fun insertRow(index: Number): HTMLElement
+	public fun deleteRow(index: Number): Unit
 }
 
 public native trait HTMLTableRowElement : HTMLElement {
@@ -925,8 +894,8 @@ public native trait HTMLTableRowElement : HTMLElement {
 	public var chOff: String
 	public var vAlign: String
 
-	public fun insertCell(): HTMLElement
-	public fun deleteCell(): Unit
+	public fun insertCell(index: Number): HTMLElement
+	public fun deleteCell(index: Number): Unit
 }
 
 public native trait HTMLTableCellElement : HTMLElement {
@@ -976,119 +945,20 @@ public native trait HTMLIFrameElement : HTMLElement {
 	public var src: String
 	public var width: String
 	public val contentDocument: Document
-	public val contentWindow: window
-}
-
-public native trait EventTarget {
-	public fun addEventListener(): Unit
-	public fun removeEventListener(): Unit
-	public fun dispatchEvent(): Boolean
-	public fun addEventListenerNS(): Unit
-	public fun removeEventListenerNS(): Unit
-	public fun willTriggerNS(): Boolean
-	public fun hasEventListenerNS(): Boolean
-}
-
-public native trait EventListener {
-	public fun handleEvent(): Unit
-}
-
-public native trait EventException {
-	public var code: Number
-}
-
-public native trait DocumentEvent {
-	public fun createEvent(): Event
-	public fun canDispatch(): String
-}
-
-public native trait CustomEvent : Event {
-	public fun setDispatchState(): Unit
-	public fun isPropagationStopped(): Boolean
-	public fun isImmediatePropagationStopped(): Boolean
-}
-
-public native trait UIEvent : Event {
-	public val view: AbstractView
-	public val detail: Long
-
-	public fun initUIEvent(): Unit
-	public fun initUIEventNS(): Unit
-}
-
-public native trait TextEvent : UIEvent {
-	public val data: String
-
-	public fun initTextEvent(): Unit
-	public fun initTextEventNS(): Unit
-}
-
-public native trait MouseEvent : UIEvent {
-	public val screenX: Long
-	public val screenY: Long
-	public val clientX: Long
-	public val clientY: Long
-	public val ctrlKey: Boolean
-	public val shiftKey: Boolean
-	public val altKey: Boolean
-	public val metaKey: Boolean
-	public val button: Number
-	public val relatedTarget: EventTarget
-
-	public fun getModifierState(): Boolean
-	public fun initMouseEvent(): Unit
-	public fun initMouseEventNS(): Unit
-}
-
-public native trait KeyboardEvent : UIEvent {
-	public val keyIdentifier: String
-	public val keyLocation: Number
-	public val ctrlKey: Boolean
-	public val shiftKey: Boolean
-	public val altKey: Boolean
-	public val metaKey: Boolean
-
-	public fun getModifierState(): Boolean
-	public fun initKeyboardEvent(): Unit
-	public fun initKeyboardEventNS(): Unit
-}
-
-public native trait MutationEvent : UIEvent {
-	public class object {
-		public val MODIFICATION: Int = 1
-		public val ADDITION: Int = 2
-		public val REMOVAL: Int = 3
-	}
-
-	public val relatedNode: Node
-	public val prevValue: String
-	public val newValue: String
-	public val attrName: String
-	public val attrChange: Number
-
-	public fun initMutationEvent(): Unit
-	public fun initMutationEventNS(): Unit
-}
-
-public native trait MutationNameEvent : MutationEvent {
-	public val prevNamespaceURI: String
-	public val prevNodeName: String
-
-	public fun initMutationNameEvent(): Unit
-	public fun initMutationNameEventNS(): Unit
+	public val contentWindow: Window
 }
 
 public native trait Blob {
 	public val size: Long
 	public val `type`: String
 
-	public fun slice(): Blob
+	public fun slice(start: Long? = null, end: Long? = null, contentType: String? = null): Blob
 }
 
 public native trait FileList {
 	public val length: Int
 
-	public fun item(): File
+	public fun item(item: Int? = null): File
 }
 
 public native trait File : Blob {
@@ -1097,12 +967,15 @@ public native trait File : Blob {
 }
 
 public native trait FileReader : EventTarget {
-	public val EMPTY: Number = 0
-	public val LOADING: Number = 1
-	public val DONE: Number = 2
-	public val readyState: Number
+	public class object {
+		public val EMPTY: Int = 0
+		public val LOADING: Int = 1
+		public val DONE: Int = 2
+	}
+
+	public val readyState: Int
 	public val result: Any
-	public val error: Error
+	public val error: java.lang.Exception
 	public var onloadstart: ()->Unit
 	public var onprogress: ()->Unit
 	public var onload: ()->Unit
@@ -1110,10 +983,10 @@ public native trait FileReader : EventTarget {
 	public var onerror: ()->Unit
 	public var onloadend: ()->Unit
 
-	public fun readAsArrayBuffer(): Unit
-	public fun readAsBinaryString(): Unit
-	public fun readAsText(): Unit
-	public fun readAsDataURL(): Unit
+	public fun readAsArrayBuffer(blob: Blob? = null): Unit
+	public fun readAsBinaryString(blob: Blob? = null): Unit
+	public fun readAsText(blob: Blob? = null, encoding: String? = null): Unit
+	public fun readAsDataURL(blob: Blob? = null): Unit
 	public fun abort(): Unit
 }
 
@@ -1128,14 +1001,14 @@ public native trait DOMStringMap {
 public native trait DOMTokenList {
 	public val length: Number
 
-	public fun contains(): Boolean
-	public fun add(): Unit
-	public fun remove(): Unit
-	public fun toggle(): Unit
+	public fun contains(className: String): Boolean
+	public fun add(className: String): Unit
+	public fun remove(className: String): Unit
+	public fun toggle(className: String): Unit
 }
 
 public native trait DatabaseCallback {
-	public fun handleEvent(): Unit
+	public fun handleEvent(database: Database): Unit
 }
 
 public native trait Notification : EventTarget {
@@ -1147,31 +1020,28 @@ public native trait Notification : EventTarget {
 	public fun cancel(): Unit
 }
 
-public native trait MediaError {
-
-	public val MEDIA_ERR_ABORTED: Number = 1
-	public val MEDIA_ERR_NETWORK: Number = 2
-	public val MEDIA_ERR_DECODE: Number = 3
-	public val MEDIA_ERR_SRC_NOT_SUPPORTED: Number = 4
-	public val code: Number
+public native trait HtmlElement {
 }
 
 public native trait HTMLMediaElement : HTMLElement {
+	public class object {
+		public val HAVE_NOTHING: Number = 0
+		public val HAVE_METADATA: Number = 1
+		public val HAVE_CURRENT_DATA: Number = 2
+		public val HAVE_FUTURE_DATA: Number = 3
+		public val HAVE_ENOUGH_DATA: Number = 4
+		public val NETWORK_EMPTY: Number = 0
+		public val NETWORK_IDLE: Number = 1
+		public val NETWORK_LOADING: Number = 2
+		public val NETWORK_NO_SOURCE: Number = 3
+	}
+
 	public val error: MediaError
 	public var src: String
 	public val currentSrc: String
-	public val NETWORK_EMPTY: Number = 0
-	public val NETWORK_IDLE: Number = 1
-	public val NETWORK_LOADING: Number = 2
-	public val NETWORK_NO_SOURCE: Number = 3
 	public val networkState: Number
 	public var preload: String
 	public val buffered: TimeRanges
-	public val HAVE_NOTHING: Number = 0
-	public val HAVE_METADATA: Number = 1
-	public val HAVE_CURRENT_DATA: Number = 2
-	public val HAVE_FUTURE_DATA: Number = 3
-	public val HAVE_ENOUGH_DATA: Number = 4
 	public val readyState: Number
 	public val seeking: Boolean
 	public var currentTime: Number
@@ -1191,34 +1061,48 @@ public native trait HTMLMediaElement : HTMLElement {
 	public val tracks: Array<Any>
 
 	public fun load(): Unit
-	public fun canPlayType(): String
+	public fun canPlayType(`type`: String): String
 	public fun play(): Unit
 	public fun pause(): Unit
-	public fun addTrack(): MutableTimedTrack
+	public fun addTrack(label: String, kind: String, language: String): MutableTimedTrack
+}
+
+public native trait MediaError {
+	public class object {
+		public val MEDIA_ERR_ABORTED: Int = 1
+		public val MEDIA_ERR_NETWORK: Int = 2
+		public val MEDIA_ERR_DECODE: Int = 3
+		public val MEDIA_ERR_SRC_NOT_SUPPORTED: Int = 4
+	}
+
+	public val code: Int
 }
 
 public native trait TimeRanges {
-	public val length: Number
+	public val length: Int
 
-	public fun start(): Number
-	public fun end(): Number
+	public fun start(index: Int): Int
+	public fun end(index: Int): Int
 }
 
 public native trait TimedTrack {
+	public class object {
+		public val NONE: Int = 0
+		public val LOADING: Int = 1
+		public val LOADED: Int = 2
+		public val ERROR: Int = 3
+		public val OFF: Int = 0
+		public val HIDDEN: Int = 1
+		public val SHOWING: Int = 2
+	}
+
 	public val kind: String
 	public val label: String
 	public val language: String
-	public val NONE: Number = 0
-	public val LOADING: Number = 1
-	public val LOADED: Number = 2
-	public val ERROR: Number = 3
-	public val readyState: Number
+	public val readyState: Int
 	public val onload: ()->Unit
 	public val onerror: ()->Unit
-	public val OFF: Number = 0
-	public val HIDDEN: Number = 1
-	public val SHOWING: Number = 2
-	public var mode: Number
+	public var mode: Int
 	public val cues: TimedTrackCueList
 	public val activeCues: TimedTrackCueList
 	public val onentercue: ()->Unit
@@ -1226,8 +1110,8 @@ public native trait TimedTrack {
 }
 
 public native trait MutableTimedTrack : TimedTrack {
-	public fun addCue(): Unit
-	public fun removeCue(): Unit
+	public fun addCue(cue: TimedTrackCue): Unit
+	public fun removeCue(cue: TimedTrackCue): Unit
 }
 
 public native trait TimedTrackCue {
@@ -1246,13 +1130,13 @@ public native trait TimedTrackCue {
 
 	public fun getCueAsSource(): String
 	public fun getCueAsHTML(): DocumentFragment
-	public fun TimedTrackCue(): TimedTrackCue
+	public fun TimedTrackCue(id: String, startTime: Number, endTime: Number, settings: String, text: String, pauseOnExit: Boolean? = null): TimedTrackCue
 }
 
 public native trait TimedTrackCueList {
 	public val length: Number
 
-	public fun getCueById(): TimedTrackCue
+	public fun getCueById(id: String): TimedTrackCue
 }
 
 public native trait HTMLVideoElement : HTMLMediaElement {
@@ -1266,9 +1150,14 @@ public native trait HTMLVideoElement : HTMLMediaElement {
 public native trait Database {
 	public val version: String
 
-	public fun transaction(): Unit
-	public fun readTransaction(): Unit
-	public fun changeVersion(): Unit
+	public fun transaction(callback: SQLTransactionCallback, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun transaction(callback: SQLTransactionSyncCallback, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun transaction(callback: ()->Unit, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun readTransaction(callback: SQLTransactionCallback, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun readTransaction(callback: SQLTransactionSyncCallback, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun readTransaction(callback: ()->Unit, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun changeVersion(oldVersion: String, newVersion: String, callback: SQLTransactionCallback? = null, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun changeVersion(oldVersion: String, newVersion: String, callback: (()->Unit)? = null, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
 }
 
 public native trait SQLVoidCallback {
@@ -1276,31 +1165,31 @@ public native trait SQLVoidCallback {
 }
 
 public native trait SQLTransactionCallback {
-	public fun handleEvent(): Unit
+	public fun handleEvent(transaction: SQLTransaction? = null): Unit
 }
 
 public native trait SQLTransactionErrorCallback {
-	public fun handleEvent(): Unit
+	public fun handleEvent(error: SQLError? = null): Unit
 }
 
 public native trait SQLTransaction {
-	public fun executeSql(): Unit
+	public fun executeSql(sqlStatement: String, arguments: Array<Any>? = null, callback: SQLStatementCallback? = null, errorCallback: SQLStatementErrorCallback? = null): Unit
 }
 
 public native trait SQLStatementCallback {
-	public fun handleEvent(): Unit
+	public fun handleEvent(transaction: SQLTransaction? = null, resultSet: SQLResultSet? = null): Unit
 }
 
 public native trait SQLStatementErrorCallback {
-	public fun handleEvent(): Boolean
+	public fun handleEvent(transaction: SQLTransaction? = null, error: SQLError? = null): Boolean
 }
 
 public native trait SQLTransactionSyncCallback {
-	public fun handleEvent(): Unit
+	public fun handleEvent(transaction: SQLTransactionSync? = null): Unit
 }
 
 public native trait SQLTransactionSync {
-	public fun executeSql(): SQLResultSet
+	public fun executeSql(sqlStatement: String, arguments: Array<Any>? = null): SQLResultSet
 }
 
 public native trait SQLResultSet {
@@ -1310,51 +1199,63 @@ public native trait SQLResultSet {
 }
 
 public native trait SQLResultSetRowList {
-	public val length: Number
+	public val length: Int
 
-	public fun item(): Unit
+	public fun item(index: Int): Unit
 }
 
 public native trait SQLError {
-	public val UNKNOWN_ERR: Number = 0
-	public val DATABASE_ERR: Number = 1
-	public val VERSION_ERR: Number = 2
-	public val TOO_LARGE_ERR: Number = 3
-	public val QUOTA_ERR: Number = 4
-	public val SYNTAX_ERR: Number = 5
-	public val CONSTRAINT_ERR: Number = 6
-	public val TIMEOUT_ERR: Number = 7
-	public val code: Number
+	public class object {
+		public val UNKNOWN_ERR: Int = 0
+		public val DATABASE_ERR: Int = 1
+		public val VERSION_ERR: Int = 2
+		public val TOO_LARGE_ERR: Int = 3
+		public val QUOTA_ERR: Int = 4
+		public val SYNTAX_ERR: Int = 5
+		public val CONSTRAINT_ERR: Int = 6
+		public val TIMEOUT_ERR: Int = 7
+	}
+
+	public val code: Int
 	public val message: String
 }
 
 public native trait MessageEvent : Event {
-	public val data: String
 	public val origin: String
 	public val lastEventId: String
 	public val source: Window
-	public val ports: MessagePortArray
 }
 
-public native trait SQLException : Error {
-	public val UNKNOWN_ERR: Number = 0
-	public val DATABASE_ERR: Number = 1
-	public val VERSION_ERR: Number = 2
-	public val TOO_LARGE_ERR: Number = 3
-	public val QUOTA_ERR: Number = 4
-	public val SYNTAX_ERR: Number = 5
-	public val CONSTRAINT_ERR: Number = 6
-	public val TIMEOUT_ERR: Number = 7
-	public val code: Number
+public native trait SQLException : java.lang.Exception {
+	public class object {
+		public val UNKNOWN_ERR: Int = 0
+		public val DATABASE_ERR: Int = 1
+		public val VERSION_ERR: Int = 2
+		public val TOO_LARGE_ERR: Int = 3
+		public val QUOTA_ERR: Int = 4
+		public val SYNTAX_ERR: Int = 5
+		public val CONSTRAINT_ERR: Int = 6
+		public val TIMEOUT_ERR: Int = 7
+	}
+
+	public val code: Int
 	public val message: String
 }
 
 public native trait HTMLCanvasElement : HtmlElement {
-	public var width: Number
-	public var height: Number
+	public var width: Long
+	public var height: Long
 
-	public fun getContext(): CanvasRenderingContext2D
-	public fun toDataURL(): String
+	public fun getContext(contextId: String, args: Any? = null): CanvasRenderingContext2D
+	public fun toDataURL(String: String? = null, args: Any? = null): String
+}
+
+public native trait CanvasPattern {
+	public fun setTransform(transform: SVGMatrix? = null): Unit
+}
+
+public native trait SVGMatrix {
+	public fun inverse(): Unit
 }
 
 public native trait CanvasRenderingContext2D {
@@ -1377,42 +1278,45 @@ public native trait CanvasRenderingContext2D {
 
 	public fun save(): Unit
 	public fun restore(): Unit
-	public fun scale(): Unit
-	public fun rotate(): Unit
-	public fun translate(): Unit
-	public fun transform(): Unit
-	public fun setTransform(): Unit
-	public fun createLinearGradient(): CanvasGradient
-	public fun createRadialGradient(): CanvasGradient
-	public fun createPattern(): CanvasPattern
-	public fun clearRect(): Unit
-	public fun fillRect(): Unit
-	public fun strokeRect(): Unit
+	public fun scale(x: Number, y: Number): Unit
+	public fun rotate(angle: Number): Unit
+	public fun translate(x: Number, y: Number): Unit
+	public fun transform(m11: Number, m12: Number, m21: Number, m22: Number, dx: Number, dy: Number): Unit
+	public fun setTransform(m11: Number, m12: Number, m21: Number, m22: Number, dx: Number, dy: Number): Unit
+	public fun createLinearGradient(x0: Number, y0: Number, x1: Number, y1: Number): CanvasGradient
+	public fun createRadialGradient(x0: Number, y0: Number, r0: Number, x1: Number, y1: Number, r1: Number): CanvasGradient
+	public fun createPattern(image: HTMLImageElement, repetition: String): CanvasPattern
+	public fun createPattern(image: HTMLCanvasElement, repetition: String): CanvasPattern
+	public fun createPattern(image: HTMLVideoElement, repetition: String): CanvasPattern
+	public fun clearRect(x: Number, y: Number, w: Number, h: Number): Unit
+	public fun fillRect(x: Number, y: Number, w: Number, h: Number): Unit
+	public fun strokeRect(x: Number, y: Number, w: Number, h: Number): Unit
 	public fun beginPath(): Unit
 	public fun closePath(): Unit
-	public fun moveTo(): Unit
-	public fun lineTo(): Unit
-	public fun quadraticCurveTo(): Unit
-	public fun bezierCurveTo(): Unit
-	public fun arcTo(): Unit
-	public fun rect(): Unit
-	public fun arc(): Unit
+	public fun moveTo(x: Number, y: Number): Unit
+	public fun lineTo(x: Number, y: Number): Unit
+	public fun quadraticCurveTo(cpx: Number, cpy: Number, x: Number, y: Number): Unit
+	public fun bezierCurveTo(cp1x: Number, cp1y: Number, cp2x: Number, cp2y: Number, x: Number, y: Number): Unit
+	public fun arcTo(x1: Number, y1: Number, x2: Number, y2: Number, radius: Number): Unit
+	public fun rect(x: Number, y: Number, w: Number, h: Number): Unit
+	public fun arc(x: Number, y: Number, radius: Number, startAngle: Number, endAngle: Number, anticlockwise: Boolean): Unit
 	public fun fill(): Unit
 	public fun stroke(): Unit
 	public fun clip(): Unit
-	public fun isPointInPath(): Boolean
-	public fun drawFocusRing(): Unit
-	public fun fillText(): Unit
-	public fun strokeText(): Unit
-	public fun measureText(): TextMetrics
-	public fun drawImage(): Unit
-	public fun createImageData(): ImageData
-	public fun getImageData(): ImageData
-	public fun putImageData(): Unit
+	public fun isPointInPath(x: Number, y: Number): Boolean
+	public fun drawFocusRing(element: Element, xCaret: Number, yCaret: Number, canDrawCustom: Boolean? = null): Unit
+	public fun fillText(text: String, x: Number, y: Number, maxWidth: Number? = null): Unit
+	public fun strokeText(text: String, x: Number, y: Number, maxWidth: Number? = null): Unit
+	public fun measureText(text: String): TextMetrics
+	public fun drawImage(img_elem: Element, dx_or_sx: Number, dy_or_sy: Number, dw_or_sw: Number? = null, dh_or_sh: Number? = null, dx: Number? = null, dy: Number? = null, dw: Number? = null, dh: Number? = null): Unit
+	public fun createImageData(imagedata_or_sw: ImageData, sh: Number? = null): ImageData
+	public fun createImageData(imagedata_or_sw: Number, sh: Number? = null): ImageData
+	public fun getImageData(sx: Number, sy: Number, sw: Number, sh: Number): ImageData
+	public fun putImageData(image_data: ImageData, dx: Number, dy: Number, dirtyX: Number? = null, dirtyY: Number? = null, dirtyWidth: Number? = null, dirtyHeight: Number? = null): Unit
 }
 
 public native trait CanvasGradient {
-	public fun addColorStop(): Unit
+	public fun addColorStop(offset: Number, color: String): Unit
 }
 
 public native trait ImageData {
@@ -1440,7 +1344,7 @@ public native trait Worker : AbstractWorker {
 	public var onmessage: ()->Unit
 
 	public fun terminate(): Unit
-	public fun postMessage(): Unit
+	public fun postMessage(message: Any, ports: Array<Any>? = null): Unit
 }
 
 public native trait SharedWorker : AbstractWorker {
@@ -1448,12 +1352,12 @@ public native trait SharedWorker : AbstractWorker {
 }
 
 public native trait Storage {
-	public val length: Number
+	public val length: Long
 
-	public fun key(): String
-	public fun getItem(): Unit
-	public fun setItem(): Unit
-	public fun removeItem(): Unit
+	public fun key(index: Long): String
+	public fun getItem(key: String): Unit
+	public fun setItem(key: String, data: String): Unit
+	public fun removeItem(key: String): Unit
 	public fun clear(): Unit
 }
 
@@ -1473,7 +1377,7 @@ public native trait WebSocket {
 	public var onerror: ()->Unit
 	public var onclose: ()->Unit
 
-	public fun send(): Boolean
+	public fun send(data: String): Boolean
 	public fun close(): Unit
 }
 
@@ -1487,7 +1391,7 @@ public native trait DataView {
 	public val byteOffset: Long
 	public val byteLength: Long
 
-	public fun getInt8(): Byte
+	public fun getInt8(byteOffset: Long? = null): Byte
 }
 
 public native trait ArrayBufferView {
@@ -1504,8 +1408,8 @@ public native trait Int8Array : ArrayBufferView {
 
 	public val length: Unit
 
-	public fun set(): Unit
-	public fun subarray(): Int8Array
+	public fun set(array: Int8Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Int8Array
 }
 
 public native trait Uint8Array : ArrayBufferView {
@@ -1515,8 +1419,8 @@ public native trait Uint8Array : ArrayBufferView {
 
 	public val length: Long
 
-	public fun set(): Unit
-	public fun subarray(): Uint8Array
+	public fun set(array: Uint8Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Uint8Array
 }
 
 public native trait Int16Array : ArrayBufferView {
@@ -1526,8 +1430,8 @@ public native trait Int16Array : ArrayBufferView {
 
 	public val length: Long
 
-	public fun set(): Unit
-	public fun subarray(): Int16Array
+	public fun set(array: Int16Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Int16Array
 }
 
 public native trait Uint16Array : ArrayBufferView {
@@ -1537,8 +1441,8 @@ public native trait Uint16Array : ArrayBufferView {
 
 	public val length: Long
 
-	public fun set(): Unit
-	public fun subarray(): Uint16Array
+	public fun set(array: Uint16Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Uint16Array
 }
 
 public native trait Int32Array : ArrayBufferView {
@@ -1548,8 +1452,8 @@ public native trait Int32Array : ArrayBufferView {
 
 	public val length: Long
 
-	public fun set(): Unit
-	public fun subarray(): Int32Array
+	public fun set(array: Int32Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Int32Array
 }
 
 public native trait Uint32Array : ArrayBufferView {
@@ -1559,8 +1463,8 @@ public native trait Uint32Array : ArrayBufferView {
 
 	public val length: Long
 
-	public fun set(): Unit
-	public fun subarray(): Uint32Array
+	public fun set(array: Uint32Array, offset: Number? = null): Unit
+	public fun subarray(begin: Number, end: Number? = null): Uint32Array
 }
 
 public native trait Float32Array : ArrayBufferView {
@@ -1570,8 +1474,8 @@ public native trait Float32Array : ArrayBufferView {
 
 	public val length: Long
 
-	public fun set(): Unit
-	public fun subarray(): Float32Array
+	public fun set(array: Float32Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Float32Array
 }
 
 public native trait Float64Array : ArrayBufferView {
@@ -1581,14 +1485,14 @@ public native trait Float64Array : ArrayBufferView {
 
 	public val length: Long
 
-	public fun set(): Unit
-	public fun subarray(): Float64Array
+	public fun set(array: Float64Array, offset: Number? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Float64Array
 }
 
 public native trait Geolocation {
-	public fun getCurrentPosition(): Unit
-	public fun watchPosition(): Number
-	public fun clearWatch(): Unit
+	public fun getCurrentPosition(successCallback: ()->Unit, errorCallback: (()->Unit)? = null, options: Any? = null): Unit
+	public fun watchPosition(successCallback: ()->Unit, errorCallback: (()->Unit)? = null, options: Any? = null): Number
+	public fun clearWatch(watchId: Number? = null): Unit
 }
 
 public native trait PositionOptions {
@@ -1629,5 +1533,5 @@ public native trait XMLHttpRequest {
 }
 
 public native trait FormData {
-	public fun append(): Unit
+	public fun append(name: String, value: Any): Unit
 }

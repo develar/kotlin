@@ -1,8 +1,5 @@
 package java.lang
 
-import java.io.IOException
-import js.library
-
 library("Error")
 native open public class Exception(message: String? = null): Throwable() {}
 
