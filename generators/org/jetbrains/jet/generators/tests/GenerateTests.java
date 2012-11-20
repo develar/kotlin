@@ -23,9 +23,8 @@ import org.jetbrains.jet.checkers.AbstractJetPsiCheckerTest;
 import org.jetbrains.jet.codegen.AbstractDataClassCodegenTest;
 import org.jetbrains.jet.codegen.AbstractIntrinsicsTestCase;
 import org.jetbrains.jet.codegen.AbstractMultiDeclTestCase;
-import org.jetbrains.jet.codegen.extension.AbstractExtensionPropertiesTest;
 import org.jetbrains.jet.codegen.flags.AbstractWriteFlagsTest;
-import org.jetbrains.jet.codegen.labels.AbstractLabelGenTest;
+import org.jetbrains.jet.codegen.generated.AbstractCodegenTest;
 import org.jetbrains.jet.jvm.compiler.AbstractLoadCompiledKotlinTest;
 import org.jetbrains.jet.jvm.compiler.AbstractLoadJavaTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveDescriptorRendererTest;
@@ -96,14 +95,21 @@ public class GenerateTests {
         generateTest(
                 "compiler/tests/",
                 "LabelGenTestGenerated",
-                AbstractLabelGenTest.class,
+                AbstractCodegenTest.class,
                 testModel("compiler/testData/codegen/label")
         );
 
         generateTest(
                 "compiler/tests/",
+                "InstructionsTestGenerated",
+                AbstractCodegenTest.class,
+                testModel("compiler/testData/codegen/instructions")
+        );
+
+        generateTest(
+                "compiler/tests/",
                 "ExtensionPropertiesTestGenerated",
-                AbstractExtensionPropertiesTest.class,
+                AbstractCodegenTest.class,
                 testModel("compiler/testData/codegen/extensionProperties")
         );
 

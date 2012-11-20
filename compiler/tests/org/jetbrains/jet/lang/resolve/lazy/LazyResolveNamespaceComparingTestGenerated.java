@@ -726,6 +726,11 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                 doTestSinglePackage("compiler/testData/loadKotlin/type/AnyQ.kt");
             }
             
+            @TestMetadata("ArrayOfInNumber.kt")
+            public void testArrayOfInNumber() throws Exception {
+                doTestSinglePackage("compiler/testData/loadKotlin/type/ArrayOfInNumber.kt");
+            }
+            
             @TestMetadata("ArrayOfInt.kt")
             public void testArrayOfInt() throws Exception {
                 doTestSinglePackage("compiler/testData/loadKotlin/type/ArrayOfInt.kt");
@@ -734,6 +739,16 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
             @TestMetadata("ArrayOfInteger.kt")
             public void testArrayOfInteger() throws Exception {
                 doTestSinglePackage("compiler/testData/loadKotlin/type/ArrayOfInteger.kt");
+            }
+            
+            @TestMetadata("ArrayOfOutNumber.kt")
+            public void testArrayOfOutNumber() throws Exception {
+                doTestSinglePackage("compiler/testData/loadKotlin/type/ArrayOfOutNumber.kt");
+            }
+            
+            @TestMetadata("ArrayOfOutT.kt")
+            public void testArrayOfOutT() throws Exception {
+                doTestSinglePackage("compiler/testData/loadKotlin/type/ArrayOfOutT.kt");
             }
             
             @TestMetadata("ArrayOfString.kt")
@@ -1129,7 +1144,7 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
         }
         
         @TestMetadata("compiler/testData/loadJava/kotlinSignature")
-        @InnerTestClasses({KotlinSignature.Error.class})
+        @InnerTestClasses({KotlinSignature.Error.class, KotlinSignature.Propagation.class})
         public static class KotlinSignature extends AbstractLazyResolveNamespaceComparingTest {
             public void testAllFilesPresentInKotlinSignature() throws Exception {
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/kotlinSignature"), "kt", true);
@@ -1153,6 +1168,11 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
             @TestMetadata("ConstructorWithoutParams.kt")
             public void testConstructorWithoutParams() throws Exception {
                 doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/ConstructorWithoutParams.kt");
+            }
+            
+            @TestMetadata("CustomVariance.kt")
+            public void testCustomVariance() throws Exception {
+                doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/CustomVariance.kt");
             }
             
             @TestMetadata("MethodWithFunctionTypes.kt")
@@ -1328,10 +1348,154 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                 
             }
             
+            @TestMetadata("compiler/testData/loadJava/kotlinSignature/propagation")
+            @InnerTestClasses({Propagation.Return.class})
+            public static class Propagation extends AbstractLazyResolveNamespaceComparingTest {
+                public void testAllFilesPresentInPropagation() throws Exception {
+                    JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/kotlinSignature/propagation"), "kt", true);
+                }
+                
+                @TestMetadata("compiler/testData/loadJava/kotlinSignature/propagation/return")
+                public static class Return extends AbstractLazyResolveNamespaceComparingTest {
+                    @TestMetadata("AddNotNullJavaSubtype.kt")
+                    public void testAddNotNullJavaSubtype() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/AddNotNullJavaSubtype.kt");
+                    }
+                    
+                    @TestMetadata("AddNotNullSameJavaType.kt")
+                    public void testAddNotNullSameJavaType() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/AddNotNullSameJavaType.kt");
+                    }
+                    
+                    @TestMetadata("AddNullabilityJavaSubtype.kt")
+                    public void testAddNullabilityJavaSubtype() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/AddNullabilityJavaSubtype.kt");
+                    }
+                    
+                    @TestMetadata("AddNullabilitySameGenericType1.kt")
+                    public void testAddNullabilitySameGenericType1() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/AddNullabilitySameGenericType1.kt");
+                    }
+                    
+                    @TestMetadata("AddNullabilitySameGenericType2.kt")
+                    public void testAddNullabilitySameGenericType2() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/AddNullabilitySameGenericType2.kt");
+                    }
+                    
+                    @TestMetadata("AddNullabilitySameJavaType.kt")
+                    public void testAddNullabilitySameJavaType() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/AddNullabilitySameJavaType.kt");
+                    }
+                    
+                    public void testAllFilesPresentInReturn() throws Exception {
+                        JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/kotlinSignature/propagation/return"), "kt", true);
+                    }
+                    
+                    @TestMetadata("HalfSubstitutedTypeParameters.kt")
+                    public void testHalfSubstitutedTypeParameters() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/HalfSubstitutedTypeParameters.kt");
+                    }
+                    
+                    @TestMetadata("InheritNullabilityGenericSubclassSimple.kt")
+                    public void testInheritNullabilityGenericSubclassSimple() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritNullabilityGenericSubclassSimple.kt");
+                    }
+                    
+                    @TestMetadata("InheritNullabilityJavaSubtype.kt")
+                    public void testInheritNullabilityJavaSubtype() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritNullabilityJavaSubtype.kt");
+                    }
+                    
+                    @TestMetadata("InheritNullabilitySameGenericType.kt")
+                    public void testInheritNullabilitySameGenericType() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritNullabilitySameGenericType.kt");
+                    }
+                    
+                    @TestMetadata("InheritNullabilitySameJavaType.kt")
+                    public void testInheritNullabilitySameJavaType() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritNullabilitySameJavaType.kt");
+                    }
+                    
+                    @TestMetadata("InheritReadOnlinessOfArgument.kt")
+                    public void testInheritReadOnlinessOfArgument() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritReadOnlinessOfArgument.kt");
+                    }
+                    
+                    @TestMetadata("InheritReadOnlinessSameClass.kt")
+                    public void testInheritReadOnlinessSameClass() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritReadOnlinessSameClass.kt");
+                    }
+                    
+                    @TestMetadata("InheritReadOnlinessSubclass.kt")
+                    public void testInheritReadOnlinessSubclass() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritReadOnlinessSubclass.kt");
+                    }
+                    
+                    @TestMetadata("InheritVariance.kt")
+                    public void testInheritVariance() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritVariance.kt");
+                    }
+                    
+                    @TestMetadata("SameProjectionKind.kt")
+                    public void testSameProjectionKind() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/SameProjectionKind.kt");
+                    }
+                    
+                    @TestMetadata("TwoSuperclassesConflictingProjectionKinds.kt")
+                    public void testTwoSuperclassesConflictingProjectionKinds() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/TwoSuperclassesConflictingProjectionKinds.kt");
+                    }
+                    
+                    @TestMetadata("TwoSuperclassesMutableAndNot.kt")
+                    public void testTwoSuperclassesMutableAndNot() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/TwoSuperclassesMutableAndNot.kt");
+                    }
+                    
+                    @TestMetadata("TwoSuperclassesReturnJavaSubtype.kt")
+                    public void testTwoSuperclassesReturnJavaSubtype() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/TwoSuperclassesReturnJavaSubtype.kt");
+                    }
+                    
+                    @TestMetadata("TwoSuperclassesReturnSameJavaType.kt")
+                    public void testTwoSuperclassesReturnSameJavaType() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/TwoSuperclassesReturnSameJavaType.kt");
+                    }
+                    
+                    @TestMetadata("TwoSuperclassesSupplementNotNull.kt")
+                    public void testTwoSuperclassesSupplementNotNull() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/TwoSuperclassesSupplementNotNull.kt");
+                    }
+                    
+                    @TestMetadata("TypeParamOfClass.kt")
+                    public void testTypeParamOfClass() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/TypeParamOfClass.kt");
+                    }
+                    
+                    @TestMetadata("TypeParamOfClassSubstituted.kt")
+                    public void testTypeParamOfClassSubstituted() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/TypeParamOfClassSubstituted.kt");
+                    }
+                    
+                    @TestMetadata("TypeParamOfFun.kt")
+                    public void testTypeParamOfFun() throws Exception {
+                        doTestSinglePackage("compiler/testData/loadJava/kotlinSignature/propagation/return/TypeParamOfFun.kt");
+                    }
+                    
+                }
+                
+                public static Test innerSuite() {
+                    TestSuite suite = new TestSuite("Propagation");
+                    suite.addTestSuite(Propagation.class);
+                    suite.addTestSuite(Return.class);
+                    return suite;
+                }
+            }
+            
             public static Test innerSuite() {
                 TestSuite suite = new TestSuite("KotlinSignature");
                 suite.addTestSuite(KotlinSignature.class);
                 suite.addTestSuite(Error.class);
+                suite.addTest(Propagation.innerSuite());
                 return suite;
             }
         }

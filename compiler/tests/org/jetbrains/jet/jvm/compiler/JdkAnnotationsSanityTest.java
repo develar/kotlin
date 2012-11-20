@@ -38,7 +38,9 @@ import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.di.InjectorForJavaSemanticServices;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
+import org.jetbrains.jet.lang.resolve.java.JavaToKotlinClassMap;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.lang.resolve.lazy.KotlinTestWithEnvironment;
 import org.jetbrains.jet.lang.resolve.name.FqName;
@@ -46,6 +48,7 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.resolve.DescriptorRenderer;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -74,7 +77,7 @@ public class JdkAnnotationsSanityTest extends KotlinTestWithEnvironment {
         final BindingContext bindingContext = injector.getBindingTrace().getBindingContext();
         JavaDescriptorResolver javaDescriptorResolver = injector.getJavaDescriptorResolver();
 
-        final Map<DeclarationDescriptor, String> errors = Maps.newHashMap();
+        final Map<DeclarationDescriptor, List<String>> errors = Maps.newHashMap();
 
         Iterable<FqName> affectedClasses = getAffectedClasses(kotlinAnnotationsRoot);
         AlternativeSignatureErrorFindingVisitor visitor = new AlternativeSignatureErrorFindingVisitor(bindingContext, errors);
@@ -92,7 +95,7 @@ public class JdkAnnotationsSanityTest extends KotlinTestWithEnvironment {
 
         if (!errors.isEmpty()) {
             StringBuilder sb = new StringBuilder("Error(s) in JDK alternative signatures: \n");
-            for (Map.Entry<DeclarationDescriptor, String> entry : errors.entrySet()) {
+            for (Map.Entry<DeclarationDescriptor, List<String>> entry : errors.entrySet()) {
                 sb.append(DescriptorRenderer.TEXT.render(entry.getKey())).append(" : ").append(entry.getValue()).append("\n");
             }
             fail(sb.toString());
@@ -204,9 +207,9 @@ public class JdkAnnotationsSanityTest extends KotlinTestWithEnvironment {
 
     private static class AlternativeSignatureErrorFindingVisitor extends DeclarationDescriptorVisitorEmptyBodies<Void, Void> {
         private final BindingContext bindingContext;
-        private final Map<DeclarationDescriptor, String> errors;
+        private final Map<DeclarationDescriptor, List<String>> errors;
 
-        public AlternativeSignatureErrorFindingVisitor(BindingContext bindingContext, Map<DeclarationDescriptor, String> errors) {
+        public AlternativeSignatureErrorFindingVisitor(BindingContext bindingContext, Map<DeclarationDescriptor, List<String>> errors) {
             this.bindingContext = bindingContext;
             this.errors = errors;
         }
@@ -218,6 +221,11 @@ public class JdkAnnotationsSanityTest extends KotlinTestWithEnvironment {
 
         @Override
         public Void visitClassDescriptor(ClassDescriptor descriptor, Void data) {
+            // skip java.util.Collection, etc.
+            if (!JavaToKotlinClassMap.getInstance().mapPlatformClass(DescriptorUtils.getFQName(descriptor).toSafe()).isEmpty()) {
+                return null;
+            }
+
             return visitDeclarationRecursively(descriptor, descriptor.getDefaultType().getMemberScope());
         }
 
@@ -232,9 +240,9 @@ public class JdkAnnotationsSanityTest extends KotlinTestWithEnvironment {
         }
 
         private Void visitDeclaration(@NotNull DeclarationDescriptor descriptor) {
-            String error = bindingContext.get(BindingContext.ALTERNATIVE_SIGNATURE_DATA_ERROR, descriptor);
-            if (error != null) {
-                errors.put(descriptor, error);
+            List<String> errors = bindingContext.get(BindingContext.LOAD_FROM_JAVA_SIGNATURE_ERRORS, descriptor);
+            if (errors != null) {
+                this.errors.put(descriptor, errors);
             }
             return null;
         }

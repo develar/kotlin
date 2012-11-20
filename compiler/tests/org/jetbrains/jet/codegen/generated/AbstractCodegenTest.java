@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.codegen.labels;
+package org.jetbrains.jet.codegen.generated;
 
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.codegen.CodegenTestCase;
 
 import java.io.IOException;
 
-public abstract class AbstractLabelGenTest extends CodegenTestCase {
+public abstract class AbstractCodegenTest extends CodegenTestCase {
 
     private static final String REDUNDANT_PATH_PREFIX = "compiler/testData/codegen";
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_AND_ANNOTATIONS);
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
     }
 
     protected void doTest(String path) throws IOException {

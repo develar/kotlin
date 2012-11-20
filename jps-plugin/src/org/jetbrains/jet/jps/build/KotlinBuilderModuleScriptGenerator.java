@@ -50,7 +50,7 @@ public class KotlinBuilderModuleScriptGenerator {
             throws IOException
     {
         CharSequence moduleScriptText = KotlinModuleScriptGenerator.generateModuleScript(
-                target.getModule().getName(),
+                target.getId(),
                 getKotlinModuleDependencies(target),
                 sourceFiles,
                 target.isTests(),

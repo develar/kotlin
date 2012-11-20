@@ -21,12 +21,15 @@ import com.google.common.collect.Sets;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.util.PsiFormatUtil;
+import jet.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.java.*;
 import org.jetbrains.jet.lang.resolve.java.kotlinSignature.AlternativeMethodSignatureData;
+import org.jetbrains.jet.lang.resolve.java.kotlinSignature.SignaturesPropagation;
 import org.jetbrains.jet.lang.resolve.java.kt.DescriptorKindUtils;
 import org.jetbrains.jet.lang.resolve.java.provider.ClassPsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.java.provider.NamedMembers;
@@ -34,6 +37,8 @@ import org.jetbrains.jet.lang.resolve.java.provider.PsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.java.wrapper.PsiMethodWrapper;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.JetType;
+import org.jetbrains.jet.lang.types.SubstitutionUtils;
+import org.jetbrains.jet.lang.types.TypeSubstitutor;
 import org.jetbrains.jet.lang.types.TypeUtils;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
@@ -113,7 +118,7 @@ public final class JavaFunctionResolver {
             return trace.get(BindingContext.FUNCTION, psiMethod);
         }
 
-        SimpleFunctionDescriptorImpl functionDescriptorImpl = new SimpleFunctionDescriptorImpl(
+        final SimpleFunctionDescriptorImpl functionDescriptorImpl = new SimpleFunctionDescriptorImpl(
                 ownerDescriptor,
                 annotationResolver.resolveAnnotations(psiMethod),
                 Name.identifier(method.getName()),
@@ -135,6 +140,16 @@ public final class JavaFunctionResolver {
                 .resolveParameterDescriptors(functionDescriptorImpl, method.getParameters(), methodTypeVariableResolver);
         JetType returnType = makeReturnType(returnPsiType, method, methodTypeVariableResolver);
 
+        final List<String> signatureErrors = Lists.newArrayList();
+
+        returnType = SignaturesPropagation.modifyReturnTypeAccordingToSuperMethods(returnType, method, trace, new Function1<String, Void>() {
+            @Override
+            public Void invoke(String error) {
+                signatureErrors.add(error);
+                return null;
+            }
+        });
+
         // TODO consider better place for this check
         AlternativeMethodSignatureData alternativeMethodSignatureData =
                 new AlternativeMethodSignatureData(method, valueParameterDescriptors, returnType, methodTypeParameters);
@@ -144,8 +159,7 @@ public final class JavaFunctionResolver {
             methodTypeParameters = alternativeMethodSignatureData.getTypeParameters();
         }
         else if (alternativeMethodSignatureData.hasErrors()) {
-            trace.record(BindingContext.ALTERNATIVE_SIGNATURE_DATA_ERROR, functionDescriptorImpl,
-                         alternativeMethodSignatureData.getError());
+            signatureErrors.add(alternativeMethodSignatureData.getError());
         }
 
         functionDescriptorImpl.initialize(
@@ -170,7 +184,37 @@ public final class JavaFunctionResolver {
         if (containingClass != psiClass && !method.isStatic()) {
             throw new IllegalStateException("non-static method in subclass");
         }
+
+        if (signatureErrors.isEmpty()) {
+            checkFunctionsOverrideCorrectly(method, functionDescriptorImpl);
+        }
+        else {
+            trace.record(BindingContext.LOAD_FROM_JAVA_SIGNATURE_ERRORS, functionDescriptorImpl, signatureErrors);
+        }
+
         return functionDescriptorImpl;
+    }
+
+    private void checkFunctionsOverrideCorrectly(PsiMethodWrapper method, FunctionDescriptor functionDescriptor) {
+        List<FunctionDescriptor> superFunctions = SignaturesPropagation.getSuperFunctionsForMethod(method, trace);
+        for (FunctionDescriptor superFunction : superFunctions) {
+            TypeSubstitutor substitutor = SubstitutionUtils.buildDeepSubstitutor(
+                    ((ClassDescriptor) functionDescriptor.getContainingDeclaration()).getDefaultType());
+            FunctionDescriptor superFunctionSubstituted = superFunction.substitute(substitutor);
+
+            // TODO replace asserted condition when propagation for parameters is supported
+            //OverridingUtil.OverrideCompatibilityInfo.Result overridableResult =
+            //        OverridingUtil.isOverridableBy(superFunctionSubstituted, functionDescriptor).getResult();
+            //if (overridableResult != OverridingUtil.OverrideCompatibilityInfo.Result.OVERRIDABLE
+            //    || !OverridingUtil.isReturnTypeOkForOverride(JetTypeChecker.INSTANCE, superFunctionSubstituted, functionDescriptor)) {
+            if (!OverridingUtil.isReturnTypeOkForOverride(JetTypeChecker.INSTANCE, superFunctionSubstituted, functionDescriptor)) {
+                throw new IllegalStateException("Loaded Java method overrides another, but resolved as Kotlin function, doesn't.\n"
+                                                + "super function = " + superFunction + "\n"
+                                                + "this function = " + functionDescriptor + "\n"
+                                                + "this method = " + PsiFormatUtil.getExternalName(method.getPsiMethod()) + "\n"
+                                                + "@KotlinSignature = " + method.getSignatureAnnotation().signature());
+            }
+        }
     }
 
     @NotNull
@@ -179,6 +223,11 @@ public final class JavaFunctionResolver {
             NamedMembers namedMembers, Name methodName, PsiDeclarationProvider scopeData
     ) {
         final Set<FunctionDescriptor> functions = new HashSet<FunctionDescriptor>();
+
+        Set<SimpleFunctionDescriptor> functionsFromSupertypes = null;
+        if (owner instanceof ClassDescriptor) {
+            functionsFromSupertypes = getFunctionsFromSupertypes(methodName, owner);
+        }
 
         Set<SimpleFunctionDescriptor> functionsFromCurrent = Sets.newHashSet();
         for (PsiMethodWrapper method : namedMembers.getMethods()) {
@@ -190,8 +239,6 @@ public final class JavaFunctionResolver {
 
         if (owner instanceof ClassDescriptor) {
             ClassDescriptor classDescriptor = (ClassDescriptor) owner;
-
-            Set<SimpleFunctionDescriptor> functionsFromSupertypes = getFunctionsFromSupertypes(methodName, owner);
 
             OverrideResolver.generateOverridesInFunctionGroup(methodName, functionsFromSupertypes, functionsFromCurrent, classDescriptor,
                   new OverrideResolver.DescriptorSink() {
