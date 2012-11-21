@@ -16,8 +16,6 @@
 
 package org.jetbrains.jet.lang.resolve.calls;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
@@ -40,7 +38,6 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.ErrorUtils;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
@@ -53,6 +50,8 @@ import java.util.*;
 import static org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor.NO_RECEIVER_PARAMETER;
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
 import static org.jetbrains.jet.lang.resolve.BindingContext.*;
+import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveMode;
+import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveMode.RESOLVE_FUNCTION_ARGUMENTS;
 import static org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue.NO_RECEIVER;
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
 
@@ -60,14 +59,14 @@ import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
  * @author abreslav
  */
 public class CallResolver {
-    private final JetTypeChecker typeChecker = JetTypeChecker.INSTANCE;
-
     @NotNull
     private ExpressionTypingServices expressionTypingServices;
     @NotNull
     private TypeResolver typeResolver;
     @NotNull
     private CandidateResolver candidateResolver;
+    @NotNull
+    private ArgumentTypeResolver argumentTypeResolver;
 
     @Inject
     public void setExpressionTypingServices(@NotNull ExpressionTypingServices expressionTypingServices) {
@@ -82,6 +81,11 @@ public class CallResolver {
     @Inject
     public void setCandidateResolver(@NotNull CandidateResolver candidateResolver) {
         this.candidateResolver = candidateResolver;
+    }
+
+    @Inject
+    public void setArgumentTypeResolver(@NotNull ArgumentTypeResolver argumentTypeResolver) {
+        this.argumentTypeResolver = argumentTypeResolver;
     }
 
     @NotNull
@@ -341,7 +345,7 @@ public class CallResolver {
         OverloadResolutionResultsImpl<D> results = ResolutionResultsHandler.INSTANCE.computeResultAndReportErrors(
                 context.trace, tracing, candidates);
         if (!results.isSingleResult()) {
-            candidateResolver.checkTypesWithNoCallee(context);
+            argumentTypeResolver.checkTypesWithNoCallee(context, RESOLVE_FUNCTION_ARGUMENTS);
         }
         return results;
     }
@@ -369,7 +373,7 @@ public class CallResolver {
     }
 
     private <D extends CallableDescriptor> OverloadResolutionResults<D> checkArgumentTypesAndFail(BasicResolutionContext context) {
-        candidateResolver.checkTypesWithNoCallee(context);
+        argumentTypeResolver.checkTypesWithNoCallee(context);
         return OverloadResolutionResultsImpl.nameNotFound();
     }
 
@@ -403,6 +407,7 @@ public class CallResolver {
                     debugInfo.set(ResolutionDebugInfo.RESULT, results.getResultingCall());
                 }
 
+                resolveFunctionArguments(context, results);
                 return results;
             }
             if (results.getResultCode() == OverloadResolutionResults.Code.INCOMPLETE_TYPE_INFERENCE) {
@@ -420,12 +425,29 @@ public class CallResolver {
 
                 debugInfo.set(ResolutionDebugInfo.RESULT, resultsForFirstNonemptyCandidateSet.getResultingCall());
             }
+            resolveFunctionArguments(context, resultsForFirstNonemptyCandidateSet);
         }
         else {
             context.trace.report(UNRESOLVED_REFERENCE.on(reference));
-            candidateResolver.checkTypesWithNoCallee(context);
+            argumentTypeResolver.checkTypesWithNoCallee(context, RESOLVE_FUNCTION_ARGUMENTS);
         }
         return resultsForFirstNonemptyCandidateSet != null ? resultsForFirstNonemptyCandidateSet : OverloadResolutionResultsImpl.<F>nameNotFound();
+    }
+
+    private <D extends CallableDescriptor> OverloadResolutionResults<D> resolveFunctionArguments(
+            @NotNull final BasicResolutionContext context,
+            @NotNull OverloadResolutionResults<D> results
+    ) {
+        if (results.isSingleResult()) {
+            ResolvedCall<D> resolvedCall = results.getResultingCall();
+            if (resolvedCall instanceof ResolvedCallImpl) {
+                argumentTypeResolver.checkTypesForFunctionArguments(context, (ResolvedCallImpl<D>) resolvedCall);
+            }
+        }
+        else {
+            argumentTypeResolver.checkTypesForFunctionArgumentsWithNoCallee(context);
+        }
+        return results;
     }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -515,7 +537,7 @@ public class CallResolver {
         OverloadResolutionResultsImpl<F> results = ResolutionResultsHandler.INSTANCE.computeResultAndReportErrors(
                 task.trace, task.tracing, task.getResolvedCalls());
         if (!results.isSingleResult() && !results.isIncomplete()) {
-            candidateResolver.checkTypesWithNoCallee(task.toBasic());
+            argumentTypeResolver.checkTypesWithNoCallee(task.toBasic());
         }
         return results;
     }

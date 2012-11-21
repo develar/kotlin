@@ -1,4 +1,3 @@
-
 package foo
 
 class X {}
