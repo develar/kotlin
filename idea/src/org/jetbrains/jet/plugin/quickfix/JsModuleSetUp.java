@@ -109,9 +109,10 @@ public final class JsModuleSetUp {
     }
 
     private static boolean copyJsLibFiles(@NotNull File rootDir) {
-        File jsLibJarPath = PathUtil.getDefaultJsLibJarPath();
-        File jsLibJsPath = PathUtil.getDefaultJsLibJsPath();
-        if ((jsLibJarPath == null) || (jsLibJsPath == null)) {
+        KotlinPaths paths = PathUtil.getKotlinPathsForIdeaPlugin();
+        File jsLibJarPath = paths.getJsLibJarPath();
+        File jsLibJsPath = paths.getJsLibJsPath();
+        if (!jsLibJarPath.exists() || !jsLibJsPath.exists()) {
             notifyFailure("JavaScript library not found. Make sure plugin is installed properly.");
             return false;
         }

@@ -26,7 +26,10 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.psi.*;
-import org.jetbrains.jet.lang.resolve.*;
+import org.jetbrains.jet.lang.resolve.AnnotationResolver;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.DescriptorResolver;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.lazy.data.FilteringClassLikeInfo;
 import org.jetbrains.jet.lang.resolve.lazy.data.JetClassInfoUtil;
 import org.jetbrains.jet.lang.resolve.lazy.data.JetClassLikeInfo;
@@ -40,6 +43,7 @@ import org.jetbrains.jet.lang.types.TypeUtils;
 import java.util.*;
 
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassObjectName;
+import static org.jetbrains.jet.lang.resolve.ModifiersChecker.*;
 
 /**
  * @author abreslav
@@ -108,10 +112,10 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements LazyDesc
         else {
             Modality defaultModality = kind == ClassKind.TRAIT ? Modality.ABSTRACT : Modality.FINAL;
             JetModifierList modifierList = classLikeInfo.getModifierList();
-            this.modality = ModifiersChecker.resolveModalityFromModifiers(modifierList, defaultModality);
+            this.modality = resolveModalityFromModifiers(modifierList, defaultModality);
         }
         JetModifierList modifierList = classLikeInfo.getModifierList();
-        this.visibility = ModifiersChecker.resolveVisibilityFromModifiers(modifierList, Visibilities.INTERNAL);
+        this.visibility = resolveVisibilityFromModifiers(modifierList, getDefaultClassVisibility(this));
     }
 
     @Override

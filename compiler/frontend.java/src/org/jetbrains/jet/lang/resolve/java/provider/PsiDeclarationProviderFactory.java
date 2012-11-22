@@ -19,66 +19,36 @@ package org.jetbrains.jet.lang.resolve.java.provider;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiPackage;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.resolve.java.JvmAbi;
-import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.lang.resolve.name.Name;
 
 public final class PsiDeclarationProviderFactory {
     private PsiDeclarationProviderFactory() {
     }
 
     @NotNull
-    public static ClassPsiDeclarationProvider createSyntheticClassObjectClassData(
-            @NotNull PsiClass psiClass
-    ) {
+    public static ClassPsiDeclarationProvider createSyntheticClassObjectClassData(@NotNull PsiClass psiClass) {
         return createDeclarationProviderForClassStaticMembers(psiClass);
     }
 
     @NotNull
-    public static ClassPsiDeclarationProvider createBinaryClassData(
-            @NotNull PsiClass psiClass
-    ) {
+    public static ClassPsiDeclarationProvider createBinaryClassData(@NotNull PsiClass psiClass) {
         return new ClassPsiDeclarationProviderImpl(psiClass, false);
     }
 
     @NotNull
-    public static PsiDeclarationProvider createDeclarationProviderForPackage(
-            @Nullable PsiPackage psiPackage,
-            @Nullable PsiClass psiClass,
-            //TODO: remove this parameter
-            @Nullable FqName fqName
-    ) {
-        if (psiClass == null) {
-            assert psiPackage != null;
-            return createDeclarationProviderForNamespaceWithoutMembers(psiPackage);
-        }
-        if (psiPackage == null) {
-            return createDeclarationProviderForClassStaticMembers(psiClass);
-        }
-        return createDeclarationForKotlinNamespace(psiPackage, psiClass, fqName);
-    }
-
-    @NotNull
-    private static KotlinNamespacePsiDeclarationProvider createDeclarationForKotlinNamespace(
+    public static KotlinNamespacePsiDeclarationProvider createDeclarationForKotlinNamespace(
             @NotNull PsiPackage psiPackage,
-            @NotNull PsiClass psiClass,
-            @Nullable FqName fqName
+            @NotNull PsiClass psiClass
     ) {
-        KotlinNamespacePsiDeclarationProvider result = new KotlinNamespacePsiDeclarationProvider(psiPackage, psiClass);
-        if (fqName != null && fqName.lastSegmentIs(Name.identifier(JvmAbi.PACKAGE_CLASS))) {
-            throw new IllegalStateException("Kotlin namespace cannot have last segment " + JvmAbi.PACKAGE_CLASS + ": " + fqName);
-        }
-        return result;
+        return new KotlinNamespacePsiDeclarationProvider(psiPackage, psiClass);
     }
 
     @NotNull
-    /*package private*/ static PackagePsiDeclarationProvider createDeclarationProviderForNamespaceWithoutMembers(@NotNull PsiPackage psiPackage) {
+    public static PackagePsiDeclarationProvider createDeclarationProviderForNamespaceWithoutMembers(@NotNull PsiPackage psiPackage) {
         return new PackagePsiDeclarationProviderImpl(psiPackage);
     }
 
     @NotNull
-    private static ClassPsiDeclarationProvider createDeclarationProviderForClassStaticMembers(@NotNull PsiClass psiClass) {
+    public static ClassPsiDeclarationProvider createDeclarationProviderForClassStaticMembers(@NotNull PsiClass psiClass) {
         return new ClassPsiDeclarationProviderImpl(psiClass, true);
     }
 }

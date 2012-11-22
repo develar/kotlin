@@ -16,35 +16,38 @@
 
 package org.jetbrains.jet.lang.resolve.java.scope;
 
-import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.ClassOrNamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
 import org.jetbrains.jet.lang.resolve.java.JavaSemanticServices;
-import org.jetbrains.jet.lang.resolve.java.provider.ClassPsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.java.provider.PackagePsiDeclarationProvider;
-import org.jetbrains.jet.lang.resolve.java.provider.PsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
+
+import java.util.Collection;
+
+import static org.jetbrains.jet.lang.resolve.java.scope.ScopeUtils.computeAllPackageDeclarations;
 
 /**
  * @author abreslav
  */
-public class JavaPackageScope extends JavaBaseScope {
+public abstract class JavaPackageScope extends JavaBaseScope {
 
+    @NotNull
+    private final PackagePsiDeclarationProvider declarationProvider;
     @NotNull
     private final FqName packageFQN;
-    @NotNull
-    private final PsiDeclarationProvider declarationProvider;
 
-    public JavaPackageScope(
-            @NotNull ClassOrNamespaceDescriptor descriptor,
+    protected JavaPackageScope(
+            @NotNull NamespaceDescriptor descriptor,
+            @NotNull PackagePsiDeclarationProvider declarationProvider,
             @NotNull FqName packageFQN,
-            @NotNull JavaSemanticServices semanticServices,
-            @NotNull PsiDeclarationProvider declarationProvider) {
+            @NotNull JavaSemanticServices semanticServices
+    ) {
         super(descriptor, semanticServices, declarationProvider);
         this.declarationProvider = declarationProvider;
         this.packageFQN = packageFQN;
@@ -52,29 +55,27 @@ public class JavaPackageScope extends JavaBaseScope {
 
     @Override
     public ClassifierDescriptor getClassifier(@NotNull Name name) {
-        return semanticServices.getDescriptorResolver().resolveClass(packageFQN.child(name), DescriptorSearchRule.IGNORE_IF_FOUND_IN_KOTLIN);
+        return getResolver().resolveClass(packageFQN.child(name), DescriptorSearchRule.IGNORE_IF_FOUND_IN_KOTLIN);
     }
 
     @Override
     public ClassDescriptor getObjectDescriptor(@NotNull Name name) {
         //TODO: check that class is an object
-        return semanticServices.getDescriptorResolver().resolveClass(packageFQN.child(name), DescriptorSearchRule.IGNORE_IF_FOUND_IN_KOTLIN);
+        return getResolver().resolveClass(packageFQN.child(name), DescriptorSearchRule.IGNORE_IF_FOUND_IN_KOTLIN);
     }
 
     @Override
     public NamespaceDescriptor getNamespace(@NotNull Name name) {
-        return semanticServices.getDescriptorResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
+        return getResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
     }
 
-    //TODO: remove this method
     @NotNull
-    public PsiElement getPsiElement() {
-        if (declarationProvider instanceof ClassPsiDeclarationProvider) {
-            return ((ClassPsiDeclarationProvider) declarationProvider).getPsiClass();
-        }
-        if (declarationProvider instanceof PackagePsiDeclarationProvider) {
-            return ((PackagePsiDeclarationProvider) declarationProvider).getPsiPackage();
-        }
-        throw new IllegalStateException();
+    @Override
+    protected Collection<DeclarationDescriptor> computeAllDescriptors() {
+        Collection<DeclarationDescriptor> result = super.computeAllDescriptors();
+        result.addAll(computeAllPackageDeclarations(declarationProvider.getPsiPackage(),
+                                                    semanticServices,
+                                                    DescriptorUtils.getFQName(descriptor).toSafe()));
+        return result;
     }
 }

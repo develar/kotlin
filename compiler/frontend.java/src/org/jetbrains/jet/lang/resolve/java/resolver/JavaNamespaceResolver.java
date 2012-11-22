@@ -31,9 +31,10 @@ import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.java.*;
 import org.jetbrains.jet.lang.resolve.java.descriptor.JavaNamespaceDescriptor;
-import org.jetbrains.jet.lang.resolve.java.provider.PsiDeclarationProvider;
-import org.jetbrains.jet.lang.resolve.java.provider.PsiDeclarationProviderFactory;
-import org.jetbrains.jet.lang.resolve.java.scope.JavaPackageScope;
+import org.jetbrains.jet.lang.resolve.java.scope.JavaBaseScope;
+import org.jetbrains.jet.lang.resolve.java.scope.JavaClassStaticMembersScope;
+import org.jetbrains.jet.lang.resolve.java.scope.JavaPackageScopeWithoutMembers;
+import org.jetbrains.jet.lang.resolve.java.scope.JavaScopeForKotlinNamespace;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
@@ -42,12 +43,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jetbrains.jet.lang.resolve.java.provider.PsiDeclarationProviderFactory.*;
+
 public final class JavaNamespaceResolver {
 
     @NotNull
     public static final ModuleDescriptor FAKE_ROOT_MODULE = new ModuleDescriptor(JavaDescriptorResolver.JAVA_ROOT);
     @NotNull
-    private final Map<FqName, JavaPackageScope> resolvedNamespaceCache = Maps.newHashMap();
+    private final Map<FqName, JavaBaseScope> resolvedNamespaceCache = Maps.newHashMap();
     @NotNull
     private final Set<FqName> unresolvedCache = Sets.newHashSet();
 
@@ -84,7 +87,7 @@ public final class JavaNamespaceResolver {
         if (unresolvedCache.contains(qualifiedName)) {
             return null;
         }
-        JavaPackageScope scope = resolvedNamespaceCache.get(qualifiedName);
+        JavaBaseScope scope = resolvedNamespaceCache.get(qualifiedName);
         if (scope != null) {
             return (NamespaceDescriptor) scope.getContainingDeclaration();
         }
@@ -100,7 +103,7 @@ public final class JavaNamespaceResolver {
                 qualifiedName
         );
 
-        JavaPackageScope newScope = createNamespaceScope(qualifiedName, javaNamespaceDescriptor);
+        JavaBaseScope newScope = createNamespaceScope(qualifiedName, javaNamespaceDescriptor);
         if (newScope == null) {
             return null;
         }
@@ -128,66 +131,69 @@ public final class JavaNamespaceResolver {
     }
 
     @Nullable
-    private JavaPackageScope createNamespaceScope(
+    private JavaBaseScope createNamespaceScope(
             @NotNull FqName fqName,
             @NotNull NamespaceDescriptor namespaceDescriptor
     ) {
-        PsiDeclarationProvider namespaceData = createDeclarationProvider(fqName, namespaceDescriptor);
-        JavaPackageScope javaPackageScope;
-        if (namespaceData == null) {
-            javaPackageScope = null;
-        }
-        else {
-            //TODO:
-            javaPackageScope = new JavaPackageScope(namespaceDescriptor, fqName, javaSemanticServices, namespaceData);
-        }
-
-        cache(fqName, javaPackageScope);
-
-        return javaPackageScope;
+        JavaBaseScope namespaceScope = doCreateNamespaceScope(fqName, namespaceDescriptor);
+        cache(fqName, namespaceScope);
+        return namespaceScope;
     }
 
     @Nullable
-    private PsiDeclarationProvider createDeclarationProvider(
+    private JavaBaseScope doCreateNamespaceScope(
             @NotNull FqName fqName,
             @NotNull NamespaceDescriptor namespaceDescriptor
     ) {
-        PsiClass psiClass = getPsiClassForJavaPackageScope(fqName);
         PsiPackage psiPackage = psiClassFinder.findPsiPackage(fqName);
-        if (psiClass != null || psiPackage != null) {
+        if (psiPackage != null) {
+            PsiClass psiClass = getPsiClassForJavaPackageScope(fqName);
             trace.record(JavaBindingContext.JAVA_NAMESPACE_KIND, namespaceDescriptor, JavaNamespaceKind.PROPER);
-            return PsiDeclarationProviderFactory.createDeclarationProviderForPackage(psiPackage, psiClass, fqName);
+            if (psiClass == null) {
+                return new JavaPackageScopeWithoutMembers(namespaceDescriptor,
+                                                          createDeclarationProviderForNamespaceWithoutMembers(psiPackage),
+                                                          fqName, javaSemanticServices);
+            }
+            return new JavaScopeForKotlinNamespace(namespaceDescriptor,
+                                                   createDeclarationForKotlinNamespace(psiPackage, psiClass),
+                                                   fqName, javaSemanticServices);
         }
 
-        psiClass = psiClassFinder.findPsiClass(fqName, PsiClassFinder.RuntimeClassesHandleMode.IGNORE);
-        if (psiClass != null && !psiClass.isEnum()) {
-            trace.record(JavaBindingContext.JAVA_NAMESPACE_KIND, namespaceDescriptor, JavaNamespaceKind.CLASS_STATICS);
-            return PsiDeclarationProviderFactory.createDeclarationProviderForPackage(psiPackage, psiClass, fqName);
+        PsiClass psiClass = psiClassFinder.findPsiClass(fqName, PsiClassFinder.RuntimeClassesHandleMode.IGNORE);
+        if (psiClass == null) {
+            return null;
         }
-
-        return null;
+        if (psiClass.isEnum()) {
+            // NOTE: we don't want to create namespace for enum classes because we put
+            // static members of enum class into class object descriptor
+            return null;
+        }
+        trace.record(JavaBindingContext.JAVA_NAMESPACE_KIND, namespaceDescriptor, JavaNamespaceKind.CLASS_STATICS);
+        return new JavaClassStaticMembersScope(namespaceDescriptor,
+                                               createDeclarationProviderForClassStaticMembers(psiClass),
+                                               fqName, javaSemanticServices);
     }
 
-    private void cache(@NotNull FqName fqName, @Nullable JavaPackageScope packageScope) {
+    private void cache(@NotNull FqName fqName, @Nullable JavaBaseScope packageScope) {
         if (packageScope == null) {
             unresolvedCache.add(fqName);
             return;
         }
-        JavaPackageScope oldValue = resolvedNamespaceCache.put(fqName, packageScope);
+        JavaBaseScope oldValue = resolvedNamespaceCache.put(fqName, packageScope);
         if (oldValue != null) {
             throw new IllegalStateException("rewrite at " + fqName);
         }
     }
 
     @Nullable
-    public JavaPackageScope getJavaPackageScopeForExistingNamespaceDescriptor(@NotNull NamespaceDescriptor namespaceDescriptor) {
+    public JavaBaseScope getJavaPackageScopeForExistingNamespaceDescriptor(@NotNull NamespaceDescriptor namespaceDescriptor) {
         FqName fqName = DescriptorUtils.getFQName(namespaceDescriptor).toSafe();
         if (unresolvedCache.contains(fqName)) {
             throw new IllegalStateException(
                     "This means that we are trying to create a Java package, but have a package with the same FQN defined in Kotlin: " +
                     fqName);
         }
-        JavaPackageScope alreadyResolvedScope = resolvedNamespaceCache.get(fqName);
+        JavaBaseScope alreadyResolvedScope = resolvedNamespaceCache.get(fqName);
         if (alreadyResolvedScope != null) {
             return alreadyResolvedScope;
         }

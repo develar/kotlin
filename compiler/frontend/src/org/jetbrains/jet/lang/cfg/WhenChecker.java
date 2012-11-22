@@ -17,9 +17,11 @@
 package org.jetbrains.jet.lang.cfg;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
@@ -33,7 +35,10 @@ import java.util.Collections;
 /**
  * @author svtk
  */
-public class WhenChecker {
+public final class WhenChecker {
+    private WhenChecker() {
+    }
+
     public static boolean isWhenExhaustive(@NotNull JetWhenExpression expression, @NotNull BindingTrace trace) {
         JetExpression subjectExpression = expression.getSubjectExpression();
         if (subjectExpression == null) return false;
@@ -65,20 +70,53 @@ public class WhenChecker {
         return isExhaust && notEmpty;
     }
 
-    private static boolean containsEnumEntryCase(@NotNull JetWhenExpression whenExpression, @NotNull ClassDescriptor enumEntry, @NotNull BindingTrace trace) {
+    private static boolean containsEnumEntryCase(
+            @NotNull JetWhenExpression whenExpression,
+            @NotNull ClassDescriptor enumEntry,
+            @NotNull BindingTrace trace
+    ) {
         assert enumEntry.getKind() == ClassKind.ENUM_ENTRY;
         for (JetWhenEntry whenEntry : whenExpression.getEntries()) {
             for (JetWhenCondition condition : whenEntry.getConditions()) {
-                if (condition instanceof JetWhenConditionWithExpression) {
-                    JetExpression patternExpression = ((JetWhenConditionWithExpression) condition).getExpression();
-                    JetType type = trace.get(BindingContext.EXPRESSION_TYPE, patternExpression);
-                    if (type == null) continue;
-                    if (type.getConstructor().getDeclarationDescriptor() == enumEntry) {
-                        return true;
-                    }
+                if (!(condition instanceof JetWhenConditionWithExpression)) {
+                    continue;
+                }
+                if (isCheckForEnumEntry((JetWhenConditionWithExpression) condition, enumEntry, trace)) {
+                    return true;
                 }
             }
         }
         return false;
+    }
+
+    private static boolean isCheckForEnumEntry(
+            @NotNull JetWhenConditionWithExpression whenExpression,
+            @NotNull ClassDescriptor enumEntry,
+            @NotNull BindingTrace trace
+    ) {
+        JetSimpleNameExpression reference = getReference(whenExpression.getExpression());
+        if (reference == null) return false;
+
+        DeclarationDescriptor target = trace.get(BindingContext.REFERENCE_TARGET, reference);
+        if (!(target instanceof VariableDescriptor)) {
+            return false;
+        }
+
+        ClassDescriptor classDescriptor = trace.get(BindingContext.OBJECT_DECLARATION_CLASS, (VariableDescriptor) target);
+        return classDescriptor == enumEntry;
+    }
+
+    @Nullable
+    private static JetSimpleNameExpression getReference(@Nullable JetExpression expression) {
+        if (expression == null) {
+            return null;
+        }
+        if (expression instanceof JetSimpleNameExpression) {
+            return (JetSimpleNameExpression) expression;
+        }
+        if (expression instanceof JetQualifiedExpression) {
+            return getReference(((JetQualifiedExpression) expression).getSelectorExpression());
+        }
+        return null;
     }
 }

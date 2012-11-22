@@ -16,41 +16,31 @@
 
 package org.jetbrains.jet.lang.resolve.java.scope;
 
-import com.google.common.collect.Maps;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiModifier;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.ClassOrNamespaceDescriptor;
-import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.java.JavaSemanticServices;
 import org.jetbrains.jet.lang.resolve.java.provider.ClassPsiDeclarationProvider;
-import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-/**
- * Class static of instance members.
- *
- * @author abreslav
- */
-public class JavaClassMembersScope extends JavaBaseScope {
+public abstract class JavaClassMembersScope extends JavaBaseScope {
     @NotNull
-    private final Map<Name, ClassifierDescriptor> classifiers = Maps.newHashMap();
-    @NotNull
-    private final ClassPsiDeclarationProvider classPsiDeclarationProvider;
+    protected final ClassPsiDeclarationProvider declarationProvider;
 
-    public JavaClassMembersScope(
+    private Map<Name, ClassifierDescriptor> classifiersMap = null;
+
+    protected JavaClassMembersScope(
             @NotNull ClassOrNamespaceDescriptor descriptor,
-            @NotNull JavaSemanticServices semanticServices,
-            @NotNull ClassPsiDeclarationProvider resolverScopeData) {
-        super(descriptor, semanticServices, resolverScopeData);
-        this.classPsiDeclarationProvider = resolverScopeData;
+            @NotNull ClassPsiDeclarationProvider declarationProvider,
+            @NotNull JavaSemanticServices semanticServices
+    ) {
+        super(descriptor, semanticServices, declarationProvider);
+        this.declarationProvider = declarationProvider;
     }
 
     @NotNull
@@ -59,28 +49,33 @@ public class JavaClassMembersScope extends JavaBaseScope {
         throw new UnsupportedOperationException(); // TODO
     }
 
+
+    @NotNull
     @Override
-    public ClassifierDescriptor getClassifier(@NotNull Name name) {
-        ClassifierDescriptor classifierDescriptor = classifiers.get(name);
-        if (classifierDescriptor == null) {
-            classifierDescriptor = doGetClassifierDescriptor(name);
-            classifiers.put(name, classifierDescriptor);
-        }
-        return classifierDescriptor;
+    protected Set<FunctionDescriptor> computeFunctionDescriptor(@NotNull Name name) {
+        return getResolver().resolveFunctionGroup(name, declarationProvider, descriptor);
     }
 
-    private ClassifierDescriptor doGetClassifierDescriptor(Name name) {
-        // TODO : suboptimal, walk the list only once
-        for (PsiClass innerClass : classPsiDeclarationProvider.getPsiClass().getAllInnerClasses()) {
-            if (name.getName().equals(innerClass.getName())) {
-                if (innerClass.hasModifierProperty(PsiModifier.STATIC) != classPsiDeclarationProvider.isStaticMembers()) return null;
-                ClassDescriptor classDescriptor = semanticServices.getDescriptorResolver()
-                        .resolveClass(new FqName(innerClass.getQualifiedName()), DescriptorSearchRule.IGNORE_IF_FOUND_IN_KOTLIN);
-                if (classDescriptor != null) {
-                    return classDescriptor;
-                }
+    @Override
+    public ClassifierDescriptor getClassifier(@NotNull Name name) {
+        return getClassifiersMap().get(name);
+    }
+
+    @NotNull
+    private Map<Name, ClassifierDescriptor> getClassifiersMap() {
+        if (classifiersMap == null) {
+            Collection<ClassDescriptor> innerClasses = getInnerClasses();
+            classifiersMap = new HashMap<Name, ClassifierDescriptor>();
+            for (ClassDescriptor innerClass : innerClasses) {
+                classifiersMap.put(innerClass.getName(), innerClass);
             }
         }
-        return null;
+        return classifiersMap;
+    }
+
+    @NotNull
+    @Override
+    protected Collection<ClassDescriptor> computeInnerClasses() {
+        return getResolver().resolveInnerClasses(descriptor, declarationProvider);
     }
 }

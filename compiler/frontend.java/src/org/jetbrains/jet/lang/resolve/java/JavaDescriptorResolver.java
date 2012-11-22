@@ -16,18 +16,16 @@
 
 package org.jetbrains.jet.lang.resolve.java;
 
-import com.intellij.psi.PsiClass;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.resolve.java.descriptor.ClassDescriptorFromJvmBytecode;
 import org.jetbrains.jet.lang.resolve.java.provider.ClassPsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.java.provider.PsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.java.resolver.*;
-import org.jetbrains.jet.lang.resolve.java.scope.JavaPackageScope;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.types.DependencyClassByQualifiedNameResolver;
 import org.jetbrains.jet.lang.types.JetType;
 
@@ -109,7 +107,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
 
     @NotNull
     public Collection<ConstructorDescriptor> resolveConstructors(
-            @NotNull ClassPsiDeclarationProvider classData, @NotNull ClassDescriptorFromJvmBytecode classDescriptor
+            @NotNull ClassPsiDeclarationProvider classData, @NotNull ClassDescriptor classDescriptor
     ) {
         return constructorResolver.resolveConstructors(classData, classDescriptor);
     }
@@ -125,7 +123,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
     }
 
     @Nullable
-    public JavaPackageScope getJavaPackageScope(@NotNull NamespaceDescriptor namespaceDescriptor) {
+    public JetScope getJavaPackageScope(@NotNull NamespaceDescriptor namespaceDescriptor) {
         return namespaceResolver.getJavaPackageScopeForExistingNamespaceDescriptor(namespaceDescriptor);
     }
 
@@ -173,7 +171,10 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
     }
 
     @NotNull
-    public List<ClassDescriptor> resolveInnerClasses(DeclarationDescriptor owner, PsiClass psiClass, boolean staticMembers) {
-        return innerClassResolver.resolveInnerClasses(owner, psiClass, staticMembers);
+    public List<ClassDescriptor> resolveInnerClasses(
+            @NotNull DeclarationDescriptor owner,
+            @NotNull ClassPsiDeclarationProvider declarationProvider)
+    {
+        return innerClassResolver.resolveInnerClasses(owner, declarationProvider);
     }
 }
