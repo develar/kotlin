@@ -420,7 +420,7 @@ public native trait CSSStyleDeclaration {
 }
 
 public native trait CSSRule {
-	public class object {
+	public native class object {
 		public val STYLE_RULE: Int = 1
 		public val MEDIA_RULE: Int = 4
 		public val FONT_FACE_RULE: Int = 5
@@ -446,7 +446,7 @@ public native trait CSSRule {
 }
 
 public native trait CSSValue {
-	public class object {
+	public native class object {
 		public val CSS_INHERIT: Int = 0
 		public val CSS_PRIMITIVE_VALUE: Int = 1
 		public val CSS_VALUE_LIST: Int = 2
@@ -972,7 +972,7 @@ public native trait File : Blob {
 }
 
 public native trait FileReader : EventTarget {
-	public class object {
+	public native class object {
 		public val EMPTY: Int = 0
 		public val LOADING: Int = 1
 		public val DONE: Int = 2
@@ -1029,7 +1029,7 @@ public native trait HtmlElement {
 }
 
 public native trait HTMLMediaElement : HTMLElement {
-	public class object {
+	public native class object {
 		public val HAVE_NOTHING: Number = 0
 		public val HAVE_METADATA: Number = 1
 		public val HAVE_CURRENT_DATA: Number = 2
@@ -1073,7 +1073,7 @@ public native trait HTMLMediaElement : HTMLElement {
 }
 
 public native trait MediaError {
-	public class object {
+	public native class object {
 		public val MEDIA_ERR_ABORTED: Int = 1
 		public val MEDIA_ERR_NETWORK: Int = 2
 		public val MEDIA_ERR_DECODE: Int = 3
@@ -1091,7 +1091,7 @@ public native trait TimeRanges {
 }
 
 public native trait TimedTrack {
-	public class object {
+	public native class object {
 		public val NONE: Int = 0
 		public val LOADING: Int = 1
 		public val LOADED: Int = 2
@@ -1210,7 +1210,7 @@ public native trait SQLResultSetRowList {
 }
 
 public native trait SQLError {
-	public class object {
+	public native class object {
 		public val UNKNOWN_ERR: Int = 0
 		public val DATABASE_ERR: Int = 1
 		public val VERSION_ERR: Int = 2
@@ -1232,7 +1232,7 @@ public native trait MessageEvent : Event {
 }
 
 public native trait SQLException : java.lang.Exception {
-	public class object {
+	public native class object {
 		public val UNKNOWN_ERR: Int = 0
 		public val DATABASE_ERR: Int = 1
 		public val VERSION_ERR: Int = 2
@@ -1367,8 +1367,8 @@ public native trait Storage {
 	public fun clear(): Unit
 }
 
-public native class WebSocket(url: String, vararg protocols: String) {
-	public class object {
+public native class WebSocket<T: Any>(url: String, vararg protocols: String) {
+	public native class object {
 		public val CONNECTING: Int = 0
 		public val OPEN: Int = 1
 		public val CLOSING: Int = 2
@@ -1380,10 +1380,18 @@ public native class WebSocket(url: String, vararg protocols: String) {
 	public val bufferedAmount: Long = noImpl
 	public val extensions: String = noImpl
 	public val protocol: String = noImpl
-	public var onopen: ()->Unit = noImpl
-	public var onmessage: ()->Unit = noImpl
-	public var onerror: ()->Unit = noImpl
-	public var onclose: ()->Unit = noImpl
+	public var onopen: (org.w3c.dom.Event)->Unit = noImpl
+
+	public native trait MessageEvent : org.w3c.dom.Event {
+		val data: T
+	}
+	public var onmessage: (event: MessageEvent)->Unit = noImpl
+	public var onerror: (org.w3c.dom.Event)->Unit = noImpl
+
+	public native trait CloseEvent : org.w3c.dom.Event {
+		val wasClean: Boolean
+	}
+	public var onclose: (event: CloseEvent)->Unit = noImpl
 
 	public fun send(data: String): Unit = noImpl
 	public fun send(data: ArrayBuffer): Unit = noImpl
@@ -1413,7 +1421,7 @@ public native open class ArrayBufferView() {
 }
 
 public native class Int8Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
-	public class object {
+	public native class object {
 		public val BYTES_PER_ELEMENT: Int = 8
 	}
 
@@ -1424,7 +1432,7 @@ public native class Int8Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = n
 }
 
 public native class Uint8Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
-	public class object {
+	public native class object {
 		public val BYTES_PER_ELEMENT: Int = 8
 	}
 
@@ -1435,7 +1443,7 @@ public native class Uint8Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = 
 }
 
 public native class Int16Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
-	public class object {
+	public native class object {
 		public val BYTES_PER_ELEMENT: Int = 16
 	}
 
@@ -1446,7 +1454,7 @@ public native class Int16Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = 
 }
 
 public native class Uint16Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
-	public class object {
+	public native class object {
 		public val BYTES_PER_ELEMENT: Int = 16
 	}
 
@@ -1457,7 +1465,7 @@ public native class Uint16Array(bufferOrArrayOrLength: Unit, byteOffset: Long? =
 }
 
 public native class Int32Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
-	public class object {
+	public native class object {
 		public val BYTES_PER_ELEMENT: Int = 32
 	}
 
@@ -1468,7 +1476,7 @@ public native class Int32Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = 
 }
 
 public native class Uint32Array(bufferOrArrayOrLength: Unit, byteOffset: Number? = null, length: Number? = null) : ArrayBufferView() {
-	public class object {
+	public native class object {
 		public val BYTES_PER_ELEMENT: Int = 32
 	}
 
@@ -1479,7 +1487,7 @@ public native class Uint32Array(bufferOrArrayOrLength: Unit, byteOffset: Number?
 }
 
 public native class Float32Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
-	public class object {
+	public native class object {
 		public val BYTES_PER_ELEMENT: Int = 32
 	}
 
@@ -1490,7 +1498,7 @@ public native class Float32Array(bufferOrArrayOrLength: Unit, byteOffset: Long? 
 }
 
 public native class Float64Array(bufferOrArrayOrLength: Long, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
-	public class object {
+	public native class object {
 		public val BYTES_PER_ELEMENT: Int = 64
 	}
 
@@ -1528,7 +1536,7 @@ public native trait Coordinates {
 }
 
 public native trait PositionError {
-	public class object {
+	public native class object {
 		public val PERMISSION_DENIED: Int = 1
 		public val POSITION_UNAVAILABLE: Int = 2
 		public val TIMEOUT: Int = 3
