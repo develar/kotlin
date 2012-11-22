@@ -36,6 +36,7 @@ import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager;
+import org.jetbrains.jet.utils.KotlinPaths;
 import org.jetbrains.jet.utils.PathUtil;
 
 import java.io.File;
