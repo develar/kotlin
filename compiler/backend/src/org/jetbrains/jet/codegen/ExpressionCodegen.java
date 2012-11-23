@@ -94,6 +94,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
     private final BindingContext bindingContext;
     final CodegenContext context;
+    private final CodegenStatementVisitor statementVisitor;
 
     private final Stack<BlockStackElement> blockStackElements = new Stack<BlockStackElement>();
     private final Collection<String> localVariableNames = new HashSet<String>();
@@ -181,6 +182,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
         };
         this.bindingContext = state.getBindingContext();
         this.context = context;
+        this.statementVisitor = new CodegenStatementVisitor(this);
     }
 
     public GenerationState getState() {
@@ -217,14 +219,25 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
     }
 
     public StackValue genQualified(StackValue receiver, JetElement selector) {
+        return genQualified(receiver, selector, this);
+    }
+
+    private StackValue genQualified(StackValue receiver, JetElement selector, JetVisitor<StackValue, StackValue> visitor) {
         if (tempVariables.containsKey(selector)) {
             throw new IllegalStateException("Inconsistent state: expression saved to a temporary variable is a selector");
         }
         if (!(selector instanceof JetBlockExpression)) {
             markLineNumber(selector);
         }
+        if (selector instanceof JetExpression) {
+            JetExpression expression = (JetExpression) selector;
+            CompileTimeConstant<?> constant = bindingContext.get(BindingContext.COMPILE_TIME_VALUE, expression);
+            if (constant != null) {
+                return StackValue.constant(constant.getValue(), expressionType(expression));
+            }
+        }
         try {
-            return selector.accept(this, receiver);
+            return selector.accept(visitor, receiver);
         }
         catch (ProcessCanceledException e) {
             throw e;
@@ -240,17 +253,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
     public StackValue gen(JetElement expr) {
         StackValue tempVar = tempVariables.get(expr);
-        if (tempVar != null) {
-            return tempVar;
-        }
-        if (expr instanceof JetExpression) {
-            JetExpression expression = (JetExpression) expr;
-            CompileTimeConstant<?> constant = bindingContext.get(BindingContext.COMPILE_TIME_VALUE, expression);
-            if (constant != null) {
-                return StackValue.constant(constant.getValue(), expressionType(expression));
-            }
-        }
-        return genQualified(StackValue.none(), expr);
+        return tempVar != null ? tempVar : genQualified(StackValue.none(), expr);
     }
 
     public void gen(JetElement expr, Type type) {
@@ -260,6 +263,10 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
     public void genToJVMStack(JetExpression expr) {
         gen(expr, expressionType(expr));
+    }
+
+    private StackValue genStatement(JetElement statement) {
+        return genQualified(StackValue.none(), statement, statementVisitor);
     }
 
     @Override
@@ -348,7 +355,12 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
     @Override
     public StackValue visitIfExpression(JetIfExpression expression, StackValue receiver) {
-        Type asmType = expressionType(expression);
+        return generateIfExpression(expression, false);
+    }
+
+    /* package */ StackValue generateIfExpression(JetIfExpression expression, boolean isStatement) {
+        Type asmType = isStatement ? Type.VOID_TYPE : expressionType(expression);
+        StackValue condition = gen(expression.getCondition());
 
         JetExpression thenExpression = expression.getThen();
         JetExpression elseExpression = expression.getElse();
@@ -359,25 +371,18 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
         if (isEmptyExpression(thenExpression)) {
             if (isEmptyExpression(elseExpression)) {
-                if (!asmType.equals(JET_TUPLE0_TYPE)) {
-                    throw new CompilationException("Completely empty 'if' is expected to have Unit type", null, expression);
-                }
-                StackValue.putTuple0Instance(v);
+                condition.put(asmType, v);
                 return StackValue.onStack(asmType);
             }
-            StackValue condition = gen(expression.getCondition());
-            return generateSingleBranchIf(condition, elseExpression, false);
+            return generateSingleBranchIf(condition, expression, elseExpression, false, isStatement);
         }
         else {
             if (isEmptyExpression(elseExpression)) {
-                StackValue condition = gen(expression.getCondition());
-                return generateSingleBranchIf(condition, thenExpression, true);
+                return generateSingleBranchIf(condition, expression, thenExpression, true, isStatement);
             }
         }
 
-
         Label elseLabel = new Label();
-        StackValue condition = gen(expression.getCondition());
         condition.condJump(elseLabel, true, v);   // == 0, i.e. false
 
         Label end = new Label();
@@ -389,6 +394,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
         gen(elseExpression, asmType);
 
+        markLineNumber(expression);
         v.mark(end);
 
         return StackValue.onStack(asmType);
@@ -957,27 +963,37 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
         throw new UnsupportedOperationException();
     }
 
-    private StackValue generateSingleBranchIf(StackValue condition, JetExpression expression, boolean inverse) {
-        Type expressionType = expressionType(expression);
-        Type targetType = expressionType;
-        if (!expressionType.equals(JET_TUPLE0_TYPE)) {
-            targetType = OBJECT_TYPE;
-        }
-
+    private StackValue generateSingleBranchIf(
+            StackValue condition,
+            JetIfExpression ifExpression,
+            JetExpression expression,
+            boolean inverse,
+            boolean isStatement
+    ) {
         Label elseLabel = new Label();
         condition.condJump(elseLabel, inverse, v);
 
-        gen(expression, expressionType);
-        StackValue.coerce(expressionType, targetType, v);
+        if (isStatement) {
+            gen(expression, Type.VOID_TYPE);
+            v.mark(elseLabel);
+            return StackValue.none();
+        }
+        else {
+            Type type = expressionType(expression);
+            Type targetType = type.equals(JET_TUPLE0_TYPE) ? type : OBJECT_TYPE;
 
-        Label end = new Label();
-        v.goTo(end);
+            gen(expression, targetType);
 
-        v.mark(elseLabel);
-        StackValue.putTuple0Instance(v);
+            Label end = new Label();
+            v.goTo(end);
 
-        v.mark(end);
-        return StackValue.onStack(targetType);
+            markLineNumber(ifExpression);
+            v.mark(elseLabel);
+            StackValue.putTuple0Instance(v);
+
+            v.mark(end);
+            return StackValue.onStack(targetType);
+        }
     }
 
     @Override
@@ -1186,11 +1202,15 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
                 generateLocalFunctionDeclaration((JetNamedFunction) statement, leaveTasks);
             }
 
+            boolean isStatement = iterator.hasNext() || !isInsideNonUnitFunction();
+
+            StackValue result = isStatement ? genStatement(statement) : gen(statement);
+
             if (!iterator.hasNext()) {
-                answer = gen(statement);
+                answer = result;
             }
             else {
-                gen(statement, Type.VOID_TYPE);
+                result.put(Type.VOID_TYPE, v);
             }
         }
 
@@ -1201,6 +1221,12 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
         }
 
         return answer;
+    }
+
+    private boolean isInsideNonUnitFunction() {
+        DeclarationDescriptor descriptor = context.getContextDescriptor();
+        JetType unit = KotlinBuiltIns.getInstance().getUnitType();
+        return descriptor instanceof CallableDescriptor && !unit.equals(((CallableDescriptor) descriptor).getReturnType());
     }
 
     private void generateLocalVariableDeclaration(
@@ -1303,6 +1329,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
             v.areturn(returnType);
         }
         else {
+            doFinallyOnReturn();
             v.visitInsn(RETURN);
         }
         return StackValue.none();
@@ -3115,6 +3142,10 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
     @Override
     public StackValue visitTryExpression(JetTryExpression expression, StackValue receiver) {
+        return generateTryExpression(expression, false);
+    }
+
+    public StackValue generateTryExpression(JetTryExpression expression, boolean isStatement) {
         /*
 The "returned" value of try expression with no finally is either the last expression in the try block or the last expression in the catch block
 (or blocks).
@@ -3128,7 +3159,7 @@ The "returned" value of try expression with no finally is either the last expres
 
         JetType jetType = bindingContext.get(BindingContext.EXPRESSION_TYPE, expression);
         assert jetType != null;
-        Type expectedAsmType = asmType(jetType);
+        Type expectedAsmType = isStatement ? Type.VOID_TYPE : asmType(jetType);
 
         Label tryStart = new Label();
         v.mark(tryStart);
@@ -3136,8 +3167,11 @@ The "returned" value of try expression with no finally is either the last expres
 
         gen(expression.getTryBlock(), expectedAsmType);
 
-        int savedValue = myFrameMap.enterTemp(expectedAsmType);
-        v.store(savedValue, expectedAsmType);
+        int savedValue = -1;
+        if (!isStatement) {
+            savedValue = myFrameMap.enterTemp(expectedAsmType);
+            v.store(savedValue, expectedAsmType);
+        }
 
         Label tryEnd = new Label();
         v.mark(tryEnd);
@@ -3165,7 +3199,9 @@ The "returned" value of try expression with no finally is either the last expres
 
             gen(clause.getCatchBody(), expectedAsmType);
 
-            v.store(savedValue, expectedAsmType);
+            if (!isStatement) {
+                v.store(savedValue, expectedAsmType);
+            }
 
             myFrameMap.leave(descriptor);
 
@@ -3200,10 +3236,14 @@ The "returned" value of try expression with no finally is either the last expres
 
             v.visitTryCatchBlock(tryStart, tryEnd, finallyStart, null);
         }
+
+        markLineNumber(expression);
         v.mark(end);
 
-        v.load(savedValue, expectedAsmType);
-        myFrameMap.leaveTemp(expectedAsmType);
+        if (!isStatement) {
+            v.load(savedValue, expectedAsmType);
+            myFrameMap.leaveTemp(expectedAsmType);
+        }
 
         if (finallyBlock != null) {
             blockStackElements.pop();
@@ -3337,10 +3377,14 @@ The "returned" value of try expression with no finally is either the last expres
 
     @Override
     public StackValue visitWhenExpression(JetWhenExpression expression, StackValue receiver) {
+        return generateWhenExpression(expression, false);
+    }
+
+    public StackValue generateWhenExpression(JetWhenExpression expression, boolean isStatement) {
         JetExpression expr = expression.getSubjectExpression();
         JetType subjectJetType = bindingContext.get(BindingContext.EXPRESSION_TYPE, expr);
         final Type subjectType = asmTypeOrVoid(subjectJetType);
-        final Type resultType = expressionType(expression);
+        final Type resultType = isStatement ? Type.VOID_TYPE : expressionType(expression);
         final int subjectLocal = expr != null ? myFrameMap.enterTemp(subjectType) : -1;
         if (subjectLocal != -1) {
             gen(expr, subjectType);
@@ -3391,6 +3435,8 @@ The "returned" value of try expression with no finally is either the last expres
             v.mark(nextCondition);
             throwNewException(CLASS_NO_PATTERN_MATCHED_EXCEPTION);
         }
+
+        markLineNumber(expression);
         v.mark(end);
 
         myFrameMap.leaveTemp(subjectType);
