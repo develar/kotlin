@@ -17,12 +17,12 @@
 package org.jetbrains.jet.plugin.compiler;
 
 import com.intellij.openapi.compiler.*;
-import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.StdFileTypes;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.jet.plugin.JetFileType;
 
 import java.util.Collections;
@@ -33,13 +33,15 @@ import static org.jetbrains.jet.compiler.runner.CompilerRunnerConstants.KOTLIN_C
 /**
  * @author yole
  */
-public class JetCompilerManager implements ProjectComponent {
+public class JetCompilerManager implements StartupActivity, DumbAware {
     private static final Logger LOG = Logger.getInstance(JetCompilerManager.class);
 
     // Comes from external make
     private static final String PREFIX_WITH_COMPILER_NAME = KOTLIN_COMPILER_NAME + ": " + INTERNAL_ERROR_PREFIX;
 
-    public JetCompilerManager(Project project, CompilerManager manager) {
+    @Override
+    public void runActivity(Project project) {
+        CompilerManager manager = CompilerManager.getInstance(project);
         manager.addTranslatingCompiler(new JetCompiler(),
                                        Collections.<FileType>singleton(JetFileType.INSTANCE),
                                        Collections.singleton(StdFileTypes.CLASS));
@@ -65,27 +67,5 @@ public class JetCompilerManager implements ProjectComponent {
             public void fileGenerated(String outputRoot, String relativePath) {
             }
         }, project);
-    }
-
-    @Override
-    public void projectOpened() {
-    }
-
-    @Override
-    public void projectClosed() {
-    }
-
-    @Override
-    public void initComponent() {
-    }
-
-    @Override
-    public void disposeComponent() {
-    }
-
-    @NotNull
-    @Override
-    public String getComponentName() {
-        return JetCompilerManager.class.getCanonicalName();
     }
 }
