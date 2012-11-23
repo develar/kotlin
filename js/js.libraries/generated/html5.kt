@@ -1383,13 +1383,13 @@ public native class WebSocket<T: Any>(url: String, vararg protocols: String) {
 	public var onopen: (org.w3c.dom.Event)->Unit = noImpl
 
 	public native trait MessageEvent : org.w3c.dom.Event {
-		val data: T
+		public val data: T
 	}
 	public var onmessage: (event: MessageEvent)->Unit = noImpl
 	public var onerror: (org.w3c.dom.Event)->Unit = noImpl
 
 	public native trait CloseEvent : org.w3c.dom.Event {
-		val wasClean: Boolean
+		public val wasClean: Boolean
 	}
 	public var onclose: (event: CloseEvent)->Unit = noImpl
 
