@@ -39,6 +39,7 @@ abstract class InnerDeclarationTranslator {
     }
 
     public JsExpression translate(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
+        //noinspection ConstantConditions
         boolean hasCaptured = context.usageTracker().hasCaptured();
         if (!hasCaptured && self == JsLiteral.NULL) {
             return createExpression(nameRef, self);
@@ -55,6 +56,7 @@ abstract class InnerDeclarationTranslator {
                         name = context.getNameForDescriptor(descriptor);
                     }
                     else {
+                        //noinspection ConstantConditions
                         name = ((JsNameRef) context.getAliasForDescriptor(descriptor)).getName();
                         assert name != null;
                     }
