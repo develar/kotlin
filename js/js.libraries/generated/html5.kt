@@ -8,8 +8,6 @@ import org.w3c.dom.*
 
 public native trait Image : HTMLImageElement {
 	public var constructor: Unit
-	public var naturalWidth: Number
-	public var naturalHeight: Number
 }
 
 public native trait Navigator {
@@ -374,20 +372,20 @@ public native trait HTMLElement : Element {
 	public var dir: String
 	public var className: String
 	public var style: CSSStyleDeclaration
-	public var clientWidth: Number
-	public var clientHeight: Number
-	public var clientTop: Number
-	public var clientLeft: Number
+	public var clientWidth: Int
+	public var clientHeight: Int
+	public var clientTop: Int
+	public var clientLeft: Int
 	public var innerHTML: String
-	public var offsetWidth: Number
-	public var offsetHeight: Number
-	public var offsetTop: Number
-	public var offsetLeft: Number
+	public var offsetWidth: Int
+	public var offsetHeight: Int
+	public var offsetTop: Int
+	public var offsetLeft: Int
 	public var offsetParent: HTMLElement
-	public var scrollWidth: Number
-	public var scrollHeight: Number
-	public var scrollTop: Number
-	public var scrollLeft: Number
+	public var scrollWidth: Int
+	public var scrollHeight: Int
+	public var scrollTop: Int
+	public var scrollLeft: Int
 	public var stylesheet: Stylesheet
 	public var onblur: ()->Unit
 	public var onclick: ()->Unit
@@ -769,6 +767,9 @@ public native trait HTMLImageElement : HTMLElement {
 	public var onunload: ()->Unit
 
 	public var crossOrigin: String
+	public val complete: Boolean
+	public val naturalHeight: Long
+	public val naturalWidth: Long
 }
 
 public native trait HTMLObjectElement : HTMLElement {
@@ -1248,7 +1249,7 @@ public native trait SQLException : java.lang.Exception {
 	public val message: String
 }
 
-public native trait HTMLCanvasElement : HtmlElement {
+public native trait HTMLCanvasElement : HTMLElement {
 	public var width: Long
 	public var height: Long
 
@@ -1266,10 +1267,10 @@ public native trait SVGMatrix {
 
 public native trait CanvasRenderingContext2D {
 	public val canvas: HTMLCanvasElement
-	public var globalAlpha: Number
+	public var globalAlpha: Float
 	public var globalCompositeOperation: String
-	public var fillStyle: Unit
-	public var strokeStyle: Unit
+	public var fillStyle: String
+	public var strokeStyle: String
 	public var lineWidth: Number
 	public var lineCap: String
 	public var lineJoin: String
@@ -1284,13 +1285,13 @@ public native trait CanvasRenderingContext2D {
 
 	public fun save(): Unit
 	public fun restore(): Unit
-	public fun scale(x: Number, y: Number): Unit
-	public fun rotate(angle: Number): Unit
-	public fun translate(x: Number, y: Number): Unit
-	public fun transform(m11: Number, m12: Number, m21: Number, m22: Number, dx: Number, dy: Number): Unit
-	public fun setTransform(m11: Number, m12: Number, m21: Number, m22: Number, dx: Number, dy: Number): Unit
-	public fun createLinearGradient(x0: Number, y0: Number, x1: Number, y1: Number): CanvasGradient
-	public fun createRadialGradient(x0: Number, y0: Number, r0: Number, x1: Number, y1: Number, r1: Number): CanvasGradient
+	public fun scale(x: Float, y: Float): Unit
+	public fun rotate(angle: Float): Unit
+	public fun translate(x: Float, y: Float): Unit
+	public fun transform(m11: Float, m12: Float, m21: Float, m22: Float, dx: Float, dy: Float): Unit
+	public fun setTransform(m11: Float, m12: Float, m21: Float, m22: Float, dx: Float, dy: Float): Unit
+	public fun createLinearGradient(x0: Float, y0: Float, x1: Float, y1: Float): CanvasGradient
+	public fun createRadialGradient(x0: Float, y0: Float, r0: Float, x1: Float, y1: Float, r1: Float): CanvasGradient
 	public fun createPattern(image: HTMLImageElement, repetition: String): CanvasPattern
 	public fun createPattern(image: HTMLCanvasElement, repetition: String): CanvasPattern
 	public fun createPattern(image: HTMLVideoElement, repetition: String): CanvasPattern
