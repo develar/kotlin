@@ -6,14 +6,16 @@
   <version>@snapshot@</version>
   <vendor url="http://www.jetbrains.com">JetBrains Inc.</vendor>
 
-  <idea-version since-build="122.813" until-build="123.9999" />
+  <idea-version since-build="123.4" until-build="123.9999" />
 
   <depends optional="true">JUnit</depends>
-  <depends optional="true" config-file="javaScriptDebug.xml">JavaScriptDebugger</depends>
 
   <project-components>
       <component>
           <implementation-class>org.jetbrains.jet.plugin.JetStandardLibraryInitializer</implementation-class>
+      </component>
+      <component>
+          <implementation-class>org.jetbrains.jet.plugin.compiler.JetCompilerManager</implementation-class>
       </component>
       <component>
           <implementation-class>org.jetbrains.jet.plugin.caches.JetCacheManager</implementation-class>
@@ -31,6 +33,12 @@
         <implementation-class>org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerUpdater</implementation-class>
       </component>
   </project-components>
+
+  <module-components>
+    <component>
+      <implementation-class>org.jetbrains.jet.plugin.project.K2JSModuleComponent</implementation-class>
+    </component>
+  </module-components>
 
   <actions>
      <action id="Kotlin.NewFile" class="org.jetbrains.jet.plugin.actions.NewKotlinFileAction">
@@ -238,8 +246,5 @@
 
       <project.converterProvider implementation="org.jetbrains.jet.plugin.converters.JetRunConfigurationSettingsFormatConverterProvider"/>
 
-    <moduleService serviceInterface="org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager"
-                   serviceImplementation="org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager"/>
-    <postStartupActivity implementation="org.jetbrains.jet.plugin.compiler.JetCompilerManager"/>
   </extensions>
 </idea-plugin>
