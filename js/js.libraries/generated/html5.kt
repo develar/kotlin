@@ -367,6 +367,7 @@ public native trait CssStyle {
 }
 
 public native trait HTMLElement : Element {
+	public var outerHTML: String
 	public var id: String
 	public var title: String
 	public var lang: String
