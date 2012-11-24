@@ -15,9 +15,6 @@
           <implementation-class>org.jetbrains.jet.plugin.JetStandardLibraryInitializer</implementation-class>
       </component>
       <component>
-          <implementation-class>org.jetbrains.jet.plugin.compiler.JetCompilerManager</implementation-class>
-      </component>
-      <component>
           <implementation-class>org.jetbrains.jet.plugin.caches.JetCacheManager</implementation-class>
       </component>
       <component>
@@ -245,6 +242,6 @@
       </intentionAction>
 
       <project.converterProvider implementation="org.jetbrains.jet.plugin.converters.JetRunConfigurationSettingsFormatConverterProvider"/>
-
+      <postStartupActivity implementation="org.jetbrains.jet.plugin.compiler.JetCompilerManager"/>
   </extensions>
 </idea-plugin>
