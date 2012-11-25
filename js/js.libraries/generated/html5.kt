@@ -1269,8 +1269,8 @@ public native trait CanvasRenderingContext2D {
 	public val canvas: HTMLCanvasElement
 	public var globalAlpha: Float
 	public var globalCompositeOperation: String
-	public var fillStyle: String
-	public var strokeStyle: String
+	public var fillStyle: Any
+	public var strokeStyle: Any
 	public var lineWidth: Number
 	public var lineCap: String
 	public var lineJoin: String
