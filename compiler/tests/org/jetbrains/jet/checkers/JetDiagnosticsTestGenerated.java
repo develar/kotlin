@@ -1382,6 +1382,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/declarationChecks/ComponentFunctionReturnTypeMismatch.kt");
             }
             
+            @TestMetadata("ConflictingAndRedundantProjections.kt")
+            public void testConflictingAndRedundantProjections() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/declarationChecks/ConflictingAndRedundantProjections.kt");
+            }
+            
             @TestMetadata("DataFlowInMultiDeclInFor.kt")
             public void testDataFlowInMultiDeclInFor() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/declarationChecks/DataFlowInMultiDeclInFor.kt");
@@ -1460,6 +1465,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("RedeclarationsInMultiDecl.kt")
             public void testRedeclarationsInMultiDecl() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/declarationChecks/RedeclarationsInMultiDecl.kt");
+            }
+            
+            @TestMetadata("VarianceOnFunctionAndPropertyTypeParameters.kt")
+            public void testVarianceOnFunctionAndPropertyTypeParameters() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/declarationChecks/VarianceOnFunctionAndPropertyTypeParameters.kt");
             }
             
             @TestMetadata("compiler/testData/diagnostics/tests/declarationChecks/multiDeclarations")

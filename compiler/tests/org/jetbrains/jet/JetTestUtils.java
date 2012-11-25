@@ -39,6 +39,7 @@ import org.jetbrains.jet.lang.diagnostics.Severity;
 import org.jetbrains.jet.lang.diagnostics.UnresolvedReferenceDiagnosticFactory;
 import org.jetbrains.jet.lang.diagnostics.rendering.DefaultErrorMessages;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.jet.lang.psi.JetPsiFactory;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
@@ -55,6 +56,7 @@ import org.junit.Assert;
 import javax.tools.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.*;
@@ -369,15 +371,33 @@ public class JetTestUtils {
 
     public static void compileJavaFiles(@NotNull Collection<File> files, List<String> options) throws IOException {
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fileManager = javaCompiler.getStandardFileManager(null, Locale.ENGLISH, Charset.forName("utf-8"));
+        DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<JavaFileObject>();
+        StandardJavaFileManager fileManager = javaCompiler.getStandardFileManager(diagnosticCollector, Locale.ENGLISH, Charset.forName("utf-8"));
         try {
             Iterable<? extends JavaFileObject> javaFileObjectsFromFiles = fileManager.getJavaFileObjectsFromFiles(files);
-            JavaCompiler.CompilationTask task = javaCompiler.getTask(null, fileManager, null, options, null, javaFileObjectsFromFiles);
 
-            Assert.assertTrue(task.call());
+            JavaCompiler.CompilationTask task = javaCompiler.getTask(
+                    new StringWriter(), // do not write to System.err
+                    fileManager,
+                    diagnosticCollector,
+                    options,
+                    null,
+                    javaFileObjectsFromFiles);
+
+            Assert.assertTrue(errorsToString(diagnosticCollector), task.call());
         } finally {
             fileManager.close();
         }
+    }
+
+    private static String errorsToString(DiagnosticCollector<JavaFileObject> diagnosticCollector) {
+        StringBuilder builder = new StringBuilder();
+        for (javax.tools.Diagnostic<? extends JavaFileObject> diagnostic : diagnosticCollector.getDiagnostics()) {
+            if (diagnostic.getKind() == javax.tools.Diagnostic.Kind.ERROR) {
+                builder.append(diagnostic).append("\n");
+            }
+        }
+        return builder.toString();
     }
 
     public static void assertAllTestsPresentByMetadata(
@@ -473,5 +493,10 @@ public class JetTestUtils {
 
     public static KotlinPaths getPathsForTests() {
         return new KotlinPaths(new File("dist/kotlinc"));
+    }
+
+    public static JetFile loadJetFile(@NotNull Project project, @NotNull File ioFile) throws IOException {
+        String text = FileUtil.loadFile(ioFile);
+        return JetPsiFactory.createFile(project, text);
     }
 }

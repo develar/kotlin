@@ -86,11 +86,13 @@ public interface Errors {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    SimpleDiagnosticFactory<JetTypeProjection> PROJECTION_ON_NON_CLASS_TYPE_ARGUMENT = SimpleDiagnosticFactory.create(ERROR, PROJECTION_MODIFIER);
+    SimpleDiagnosticFactory<JetTypeProjection> PROJECTION_ON_NON_CLASS_TYPE_ARGUMENT = SimpleDiagnosticFactory.create(ERROR, VARIANCE_IN_PROJECTION);
     DiagnosticFactory2<JetTypeReference, JetType, JetType> UPPER_BOUND_VIOLATED = DiagnosticFactory2.create(ERROR);
     SimpleDiagnosticFactory<JetNullableType> REDUNDANT_NULLABLE = SimpleDiagnosticFactory.create(WARNING, NULLABLE_TYPE);
     DiagnosticFactory1<JetNullableType, JetType> BASE_WITH_NULLABLE_UPPER_BOUND = DiagnosticFactory1.create(WARNING, NULLABLE_TYPE);
     DiagnosticFactory1<JetElement, Integer> WRONG_NUMBER_OF_TYPE_ARGUMENTS = DiagnosticFactory1.create(ERROR);
+    DiagnosticFactory1<JetTypeProjection, ClassifierDescriptor> CONFLICTING_PROJECTION = DiagnosticFactory1.create(ERROR, VARIANCE_IN_PROJECTION);
+    DiagnosticFactory1<JetTypeProjection, ClassifierDescriptor> REDUNDANT_PROJECTION = DiagnosticFactory1.create(WARNING, VARIANCE_IN_PROJECTION);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -121,7 +123,7 @@ public interface Errors {
     // Classes and traits
 
     SimpleDiagnosticFactory<JetTypeProjection> PROJECTION_IN_IMMEDIATE_ARGUMENT_TO_SUPERTYPE =
-            SimpleDiagnosticFactory.create(ERROR, PROJECTION_MODIFIER);
+            SimpleDiagnosticFactory.create(ERROR, VARIANCE_IN_PROJECTION);
 
     SimpleDiagnosticFactory<PsiElement> CYCLIC_INHERITANCE_HIERARCHY = SimpleDiagnosticFactory.create(ERROR);
 
@@ -147,7 +149,7 @@ public interface Errors {
     SimpleDiagnosticFactory<JetModifierListOwner> ABSTRACT_MODIFIER_IN_TRAIT = SimpleDiagnosticFactory
             .create(WARNING, ABSTRACT_MODIFIER);
     SimpleDiagnosticFactory<JetModifierListOwner> OPEN_MODIFIER_IN_TRAIT = SimpleDiagnosticFactory
-            .create(WARNING, positionModifier(JetTokens.OPEN_KEYWORD));
+            .create(WARNING, modifierSetPosition(JetTokens.OPEN_KEYWORD));
     SimpleDiagnosticFactory<PsiElement> TRAIT_CAN_NOT_BE_FINAL = SimpleDiagnosticFactory.create(ERROR);
 
     SimpleDiagnosticFactory<PsiElement> CONSTRUCTOR_IN_TRAIT = SimpleDiagnosticFactory.create(ERROR);
@@ -161,10 +163,10 @@ public interface Errors {
     SimpleDiagnosticFactory<PsiElement> ENUM_NOT_ALLOWED = SimpleDiagnosticFactory.create(ERROR);
 
     SimpleDiagnosticFactory<JetModifierListOwner> ILLEGAL_ENUM_ANNOTATION = SimpleDiagnosticFactory
-            .create(ERROR, positionModifier(JetTokens.ENUM_KEYWORD));
+            .create(ERROR, modifierSetPosition(JetTokens.ENUM_KEYWORD));
 
     SimpleDiagnosticFactory<JetModifierListOwner> OPEN_MODIFIER_IN_ENUM = SimpleDiagnosticFactory
-            .create(ERROR, positionModifier(JetTokens.OPEN_KEYWORD));
+            .create(ERROR, modifierSetPosition(JetTokens.OPEN_KEYWORD));
 
     SimpleDiagnosticFactory<PsiElement> CLASS_IN_SUPERTYPE_FOR_ENUM = SimpleDiagnosticFactory.create(ERROR);
 
@@ -187,6 +189,8 @@ public interface Errors {
     DiagnosticFactory2<JetSimpleNameExpression, JetTypeConstraint, JetTypeParameterListOwner> NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER =
             DiagnosticFactory2.create(ERROR);
 
+    SimpleDiagnosticFactory<JetTypeParameter> VARIANCE_ON_TYPE_PARAMETER_OF_FUNCTION_OR_PROPERTY = SimpleDiagnosticFactory.create(ERROR, VARIANCE_MODIFIER);
+
     // Members
 
     SimpleDiagnosticFactory<PsiElement> PACKAGE_MEMBER_CANNOT_BE_PROTECTED = SimpleDiagnosticFactory.create(ERROR);
@@ -195,7 +199,8 @@ public interface Errors {
 
     DiagnosticFactory2<JetDeclaration, CallableMemberDescriptor, String> CONFLICTING_OVERLOADS = DiagnosticFactory2.create(ERROR, DECLARATION);
 
-    SimpleDiagnosticFactory<JetNamedDeclaration> NON_FINAL_MEMBER_IN_FINAL_CLASS = SimpleDiagnosticFactory.create(WARNING, positionModifier(JetTokens.OPEN_KEYWORD));
+    SimpleDiagnosticFactory<JetNamedDeclaration> NON_FINAL_MEMBER_IN_FINAL_CLASS = SimpleDiagnosticFactory.create(WARNING, modifierSetPosition(
+            JetTokens.OPEN_KEYWORD));
 
     DiagnosticFactory1<JetModifierListOwner, CallableMemberDescriptor> NOTHING_TO_OVERRIDE = DiagnosticFactory1.create(ERROR, OVERRIDE_MODIFIER);
 

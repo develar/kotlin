@@ -27,6 +27,7 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lexer.JetKeywordToken;
 import org.jetbrains.jet.lexer.JetTokens;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -163,21 +164,28 @@ public class PositioningStrategies {
         }
     };
 
-    public static final PositioningStrategy<JetModifierListOwner> ABSTRACT_MODIFIER = positionModifier(JetTokens.ABSTRACT_KEYWORD);
+    public static final PositioningStrategy<JetModifierListOwner> ABSTRACT_MODIFIER = modifierSetPosition(JetTokens.ABSTRACT_KEYWORD);
 
-    public static final PositioningStrategy<JetModifierListOwner> OVERRIDE_MODIFIER = positionModifier(JetTokens.OVERRIDE_KEYWORD);
+    public static final PositioningStrategy<JetModifierListOwner> OVERRIDE_MODIFIER = modifierSetPosition(JetTokens.OVERRIDE_KEYWORD);
 
-    public static PositioningStrategy<JetModifierListOwner> positionModifier(final JetKeywordToken token) {
+    public static final PositioningStrategy<JetModifierListOwner> VARIANCE_MODIFIER = modifierSetPosition(JetTokens.IN_KEYWORD,
+                                                                                                          JetTokens.OUT_KEYWORD);
+
+    public static PositioningStrategy<JetModifierListOwner> modifierSetPosition(final JetKeywordToken... tokens) {
         return new PositioningStrategy<JetModifierListOwner>() {
             @NotNull
             @Override
             public List<TextRange> mark(@NotNull JetModifierListOwner modifierListOwner) {
-                assert modifierListOwner.hasModifier(token);
                 JetModifierList modifierList = modifierListOwner.getModifierList();
-                assert modifierList != null;
-                ASTNode node = modifierList.getModifierNode(token);
-                assert node != null;
-                return markNode(node);
+                assert modifierList != null : "No modifier list, but modifier has been found by the analyzer";
+
+                for (JetKeywordToken token : tokens) {
+                    ASTNode node = modifierList.getModifierNode(token);
+                    if (node != null) {
+                        return markNode(node);
+                    }
+                }
+                throw new IllegalStateException("None of the modifiers is found: " + Arrays.asList(tokens));
             }
         };
     }
@@ -211,7 +219,7 @@ public class PositioningStrategies {
         }
     };
 
-    public static final PositioningStrategy<JetTypeProjection> PROJECTION_MODIFIER = new PositioningStrategy<JetTypeProjection>() {
+    public static final PositioningStrategy<JetTypeProjection> VARIANCE_IN_PROJECTION = new PositioningStrategy<JetTypeProjection>() {
         @NotNull
         @Override
         public List<TextRange> mark(@NotNull JetTypeProjection element) {
