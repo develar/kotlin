@@ -22,14 +22,13 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiFormatUtil;
-import jet.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.java.*;
 import org.jetbrains.jet.lang.resolve.java.kotlinSignature.AlternativeMethodSignatureData;
-import org.jetbrains.jet.lang.resolve.java.kotlinSignature.SignaturesPropagation;
+import org.jetbrains.jet.lang.resolve.java.kotlinSignature.SignaturesPropagationData;
 import org.jetbrains.jet.lang.resolve.java.kt.DescriptorKindUtils;
 import org.jetbrains.jet.lang.resolve.java.provider.ClassPsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.java.provider.NamedMembers;
@@ -49,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.jetbrains.jet.lang.resolve.OverridingUtil.*;
 import static org.jetbrains.jet.lang.resolve.java.provider.DeclarationOrigin.JAVA;
 import static org.jetbrains.jet.lang.resolve.java.provider.DeclarationOrigin.KOTLIN;
 
@@ -142,17 +142,20 @@ public final class JavaFunctionResolver {
 
         final List<String> signatureErrors = Lists.newArrayList();
 
-        returnType = SignaturesPropagation.modifyReturnTypeAccordingToSuperMethods(returnType, method, trace, new Function1<String, Void>() {
-            @Override
-            public Void invoke(String error) {
-                signatureErrors.add(error);
-                return null;
-            }
-        });
+        SignaturesPropagationData signaturesPropagationData =
+                new SignaturesPropagationData(returnType, valueParameterDescriptors, methodTypeParameters, method, trace);
+        List<FunctionDescriptor> superFunctions = signaturesPropagationData.getSuperFunctions();
+
+        returnType = signaturesPropagationData.getModifiedReturnType();
+        valueParameterDescriptors = signaturesPropagationData.getModifiedValueParameters();
+        methodTypeParameters = signaturesPropagationData.getModifiedTypeParameters();
+
+        signatureErrors.addAll(signaturesPropagationData.getSignatureErrors());
 
         // TODO consider better place for this check
         AlternativeMethodSignatureData alternativeMethodSignatureData =
-                new AlternativeMethodSignatureData(method, valueParameterDescriptors, returnType, methodTypeParameters);
+                new AlternativeMethodSignatureData(method, valueParameterDescriptors, returnType, methodTypeParameters,
+                                                   !superFunctions.isEmpty());
         if (alternativeMethodSignatureData.isAnnotated() && !alternativeMethodSignatureData.hasErrors()) {
             valueParameterDescriptors = alternativeMethodSignatureData.getValueParameters();
             returnType = alternativeMethodSignatureData.getReturnType();
@@ -186,7 +189,7 @@ public final class JavaFunctionResolver {
         }
 
         if (signatureErrors.isEmpty()) {
-            checkFunctionsOverrideCorrectly(method, functionDescriptorImpl);
+            checkFunctionsOverrideCorrectly(method, superFunctions, functionDescriptorImpl);
         }
         else {
             trace.record(BindingContext.LOAD_FROM_JAVA_SIGNATURE_ERRORS, functionDescriptorImpl, signatureErrors);
@@ -195,19 +198,22 @@ public final class JavaFunctionResolver {
         return functionDescriptorImpl;
     }
 
-    private void checkFunctionsOverrideCorrectly(PsiMethodWrapper method, FunctionDescriptor functionDescriptor) {
-        List<FunctionDescriptor> superFunctions = SignaturesPropagation.getSuperFunctionsForMethod(method, trace);
+    private static void checkFunctionsOverrideCorrectly(
+            PsiMethodWrapper method,
+            List<FunctionDescriptor> superFunctions,
+            FunctionDescriptor functionDescriptor
+    ) {
         for (FunctionDescriptor superFunction : superFunctions) {
             TypeSubstitutor substitutor = SubstitutionUtils.buildDeepSubstitutor(
                     ((ClassDescriptor) functionDescriptor.getContainingDeclaration()).getDefaultType());
             FunctionDescriptor superFunctionSubstituted = superFunction.substitute(substitutor);
 
-            // TODO replace asserted condition when propagation for parameters is supported
-            //OverridingUtil.OverrideCompatibilityInfo.Result overridableResult =
-            //        OverridingUtil.isOverridableBy(superFunctionSubstituted, functionDescriptor).getResult();
-            //if (overridableResult != OverridingUtil.OverrideCompatibilityInfo.Result.OVERRIDABLE
-            //    || !OverridingUtil.isReturnTypeOkForOverride(JetTypeChecker.INSTANCE, superFunctionSubstituted, functionDescriptor)) {
-            if (!OverridingUtil.isReturnTypeOkForOverride(JetTypeChecker.INSTANCE, superFunctionSubstituted, functionDescriptor)) {
+            OverrideCompatibilityInfo.Result overridableResult =
+                    isOverridableBy(superFunctionSubstituted, functionDescriptor).getResult();
+            boolean paramsOk = overridableResult == OverrideCompatibilityInfo.Result.OVERRIDABLE;
+            boolean returnTypeOk =
+                    isReturnTypeOkForOverride(JetTypeChecker.INSTANCE, superFunctionSubstituted, functionDescriptor);
+            if (!paramsOk || !returnTypeOk) {
                 throw new IllegalStateException("Loaded Java method overrides another, but resolved as Kotlin function, doesn't.\n"
                                                 + "super function = " + superFunction + "\n"
                                                 + "this function = " + functionDescriptor + "\n"

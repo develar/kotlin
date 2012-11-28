@@ -78,15 +78,16 @@
         <copy file="dependencies/download/dx-1.7-sources.jar" tofile="dependencies/dx-sources.jar" overwrite="true"/>
 
         <!-- jline -->
-        <get src="http://repository.jetbrains.com/remote-repos/jline/jline/2.6/jline-2.6.jar"
-             dest="dependencies/download/jline-2.6.jar" usetimestamp="true"/>
-        <copy file="dependencies/download/jline-2.6.jar" tofile="dependencies/jline.jar" overwrite="true"/>
+        <get src="http://repository.jetbrains.com/remote-repos/jline/jline/2.9/jline-2.9.jar"
+             dest="dependencies/download/jline-2.9.jar" usetimestamp="true"/>
+        <copy file="dependencies/download/jline-2.9.jar" tofile="dependencies/jline.jar" overwrite="true"/>
 
-        <get src="http://repository.jetbrains.com/remote-repos/jline/jline/2.6/jline-2.6-sources.jar"
-             dest="dependencies/download/jline-2.6-sources.jar" usetimestamp="true"/>
-        <copy file="dependencies/download/jline-2.6-sources.jar" tofile="dependencies/jline-sources.jar" overwrite="true"/>
+        <get src="http://repository.jetbrains.com/remote-repos/jline/jline/2.9/jline-2.9-sources.jar"
+             dest="dependencies/download/jline-2.9-sources.jar" usetimestamp="true"/>
+        <copy file="dependencies/download/jline-2.9-sources.jar" tofile="dependencies/jline-sources.jar" overwrite="true"/>
 
         <!-- jansi -->
+        <!--
         <get src="http://repository.jetbrains.com/remote-repos/org/fusesource/jansi/jansi/1.9/jansi-1.9.jar"
              dest="dependencies/download/jansi-1.9.jar" usetimestamp="true"/>
         <copy file="dependencies/download/jansi-1.9.jar" tofile="dependencies/jansi.jar" overwrite="true"/>
@@ -94,6 +95,7 @@
         <get src="http://repository.jetbrains.com/remote-repos/org/fusesource/jansi/jansi/1.9/jansi-1.9-sources.jar"
              dest="dependencies/download/jansi-1.9-sources.jar" usetimestamp="true"/>
         <copy file="dependencies/download/jansi-1.9-sources.jar" tofile="dependencies/jansi-sources.jar" overwrite="true"/>
+        -->
 
         <!-- Guava 12 sources-->
         <get src="http://search.maven.org/remotecontent?filepath=com/google/guava/guava/12.0/guava-12.0-sources.jar"
@@ -186,22 +188,22 @@
                     <get src="@{base.url}/core/picocontainer.jar" dest="${core}/picocontainer.jar" usetimestamp="true"/>
                     <get src="@{base.url}/core/trove4j.jar" dest="${core}/trove4j.jar" usetimestamp="true"/>
 
-                    <get src="@{base.url}/jps/asm4-all.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/groovy-jps-plugin.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/groovy_rt.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/jdom.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/jgoodies-forms.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/jna.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/jps-builders.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/jps-model.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/log4j.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/nanoxml-2.2.3.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/protobuf-2.4.1.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/trove4j.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/ui-designer-jps-plugin.jar" dest="${jps}/" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/util.jar" dest="${jps}/" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/asm4-all.jar" dest="${jps}/asm4-all.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/groovy-jps-plugin.jar" dest="${jps}/groovy-jps-plugin.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/groovy_rt.jar" dest="${jps}/groovy_rt.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/jdom.jar" dest="${jps}/jdom.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/jgoodies-forms.jar" dest="${jps}/jgoodies-forms.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/jna.jar" dest="${jps}/jna.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/jps-builders.jar" dest="${jps}/jps-builders.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/jps-model.jar" dest="${jps}/jps-model.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/log4j.jar" dest="${jps}/log4j.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/nanoxml-2.2.3.jar" dest="${jps}/nanoxml-2.2.3.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/protobuf-2.4.1.jar" dest="${jps}/protobuf-2.4.1.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/trove4j.jar" dest="${jps}/trove4j.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/ui-designer-jps-plugin.jar" dest="${jps}/ui-designer-jps-plugin.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/util.jar" dest="${jps}/util.jar" usetimestamp="true"/>
 
-                    <get src="@{base.url}/jps/test/jps-build-test.jar" dest="${jps-test}/" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/test/jps-build-test.jar" dest="${jps-test}/jps-build-test.jar" usetimestamp="true"/>
 
                     <get src="@{base.url}/@{build.zip}" dest="dependencies/download/@{build.zip}" usetimestamp="true"/>
 

@@ -29,11 +29,10 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.java.wrapper.PsiMethodWrapper;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.types.JetType;
+import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,44 +42,32 @@ import java.util.Map;
  */
 public class AlternativeMethodSignatureData extends ElementAlternativeSignatureData {
     private final JetNamedFunction altFunDeclaration;
-    private final PsiMethodWrapper method;
 
     private JavaDescriptorResolver.ValueParameterDescriptors altValueParameters;
     private JetType altReturnType;
     private List<TypeParameterDescriptor> altTypeParameters;
 
-    private final Map<TypeParameterDescriptor, TypeParameterDescriptorImpl> originalToAltTypeParameters =
-            new HashMap<TypeParameterDescriptor, TypeParameterDescriptorImpl>();
+    private Map<TypeParameterDescriptor, TypeParameterDescriptorImpl> originalToAltTypeParameters;
 
     public AlternativeMethodSignatureData(
             @NotNull PsiMethodWrapper method,
             @NotNull JavaDescriptorResolver.ValueParameterDescriptors valueParameterDescriptors,
             @Nullable JetType originalReturnType,
-            @NotNull List<TypeParameterDescriptor> methodTypeParameters
+            @NotNull List<TypeParameterDescriptor> methodTypeParameters,
+            boolean hasSuperMethods
     ) {
         String signature = method.getSignatureAnnotation().signature();
         if (signature.isEmpty()) {
             setAnnotated(false);
             altFunDeclaration = null;
-            this.method = null;
             return;
         }
 
         setAnnotated(true);
-        this.method = method;
         Project project = method.getPsiMethod().getProject();
         altFunDeclaration = JetPsiFactory.createFunction(project, signature);
 
-        for (TypeParameterDescriptor typeParameter : methodTypeParameters) {
-            originalToAltTypeParameters.put(typeParameter,
-                                            TypeParameterDescriptorImpl.createForFurtherModification(
-                                                    typeParameter.getContainingDeclaration(),
-                                                    typeParameter.getAnnotations(),
-                                                    typeParameter.isReified(),
-                                                    typeParameter.getVariance(),
-                                                    typeParameter.getName(),
-                                                    typeParameter.getIndex()));
-        }
+        originalToAltTypeParameters = SignaturesUtil.recreateTypeParametersAndReturnMapping(methodTypeParameters);
 
         try {
             checkForSyntaxErrors(altFunDeclaration);
@@ -89,12 +76,52 @@ public class AlternativeMethodSignatureData extends ElementAlternativeSignatureD
             computeTypeParameters(methodTypeParameters);
             computeValueParameters(valueParameterDescriptors);
 
+            if (hasSuperMethods) {
+                checkSameParameterTypes(valueParameterDescriptors, methodTypeParameters);
+            }
+
             if (originalReturnType != null) {
                 altReturnType = computeReturnType(originalReturnType, altFunDeclaration.getReturnTypeRef(), originalToAltTypeParameters);
             }
         }
         catch (AlternativeSignatureMismatchException e) {
             setError(e.getMessage());
+        }
+    }
+
+    private void checkSameParameterTypes(
+            @NotNull JavaDescriptorResolver.ValueParameterDescriptors valueParameterDescriptors,
+            @NotNull List<TypeParameterDescriptor> methodTypeParameters
+    ) {
+        TypeSubstitutor substitutor = SignaturesUtil.createSubstitutorForFunctionTypeParameters(originalToAltTypeParameters);
+
+        for (ValueParameterDescriptor parameter : valueParameterDescriptors.getDescriptors()) {
+            int index = parameter.getIndex();
+            ValueParameterDescriptor altParameter = altValueParameters.getDescriptors().get(index);
+
+            JetType substituted = substitutor.substitute(parameter.getType(), Variance.INVARIANT);
+            assert substituted != null;
+
+            if (!TypeUtils.equalTypes(substituted, altParameter.getType())) {
+                throw new AlternativeSignatureMismatchException(
+                        "Parameter type changed for method which overrides another: " + altParameter.getType()
+                        + ", was: " + parameter.getType());
+            }
+        }
+
+        // don't check receiver
+
+        for (TypeParameterDescriptor parameter : methodTypeParameters) {
+            int index = parameter.getIndex();
+
+            JetType substituted = substitutor.substitute(altTypeParameters.get(index).getUpperBoundsAsType(), Variance.INVARIANT);
+            assert substituted != null;
+
+            if (!TypeUtils.equalTypes(substituted, parameter.getUpperBoundsAsType())) {
+                throw new AlternativeSignatureMismatchException(
+                        "Type parameter's upper bound changed for method which overrides another: "
+                        + altTypeParameters.get(index).getUpperBoundsAsType() + ", was: " + parameter.getUpperBoundsAsType());
+            }
         }
     }
 

@@ -439,10 +439,113 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
         }
         
         @TestMetadata("compiler/testData/loadJava/kotlinSignature/propagation")
-        @InnerTestClasses({Propagation.Return.class})
+        @InnerTestClasses({Propagation.Parameter.class, Propagation.Return.class, Propagation.TypeParameter.class})
         public static class Propagation extends AbstractLoadJavaTest {
             public void testAllFilesPresentInPropagation() throws Exception {
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/kotlinSignature/propagation"), "java", true);
+            }
+            
+            @TestMetadata("compiler/testData/loadJava/kotlinSignature/propagation/parameter")
+            public static class Parameter extends AbstractLoadJavaTest {
+                public void testAllFilesPresentInParameter() throws Exception {
+                    JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/kotlinSignature/propagation/parameter"), "java", true);
+                }
+                
+                @TestMetadata("ChangeProjectionKind1.java")
+                public void testChangeProjectionKind1() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/ChangeProjectionKind1.java");
+                }
+                
+                @TestMetadata("ChangeProjectionKind2.java")
+                public void testChangeProjectionKind2() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/ChangeProjectionKind2.java");
+                }
+                
+                @TestMetadata("InheritMutability.java")
+                public void testInheritMutability() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritMutability.java");
+                }
+                
+                @TestMetadata("InheritNotVararg.java")
+                public void testInheritNotVararg() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritNotVararg.java");
+                }
+                
+                @TestMetadata("InheritNotVarargInteger.java")
+                public void testInheritNotVarargInteger() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritNotVarargInteger.java");
+                }
+                
+                @TestMetadata("InheritNotVarargNotNull.java")
+                public void testInheritNotVarargNotNull() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritNotVarargNotNull.java");
+                }
+                
+                @TestMetadata("InheritNotVarargPrimitive.java")
+                public void testInheritNotVarargPrimitive() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritNotVarargPrimitive.java");
+                }
+                
+                @TestMetadata("InheritNullability.java")
+                public void testInheritNullability() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritNullability.java");
+                }
+                
+                @TestMetadata("InheritProjectionKind.java")
+                public void testInheritProjectionKind() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritProjectionKind.java");
+                }
+                
+                @TestMetadata("InheritReadOnliness.java")
+                public void testInheritReadOnliness() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritReadOnliness.java");
+                }
+                
+                @TestMetadata("InheritVararg.java")
+                public void testInheritVararg() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritVararg.java");
+                }
+                
+                @TestMetadata("InheritVarargInteger.java")
+                public void testInheritVarargInteger() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritVarargInteger.java");
+                }
+                
+                @TestMetadata("InheritVarargNotNull.java")
+                public void testInheritVarargNotNull() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritVarargNotNull.java");
+                }
+                
+                @TestMetadata("InheritVarargPrimitive.java")
+                public void testInheritVarargPrimitive() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/InheritVarargPrimitive.java");
+                }
+                
+                @TestMetadata("MutableToReadOnly.java")
+                public void testMutableToReadOnly() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/MutableToReadOnly.java");
+                }
+                
+                @TestMetadata("NotNullToNullable.java")
+                public void testNotNullToNullable() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/NotNullToNullable.java");
+                }
+                
+                @TestMetadata("NullableToNotNull.java")
+                public void testNullableToNotNull() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/NullableToNotNull.java");
+                }
+                
+                @TestMetadata("NullableToNotNullKotlinSignature.java")
+                public void testNullableToNotNullKotlinSignature() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/NullableToNotNullKotlinSignature.java");
+                }
+                
+                @TestMetadata("ReadOnlyToMutable.java")
+                public void testReadOnlyToMutable() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/parameter/ReadOnlyToMutable.java");
+                }
+                
             }
             
             @TestMetadata("compiler/testData/loadJava/kotlinSignature/propagation/return")
@@ -573,10 +676,60 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
                 
             }
             
+            @TestMetadata("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter")
+            public static class TypeParameter extends AbstractLoadJavaTest {
+                public void testAllFilesPresentInTypeParameter() throws Exception {
+                    JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter"), "java", true);
+                }
+                
+                @TestMetadata("InheritMutability.java")
+                public void testInheritMutability() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/InheritMutability.java");
+                }
+                
+                @TestMetadata("InheritNullability.java")
+                public void testInheritNullability() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/InheritNullability.java");
+                }
+                
+                @TestMetadata("InheritReadOnliness.java")
+                public void testInheritReadOnliness() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/InheritReadOnliness.java");
+                }
+                
+                @TestMetadata("TwoBounds.java")
+                public void testTwoBounds() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/TwoBounds.java");
+                }
+                
+                @TestMetadata("TwoSuperclasses.java")
+                public void testTwoSuperclasses() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/TwoSuperclasses.java");
+                }
+                
+                @TestMetadata("TwoTypeParameters.java")
+                public void testTwoTypeParameters() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/TwoTypeParameters.java");
+                }
+                
+                @TestMetadata("UseParameterAsUpperBound.java")
+                public void testUseParameterAsUpperBound() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/UseParameterAsUpperBound.java");
+                }
+                
+                @TestMetadata("UseParameterInUpperBound.java")
+                public void testUseParameterInUpperBound() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/UseParameterInUpperBound.java");
+                }
+                
+            }
+            
             public static Test innerSuite() {
                 TestSuite suite = new TestSuite("Propagation");
                 suite.addTestSuite(Propagation.class);
+                suite.addTestSuite(Parameter.class);
                 suite.addTestSuite(Return.class);
+                suite.addTestSuite(TypeParameter.class);
                 return suite;
             }
         }
