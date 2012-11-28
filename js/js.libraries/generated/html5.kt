@@ -311,7 +311,7 @@ public native trait HTMLCollection {
 public native trait HTMLOptionsCollection {
 	public val length: Number
 
-	public fun item(index: Number): Node
+	public fun item(index: Int): Node
 	public fun namedItem(name: String): Node
 }
 
@@ -340,9 +340,8 @@ public native trait HTMLDocument : Document {
 	public fun writeln(text: String): Unit
 	public fun getElementsByName(elementName: String): NodeList
 	public fun getElementsByClassName(className: String): NodeList
-	public fun getBoxObjectFor(element: HTMLElement): Node
-	public fun querySelectorAll(String: String): NodeList
-	public fun querySelector(String: String): Node
+	public fun querySelectorAll(selector: String): NodeList
+	public fun querySelector(selector: String): Node
 	public fun getAnonymousNodes(node: HTMLElement): Array<Node>
 	public fun getAnonymousElementByAttribute(node: HTMLElement, attrName: String, attrValue: String): NodeList
 }
@@ -643,7 +642,7 @@ public native trait HTMLButtonElement : HTMLElement {
 public native trait HTMLLabelElement : HTMLElement {
 	public val form: HTMLFormElement
 	public var accessKey: String
-	public var htmlFor: Unit
+	public var htmlFor: String
 }
 
 public native trait HTMLFieldSetElement : HTMLElement {
