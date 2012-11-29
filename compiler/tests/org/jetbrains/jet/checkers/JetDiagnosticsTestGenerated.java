@@ -2386,6 +2386,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/library"), "kt", true);
             }
             
+            @TestMetadata("BooleanIsNotComparable.kt")
+            public void testBooleanIsNotComparable() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/library/BooleanIsNotComparable.kt");
+            }
+            
             @TestMetadata("Collections.kt")
             public void testCollections() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/library/Collections.kt");
@@ -2953,6 +2958,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("DoubleDefine.kt")
             public void testDoubleDefine() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/regressions/DoubleDefine.kt");
+            }
+            
+            @TestMetadata("ea40964.kt")
+            public void testEa40964() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/regressions/ea40964.kt");
             }
             
             @TestMetadata("ErrorsOnIbjectExpressionsAsParameters.kt")

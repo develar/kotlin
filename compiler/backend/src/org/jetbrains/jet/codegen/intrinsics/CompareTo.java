@@ -28,6 +28,8 @@ import org.jetbrains.jet.lang.psi.JetExpression;
 
 import java.util.List;
 
+import static org.jetbrains.jet.codegen.AsmUtil.comparisonOperandType;
+
 /**
  * @author alex.tkachman
  */
@@ -43,24 +45,25 @@ public class CompareTo implements IntrinsicMethod {
             @NotNull GenerationState state
     ) {
         assert arguments != null;
-        receiver.put(receiver.type, v);
-        codegen.gen(arguments.get(0), receiver.type);
-        if (receiver.type == Type.BYTE_TYPE || receiver.type == Type.SHORT_TYPE || receiver.type == Type.CHAR_TYPE) {
+        JetExpression argument = arguments.get(0);
+        Type type = comparisonOperandType(receiver.type, codegen.expressionType(argument));
+
+        receiver.put(type, v);
+        codegen.gen(argument, type);
+
+        if (type == Type.BYTE_TYPE || type == Type.SHORT_TYPE || type == Type.CHAR_TYPE) {
             v.sub(Type.INT_TYPE);
         }
-        else if (receiver.type == Type.INT_TYPE) {
+        else if (type == Type.INT_TYPE) {
             v.invokestatic("jet/runtime/Intrinsics", "compare", "(II)I");
         }
-        else if (receiver.type == Type.BOOLEAN_TYPE) {
-            v.invokestatic("jet/runtime/Intrinsics", "compare", "(ZZ)I");
-        }
-        else if (receiver.type == Type.LONG_TYPE) {
+        else if (type == Type.LONG_TYPE) {
             v.invokestatic("jet/runtime/Intrinsics", "compare", "(JJ)I");
         }
-        else if (receiver.type == Type.FLOAT_TYPE) {
+        else if (type == Type.FLOAT_TYPE) {
             v.invokestatic("java/lang/Float", "compare", "(FF)I");
         }
-        else if (receiver.type == Type.DOUBLE_TYPE) {
+        else if (type == Type.DOUBLE_TYPE) {
             v.invokestatic("java/lang/Double", "compare", "(DD)I");
         }
         else {

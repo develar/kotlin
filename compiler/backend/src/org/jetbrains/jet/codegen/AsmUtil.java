@@ -311,15 +311,6 @@ public class AsmUtil {
         mv.visitInsn(L2I);
     }
 
-    static StackValue compareExpressionsOnStack(InstructionAdapter v, IElementType opToken, Type operandType) {
-        if (operandType.getSort() == Type.OBJECT) {
-            v.invokeinterface("java/lang/Comparable", "compareTo", "(Ljava/lang/Object;)I");
-            v.iconst(0);
-            operandType = Type.INT_TYPE;
-        }
-        return StackValue.cmp(opToken, operandType);
-    }
-
     static StackValue genNullSafeEquals(
             InstructionAdapter v,
             IElementType opToken,
@@ -394,7 +385,7 @@ public class AsmUtil {
             boolean rightNullable
     ) {
         if ((isNumberPrimitive(leftType) || leftType.getSort() == Type.BOOLEAN) && leftType == rightType) {
-            return compareExpressionsOnStack(v, opToken, leftType);
+            return StackValue.cmp(opToken, leftType);
         }
         else {
             if (opToken == JetTokens.EQEQEQ || opToken == JetTokens.EXCLEQEQEQ) {
@@ -525,5 +516,12 @@ public class AsmUtil {
             v.visitLdcInsn(descriptor.getName().getName());
             v.invokestatic("jet/runtime/Intrinsics", assertMethodToCall, "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V");
         }
+    }
+
+    public static Type comparisonOperandType(Type left, Type right) {
+        if (left == Type.DOUBLE_TYPE || right == Type.DOUBLE_TYPE) return Type.DOUBLE_TYPE;
+        if (left == Type.FLOAT_TYPE || right == Type.FLOAT_TYPE) return Type.FLOAT_TYPE;
+        if (left == Type.LONG_TYPE || right == Type.LONG_TYPE) return Type.LONG_TYPE;
+        return Type.INT_TYPE;
     }
 }
