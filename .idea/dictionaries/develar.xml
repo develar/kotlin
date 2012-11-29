@@ -6,6 +6,8 @@
       <w>ident</w>
       <w>inlined</w>
       <w>intrinsics</w>
+      <w>kotlinc</w>
+      <w>mavenized</w>
       <w>nomen</w>
       <w>obfuscatable</w>
       <w>overridable</w>
