@@ -17,16 +17,10 @@
 package org.jetbrains.jet.plugin.project;
 
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author Pavel Talanov
@@ -51,27 +45,5 @@ public final class JsModuleDetector {
         }
 
         return false;
-    }
-
-    @NotNull
-    public static List<String> getLibPathAsList(@NotNull Project project) {
-        Module module = getJSModule(project);
-        if (module == null) {
-            return Collections.emptyList();
-        }
-        else {
-            return Collections.singletonList(KotlinJsBuildConfigurationManager.getLibLocation(module));
-        }
-    }
-
-    @Nullable
-    private static Module getJSModule(@NotNull Project project) {
-        Module[] modules = ModuleManager.getInstance(project).getModules();
-        for (Module module : modules) {
-            if (isJsModule(module)) {
-                return module;
-            }
-        }
-        return null;
     }
 }

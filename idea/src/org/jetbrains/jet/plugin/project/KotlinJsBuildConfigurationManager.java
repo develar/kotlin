@@ -23,7 +23,7 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleServiceManager;
-import com.intellij.openapi.vfs.StandardFileSystems;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
@@ -48,20 +48,14 @@ public final class KotlinJsBuildConfigurationManager implements PersistentStateC
 
     private boolean sourcemap;
 
-    public static String getLibLocation(Module module) {
+    public static VirtualFile getLibLocation(Project project) {
         final AccessToken token = ReadAction.start();
         try {
-            VirtualFile file = findLibraryFile(module.getProject(), false);
-            if (file != null) {
-                VirtualFile fileForJar = StandardFileSystems.getVirtualFileForJar(file);
-                return fileForJar == null ? null : fileForJar.getPath();
-            }
+            return findLibraryFile(project, false);
         }
         finally {
             token.finish();
         }
-
-        return null;
     }
 
     @NotNull

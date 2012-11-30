@@ -26,6 +26,7 @@ import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.Chunk;
@@ -146,7 +147,7 @@ public final class K2JSCompiler implements TranslatingCompiler {
         addPathToSourcesDir(getSourceFiles(module), args);
         addOutputPath(outFile, args);
         KotlinJsBuildConfigurationManager jsModuleComponent = KotlinJsBuildConfigurationManager.getInstance(module);
-        addLibLocation(jsModuleComponent, module, args);
+        addLibLocation(module, args);
 
         args.add("-target");
         args.add(jsModuleComponent.getEcmaVersion().toString());
@@ -189,11 +190,7 @@ public final class K2JSCompiler implements TranslatingCompiler {
                 .getFiles(JetFileType.INSTANCE, true);
     }
 
-    private static void addLibLocation(
-            @NotNull KotlinJsBuildConfigurationManager jsModuleComponent,
-            @NotNull Module module,
-            @NotNull ArrayList<String> args
-    ) {
+    private static void addLibLocation(@NotNull Module module, @NotNull ArrayList<String> args) {
         StringBuilder sb = StringBuilderSpinAllocator.alloc();
         AccessToken token = ReadAction.start();
         try {
@@ -208,9 +205,9 @@ public final class K2JSCompiler implements TranslatingCompiler {
                 }
             }
 
-            String libPath = KotlinJsBuildConfigurationManager.getLibLocation(module);
-            if (libPath != null) {
-                sb.append(libPath).append(',');
+            VirtualFile libraryFile = StandardFileSystems.getVirtualFileForJar(KotlinJsBuildConfigurationManager.getLibLocation(module.getProject()));
+            if (libraryFile != null) {
+                sb.append(libraryFile.getPath()).append(',');
             }
 
             if (sb.length() > 0) {

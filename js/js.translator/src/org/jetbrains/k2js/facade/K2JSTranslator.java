@@ -79,16 +79,10 @@ public final class K2JSTranslator {
     @NotNull
     public String translateStringWithCallToMain(@NotNull String programText, @NotNull String argumentsString) throws TranslationException {
         JetFile file = JetFileUtils.createPsiFile("test", programText, config.getProject());
-        String programCode = generateProgramCode(Collections.singletonList(file),
-                                                 MainCallParameters.mainWithArguments(parseString(argumentsString))) + "\n";
-        return FLUSH_SYSTEM_OUT + programCode + GET_SYSTEM_OUT;
-    }
-
-    @NotNull
-    public String generateProgramCode(@NotNull List<JetFile> files, @NotNull MainCallParameters mainCallParameters)
-            throws TranslationException {
         KotlinBuiltIns.initialize(config.getProject());
-        return generateProgramCode(files, mainCallParameters, new TextOutputImpl(), null, null);
+        List<JetFile> files = Collections.singletonList(file);
+        String programCode = generateProgramCode(files, MainCallParameters.mainWithArguments(parseString(argumentsString)), new TextOutputImpl(), null, AnalyzerFacadeForJS.analyzeFilesAndCheckErrors(files, config));
+        return FLUSH_SYSTEM_OUT + programCode + "\n" + GET_SYSTEM_OUT;
     }
 
     @NotNull
@@ -97,9 +91,9 @@ public final class K2JSTranslator {
             @NotNull MainCallParameters mainCallParameters,
             @NotNull TextOutputImpl output,
             @Nullable SourceMapBuilder sourceMapBuilder,
-            AnalyzeExhaust exhaust
+            @NotNull AnalyzeExhaust exhaust
     ) throws TranslationException {
-        BindingContext bindingContext = exhaust == null ? AnalyzerFacadeForJS.analyzeFilesAndCheckErrors(files, config) : exhaust.getBindingContext();
+        BindingContext bindingContext = exhaust.getBindingContext();
         JsProgram program = Translation.generateAst(bindingContext, files, mainCallParameters, config);
         JsSourceGenerationVisitor sourceGenerator = new JsSourceGenerationVisitor(output, sourceMapBuilder);
         program.accept(sourceGenerator);

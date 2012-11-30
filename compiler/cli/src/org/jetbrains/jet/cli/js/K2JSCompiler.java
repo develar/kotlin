@@ -89,13 +89,13 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
 
         final Config config = getConfig(arguments, project);
         final List<JetFile> sources = environmentForJS.getSourceFiles();
-        AnalyzeExhaust libraryExhaust = analyze(messageCollector, config, config.getLibFiles(), null, false);
+        AnalyzeExhaust libraryExhaust = analyze(messageCollector, project, config.getLibFiles(), null, false);
         if (libraryExhaust == null) {
             return ExitCode.COMPILATION_ERROR;
         }
         libraryExhaust.throwIfError();
 
-        AnalyzeExhaust exhaust = analyze(messageCollector, config, sources, libraryExhaust.getBindingContext(), true);
+        AnalyzeExhaust exhaust = analyze(messageCollector, project, sources, libraryExhaust.getBindingContext(), true);
         if (exhaust == null) {
             return ExitCode.COMPILATION_ERROR;
         }
@@ -114,11 +114,11 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         return ExitCode.OK;
     }
 
-    private static AnalyzeExhaust analyze(PrintingMessageCollector messageCollector, final Config config, final List<JetFile> sources, final BindingContext parentBindingContext, final boolean analyzeCompletely) {
+    private static AnalyzeExhaust analyze(PrintingMessageCollector messageCollector, final Project project, final List<JetFile> sources, final BindingContext parentBindingContext, final boolean analyzeCompletely) {
         return new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Function0<AnalyzeExhaust>() {
             @Override
             public AnalyzeExhaust invoke() {
-                return AnalyzerFacadeForJS.analyzeFiles(sources, analyzeCompletely, config, parentBindingContext, false);
+                return AnalyzerFacadeForJS.analyzeFiles(sources, project, parentBindingContext, analyzeCompletely);
             }
         }, sources);
     }

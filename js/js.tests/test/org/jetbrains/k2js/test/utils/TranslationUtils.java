@@ -19,7 +19,6 @@ package org.jetbrains.k2js.test.utils;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
@@ -38,7 +37,6 @@ import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.test.config.TestConfigFactory;
 
-import java.io.File;
 import java.lang.ref.SoftReference;
 import java.util.List;
 
@@ -76,7 +74,7 @@ public final class TranslationUtils {
                     return isFileWithCode((JetFile) file);
                 }
             };
-            AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(allLibFiles, filesWithCode, Config.getEmptyConfig(project));
+            AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(allLibFiles, project, null, filesWithCode, null, false);
             context = exhaust.getBindingContext();
             AnalyzerFacadeForJS.checkForErrors(allLibFiles, context);
             cachedLibraryContext = new SoftReference<BindingContext>(context);
@@ -95,8 +93,7 @@ public final class TranslationUtils {
 
     @NotNull
     public static Config getConfig(@NotNull Project project, @NotNull EcmaVersion version, @NotNull TestConfigFactory configFactory) {
-        BindingContext preanalyzedContext = getLibraryContext(project);
-        return configFactory.create(project, version, getLibFilesWithCode(getAllLibFiles(project)), preanalyzedContext);
+        return configFactory.create(project, version, getLibFilesWithCode(getAllLibFiles(project)));
     }
 
     public static void translateFiles(@NotNull Project project, @NotNull List<String> inputFiles,
@@ -104,8 +101,8 @@ public final class TranslationUtils {
             @NotNull MainCallParameters mainCallParameters,
             @NotNull EcmaVersion version, TestConfigFactory configFactory) throws Exception {
         List<JetFile> psiFiles = createPsiFileList(project, inputFiles, null);
-        K2JSTranslator translator = new K2JSTranslator(getConfig(project, version, configFactory));
-        FileUtil.writeToFile(new File(outputFile), translator.generateProgramCode(psiFiles, mainCallParameters));
+        AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(psiFiles, project, getLibraryContext(project), true);
+        K2JSTranslator.translateWithMainCallParametersAndSaveToFile(mainCallParameters, psiFiles, outputFile, getConfig(project, version, configFactory), exhaust);
     }
 
     @NotNull

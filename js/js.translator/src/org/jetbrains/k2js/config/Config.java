@@ -21,7 +21,6 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.translate.test.JSTester;
 import org.jetbrains.k2js.translate.test.QUnitTester;
 
@@ -135,7 +134,7 @@ public abstract class Config {
     public static final String STDLIB_LOCATION = "libraries/stdlib/src";
 
     @NotNull
-    private final Project project;
+    protected final Project project;
     @Nullable
     private List<JetFile> libFiles = null;
     @NotNull
@@ -190,11 +189,6 @@ public abstract class Config {
             libFiles = generateLibFiles();
         }
         return libFiles;
-    }
-
-    @Nullable
-    public BindingContext getLibraryBindingContext() {
-        return null;
     }
 
     @NotNull

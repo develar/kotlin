@@ -60,7 +60,7 @@ public class JsConfiguration implements ModuleConfiguration {
     @Nullable
     private final BindingContext preanalyzedContext;
 
-    JsConfiguration(@NotNull Project project, @Nullable BindingContext preanalyzedContext) {
+    public JsConfiguration(@NotNull Project project, @Nullable BindingContext preanalyzedContext) {
         this.project = project;
         this.preanalyzedContext = preanalyzedContext;
     }

@@ -17,22 +17,30 @@
 package org.jetbrains.jet.plugin.project;
 
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.analyzer.AnalyzerFacade;
+import org.jetbrains.jet.analyzer.AnalyzerFacadeForEverything;
 import org.jetbrains.jet.lang.ModuleConfiguration;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.BodiesResolveContext;
+import org.jetbrains.jet.lang.resolve.lazy.FileBasedDeclarationProviderFactory;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
+import org.jetbrains.jet.lang.resolve.name.FqName;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
-import org.jetbrains.k2js.config.Config;
-import org.jetbrains.k2js.config.EcmaVersion;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.LibrarySourcesConfig;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -54,7 +62,8 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             @NotNull List<AnalyzerScriptParameter> scriptParameters,
             @NotNull Predicate<PsiFile> filesToAnalyzeCompletely
     ) {
-        return AnalyzerFacadeForJS.analyzeFiles(files, filesToAnalyzeCompletely, createConfig(project), true);
+        BindingContext libraryBindingContext = AnalyzerFacadeForJS.analyzeFiles(getLibraryFiles(project), project, null, false).getBindingContext();
+        return AnalyzerFacadeForJS.analyzeFilesAndStoreBodyContext(files, project, libraryBindingContext, false);
     }
 
     @NotNull
@@ -67,16 +76,32 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             @NotNull BodiesResolveContext bodiesResolveContext,
             @NotNull ModuleConfiguration configuration
     ) {
-        return AnalyzerFacadeForJS.analyzeBodiesInFiles(filesForBodiesResolve, createConfig(project), traceContext, bodiesResolveContext, configuration);
+        return AnalyzerFacadeForEverything.analyzeBodiesInFilesWithJavaIntegration(project, scriptParameters, filesForBodiesResolve,
+                                                                                   traceContext, bodiesResolveContext, configuration);
     }
 
     @NotNull
     @Override
     public ResolveSession getLazyResolveSession(@NotNull Project project, @NotNull Collection<JetFile> files) {
-        return AnalyzerFacadeForJS.getLazyResolveSession(files, createConfig(project));
+        Collection<JetFile> allFiles = getLibraryFiles(project);
+        if (allFiles != null) {
+            allFiles.addAll(files);
+        }
+        else {
+            allFiles = files;
+        }
+
+        FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(allFiles, Predicates.<FqName>alwaysFalse());
+        ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
+        // todo cache libraryBindingContext
+        BindingContext libraryBindingContext = AnalyzerFacadeForJS.analyzeFiles(getLibraryFiles(project), project, null, false).getBindingContext();
+        return new ResolveSession(project, lazyModule, new JsModuleConfiguration(project, libraryBindingContext), declarationProviderFactory);
     }
 
-    private static Config createConfig(@NotNull Project project) {
-        return new LibrarySourcesConfig(project, "default", JsModuleDetector.getLibPathAsList(project), EcmaVersion.defaultVersion(), false);
+    private static List<JetFile> getLibraryFiles(Project project) {
+        VirtualFile libraryFile = KotlinJsBuildConfigurationManager.getLibLocation(project);
+        List<JetFile> allFiles = new ArrayList<JetFile>();
+        LibrarySourcesConfig.traverseFile(project, libraryFile, allFiles, null);
+        return allFiles;
     }
 }

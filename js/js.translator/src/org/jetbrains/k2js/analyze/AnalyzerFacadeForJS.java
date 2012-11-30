@@ -23,15 +23,10 @@ import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
-import org.jetbrains.jet.analyzer.AnalyzerFacadeForEverything;
 import org.jetbrains.jet.di.InjectorForTopDownAnalyzerForJs;
-import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.*;
-import org.jetbrains.jet.lang.resolve.lazy.FileBasedDeclarationProviderFactory;
-import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
-import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.config.Config;
 
@@ -48,51 +43,31 @@ public final class AnalyzerFacadeForJS {
     }
 
     @NotNull
-    public static BindingContext analyzeFilesAndCheckErrors(@NotNull List<JetFile> files,
-            @NotNull Config config) {
-        BindingContext bindingContext = analyzeFiles(files, config);
-        checkForErrors(Config.withJsLibAdded(files, config), bindingContext);
-        return bindingContext;
+    public static AnalyzeExhaust analyzeFilesAndCheckErrors(
+            @NotNull List<JetFile> files,
+            @NotNull Config config
+    ) {
+        AnalyzeExhaust exhaust = analyzeFiles(files, config);
+        checkForErrors(Config.withJsLibAdded(files, config), exhaust.getBindingContext());
+        return exhaust;
     }
 
     //NOTE: web demo related method
     @SuppressWarnings("UnusedDeclaration")
     @NotNull
-    public static BindingContext analyzeFiles(@NotNull Collection<JetFile> files, @NotNull Config config) {
-        return analyzeFiles(files, Predicates.<PsiFile>alwaysTrue(), config).getBindingContext();
-    }
-
-    @NotNull
-    public static AnalyzeExhaust analyzeFiles(
-            @NotNull Collection<JetFile> files,
-            @NotNull Predicate<PsiFile> filesToAnalyzeCompletely, @NotNull Config config) {
-        return analyzeFiles(files, filesToAnalyzeCompletely, config, false);
-    }
-
-    @NotNull
-    public static AnalyzeExhaust analyzeFiles(
-            @NotNull Collection<JetFile> files,
-            @NotNull Predicate<PsiFile> filesToAnalyzeCompletely,
-            @NotNull Config config,
-            boolean storeContextForBodiesResolve
-    ) {
+    public static AnalyzeExhaust analyzeFiles(@NotNull Collection<JetFile> files, @NotNull Config config) {
         Project project = config.getProject();
         ModuleDescriptor owner = new ModuleDescriptor(Name.special("<module>"));
-        Predicate<PsiFile> completely = Predicates.and(notLibFiles(config.getLibFiles()), filesToAnalyzeCompletely);
+        Predicate<PsiFile> completely = notLibFiles(config.getLibFiles());
         TopDownAnalysisParameters topDownAnalysisParameters =
                 new TopDownAnalysisParameters(completely, false, false, Collections.<AnalyzerScriptParameter>emptyList());
-        BindingContext libraryBindingContext = config.getLibraryBindingContext();
-        BindingTrace trace = libraryBindingContext == null ?
-                             new ObservableBindingTrace(new BindingTraceContext()) :
-                             new DelegatingBindingTrace(libraryBindingContext, "trace for analyzing library in js");
+        BindingTrace trace = new ObservableBindingTrace(new BindingTraceContext());
         InjectorForTopDownAnalyzerForJs injector = new InjectorForTopDownAnalyzerForJs(project, topDownAnalysisParameters, trace, owner,
-                                                                                       new JsConfiguration(project, libraryBindingContext));
+                                                                                       new JsConfiguration(project, null));
         try {
-            Collection<JetFile> allFiles = libraryBindingContext != null ? files : Config.withJsLibAdded(files, config);
+            Collection<JetFile> allFiles = Config.withJsLibAdded(files, config);
             injector.getTopDownAnalyzer().analyzeFiles(allFiles, Collections.<AnalyzerScriptParameter>emptyList());
-            BodiesResolveContext bodiesResolveContext = storeContextForBodiesResolve ?
-                                                        new CachedBodiesResolveContext(injector.getTopDownAnalysisContext()) :
-                                                        null;
+            BodiesResolveContext bodiesResolveContext = null;
             return AnalyzeExhaust.success(trace.getBindingContext(), bodiesResolveContext, injector.getModuleConfiguration());
         }
         finally {
@@ -103,44 +78,52 @@ public final class AnalyzerFacadeForJS {
     @NotNull
     public static AnalyzeExhaust analyzeFiles(
             @NotNull Collection<JetFile> files,
-            boolean analyzeCompletely,
-            @NotNull Config config,
+            @NotNull Project project,
+            @Nullable BindingContext parentBindingContext,
+            boolean analyzeCompletely
+    ) {
+        return analyzeFiles(files, project, parentBindingContext, analyzeCompletely ? Predicates.<PsiFile>alwaysTrue() : Predicates.<PsiFile>alwaysFalse(), null, false);
+    }
+
+    @NotNull
+    public static AnalyzeExhaust analyzeFilesAndStoreBodyContext(
+            @NotNull Collection<JetFile> files,
+            @NotNull Project project,
+            @Nullable BindingContext parentBindingContext,
+            boolean analyzeCompletely
+    ) {
+        return analyzeFiles(files, project, parentBindingContext, analyzeCompletely ? Predicates.<PsiFile>alwaysTrue() : Predicates.<PsiFile>alwaysFalse(), null, true);
+    }
+
+    @NotNull
+    public static AnalyzeExhaust analyzeFiles(
+            @NotNull Collection<JetFile> files,
+            @NotNull Project project,
             BindingContext parentBindingContext,
+            @NotNull Predicate<PsiFile> analyzeCompletely,
+            @Nullable BodiesResolveContext bodiesResolveContext,
             boolean storeContextForBodiesResolve
     ) {
-        Project project = config.getProject();
         ModuleDescriptor owner = new ModuleDescriptor(Name.special("<module>"));
         TopDownAnalysisParameters topDownAnalysisParameters =
-                new TopDownAnalysisParameters(analyzeCompletely ? Predicates.<PsiFile>alwaysTrue() : Predicates.<PsiFile>alwaysFalse(), false, false, Collections.<AnalyzerScriptParameter>emptyList());
+                new TopDownAnalysisParameters(analyzeCompletely, false, false, Collections.<AnalyzerScriptParameter>emptyList());
         BindingTrace trace = parentBindingContext == null ?
                              new ObservableBindingTrace(new BindingTraceContext()) :
                              new DelegatingBindingTrace(parentBindingContext, "trace for analyzing library in js");
         InjectorForTopDownAnalyzerForJs injector = new InjectorForTopDownAnalyzerForJs(project, topDownAnalysisParameters, trace, owner,
-                                                                                       new JsModuleConfiguration(project, parentBindingContext));
+                                                                                       new JsModuleConfiguration(project,
+                                                                                                                 parentBindingContext));
         try {
             injector.getTopDownAnalyzer().analyzeFiles(files, Collections.<AnalyzerScriptParameter>emptyList());
-            BodiesResolveContext bodiesResolveContext = storeContextForBodiesResolve ?
-                                                        new CachedBodiesResolveContext(injector.getTopDownAnalysisContext()) :
-                                                        null;
-            return AnalyzeExhaust.success(trace.getBindingContext(), bodiesResolveContext, injector.getModuleConfiguration());
+            assert !storeContextForBodiesResolve || bodiesResolveContext == null;
+            return AnalyzeExhaust.success(trace.getBindingContext(),
+                                          storeContextForBodiesResolve ? new CachedBodiesResolveContext(
+                                                  injector.getTopDownAnalysisContext()) : bodiesResolveContext,
+                                          injector.getModuleConfiguration());
         }
         finally {
             injector.destroy();
         }
-    }
-
-    @NotNull
-    public static AnalyzeExhaust analyzeBodiesInFiles(
-            @NotNull Predicate<PsiFile> filesToAnalyzeCompletely,
-            @NotNull Config config,
-            @NotNull BindingTrace traceContext,
-            @NotNull BodiesResolveContext bodiesResolveContext,
-            @NotNull ModuleConfiguration configuration) {
-        Predicate<PsiFile> completely = Predicates.and(notLibFiles(config.getLibFiles()), filesToAnalyzeCompletely);
-
-        return AnalyzerFacadeForEverything.analyzeBodiesInFilesWithJavaIntegration(
-                config.getProject(), Collections.<AnalyzerScriptParameter>emptyList(), completely, traceContext, bodiesResolveContext,
-                configuration);
     }
 
     public static void checkForErrors(@NotNull Collection<JetFile> allFiles, @NotNull BindingContext bindingContext) {
@@ -156,17 +139,8 @@ public final class AnalyzerFacadeForJS {
             @Override
             public boolean apply(@Nullable PsiFile file) {
                 assert file instanceof JetFile;
-                @SuppressWarnings("UnnecessaryLocalVariable") boolean notLibFile = !jsLibFiles.contains(file);
-                return notLibFile;
+                return !jsLibFiles.contains(file);
             }
         };
-    }
-
-    @NotNull
-    public static ResolveSession getLazyResolveSession(Collection<JetFile> files, final Config config) {
-        FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(
-                Config.withJsLibAdded(files, config), Predicates.<FqName>alwaysFalse());
-        ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
-        return new ResolveSession(config.getProject(), lazyModule, new JsConfiguration(config.getProject(), null), declarationProviderFactory);
     }
 }

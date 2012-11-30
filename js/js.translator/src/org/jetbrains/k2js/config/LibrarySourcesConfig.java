@@ -16,26 +16,19 @@
 
 package org.jetbrains.k2js.config;
 
-import com.google.common.collect.Lists;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.*;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.k2js.utils.JetFileUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * @author Pavel Talanov
@@ -45,9 +38,6 @@ public class LibrarySourcesConfig extends Config {
     public static final Key<String> EXTERNAL_MODULE_NAME = Key.create("externalModule");
     @NotNull
     public static final String UNKNOWN_EXTERNAL_MODULE_NAME = "<unknown>";
-
-    @NotNull
-    private static final Logger LOG = Logger.getInstance("#org.jetbrains.k2js.config.LibrarySourcesConfig");
 
     @NotNull
     private final List<String> files;
@@ -75,35 +65,21 @@ public class LibrarySourcesConfig extends Config {
         final List<JetFile> psiFiles = new ArrayList<JetFile>();
         String moduleName = UNKNOWN_EXTERNAL_MODULE_NAME;
         VirtualFileSystem fileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.FILE_PROTOCOL);
-        final PsiManager psiManager = PsiManager.getInstance(getProject());
+        final PsiManager psiManager = PsiManager.getInstance(project);
         for (String path : files) {
             if (path.charAt(0) == '@') {
                 moduleName = path.substring(1);
                 moduleDependencies.add(moduleName);
             }
-            else if (path.endsWith(".jar") || path.endsWith(".zip")) {
-                try {
-                    psiFiles.addAll(readZip(path));
-                }
-                catch (IOException e) {
-                    LOG.error(e);
-                }
-            }
             else {
                 VirtualFile file = fileSystem.findFileByPath(path);
                 assert file != null;
-                if (file.isDirectory()) {
-                    final String currentModuleName = moduleName;
-                    VfsUtilCore.visitChildrenRecursively(file, new VirtualFileVisitor() {
-                        @Override
-                        public boolean visitFile(@NotNull VirtualFile file) {
-                            if (file.getName().endsWith(".kt")) {
-                                addPsiFile(psiFiles, currentModuleName, psiManager, file);
-                                return false;
-                            }
-                            return true;
-                        }
-                    });
+                VirtualFile jarFile = StandardFileSystems.getJarRootForLocalFile(file);
+                if (jarFile != null) {
+                    traverseFile(project, jarFile, psiFiles, UNKNOWN_EXTERNAL_MODULE_NAME);
+                }
+                else if (file.isDirectory()) {
+                    traverseFile(project, file, psiFiles, moduleName);
                 }
                 else {
                     addPsiFile(psiFiles, moduleName, psiManager, file);
@@ -121,41 +97,30 @@ public class LibrarySourcesConfig extends Config {
     }
 
     private static void addPsiFile(
-            final List<JetFile> psiFiles,
-            final String moduleName,
+            final Collection<JetFile> result,
+            @Nullable final String moduleName,
             final PsiManager psiManager,
             final VirtualFile file
     ) {
-            PsiFile psiFile = psiManager.findFile(file);
-            assert psiFile != null;
+        PsiFile psiFile = psiManager.findFile(file);
+        assert psiFile != null;
+        if (moduleName != null) {
             psiFile.putUserData(EXTERNAL_MODULE_NAME, moduleName);
-            psiFiles.add((JetFile) psiFile);
+        }
+        result.add((JetFile) psiFile);
     }
 
-    private List<JetFile> readZip(String file) throws IOException {
-        ZipFile zipFile = new ZipFile(file);
-        try {
-            return traverseArchive(zipFile);
-        }
-        finally {
-            zipFile.close();
-        }
-    }
-
-    @NotNull
-    private List<JetFile> traverseArchive(@NotNull ZipFile file) throws IOException {
-        List<JetFile> result = Lists.newArrayList();
-        Enumeration<? extends ZipEntry> zipEntries = file.entries();
-        while (zipEntries.hasMoreElements()) {
-            ZipEntry entry = zipEntries.nextElement();
-            if (!entry.isDirectory() && entry.getName().endsWith(".kt")) {
-                InputStream stream = file.getInputStream(entry);
-                String text = FileUtil.loadTextAndClose(stream);
-                JetFile jetFile = JetFileUtils.createPsiFile(entry.getName(), text, getProject());
-                jetFile.putUserData(EXTERNAL_MODULE_NAME, UNKNOWN_EXTERNAL_MODULE_NAME);
-                result.add(jetFile);
+    public static void traverseFile(Project project, VirtualFile file, final Collection<JetFile> result, @Nullable final String moduleName) {
+        final PsiManager psiManager = PsiManager.getInstance(project);
+        VfsUtilCore.visitChildrenRecursively(file, new VirtualFileVisitor() {
+            @Override
+            public boolean visitFile(@NotNull VirtualFile file) {
+                if (file.getName().endsWith(".kt")) {
+                    addPsiFile(result, moduleName, psiManager, file);
+                    return false;
+                }
+                return true;
             }
-        }
-        return result;
+        });
     }
 }

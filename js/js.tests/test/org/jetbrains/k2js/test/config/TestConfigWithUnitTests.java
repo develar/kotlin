@@ -19,7 +19,6 @@ package org.jetbrains.k2js.test.config;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.test.JSRhinoUnitTester;
 import org.jetbrains.k2js.translate.test.JSTester;
@@ -36,9 +35,8 @@ public class TestConfigWithUnitTests extends TestConfig {
         @Override
         public TestConfig create(@NotNull Project project,
                 @NotNull EcmaVersion version,
-                @NotNull List<JetFile> files,
-                @NotNull BindingContext context) {
-            return new TestConfigWithUnitTests(project, version, files, context);
+                @NotNull List<JetFile> files) {
+            return new TestConfigWithUnitTests(project, version, files);
         }
     };
 
@@ -49,8 +47,7 @@ public class TestConfigWithUnitTests extends TestConfig {
 
     public TestConfigWithUnitTests(@NotNull Project project,
             @NotNull EcmaVersion version,
-            @NotNull List<JetFile> files,
-            @NotNull BindingContext context) {
-        super(project, version, files, context);
+            @NotNull List<JetFile> files) {
+        super(project, version, files);
     }
 }

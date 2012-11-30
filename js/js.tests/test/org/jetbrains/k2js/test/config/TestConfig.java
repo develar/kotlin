@@ -19,7 +19,6 @@ package org.jetbrains.k2js.test.config;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
 
@@ -37,27 +36,18 @@ public class TestConfig extends Config {
         @Override
         public TestConfig create(@NotNull Project project,
                 @NotNull EcmaVersion version,
-                @NotNull List<JetFile> files,
-                @NotNull BindingContext context) {
-            return new TestConfig(project, version, files, context);
+                @NotNull List<JetFile> files) {
+            return new TestConfig(project, version, files);
         }
     };
 
     @NotNull
     private final List<JetFile> jsLibFiles;
-    @NotNull
-    private final BindingContext libraryContext;
 
     public TestConfig(@NotNull Project project, @NotNull EcmaVersion version,
-            @NotNull List<JetFile> files, @NotNull BindingContext context) {
+            @NotNull List<JetFile> files) {
         super(project, TEST_MODULE_NAME, version);
         jsLibFiles = files;
-        libraryContext = context;
-    }
-
-    @Override
-    public BindingContext getLibraryBindingContext() {
-        return libraryContext;
     }
 
     @Override
