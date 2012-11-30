@@ -16,12 +16,21 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public class JsModuleConfiguration implements ModuleConfiguration {
     private final Project project;
     private final BindingContext parentBindingContext;
     private final ModuleConfiguration delegateConfiguration;
+
+    @NotNull
+    public static final List<ImportPath> DEFAULT_IMPORT_PATHS = Arrays.asList(
+            new ImportPath("js.*"),
+            new ImportPath("java.lang.*"),
+            new ImportPath(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), true),
+            new ImportPath("kotlin.*"));
 
     public JsModuleConfiguration(@NotNull Project project, BindingContext parentBindingContext) {
         this.project = project;
@@ -31,7 +40,7 @@ public class JsModuleConfiguration implements ModuleConfiguration {
 
     @Override
     public void addDefaultImports(@NotNull Collection<JetImportDirective> directives) {
-        for (ImportPath path : JsConfiguration.DEFAULT_IMPORT_PATHS) {
+        for (ImportPath path : DEFAULT_IMPORT_PATHS) {
             directives.add(JetPsiFactory.createImportDirective(project, path));
         }
         delegateConfiguration.addDefaultImports(directives);

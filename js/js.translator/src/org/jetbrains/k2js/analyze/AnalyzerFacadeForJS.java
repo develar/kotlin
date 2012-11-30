@@ -47,32 +47,11 @@ public final class AnalyzerFacadeForJS {
             @NotNull List<JetFile> files,
             @NotNull Config config
     ) {
-        AnalyzeExhaust exhaust = analyzeFiles(files, config);
-        checkForErrors(Config.withJsLibAdded(files, config), exhaust.getBindingContext());
-        return exhaust;
-    }
+        AnalyzeExhaust libraryExhaust = analyzeFiles(config.getLibFiles(), config.getProject(), null, false);
+        libraryExhaust.throwIfError();
 
-    //NOTE: web demo related method
-    @SuppressWarnings("UnusedDeclaration")
-    @NotNull
-    public static AnalyzeExhaust analyzeFiles(@NotNull Collection<JetFile> files, @NotNull Config config) {
-        Project project = config.getProject();
-        ModuleDescriptor owner = new ModuleDescriptor(Name.special("<module>"));
-        Predicate<PsiFile> completely = notLibFiles(config.getLibFiles());
-        TopDownAnalysisParameters topDownAnalysisParameters =
-                new TopDownAnalysisParameters(completely, false, false, Collections.<AnalyzerScriptParameter>emptyList());
-        BindingTrace trace = new ObservableBindingTrace(new BindingTraceContext());
-        InjectorForTopDownAnalyzerForJs injector = new InjectorForTopDownAnalyzerForJs(project, topDownAnalysisParameters, trace, owner,
-                                                                                       new JsConfiguration(project, null));
-        try {
-            Collection<JetFile> allFiles = Config.withJsLibAdded(files, config);
-            injector.getTopDownAnalyzer().analyzeFiles(allFiles, Collections.<AnalyzerScriptParameter>emptyList());
-            BodiesResolveContext bodiesResolveContext = null;
-            return AnalyzeExhaust.success(trace.getBindingContext(), bodiesResolveContext, injector.getModuleConfiguration());
-        }
-        finally {
-            injector.destroy();
-        }
+        checkForErrors(files);
+        return analyzeFiles(files, config.getProject(), libraryExhaust.getBindingContext(), true);
     }
 
     @NotNull
@@ -126,21 +105,9 @@ public final class AnalyzerFacadeForJS {
         }
     }
 
-    public static void checkForErrors(@NotNull Collection<JetFile> allFiles, @NotNull BindingContext bindingContext) {
-        AnalyzingUtils.throwExceptionOnErrors(bindingContext);
+    public static void checkForErrors(@NotNull Collection<JetFile> allFiles) {
         for (JetFile file : allFiles) {
             AnalyzingUtils.checkForSyntacticErrors(file);
         }
-    }
-
-    @NotNull
-    private static Predicate<PsiFile> notLibFiles(@NotNull final List<JetFile> jsLibFiles) {
-        return new Predicate<PsiFile>() {
-            @Override
-            public boolean apply(@Nullable PsiFile file) {
-                assert file instanceof JetFile;
-                return !jsLibFiles.contains(file);
-            }
-        };
     }
 }
