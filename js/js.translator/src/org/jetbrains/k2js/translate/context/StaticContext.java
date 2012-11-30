@@ -229,43 +229,45 @@ public final class StaticContext {
 
     @Nullable
     public JsNameRef getQualifierForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+        if (descriptor instanceof ConstructorDescriptor) {
+            descriptor = ((ConstructorDescriptor) descriptor).getContainingDeclaration();
+        }
+
+        DeclarationDescriptor namespace = descriptor.getContainingDeclaration();
+        if (!(namespace instanceof NamespaceDescriptor)) {
+            return null;
+        }
+
         if (descriptor instanceof PropertyDescriptor ||
             (descriptor instanceof NamespaceDescriptor && DescriptorUtils.isRootNamespace((NamespaceDescriptor) descriptor)) ||
             AnnotationsUtils.isNativeObject(descriptor)) {
             return null;
-        }
-        else if (descriptor instanceof ConstructorDescriptor) {
-            return getQualifierForDescriptor(((ConstructorDescriptor) descriptor).getContainingDeclaration());
         }
 
         if (isLibraryObject(descriptor) || standardClasses.isStandardObject(descriptor)) {
             return Namer.KOTLIN_OBJECT_NAME_REF;
         }
 
-        JsNameRef qualifier = qualifierMap.get(descriptor);
+        JsNameRef qualifier = qualifierMap.get(namespace);
         if (qualifier == null) {
-            qualifier = resolveQualifier(descriptor);
-            qualifierMap.put(descriptor, qualifier);
+            qualifier = resolveQualifier((NamespaceDescriptor) namespace, descriptor);
+            qualifierMap.put(namespace, qualifier);
         }
         return qualifier;
     }
 
     @Nullable
-    private JsNameRef resolveQualifier(DeclarationDescriptor requestor) {
-        DeclarationDescriptor namespace = requestor.getContainingDeclaration();
-        if (!(namespace instanceof NamespaceDescriptor)) {
-            return null;
-        }
-
+    private JsNameRef resolveQualifier(NamespaceDescriptor namespace, DeclarationDescriptor requestor) {
         JsNameRef result = new JsNameRef(Namer.generateNamespaceName(namespace));
-        if (DescriptorUtils.isRootNamespace((NamespaceDescriptor) namespace)) {
+        if (DescriptorUtils.isRootNamespace(namespace)) {
             return result;
         }
 
         JsNameRef qualifier = result;
-        while ((namespace = namespace.getContainingDeclaration()) instanceof NamespaceDescriptor &&
-               !DescriptorUtils.isRootNamespace((NamespaceDescriptor) namespace)) {
-            JsNameRef ref = new JsNameRef(namespace.getName().getName());
+        DeclarationDescriptor parent = namespace;
+        while ((parent = parent.getContainingDeclaration()) instanceof NamespaceDescriptor &&
+               !DescriptorUtils.isRootNamespace((NamespaceDescriptor) parent)) {
+            JsNameRef ref = new JsNameRef(parent.getName().getName());
             qualifier.setQualifier(ref);
             qualifier = ref;
         }
@@ -290,7 +292,6 @@ public final class StaticContext {
         if (qualifier.getQualifier() == null) {
             qualifier.setQualifier(new JsNameRef(Namer.getRootNamespaceName()));
         }
-
         return result;
     }
 }
