@@ -10,6 +10,7 @@
 
   <depends optional="true">JUnit</depends>
   <depends optional="true" config-file="javaScriptDebug.xml">JavaScriptDebugger</depends>
+  <depends optional="true" config-file="junit.xml">JUnit</depends>
 
   <project-components>
       <component>
@@ -170,7 +171,7 @@
       <configurationType implementation="org.jetbrains.jet.plugin.k2jsrun.K2JSRunConfigurationType"/>
       <programRunner implementation="org.jetbrains.jet.plugin.k2jsrun.K2JSBrowserProgramRunner"/>
       <configurationProducer implementation="org.jetbrains.jet.plugin.run.JetRunConfigurationProducer"/>
-      <configurationProducer implementation="org.jetbrains.jet.plugin.run.JetJUnitConfigurationProducer"/>
+
       <codeInsight.lineMarkerProvider language="jet" implementationClass="org.jetbrains.jet.plugin.highlighter.JetLineMarkerProvider"/>
       <codeInsight.lineMarkerProvider language="JAVA" implementationClass="org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerProvider"/>
       <iconProvider implementation="org.jetbrains.jet.plugin.JetIconProvider"/>
