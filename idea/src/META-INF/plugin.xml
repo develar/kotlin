@@ -26,9 +26,6 @@
           <implementation-class>org.jetbrains.jet.plugin.highlighter.DeclarationHintSupport</implementation-class>
       </component>
       <component>
-        <implementation-class>org.jetbrains.jet.plugin.OutdatedKotlinRuntimeNotification</implementation-class>
-      </component>
-      <component>
         <implementation-class>org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerUpdater</implementation-class>
       </component>
   </project-components>
@@ -241,5 +238,6 @@
       <moduleService serviceInterface="org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager"
                      serviceImplementation="org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.compiler.JetCompilerManager"/>
+      <postStartupActivity implementation="org.jetbrains.jet.plugin.OutdatedKotlinRuntimeNotification"/>
   </extensions>
 </idea-plugin>

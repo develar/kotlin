@@ -22,9 +22,9 @@ import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.JarFileSystem;
@@ -46,24 +46,19 @@ import java.util.jar.JarFile;
  * @author Evgeny Gerashchenko
  * @since 5/22/12
  */
-public class OutdatedKotlinRuntimeNotification extends AbstractProjectComponent {
+public class OutdatedKotlinRuntimeNotification implements StartupActivity {
     private static final String UNKNOWN_VERSION = "UNKNOWN";
-    private static final String SUPPRESSED_PROPERTY_NAME = "oudtdated.runtime.suppressed.plugin.version";
-
-    public OutdatedKotlinRuntimeNotification(final Project project) {
-        super(project);
-    }
+    private static final String SUPPRESSED_PROPERTY_NAME = "outdated.runtime.suppressed.plugin.version";
 
     @Override
-    public void projectOpened() {
+    public void runActivity(final Project project) {
         if (ApplicationManager.getApplication().isInternal()) return;
-        String runtimeVersion = getRuntimeVersion();
         final String pluginVersion = getPluginVersion();
-        if (runtimeVersion == null) return; // runtime is not present in project
         if ("@snapshot@".equals(pluginVersion)) return; // plugin is run from sources, can't compare versions
-
+        String runtimeVersion = getRuntimeVersion(project);
+        if (runtimeVersion == null) return; // runtime is not present in project
         // user already clicked suppress
-        if (pluginVersion.equals(PropertiesComponent.getInstance(myProject).getValue(SUPPRESSED_PROPERTY_NAME))) return;
+        if (pluginVersion.equals(PropertiesComponent.getInstance(project).getValue(SUPPRESSED_PROPERTY_NAME))) return;
 
         boolean isRuntimeOutdated = "snapshot".equals(runtimeVersion)
                                     || UNKNOWN_VERSION.equals(runtimeVersion)
@@ -83,10 +78,10 @@ public class OutdatedKotlinRuntimeNotification extends AbstractProjectComponent 
             public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
                 if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     if ("update".equals(event.getDescription())) {
-                        updateRuntime();
+                        updateRuntime(project);
                     }
                     else if ("ignore".equals(event.getDescription())) {
-                        PropertiesComponent.getInstance(myProject).setValue(SUPPRESSED_PROPERTY_NAME, pluginVersion);
+                        PropertiesComponent.getInstance(project).setValue(SUPPRESSED_PROPERTY_NAME, pluginVersion);
                     }
                     else {
                         throw new AssertionError();
@@ -94,20 +89,20 @@ public class OutdatedKotlinRuntimeNotification extends AbstractProjectComponent 
                     notification.expire();
                 }
             }
-        }), myProject);
+        }), project);
 }
 
-    private void updateRuntime() {
+    private static void updateRuntime(final Project project) {
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             @Override
             public void run() {
                 File runtimePath = PathUtil.getKotlinPathsForIdeaPlugin().getRuntimePath();
                 if (!runtimePath.exists()) {
-                    Messages.showErrorDialog(myProject, "kotlin-runtime.jar is not found. Make sure plugin is properly installed.",
+                    Messages.showErrorDialog(project, "kotlin-runtime.jar is not found. Make sure plugin is properly installed.",
                                              "No Runtime Found");
                     return;
                 }
-                VirtualFile runtimeJar = getKotlinRuntimeJar();
+                VirtualFile runtimeJar = getKotlinRuntimeJar(project);
                 assert runtimeJar != null;
                 VirtualFile jarFile = JarFileSystem.getInstance().getVirtualFileForJar(runtimeJar);
                 if (jarFile != null) {
@@ -126,8 +121,8 @@ public class OutdatedKotlinRuntimeNotification extends AbstractProjectComponent 
     }
 
     @Nullable
-    private String getRuntimeVersion() {
-        VirtualFile kotlinRuntimeJar = getKotlinRuntimeJar();
+    private static String getRuntimeVersion(Project project) {
+        VirtualFile kotlinRuntimeJar = getKotlinRuntimeJar(project);
         if (kotlinRuntimeJar == null) return null;
         VirtualFile manifestFile = kotlinRuntimeJar.findFileByRelativePath(JarFile.MANIFEST_NAME);
         if (manifestFile != null) {
@@ -140,8 +135,8 @@ public class OutdatedKotlinRuntimeNotification extends AbstractProjectComponent 
     }
 
     @Nullable
-    private VirtualFile getKotlinRuntimeJar() {
-        return ConfigureKotlinLibraryNotificationProvider.findLibraryFile(myProject, true);
+    private static VirtualFile getKotlinRuntimeJar(Project project) {
+        return ConfigureKotlinLibraryNotificationProvider.findLibraryFile(project, true);
     }
 
     @NotNull
