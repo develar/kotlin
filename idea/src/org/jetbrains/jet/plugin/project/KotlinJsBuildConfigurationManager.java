@@ -16,15 +16,20 @@
 
 package org.jetbrains.jet.plugin.project;
 
+import com.intellij.openapi.application.AccessToken;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleServiceManager;
+import com.intellij.openapi.vfs.StandardFileSystems;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.config.EcmaVersion;
+
+import static org.jetbrains.jet.plugin.quickfix.ConfigureKotlinLibraryNotificationProvider.findLibraryFile;
 
 /**
  * @author Pavel Talanov
@@ -38,19 +43,33 @@ public final class KotlinJsBuildConfigurationManager implements PersistentStateC
 
     private boolean isJavaScriptModule;
 
-    @Nullable
-    private String pathToJavaScriptLibrary;
-
     @NotNull
     private EcmaVersion ecmaVersion = EcmaVersion.defaultVersion();
 
     private boolean sourcemap;
+
+    public static String getLibLocation(Module module) {
+        final AccessToken token = ReadAction.start();
+        try {
+            VirtualFile file = findLibraryFile(module.getProject(), false);
+            if (file != null) {
+                VirtualFile fileForJar = StandardFileSystems.getVirtualFileForJar(file);
+                return fileForJar == null ? null : fileForJar.getPath();
+            }
+        }
+        finally {
+            token.finish();
+        }
+
+        return null;
+    }
 
     @NotNull
     public EcmaVersion getEcmaVersion() {
         return ecmaVersion;
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public void setEcmaVersion(@NotNull EcmaVersion ecmaVersion) {
         this.ecmaVersion = ecmaVersion;
     }
@@ -59,6 +78,7 @@ public final class KotlinJsBuildConfigurationManager implements PersistentStateC
         return sourcemap;
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public void setSourcemap(boolean sourcemap) {
         this.sourcemap = sourcemap;
     }
@@ -69,15 +89,6 @@ public final class KotlinJsBuildConfigurationManager implements PersistentStateC
 
     public void setJavaScriptModule(boolean javaScriptModule) {
         isJavaScriptModule = javaScriptModule;
-    }
-
-    @Nullable
-    public String getPathToJavaScriptLibrary() {
-        return pathToJavaScriptLibrary;
-    }
-
-    public void setPathToJavaScriptLibrary(@Nullable String pathToJavaScriptLibrary) {
-        this.pathToJavaScriptLibrary = pathToJavaScriptLibrary;
     }
 
     @Override

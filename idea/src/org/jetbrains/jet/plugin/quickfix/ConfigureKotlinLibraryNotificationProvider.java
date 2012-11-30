@@ -19,7 +19,9 @@
  */
 package org.jetbrains.jet.plugin.quickfix;
 
+import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
@@ -59,6 +61,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.plugin.JetFileType;
+import org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager;
+import org.jetbrains.jet.utils.KotlinPaths;
 import org.jetbrains.jet.utils.PathUtil;
 
 import javax.swing.*;
@@ -69,8 +73,9 @@ import static org.jetbrains.jet.plugin.project.JsModuleDetector.isJsModule;
 
 public class ConfigureKotlinLibraryNotificationProvider extends EditorNotifications.Provider<EditorNotificationPanel> {
     private static final Key<EditorNotificationPanel> KEY = Key.create("configure.kotlin.library");
-    public static final String LIBRARY_NAME = "KotlinRuntime";
-    public static final String KOTLIN_RUNTIME_JAR = "kotlin-runtime.jar";
+    private static final String LIBRARY_NAME = "KotlinRuntime";
+    private static final String JS_LIBRARY_NAME = "KotlinJsRuntime";
+
     private final Project myProject;
 
     public ConfigureKotlinLibraryNotificationProvider(Project project) {
@@ -107,20 +112,38 @@ public class ConfigureKotlinLibraryNotificationProvider extends EditorNotificati
         return null;
     }
 
-    private Library findOrCreateRuntimeLibrary() {
-        LibraryTable table = ProjectLibraryTable.getInstance(myProject);
-        Library kotlinRuntime = table.getLibraryByName(LIBRARY_NAME);
-        if (kotlinRuntime != null) {
-            for (VirtualFile root : kotlinRuntime.getFiles(OrderRootType.CLASSES)) {
-                if (root.getName().equals(KOTLIN_RUNTIME_JAR)) {
-                    return kotlinRuntime;
-                }
+    @Nullable
+    public static Library findLibrary(Project project, boolean isJvm) {
+        return ProjectLibraryTable.getInstance(project).getLibraryByName(isJvm ? LIBRARY_NAME : JS_LIBRARY_NAME);
+    }
+
+    @Nullable
+    public static VirtualFile findLibraryFile(Project project, boolean isJvm) {
+        Library library = findLibrary(project, isJvm);
+        return library == null ? null : findLibraryFile(library, isJvm);
+    }
+
+    @Nullable
+    private static VirtualFile findLibraryFile(Library library, boolean isJvm) {
+        for (VirtualFile file : library.getFiles(isJvm ? OrderRootType.CLASSES : OrderRootType.SOURCES)) {
+            if (file.getName().equals(KotlinPaths.getRuntimeName(isJvm))) {
+                return file;
             }
         }
+        return null;
+    }
 
-        File runtimePath = PathUtil.getKotlinPathsForIdeaPlugin().getRuntimePath();
+    private Library findOrCreateRuntimeLibrary(String libraryName, boolean isJvm) {
+        LibraryTable table = ProjectLibraryTable.getInstance(myProject);
+        Library kotlinRuntime = table.getLibraryByName(libraryName);
+        if (kotlinRuntime != null && findLibraryFile(kotlinRuntime, isJvm) != null) {
+            return kotlinRuntime;
+        }
+
+        String libraryFileName = KotlinPaths.getRuntimeName(isJvm);
+        File runtimePath = PathUtil.getKotlinPathsForIdeaPlugin().getRuntimePath(isJvm);
         if (!runtimePath.exists()) {
-            Messages.showErrorDialog(myProject, "kotlin-runtime.jar is not found. Make sure plugin is properly installed.",
+            Messages.showErrorDialog(myProject, libraryFileName + " is not found. Make sure plugin is properly installed.",
                                      "No Runtime Found");
             return null;
         }
@@ -129,87 +152,91 @@ public class ConfigureKotlinLibraryNotificationProvider extends EditorNotificati
         dlg.show();
         if (!dlg.isOK()) return null;
         String path = dlg.getPath();
-        final File targetJar = new File(path, "kotlin-runtime.jar");
+        final File targetFile = new File(path, libraryFileName);
         try {
-            FileUtil.copy(runtimePath, targetJar);
-            VirtualFile jarVfs = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetJar);
-            if (jarVfs != null) {
-                jarVfs.refresh(false, false);
+            FileUtil.copy(runtimePath, targetFile);
+            VirtualFile virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetFile);
+            if (virtualFile != null) {
+                virtualFile.refresh(false, false);
             }
         }
         catch (IOException e) {
-            Messages.showErrorDialog(myProject, "Error copying jar: " + e.getLocalizedMessage(), "Error Copying File");
+            Messages.showErrorDialog(myProject, "Error copying " + libraryFileName + ": " + e.getLocalizedMessage(), "Error Copying File");
             return null;
         }
 
-        if (kotlinRuntime == null) {
-            kotlinRuntime = table.createLibrary("KotlinRuntime");
-        }
-
-        final Library finalKotlinRuntime = kotlinRuntime;
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-            public void run() {
-                Library.ModifiableModel model = finalKotlinRuntime.getModifiableModel();
-                model.addRoot(VfsUtil.getUrlForLibraryRoot(targetJar), OrderRootType.CLASSES);
-                model.addRoot(VfsUtil.getUrlForLibraryRoot(targetJar) + "src", OrderRootType.SOURCES);
-                model.commit();
+        final AccessToken token = WriteAction.start();
+        try {
+            if (kotlinRuntime == null) {
+                kotlinRuntime = table.createLibrary(libraryName);
             }
-        });
-
+            Library.ModifiableModel model = kotlinRuntime.getModifiableModel();
+            String url = VfsUtil.getUrlForLibraryRoot(targetFile);
+            model.addRoot(url, isJvm ? OrderRootType.CLASSES : OrderRootType.SOURCES);
+            if (isJvm) {
+                model.addRoot(url + "src", OrderRootType.SOURCES);
+            }
+            model.commit();
+        }
+        finally {
+            token.finish();
+        }
         return kotlinRuntime;
     }
 
-    private EditorNotificationPanel createNotificationPanel(final Module module) {
-        final EditorNotificationPanel answer = new EditorNotificationPanel();
-
+    private EditorNotificationPanel createNotificationPanel(Module module) {
+        EditorNotificationPanel answer = new EditorNotificationPanel();
         answer.setText("Kotlin is not configured for module '" + module.getName() + "'");
-        answer.createActionLabel("Set up module '" + module.getName() + "' as JVM Kotlin module", new Runnable() {
-            @Override
-            public void run() {
-                setUpKotlinRuntime(module);
-            }
-        });
-
-        answer.createActionLabel("Set up module '" + module.getName() + "' as JavaScript Kotlin module", new Runnable() {
-            @Override
-            public void run() {
-                setUpJSModule(module);
-            }
-        });
-
+        answer.createActionLabel("Set up module '" + module.getName() + "' as JVM Kotlin module",
+                                 new SetupKotlinRuntimeTask(module, true));
+        answer.createActionLabel("Set up module '" + module.getName() + "' as JavaScript Kotlin module",
+                                 new SetupKotlinRuntimeTask(module, false));
         return answer;
     }
 
-    private void setUpJSModule(@NotNull Module module) {
-        JsModuleSetUp.doSetUpModule(module, new Runnable() {
-            @Override
-            public void run() {
-                updateNotifications();
-            }
-        });
-    }
+    private class SetupKotlinRuntimeTask implements Runnable {
+        private final Module module;
+        private final boolean asJvm;
 
-    private void setUpKotlinRuntime(@NotNull final Module module) {
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-            @Override
-            public void run() {
-                Library library = findOrCreateRuntimeLibrary();
-                if (library != null) {
-                    ModifiableRootModel model = ModuleRootManager.getInstance(module).getModifiableModel();
-                    if (model.findLibraryOrderEntry(library) == null) {
-                        model.addLibraryEntry(library);
-                        model.commit();
-                    }
-                    else {
-                        model.dispose();
-                    }
-                    updateNotifications();
-                }
-                if (!jdkAnnotationsArePresent(module)) {
-                    addJdkAnnotations(module);
-                }
+        public SetupKotlinRuntimeTask(Module module, boolean asJvm) {
+            this.module = module;
+            this.asJvm = asJvm;
+        }
+
+        @Override
+        public void run() {
+            final Library library;
+            if (asJvm) {
+                library = findOrCreateRuntimeLibrary(LIBRARY_NAME, asJvm);
             }
-        });
+            else {
+                library = findOrCreateRuntimeLibrary(JS_LIBRARY_NAME, asJvm);
+            }
+
+            ApplicationManager.getApplication().runWriteAction(new Runnable() {
+                @Override
+                public void run() {
+                    if (library != null) {
+                        ModifiableRootModel model = ModuleRootManager.getInstance(module).getModifiableModel();
+                        if (model.findLibraryOrderEntry(library) == null) {
+                            model.addLibraryEntry(library);
+                            model.commit();
+                        }
+                        else {
+                            model.dispose();
+                        }
+                        updateNotifications();
+                    }
+                    if (!asJvm) {
+                        KotlinJsBuildConfigurationManager jsModuleComponent = KotlinJsBuildConfigurationManager.getInstance(module);
+                        jsModuleComponent.setJavaScriptModule(true);
+                    }
+                    else if (!jdkAnnotationsArePresent(module)) {
+                        addJdkAnnotations(module);
+                    }
+                }
+            });
+        }
     }
 
     /* package */ static void addJdkAnnotations(Module module) {

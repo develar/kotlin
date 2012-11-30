@@ -208,7 +208,7 @@ public final class K2JSCompiler implements TranslatingCompiler {
                 }
             }
 
-            String libPath = JsModuleDetector.getLibLocation(jsModuleComponent, module);
+            String libPath = KotlinJsBuildConfigurationManager.getLibLocation(module);
             if (libPath != null) {
                 sb.append(libPath).append(',');
             }

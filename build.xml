@@ -157,15 +157,10 @@
       <fileset dir="${basedir}/js/js.libraries">
         <exclude name="src/qunit/*"/>
         <exclude name="src/junit/*"/>
-        <exclude name="src/stdlib/*"/>
+        <!-- stdlib for js is useless for now, so, commented -->
+        <!--<include name="stdlib/*"/>-->
         <include name="src/**"/>
         <include name="generated/**"/>
-      </fileset>
-      <zipfileset file="${kotlin-home}/build.txt" prefix="META-INF"/>
-    </zip>
-    <zip destfile="${kotlin-home}/lib/kotlin-js-stdlib.zip" update="false">
-      <fileset dir="${basedir}/js/js.libraries">
-        <include name="src/stdlib/*"/>
       </fileset>
       <zipfileset file="${kotlin-home}/build.txt" prefix="META-INF"/>
     </zip>

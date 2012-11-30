@@ -25,10 +25,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.OrderRootType;
-import com.intellij.openapi.roots.impl.libraries.ProjectLibraryTable;
-import com.intellij.openapi.roots.libraries.Library;
-import com.intellij.openapi.roots.libraries.LibraryTable;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.JarFileSystem;
@@ -145,16 +141,7 @@ public class OutdatedKotlinRuntimeNotification extends AbstractProjectComponent 
 
     @Nullable
     private VirtualFile getKotlinRuntimeJar() {
-        LibraryTable table = ProjectLibraryTable.getInstance(myProject);
-        Library kotlinRuntime = table.getLibraryByName(ConfigureKotlinLibraryNotificationProvider.LIBRARY_NAME);
-        if (kotlinRuntime != null) {
-            for (VirtualFile root : kotlinRuntime.getFiles(OrderRootType.CLASSES)) {
-                if (root.getName().equals(ConfigureKotlinLibraryNotificationProvider.KOTLIN_RUNTIME_JAR)) {
-                    return root;
-                }
-            }
-        }
-        return null;
+        return ConfigureKotlinLibraryNotificationProvider.findLibraryFile(myProject, true);
     }
 
     @NotNull

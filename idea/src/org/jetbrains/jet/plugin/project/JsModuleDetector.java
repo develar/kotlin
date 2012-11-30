@@ -19,7 +19,6 @@ package org.jetbrains.jet.plugin.project;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -61,17 +60,7 @@ public final class JsModuleDetector {
             return Collections.emptyList();
         }
         else {
-            return Collections.singletonList(getLibLocation(KotlinJsBuildConfigurationManager.getInstance(module), module));
-        }
-    }
-
-    public static String getLibLocation(KotlinJsBuildConfigurationManager jsModuleComponent, Module module) {
-        String libPath = jsModuleComponent.getPathToJavaScriptLibrary();
-        if (libPath == null) {
-            return null;
-        }
-        else {
-            return ModuleRootManager.getInstance(module).getContentRoots()[0].getPath() + libPath;
+            return Collections.singletonList(KotlinJsBuildConfigurationManager.getLibLocation(module));
         }
     }
 

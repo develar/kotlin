@@ -21,6 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 
 public class KotlinPaths {
+    private static final String KOTLIN_RUNTIME_JAR = "kotlin-runtime.jar";
+    private static final String KOTLIN_JS_LIBRARY = "kotlin-js-lib.zip";
+
     // kotlinc directory
     private final File homePath;
 
@@ -40,22 +43,21 @@ public class KotlinPaths {
 
     @NotNull
     public File getRuntimePath() {
-        return getLibraryFile("kotlin-runtime.jar");
+        return getRuntimePath(true);
+    }
+
+    @NotNull
+    public File getRuntimePath(boolean forJvm) {
+        return getLibraryFile(getRuntimeName(forJvm));
+    }
+
+    public static String getRuntimeName(boolean forJvm) {
+        return forJvm ? KOTLIN_RUNTIME_JAR : KOTLIN_JS_LIBRARY;
     }
 
     @NotNull
     public File getJdkAnnotationsPath() {
         return getLibraryFile(PathUtil.JDK_ANNOTATIONS_JAR);
-    }
-
-    @NotNull
-    public File getJsLibJsPath() {
-        return getLibraryFile(PathUtil.JS_LIB_JS_NAME);
-    }
-
-    @NotNull
-    public File getJsLibJarPath() {
-        return getLibraryFile(PathUtil.JS_LIB_JAR_NAME);
     }
 
     @NotNull
