@@ -2,6 +2,7 @@ package org.jetbrains.k2js.analyze;
 
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.DefaultModuleConfiguration;
 import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
@@ -13,6 +14,7 @@ import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.ImportPath;
 import org.jetbrains.jet.lang.resolve.name.FqName;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
@@ -21,8 +23,11 @@ import java.util.Collection;
 import java.util.List;
 
 public class JsModuleConfiguration implements ModuleConfiguration {
+    public static final Name STUBS_MODULE_NAME = Name.special("<stubs>");
+
     private final Project project;
     private final BindingContext parentBindingContext;
+    @Nullable
     private final ModuleConfiguration delegateConfiguration;
 
     @NotNull
@@ -35,7 +40,7 @@ public class JsModuleConfiguration implements ModuleConfiguration {
     public JsModuleConfiguration(@NotNull Project project, BindingContext parentBindingContext) {
         this.project = project;
         this.parentBindingContext = parentBindingContext;
-        this.delegateConfiguration = DefaultModuleConfiguration.createStandardConfiguration(project);
+        this.delegateConfiguration = parentBindingContext == null ? DefaultModuleConfiguration.createStandardConfiguration(project) : null;
     }
 
     @Override
@@ -43,7 +48,9 @@ public class JsModuleConfiguration implements ModuleConfiguration {
         for (ImportPath path : DEFAULT_IMPORT_PATHS) {
             directives.add(JetPsiFactory.createImportDirective(project, path));
         }
-        delegateConfiguration.addDefaultImports(directives);
+        if (delegateConfiguration != null) {
+            delegateConfiguration.addDefaultImports(directives);
+        }
     }
 
     @Override
@@ -61,7 +68,7 @@ public class JsModuleConfiguration implements ModuleConfiguration {
         else if (DescriptorUtils.isRootNamespace(namespaceDescriptor)) {
             namespaceMemberScope.importScope(KotlinBuiltIns.getInstance().getBuiltInsScope());
         }
-        else {
+        else if (delegateConfiguration != null) {
             delegateConfiguration.extendNamespaceScope(trace, namespaceDescriptor, namespaceMemberScope);
         }
     }

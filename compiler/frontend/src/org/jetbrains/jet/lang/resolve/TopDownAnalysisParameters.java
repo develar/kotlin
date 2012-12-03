@@ -17,9 +17,11 @@
 package org.jetbrains.jet.lang.resolve;
 
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -34,6 +36,14 @@ public class TopDownAnalysisParameters {
     private final boolean declaredLocally;
     @NotNull
     private final List<AnalyzerScriptParameter> scriptParameters;
+
+    public TopDownAnalysisParameters(boolean analyzeCompletely) {
+        this(analyzeCompletely ? Predicates.<PsiFile>alwaysTrue() : Predicates.<PsiFile>alwaysFalse());
+    }
+
+    public TopDownAnalysisParameters(@NotNull Predicate<PsiFile> analyzeCompletely) {
+        this(analyzeCompletely, false, false, Collections.<AnalyzerScriptParameter>emptyList());
+    }
 
     public TopDownAnalysisParameters(
             @NotNull Predicate<PsiFile> analyzeCompletely,

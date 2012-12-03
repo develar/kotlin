@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
@@ -75,7 +76,7 @@ public final class TranslationUtils {
                 }
             };
             AnalyzerFacadeForJS.checkForErrors(allLibFiles);
-            AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(allLibFiles, project, null, filesWithCode, null, false);
+            AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(allLibFiles, project, null, new TopDownAnalysisParameters(filesWithCode), false);
             exhaust.throwIfError();
             context = exhaust.getBindingContext();
             cachedLibraryContext = new SoftReference<BindingContext>(context);

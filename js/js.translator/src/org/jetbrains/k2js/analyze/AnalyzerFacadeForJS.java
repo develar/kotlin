@@ -16,10 +16,7 @@
 
 package org.jetbrains.k2js.analyze;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
@@ -61,7 +58,7 @@ public final class AnalyzerFacadeForJS {
             @Nullable BindingContext parentBindingContext,
             boolean analyzeCompletely
     ) {
-        return analyzeFiles(files, project, parentBindingContext, analyzeCompletely ? Predicates.<PsiFile>alwaysTrue() : Predicates.<PsiFile>alwaysFalse(), null, false);
+        return analyzeFiles(files, project, parentBindingContext, new TopDownAnalysisParameters(analyzeCompletely), false);
     }
 
     @NotNull
@@ -71,7 +68,7 @@ public final class AnalyzerFacadeForJS {
             @Nullable BindingContext parentBindingContext,
             boolean analyzeCompletely
     ) {
-        return analyzeFiles(files, project, parentBindingContext, analyzeCompletely ? Predicates.<PsiFile>alwaysTrue() : Predicates.<PsiFile>alwaysFalse(), null, true);
+        return analyzeFiles(files, project, parentBindingContext, new TopDownAnalysisParameters(analyzeCompletely), true);
     }
 
     @NotNull
@@ -79,17 +76,29 @@ public final class AnalyzerFacadeForJS {
             @NotNull Collection<JetFile> files,
             @NotNull Project project,
             BindingContext parentBindingContext,
-            @NotNull Predicate<PsiFile> analyzeCompletely,
-            @Nullable BodiesResolveContext bodiesResolveContext,
+            @NotNull TopDownAnalysisParameters topDownAnalysisParameters,
             boolean storeContextForBodiesResolve
     ) {
-        ModuleDescriptor owner = new ModuleDescriptor(Name.special("<module>"));
-        TopDownAnalysisParameters topDownAnalysisParameters =
-                new TopDownAnalysisParameters(analyzeCompletely, false, false, Collections.<AnalyzerScriptParameter>emptyList());
+        return analyzeFiles(files, project, parentBindingContext, topDownAnalysisParameters, null, storeContextForBodiesResolve, null);
+    }
+
+    @NotNull
+    public static AnalyzeExhaust analyzeFiles(
+            @NotNull Collection<JetFile> files,
+            @NotNull Project project,
+            BindingContext parentBindingContext,
+            @NotNull TopDownAnalysisParameters topDownAnalysisParameters,
+            @Nullable BodiesResolveContext bodiesResolveContext,
+            boolean storeContextForBodiesResolve,
+            @Nullable ModuleDescriptor moduleDescriptor
+    ) {
+        if (moduleDescriptor == null) {
+            moduleDescriptor = new ModuleDescriptor(Name.special("<module>"));
+        }
         BindingTrace trace = parentBindingContext == null ?
                              new ObservableBindingTrace(new BindingTraceContext()) :
                              new DelegatingBindingTrace(parentBindingContext, "trace for analyzing library in js");
-        InjectorForTopDownAnalyzerForJs injector = new InjectorForTopDownAnalyzerForJs(project, topDownAnalysisParameters, trace, owner,
+        InjectorForTopDownAnalyzerForJs injector = new InjectorForTopDownAnalyzerForJs(project, topDownAnalysisParameters, trace, moduleDescriptor,
                                                                                        new JsModuleConfiguration(project,
                                                                                                                  parentBindingContext));
         try {

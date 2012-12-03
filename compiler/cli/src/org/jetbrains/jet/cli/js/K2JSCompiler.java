@@ -33,9 +33,12 @@ import org.jetbrains.jet.cli.common.messages.*;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.config.CommonConfigurationKeys;
 import org.jetbrains.jet.config.CompilerConfiguration;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.*;
 import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
@@ -89,13 +92,14 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
 
         final Config config = getConfig(arguments, project);
         final List<JetFile> sources = environmentForJS.getSourceFiles();
-        AnalyzeExhaust libraryExhaust = analyze(messageCollector, project, config.getLibFiles(), null, false);
+        AnalyzeExhaust libraryExhaust = analyze(messageCollector, project, config.getLibFiles(), null, false,
+                                                new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME));
         if (libraryExhaust == null) {
             return ExitCode.COMPILATION_ERROR;
         }
         libraryExhaust.throwIfError();
 
-        AnalyzeExhaust exhaust = analyze(messageCollector, project, sources, libraryExhaust.getBindingContext(), true);
+        AnalyzeExhaust exhaust = analyze(messageCollector, project, sources, libraryExhaust.getBindingContext(), true, null);
         if (exhaust == null) {
             return ExitCode.COMPILATION_ERROR;
         }
@@ -114,11 +118,18 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         return ExitCode.OK;
     }
 
-    private static AnalyzeExhaust analyze(PrintingMessageCollector messageCollector, final Project project, final List<JetFile> sources, final BindingContext parentBindingContext, final boolean analyzeCompletely) {
+    private static AnalyzeExhaust analyze(
+            PrintingMessageCollector messageCollector,
+            final Project project,
+            final List<JetFile> sources,
+            final BindingContext parentBindingContext,
+            final boolean analyzeCompletely,
+            final ModuleDescriptor moduleDescriptor
+    ) {
         return new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Function0<AnalyzeExhaust>() {
             @Override
             public AnalyzeExhaust invoke() {
-                return AnalyzerFacadeForJS.analyzeFiles(sources, project, parentBindingContext, analyzeCompletely);
+                return AnalyzerFacadeForJS.analyzeFiles(sources, project, parentBindingContext, new TopDownAnalysisParameters(analyzeCompletely), null, false, moduleDescriptor);
             }
         }, sources);
     }
