@@ -29,3 +29,7 @@ public native class JSON {
         public fun parse<T>(text: String, reviver: ((key: String, value: Any?)->Unit)? = null): T = noImpl
     }
 }
+
+public native trait JsonSerializable {
+    public fun toJSON(): String
+}
