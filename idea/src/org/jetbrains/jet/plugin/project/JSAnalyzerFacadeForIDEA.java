@@ -49,6 +49,7 @@ import java.util.List;
 public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
 
     INSTANCE;
+    private static final Name MODULE_NAME = Name.special("<module>");
 
     private JSAnalyzerFacadeForIDEA() {
     }
@@ -63,7 +64,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     ) {
         JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
         AnalyzerFacadeForJS.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
-        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("module")), project, libraryModuleConfiguration);
+        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(MODULE_NAME), project, libraryModuleConfiguration);
         return AnalyzerFacadeForJS.analyzeFilesAndStoreBodyContext(moduleConfiguration, files, false);
     }
 
@@ -96,7 +97,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
         ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
         JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
         AnalyzerFacadeForJS.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
-        return new ResolveSession(project, lazyModule, new JsModuleConfiguration(new ModuleDescriptor(Name.special("module")), project, libraryModuleConfiguration), declarationProviderFactory);
+        return new ResolveSession(project, lazyModule, new JsModuleConfiguration(new ModuleDescriptor(MODULE_NAME), project, libraryModuleConfiguration), declarationProviderFactory);
     }
 
     private static List<JetFile> getLibraryFiles(Project project) {
