@@ -28,10 +28,12 @@ import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.facade.K2JSTranslator;
@@ -51,7 +53,7 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    private static SoftReference<BindingContext> cachedLibraryContext = new SoftReference<BindingContext>(null);
+    private static SoftReference<JsModuleConfiguration> cachedLibraryContext = new SoftReference<JsModuleConfiguration>(null);
 
     @Nullable
     private static List<JetFile> libFiles = null;
@@ -65,8 +67,8 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    public static BindingContext getLibraryContext(@NotNull Project project) {
-        BindingContext context = cachedLibraryContext.get();
+    public static JsModuleConfiguration getLibraryContext(@NotNull Project project) {
+        JsModuleConfiguration context = cachedLibraryContext.get();
         if (context == null) {
             List<JetFile> allLibFiles = getAllLibFiles(project);
             Predicate<PsiFile> filesWithCode = new Predicate<PsiFile>() {
@@ -76,10 +78,11 @@ public final class TranslationUtils {
                 }
             };
             AnalyzerFacadeForJS.checkForErrors(allLibFiles);
-            AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(allLibFiles, project, null, new TopDownAnalysisParameters(filesWithCode), false);
+            JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
+            AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, allLibFiles, new TopDownAnalysisParameters(filesWithCode), false);
             exhaust.throwIfError();
-            context = exhaust.getBindingContext();
-            cachedLibraryContext = new SoftReference<BindingContext>(context);
+            cachedLibraryContext = new SoftReference<JsModuleConfiguration>(moduleConfiguration);
+            context = moduleConfiguration;
         }
         return context;
     }
@@ -103,8 +106,10 @@ public final class TranslationUtils {
             @NotNull MainCallParameters mainCallParameters,
             @NotNull EcmaVersion version, TestConfigFactory configFactory) throws Exception {
         List<JetFile> psiFiles = createPsiFileList(project, inputFiles, null);
-        AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(psiFiles, project, getLibraryContext(project), true);
-        K2JSTranslator.translateWithMainCallParametersAndSaveToFile(mainCallParameters, psiFiles, outputFile, getConfig(project, version, configFactory), exhaust);
+        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("<tests>")), project, getLibraryContext(project));
+        AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, psiFiles, true);
+        exhaust.throwIfError();
+        K2JSTranslator.translateWithMainCallParametersAndSaveToFile(mainCallParameters, psiFiles, outputFile, getConfig(project, version, configFactory), moduleConfiguration.getBindingContext());
     }
 
     @NotNull

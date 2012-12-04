@@ -35,8 +35,8 @@ import org.jetbrains.jet.config.CommonConfigurationKeys;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.*;
@@ -44,8 +44,10 @@ import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageLocation.NO_LOCATION;
 
@@ -91,24 +93,41 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         }
 
         final Config config = getConfig(arguments, project);
-        final List<JetFile> sources = environmentForJS.getSourceFiles();
-        AnalyzeExhaust libraryExhaust = analyze(messageCollector, project, config.getLibFiles(), null, false,
-                                                new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME));
-        if (libraryExhaust == null) {
-            return ExitCode.COMPILATION_ERROR;
-        }
-        libraryExhaust.throwIfError();
 
-        AnalyzeExhaust exhaust = analyze(messageCollector, project, sources, libraryExhaust.getBindingContext(), true, null);
-        if (exhaust == null) {
+        List<JetFile> libraryFiles = config.getModules().get(JsModuleConfiguration.STUBS_MODULE_NAME.getName());
+        JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
+        if (!analyze(messageCollector, libraryModuleConfiguration, libraryFiles, false)) {
             return ExitCode.COMPILATION_ERROR;
         }
-        exhaust.throwIfError();
+
+        List<JetFile> otherModulesFiles;
+        JsModuleConfiguration parentLibraryConfiguration = libraryModuleConfiguration;
+        if (!config.getModules().isEmpty()) {
+            otherModulesFiles = new ArrayList<JetFile>();
+            // todo normal module dependency resolution (exhaust per module)
+            for (Map.Entry<String, List<JetFile>> entry : config.getModules().entrySet()) {
+                if (entry.getKey() != JsModuleConfiguration.STUBS_MODULE_NAME.getName()) {
+                    otherModulesFiles.addAll(entry.getValue());
+                }
+            }
+
+            if (!otherModulesFiles.isEmpty()) {
+                parentLibraryConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("<externalModules>")), project, libraryModuleConfiguration);
+                if (!analyze(messageCollector, parentLibraryConfiguration, otherModulesFiles, false)) {
+                    return ExitCode.COMPILATION_ERROR;
+                }
+            }
+        }
+
+        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("<module>")), project, parentLibraryConfiguration);
+        if (!analyze(messageCollector, moduleConfiguration, environmentForJS.getSourceFiles(), true)) {
+            return ExitCode.COMPILATION_ERROR;
+        }
 
         MainCallParameters mainCallParameters = arguments.createMainCallParameters();
         try {
             K2JSTranslator.translateWithMainCallParametersAndSaveToFile(mainCallParameters, environmentForJS.getSourceFiles(), outputFile,
-                                                                        config, exhaust);
+                                                                        config, moduleConfiguration.getBindingContext());
         }
         catch (Throwable e) {
             messageCollector.report(CompilerMessageSeverity.EXCEPTION, MessageRenderer.PLAIN.renderException(e),
@@ -118,20 +137,24 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         return ExitCode.OK;
     }
 
-    private static AnalyzeExhaust analyze(
-            PrintingMessageCollector messageCollector,
-            final Project project,
-            final List<JetFile> sources,
-            final BindingContext parentBindingContext,
-            final boolean analyzeCompletely,
-            final ModuleDescriptor moduleDescriptor
+    private static boolean analyze(
+            @NotNull PrintingMessageCollector messageCollector,
+            @NotNull final JsModuleConfiguration moduleConfiguration,
+            @NotNull final List<JetFile> sources,
+            final boolean analyzeCompletely
     ) {
-        return new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Function0<AnalyzeExhaust>() {
+        AnalyzeExhaust exhaust = new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Function0<AnalyzeExhaust>() {
             @Override
             public AnalyzeExhaust invoke() {
-                return AnalyzerFacadeForJS.analyzeFiles(sources, project, parentBindingContext, new TopDownAnalysisParameters(analyzeCompletely), null, false, moduleDescriptor);
+                return AnalyzerFacadeForJS
+                        .analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
             }
         }, sources);
+        if (exhaust == null) {
+            return false;
+        }
+        exhaust.throwIfError();
+        return true;
     }
 
     private static void reportCompiledSourcesList(@NotNull PrintingMessageCollector messageCollector,

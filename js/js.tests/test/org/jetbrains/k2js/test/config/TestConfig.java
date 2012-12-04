@@ -19,9 +19,11 @@ package org.jetbrains.k2js.test.config;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -41,18 +43,9 @@ public class TestConfig extends Config {
         }
     };
 
-    @NotNull
-    private final List<JetFile> jsLibFiles;
-
     public TestConfig(@NotNull Project project, @NotNull EcmaVersion version,
             @NotNull List<JetFile> files) {
         super(project, TEST_MODULE_NAME, version);
-        jsLibFiles = files;
-    }
-
-    @Override
-    @NotNull
-    public List<JetFile> generateLibFiles() {
-        return jsLibFiles;
+        modules = Collections.singletonMap(JsModuleConfiguration.STUBS_MODULE_NAME.getName(), files);
     }
 }

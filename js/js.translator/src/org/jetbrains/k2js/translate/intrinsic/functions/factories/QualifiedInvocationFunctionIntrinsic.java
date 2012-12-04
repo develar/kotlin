@@ -28,4 +28,9 @@ public final class QualifiedInvocationFunctionIntrinsic extends FunctionIntrinsi
     ) {
         return new JsInvocation(nameRef, receiver == null ? arguments : TranslationUtils.generateInvocationArguments(receiver, arguments));
     }
+
+    @Override
+    public String toString() {
+        return nameRef.toString();
+    }
 }

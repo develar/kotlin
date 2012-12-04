@@ -132,7 +132,7 @@ public final class StandardClasses {
         return standardObjects.containsKey(DescriptorUtils.getFQName(descriptor));
     }
 
-    @NotNull
+    @Nullable
     public String getStandardObjectName(@NotNull DeclarationDescriptor descriptor) {
         return standardObjects.get(DescriptorUtils.getFQName(descriptor));
     }

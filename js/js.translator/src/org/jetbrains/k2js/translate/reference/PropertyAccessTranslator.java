@@ -19,7 +19,6 @@ package org.jetbrains.k2js.translate.reference;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
@@ -27,7 +26,6 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 
 import static org.jetbrains.k2js.translate.utils.AnnotationsUtils.isNativeObject;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForReferenceExpression;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getResolvedCallForProperty;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.isBackingFieldReference;
 
@@ -35,61 +33,42 @@ import static org.jetbrains.k2js.translate.utils.PsiUtils.isBackingFieldReferenc
  * @author Pavel Talanov
  */
 public abstract class PropertyAccessTranslator extends AbstractTranslator implements AccessTranslator {
+    protected final  CallType callType;
+
+    @NotNull
+    protected final PropertyDescriptor propertyDescriptor;
+
+    @Nullable
+    protected final JsExpression receiver;
+
+    protected PropertyAccessTranslator(
+            @NotNull PropertyDescriptor propertyDescriptor,
+            CallType callType,
+            @Nullable JsExpression receiver,
+            @NotNull TranslationContext context
+    ) {
+        super(context);
+
+        this.propertyDescriptor = propertyDescriptor;
+        this.receiver = receiver;
+        this.callType = callType;
+    }
+
     @NotNull
     public static PropertyAccessTranslator newInstance(
+            @NotNull PropertyDescriptor propertyDescriptor,
             @NotNull JetSimpleNameExpression expression,
             @Nullable JsExpression qualifier,
             @NotNull CallType callType,
             @NotNull TranslationContext context
     ) {
-        return newInstance(expression, qualifier, callType, context, getPropertyDescriptor(expression, context));
-    }
-
-    @NotNull
-    public static PropertyAccessTranslator newInstance(
-            @NotNull JetSimpleNameExpression expression,
-            @Nullable JsExpression qualifier,
-            @NotNull CallType callType,
-            @NotNull TranslationContext context,
-            @NotNull PropertyDescriptor propertyDescriptor
-    ) {
-        PropertyAccessTranslator result;
-        if (isNativeObject(propertyDescriptor) || isBackingFieldReference(expression)) {
-            result = new NativePropertyAccessTranslator(propertyDescriptor, qualifier, context);
+        if (isBackingFieldReference(expression) || isNativeObject(propertyDescriptor)) {
+            return new NativePropertyAccessTranslator(propertyDescriptor, callType, qualifier, context);
         }
         else {
             ResolvedCall<?> resolvedCall = getResolvedCallForProperty(context.bindingContext(), expression);
-            result = new KotlinPropertyAccessTranslator(propertyDescriptor, qualifier, resolvedCall, context);
+            return new KotlinPropertyAccessTranslator(propertyDescriptor, callType, qualifier, resolvedCall, context);
         }
-        result.setCallType(callType);
-        return result;
-    }
-
-    @NotNull
-    private static PropertyDescriptor getPropertyDescriptor(@NotNull JetSimpleNameExpression expression,
-            @NotNull TranslationContext context) {
-        DeclarationDescriptor descriptor =
-                getDescriptorForReferenceExpression(context.bindingContext(), expression);
-        assert descriptor instanceof PropertyDescriptor : "Must be a property descriptor.";
-        return (PropertyDescriptor) descriptor;
-    }
-
-    //TODO: we use normal by default but may cause bugs
-    //TODO: inspect
-    private /*var*/ CallType callType = CallType.NORMAL;
-
-    protected PropertyAccessTranslator(@NotNull TranslationContext context) {
-        super(context);
-    }
-
-    public void setCallType(@NotNull CallType callType) {
-        this.callType = callType;
-    }
-
-    @NotNull
-    protected CallType getCallType() {
-        assert callType != null : "CallType not set";
-        return callType;
     }
 
     @NotNull
@@ -97,4 +76,27 @@ public abstract class PropertyAccessTranslator extends AbstractTranslator implem
 
     @NotNull
     protected abstract JsExpression translateAsSet(@Nullable JsExpression receiver, @NotNull JsExpression setTo);
+
+    @Override
+    @NotNull
+    public JsExpression translateAsGet() {
+        return translateAsGet(getReceiver());
+    }
+
+    @NotNull
+    @Override
+    public JsExpression translateAsSet(@NotNull JsExpression setTo) {
+        return translateAsSet(getReceiver(), setTo);
+    }
+
+    @NotNull
+    @Override
+    public CachedAccessTranslator getCached() {
+        return new CachedPropertyAccessTranslator(getReceiver(), this, context());
+    }
+
+    @Nullable
+    protected JsExpression getReceiver() {
+        return receiver;
+    }
 }

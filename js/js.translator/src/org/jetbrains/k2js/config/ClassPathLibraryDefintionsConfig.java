@@ -19,8 +19,11 @@ package org.jetbrains.k2js.config;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A Config implementation which is configured with a directory to find the standard library names from
@@ -36,7 +39,7 @@ public class ClassPathLibraryDefintionsConfig extends Config {
 
     @NotNull
     @Override
-    public List<JetFile> generateLibFiles() {
-        return MetaInfServices.loadServicesFiles(META_INF_SERVICES_FILE, getProject());
+    public Map<String, List<JetFile>> collectModules() {
+        return Collections.singletonMap(JsModuleConfiguration.STUBS_MODULE_NAME.getName(), MetaInfServices.loadServicesFiles(META_INF_SERVICES_FILE, getProject()));
     }
 }

@@ -44,11 +44,20 @@ public final class QualifiedExpressionTranslator {
     public static AccessTranslator getAccessTranslator(@NotNull JetQualifiedExpression expression,
                                                        @NotNull TranslationContext context) {
         JsExpression receiver = translateReceiver(expression, context);
-        PropertyAccessTranslator result =
-            PropertyAccessTranslator.newInstance(getNotNullSimpleNameSelector(expression), receiver,
-                                                 CallType.getCallTypeForQualifiedExpression(expression), context);
-        result.setCallType(CallType.getCallTypeForQualifiedExpression(expression));
-        return result;
+        JetSimpleNameExpression expression1 = getNotNullSimpleNameSelector(expression);
+        return PropertyAccessTranslator.newInstance(getPropertyDescriptor(expression1, context), expression1, receiver, CallType.getCallTypeForQualifiedExpression(expression), context
+        );
+    }
+
+    @NotNull
+    private static PropertyDescriptor getPropertyDescriptor(
+            @NotNull JetSimpleNameExpression expression,
+            @NotNull TranslationContext context
+    ) {
+        DeclarationDescriptor descriptor =
+                getDescriptorForReferenceExpression(context.bindingContext(), expression);
+        assert descriptor instanceof PropertyDescriptor : "Must be a property descriptor.";
+        return (PropertyDescriptor) descriptor;
     }
 
     @NotNull
@@ -82,7 +91,7 @@ public final class QualifiedExpressionTranslator {
         if (selector != null) {
             DeclarationDescriptor descriptor = getDescriptorForReferenceExpression(context.bindingContext(), selector);
             if (descriptor instanceof PropertyDescriptor) {
-                return PropertyAccessTranslator.newInstance(selector, receiver, callType, context, (PropertyDescriptor) descriptor).translateAsGet();
+                return PropertyAccessTranslator.newInstance((PropertyDescriptor) descriptor, selector, receiver, callType, context).translateAsGet();
             }
         }
 

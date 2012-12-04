@@ -21,7 +21,6 @@ import com.google.dart.compiler.util.TextOutputImpl;
 import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
@@ -57,13 +56,14 @@ public final class K2JSTranslator {
             @NotNull MainCallParameters mainCall,
             @NotNull List<JetFile> files,
             @NotNull String outputPath,
-            @NotNull Config config, AnalyzeExhaust exhaust
+            @NotNull Config config,
+            @NotNull BindingContext bindingContext
     ) throws TranslationException, IOException {
         K2JSTranslator translator = new K2JSTranslator(config);
         File outFile = new File(outputPath);
         TextOutputImpl output = new TextOutputImpl();
         SourceMapBuilder sourceMapBuilder = config.isSourcemap() ? new SourceMap3Builder(outFile, output, new SourceMapBuilderConsumer()) : null;
-        String programCode = translator.generateProgramCode(files, mainCall, output, sourceMapBuilder, exhaust);
+        String programCode = translator.generateProgramCode(files, mainCall, output, sourceMapBuilder, bindingContext);
         FileUtil.writeToFile(outFile, programCode);
         if (sourceMapBuilder != null) {
             FileUtil.writeToFile(sourceMapBuilder.getOutFile(), sourceMapBuilder.build());
@@ -91,9 +91,8 @@ public final class K2JSTranslator {
             @NotNull MainCallParameters mainCallParameters,
             @NotNull TextOutputImpl output,
             @Nullable SourceMapBuilder sourceMapBuilder,
-            @NotNull AnalyzeExhaust exhaust
+            @NotNull BindingContext bindingContext
     ) throws TranslationException {
-        BindingContext bindingContext = exhaust.getBindingContext();
         JsProgram program = Translation.generateAst(bindingContext, files, mainCallParameters, config);
         JsSourceGenerationVisitor sourceGenerator = new JsSourceGenerationVisitor(output, sourceMapBuilder);
         program.accept(sourceGenerator);

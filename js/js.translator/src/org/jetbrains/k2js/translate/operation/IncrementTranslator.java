@@ -63,7 +63,7 @@ public abstract class IncrementTranslator extends AbstractTranslator {
         super(context);
         this.expression = expression;
         JetExpression baseExpression = getBaseExpression(expression);
-        this.accessTranslator = getCachedAccessTranslator(baseExpression, context());
+        accessTranslator = getCachedAccessTranslator(baseExpression, context());
     }
 
     @NotNull

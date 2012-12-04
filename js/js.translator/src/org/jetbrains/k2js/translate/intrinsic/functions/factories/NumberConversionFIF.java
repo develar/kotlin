@@ -21,11 +21,15 @@ import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
 import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.intellij.openapi.util.Pair;
+import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.intrinsic.functions.FunctionIntrinsics;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
+import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.NamePredicate;
 
 import java.util.List;
@@ -90,12 +94,12 @@ public final class NumberConversionFIF extends CompositeFIF {
             return subtract(assignment(toConvertReference, receiver), fractional);
         }
     };
-    @NotNull
-    public static final FunctionIntrinsicFactory INSTANCE = new NumberConversionFIF();
 
-    private NumberConversionFIF() {
-        add(pattern(INTEGER_NUMBER_TYPES, SUPPORTED_CONVERSIONS), RETURN_RECEIVER);
-        add(pattern(FLOATING_POINT_NUMBER_TYPES, INTEGER_CONVERSIONS), GET_INTEGER_PART);
-        add(pattern(FLOATING_POINT_NUMBER_TYPES, FLOATING_POINT_CONVERSIONS), RETURN_RECEIVER);
+    public NumberConversionFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+        super(intrinsics);
+
+        add(FunctionIntrinsics.ANY_MEMBER, pattern(INTEGER_NUMBER_TYPES, SUPPORTED_CONVERSIONS), RETURN_RECEIVER);
+        add(FunctionIntrinsics.ANY_MEMBER, pattern(FLOATING_POINT_NUMBER_TYPES, INTEGER_CONVERSIONS), GET_INTEGER_PART);
+        add(FunctionIntrinsics.ANY_MEMBER, pattern(FLOATING_POINT_NUMBER_TYPES, FLOATING_POINT_CONVERSIONS), RETURN_RECEIVER);
     }
 }

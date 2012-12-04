@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.general;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
@@ -24,6 +25,7 @@ import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetNamedFunction;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.facade.exceptions.MainFunctionNotFoundException;
@@ -127,11 +129,17 @@ public final class Translation {
     }
 
     private static JsInvocation generateDefineModuleInvocation(Config config, JsFunction definitionFunction, JsProgram program) {
-        JsLiteral moduleDependencies = config.getModuleDependencies().isEmpty()
-                                       ? JsLiteral.NULL
-                                       : new JsArrayLiteral(toStringLiteralList(config.getModuleDependencies(), program));
-        return new JsInvocation(new JsNameRef("defineModule", Namer.KOTLIN_OBJECT_NAME_REF), program.getStringLiteral(config.getModuleId()),
-                                moduleDependencies, definitionFunction);
+        List<JsExpression> moduleDependencies = new SmartList<JsExpression>();
+        for (String moduleName : config.getModules().keySet()) {
+            if (moduleName != JsModuleConfiguration.STUBS_MODULE_NAME.getName()) {
+                moduleDependencies.add(program.getStringLiteral(moduleName));
+            }
+        }
+
+        return new JsInvocation(new JsNameRef("defineModule", Namer.KOTLIN_OBJECT_NAME_REF),
+                                program.getStringLiteral(config.getModuleId()),
+                                moduleDependencies.isEmpty() ? JsLiteral.NULL : new JsArrayLiteral(moduleDependencies),
+                                definitionFunction);
     }
 
     private static JsFunction generateDefinitionFunction(

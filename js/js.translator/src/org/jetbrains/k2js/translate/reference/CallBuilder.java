@@ -81,6 +81,11 @@ public final class CallBuilder {
     }
 
     @NotNull
+    public CallBuilder args(@NotNull JsExpression arg) {
+        return args(Collections.singletonList(arg));
+    }
+
+    @NotNull
     public CallBuilder descriptor(@NotNull CallableDescriptor descriptor) {
         this.descriptor = descriptor;
         return this;

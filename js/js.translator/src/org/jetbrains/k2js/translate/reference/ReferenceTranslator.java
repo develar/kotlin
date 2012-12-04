@@ -78,7 +78,7 @@ public final class ReferenceTranslator {
 
         DeclarationDescriptor descriptor = context.bindingContext().get(BindingContext.REFERENCE_TARGET, expression);
         if (descriptor instanceof PropertyDescriptor) {
-            return PropertyAccessTranslator.newInstance(expression, receiver, CallType.NORMAL, context, (PropertyDescriptor) descriptor);
+            return PropertyAccessTranslator.newInstance((PropertyDescriptor) descriptor, expression, receiver, CallType.NORMAL, context);
         }
         assert descriptor != null;
         return new ReferenceAccessTranslator(descriptor, context);

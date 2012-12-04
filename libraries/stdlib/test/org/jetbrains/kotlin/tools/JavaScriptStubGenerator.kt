@@ -151,7 +151,8 @@ class JavaScriptStubGenerator(packageName: String) {
                     else {
                         builder.append(exposeAsProperty)
                     }
-                    builder.append(": ").append(currentClassName).append(" = noImpl")
+                    builder.append(": ").append(currentClassName)
+                            //.append(" = noImpl")
                 }
             }
             else {
@@ -276,7 +277,8 @@ class JavaScriptStubGenerator(packageName: String) {
             builder.append(' ').appendName(element).append(": ")
             typeNameAppender()
 
-            val value = element.attribute("value") ?: (if (bodyRequired) "noImpl" else null)
+            //val value = element.attribute("value") ?: (if (bodyRequired) "noImpl" else null)
+            val value = element.attribute("value")
             if (value != null) {
                 builder.append(" = ").append(value)
             }
@@ -338,9 +340,9 @@ class JavaScriptStubGenerator(packageName: String) {
                 }
 
                 builder.append(')').appendType(element, "returnType")
-                if (bodyRequired) {
-                    builder.append(" = ").append("noImpl")
-                }
+                //if (bodyRequired) {
+                //    builder.append(" = ").append("noImpl")
+                //}
             }
             while (!stopProcessParameters)
         }

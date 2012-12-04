@@ -55,13 +55,10 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
         return (new CallExpressionTranslator(expression, receiver, callType, context)).translate();
     }
 
-    private final boolean isNativeFunctionCall;
-
     private CallExpressionTranslator(@NotNull JetCallExpression expression,
             @Nullable JsExpression receiver,
             @NotNull CallType callType, @NotNull TranslationContext context) {
         super(expression, receiver, callType, context);
-        isNativeFunctionCall = AnnotationsUtils.isNativeObject(resolvedCall.getCandidateDescriptor());
     }
 
     @NotNull
@@ -130,6 +127,6 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
 
     @Override
     public boolean shouldWrapVarargInArray() {
-        return !isNativeFunctionCall;
+        return !AnnotationsUtils.isNativeObject(resolvedCall.getCandidateDescriptor());
     }
 }

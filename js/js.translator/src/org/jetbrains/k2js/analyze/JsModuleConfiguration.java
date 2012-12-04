@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.DefaultModuleConfiguration;
 import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetImportDirective;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
@@ -26,9 +27,11 @@ public class JsModuleConfiguration implements ModuleConfiguration {
     public static final Name STUBS_MODULE_NAME = Name.special("<stubs>");
 
     private final Project project;
-    private final BindingContext parentBindingContext;
+    final BindingContext parentBindingContext;
     @Nullable
     private final ModuleConfiguration delegateConfiguration;
+
+    private final ModuleDescriptor moduleDescriptor;
 
     @NotNull
     public static final List<ImportPath> DEFAULT_IMPORT_PATHS = Arrays.asList(
@@ -37,10 +40,39 @@ public class JsModuleConfiguration implements ModuleConfiguration {
             new ImportPath(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), true),
             new ImportPath("kotlin.*"));
 
-    public JsModuleConfiguration(@NotNull Project project, BindingContext parentBindingContext) {
+    BindingContext bindingContext;
+
+    public JsModuleConfiguration(Project project) {
+        this(new ModuleDescriptor(Name.special("<module>")), project, null);
+    }
+
+    public JsModuleConfiguration(ModuleDescriptor moduleDescriptor, Project project) {
+        this(moduleDescriptor, project, null);
+    }
+
+    public JsModuleConfiguration(ModuleDescriptor moduleDescriptor, Project project, @Nullable JsModuleConfiguration parentJsModuleConfiguration) {
+        this.moduleDescriptor = moduleDescriptor;
         this.project = project;
-        this.parentBindingContext = parentBindingContext;
-        this.delegateConfiguration = parentBindingContext == null ? DefaultModuleConfiguration.createStandardConfiguration(project) : null;
+        if (parentJsModuleConfiguration == null) {
+            parentBindingContext = null;
+            delegateConfiguration = DefaultModuleConfiguration.createStandardConfiguration(project);
+        }
+        else {
+            parentBindingContext = parentJsModuleConfiguration.bindingContext;
+            delegateConfiguration = null;
+        }
+    }
+
+    public BindingContext getBindingContext() {
+        return bindingContext;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public ModuleDescriptor getModuleDescriptor() {
+        return moduleDescriptor;
     }
 
     @Override

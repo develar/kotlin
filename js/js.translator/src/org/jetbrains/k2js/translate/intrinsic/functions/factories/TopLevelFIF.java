@@ -17,6 +17,8 @@
 package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.openapi.util.Pair;
+import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -30,10 +32,12 @@ import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
+import org.jetbrains.jet.lang.types.lang.PrimitiveType;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.intrinsic.functions.basic.CallStandardMethodIntrinsic;
+import org.jetbrains.k2js.translate.intrinsic.functions.FunctionIntrinsics;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
+import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPattern;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.NamePredicate;
 import org.jetbrains.k2js.translate.reference.CallTranslator;
@@ -45,7 +49,6 @@ import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.intrinsic.functions.patterns.PatternBuilder.pattern;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.generateInvocationArguments;
 
 /**
@@ -53,7 +56,7 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.generateInvoca
  */
 public final class TopLevelFIF extends CompositeFIF {
     @NotNull
-    public static final CallStandardMethodIntrinsic EQUALS = new CallStandardMethodIntrinsic(new JsNameRef("equals", "Kotlin"), true, 1);
+    public static final FunctionIntrinsic EQUALS = kotlinFunction("equals");
 
     private static final FunctionIntrinsic NATIVE_MAP_GET = new NativeMapGetSet() {
         @NotNull
@@ -105,30 +108,47 @@ public final class TopLevelFIF extends CompositeFIF {
 
     public static final FunctionIntrinsic STRINGIFY = kotlinFunction("stringify");
 
-    private static FunctionIntrinsicFactory INSTANCE;
+    public static final DescriptorPredicate JAVA_EXCEPTION_PATTERN = new DescriptorPredicate() {
+        @Override
+        public boolean apply(@NotNull FunctionDescriptor descriptor) {
+            if (!(descriptor instanceof ConstructorDescriptor)) {
+                return false;
+            }
 
-    @NotNull
-    public static FunctionIntrinsicFactory getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new TopLevelFIF();
+            DeclarationDescriptor packageDescriptor =
+                    ((ConstructorDescriptor) descriptor).getContainingDeclaration().getContainingDeclaration();
+            if (packageDescriptor.getName().getName().equals("lang")) {
+                DeclarationDescriptor javaPackage = packageDescriptor.getContainingDeclaration();
+                if (javaPackage != null && javaPackage.getName().getName().equals("java")) {
+                    DeclarationDescriptor root = javaPackage.getContainingDeclaration();
+                    return root instanceof NamespaceDescriptor && DescriptorUtils.isRootNamespace((NamespaceDescriptor) root);
+                }
+            }
+
+            return false;
         }
-        return INSTANCE;
-    }
+    };
 
-    private TopLevelFIF() {
-        add(pattern("jet", "toString").receiverExists(), STRINGIFY);
-        add(pattern("jet", "equals").receiverExists(), EQUALS);
-        add(pattern(NamePredicate.PRIMITIVE_NUMBERS, "equals"), EQUALS);
-        add(pattern("String|Boolean|Char|Number.equals"), EQUALS);
-        add(pattern("jet", "arrayOfNulls"), kotlinFunction("arrayOfNulls"));
-        add(pattern("jet", "iterator").receiverExists(), RETURN_RECEIVER_INTRINSIC);
-        add(new DescriptorPredicate() {
+    public TopLevelFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+        super(intrinsics);
+
+        DescriptorPattern jet = new DescriptorPattern("jet");
+        DescriptorPattern jetWithReceiver = new DescriptorPattern("jet").receiverExists();
+        add("toString", jetWithReceiver, STRINGIFY);
+        add("equals", jetWithReceiver, EQUALS);
+        add("iterator", jetWithReceiver, RETURN_RECEIVER_INTRINSIC);
+
+        for (PrimitiveType primitiveType : PrimitiveType.values()) {
+            add("equals", new DescriptorPattern("jet", primitiveType.getTypeName().getName()), EQUALS);
+        }
+        add("equals", new DescriptorPattern("jet", "String"), EQUALS);
+        add("equals", new DescriptorPattern("jet", "Hashable"), EQUALS);
+
+        add("arrayOfNulls", jet, kotlinFunction("arrayOfNulls"));
+
+        add("invoke", new DescriptorPredicate() {
                 @Override
                 public boolean apply(@NotNull FunctionDescriptor descriptor) {
-                    if (!descriptor.getName().getName().equals("invoke")) {
-                        return false;
-                    }
-
                     int parameterCount = descriptor.getValueParameters().size();
                     DeclarationDescriptor fun = descriptor.getContainingDeclaration();
                     return fun == (descriptor.getReceiverParameter() == null
@@ -162,22 +182,22 @@ public final class TopLevelFIF extends CompositeFIF {
             }
         );
 
-        String[] javaUtil = {"java", "util"};
+        add("get", new DescriptorPattern("jet", "Map").checkOverridden(), NATIVE_MAP_GET);
+        DescriptorPattern js = new DescriptorPattern("js");
+        add("set", new DescriptorPattern("js").receiverExists(), NATIVE_MAP_SET);
 
-        add(pattern("jet", "Map", "get").checkOverridden(), NATIVE_MAP_GET);
-        add(pattern(new String[] {"js"}, "set").receiverExists(), NATIVE_MAP_SET);
-
-        add(pattern("js", "Json", "get"), ArrayFIF.GET_INTRINSIC);
-        add(pattern("js", "Json", "set"), ArrayFIF.SET_INTRINSIC);
+        DescriptorPattern json = new DescriptorPattern("js", "Json");
+        add("get", json, ArrayFIF.GET_INTRINSIC);
+        add("set", json, ArrayFIF.SET_INTRINSIC);
 
         JsNameRef systemOut = new JsNameRef("out", new JsNameRef("System", Namer.KOTLIN_OBJECT_NAME_REF));
-        add(pattern("js", "println"), new QualifiedInvocationFunctionIntrinsic("println", systemOut));
-        add(pattern("js", "print"), new QualifiedInvocationFunctionIntrinsic("print", systemOut));
+        add("println", js, new QualifiedInvocationFunctionIntrinsic("println", systemOut));
+        add("print", js, new QualifiedInvocationFunctionIntrinsic("print", systemOut));
 
-        add(pattern(javaUtil, "HashMap", "<init>"), new MapSelectImplementationIntrinsic(false));
-        add(pattern(javaUtil, "HashSet", "<init>"), new MapSelectImplementationIntrinsic(true));
-
-        add(pattern(javaUtil, "StringBuilder", "<init>"), new FunctionIntrinsic() {
+        add("<init>", new DescriptorPattern("java", "util", "HashMap"), new MapSelectImplementationIntrinsic(false));
+        add("<init>", new DescriptorPattern("java", "util", "HashSet"), new MapSelectImplementationIntrinsic(true));
+        DescriptorPattern stringBuilder = new DescriptorPattern("java", "util", "StringBuilder");
+        add("<init>", stringBuilder, new FunctionIntrinsic() {
             @NotNull
             @Override
             public JsExpression apply(
@@ -186,7 +206,7 @@ public final class TopLevelFIF extends CompositeFIF {
                 return JsAstUtils.wrapValue("s", context.program().getStringLiteral(""));
             }
         });
-        add(pattern(new String[] {"java", "lang", "Appendable"}, "append").checkOverridden(), new FunctionIntrinsic() {
+        add("append", new DescriptorPattern("java", "lang", "Appendable").checkOverridden(), new FunctionIntrinsic() {
             @NotNull
             @Override
             public JsExpression apply(
@@ -196,7 +216,7 @@ public final class TopLevelFIF extends CompositeFIF {
                 return new JsBinaryOperation(JsBinaryOperator.ASG_ADD, new JsNameRef("s", receiver), arguments.get(0));
             }
         });
-        add(pattern(javaUtil, "StringBuilder", "toString"), new FunctionIntrinsic() {
+        add("toString", stringBuilder, new FunctionIntrinsic() {
             @NotNull
             @Override
             public JsExpression apply(
@@ -206,26 +226,7 @@ public final class TopLevelFIF extends CompositeFIF {
             }
         });
 
-        add(new DescriptorPredicate() {
-                @Override
-                public boolean apply(@NotNull FunctionDescriptor descriptor) {
-                    if (!(descriptor instanceof ConstructorDescriptor)) {
-                        return false;
-                    }
-
-                    DeclarationDescriptor packageDescriptor =
-                            ((ConstructorDescriptor) descriptor).getContainingDeclaration().getContainingDeclaration();
-                    if (packageDescriptor.getName().getName().equals("lang")) {
-                        DeclarationDescriptor javaPackage = packageDescriptor.getContainingDeclaration();
-                        if (javaPackage != null && javaPackage.getName().getName().equals("java")) {
-                            DeclarationDescriptor root = javaPackage.getContainingDeclaration();
-                            return root instanceof NamespaceDescriptor && DescriptorUtils.isRootNamespace((NamespaceDescriptor) root);
-                        }
-                    }
-
-                    return false;
-                }
-            }, new FunctionIntrinsic() {
+        add(FunctionIntrinsics.ANY_MEMBER, JAVA_EXCEPTION_PATTERN, new FunctionIntrinsic() {
                 @NotNull
                 @Override
                 public JsExpression apply(

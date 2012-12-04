@@ -1,38 +1,43 @@
-package js
+package kotlin
 
-public fun String.startsWith(s: String): Boolean = noImpl
-public fun String.endsWith(s: String): Boolean = noImpl
-public fun String.contains(s: String): Boolean = noImpl
+public fun String.startsWith(s: String): Boolean
+public fun String.endsWith(s: String): Boolean
+public fun String.contains(s: String): Boolean
 
-public fun String.startsWith(char: Char): Boolean = noImpl
-public fun String.endsWith(char: Char): Boolean = noImpl
-public fun String.contains(char: Char): Boolean = noImpl
+public fun String.startsWith(char: Char): Boolean
+public fun String.endsWith(char: Char): Boolean
+public fun String.contains(char: Char): Boolean
 
-native public fun String.toUpperCase() : String = js.noImpl
+public fun String.toUpperCase(): String
+public fun String.toLowerCase(): String
 
-native public fun String.toLowerCase() : String = js.noImpl
+public fun String.indexOf(str: String): Int
+public fun String.indexOf(str: Char): Int
+public fun String.indexOf(str: String, fromIndex: Int): Int
+public fun String.indexOf(str: Char, fromIndex: Int): Int
 
-native public fun String.indexOf(str : String) : Int = js.noImpl
-native public fun String.indexOf(str : String, fromIndex : Int) : Int = js.noImpl
+public fun String.lastIndexOf(str: String): Int
+public fun String.lastIndexOf(str: Char): Int
+public fun String.lastIndexOf(str: String, fromIndex: Int): Int
+public fun String.lastIndexOf(str: Char, fromIndex: Int): Int
 
-native public fun String.lastIndexOf(str: String) : Int = js.noImpl
-native public fun String.lastIndexOf(str : String, fromIndex : Int) : Int = js.noImpl
+public fun String.split(regex: RegExp): Array<String>
+public fun String.split(regex: String): Array<String>
 
-native public fun String.split(regex: String): Array<String> = js.noImpl
+public fun String.substring(beginIndex: Int): String
+public fun String.substring(beginIndex: Int, endIndex: Int): String
 
-native public fun String.substring(beginIndex : Int) : String = js.noImpl
-native public fun String.substring(beginIndex : Int, endIndex : Int) : String = js.noImpl
+public fun String.charAt(index: Int): Char
 
-native public fun String.charAt(index : Int) : Char = js.noImpl
+public fun String.concat(str: String): String
 
-native public fun String.concat(str : String) : String = js.noImpl
+public fun String.match(regex: RegExp): RegExp.ExecResult
+public fun String.match(regex: String): RegExp.ExecResult
 
-native public fun String.match(regex : String) : Array<String> = js.noImpl
+public fun String.trim(): String
 
-native public fun String.trim() : String = js.noImpl
-
-public val String.size: Int
-    get() = noImpl
+public native("length") val String.size: Int
+    get() = length
 
 public fun String.length(): Int
 public fun String.isEmpty(): Boolean
@@ -175,4 +180,14 @@ public class RegExp(pattern: String, flags: String? = null) {
     public fun exec(string: String): ExecResult
 }
 
-public fun String.toRegex(flags: Int = 0): RegExp
+//public fun String.toRegex(flags: Int = 0): RegExp
+
+public fun String.replace(target: String, replacement: String): String
+public fun String.replace(target: RegExp, replacement: String): String
+
+public fun String.matches(regex: RegExp): Boolean
+public fun String.matches(regex: String): Boolean
+
+// todo
+//public fun String.capitalize(): String
+//public fun String.decapitalize(): String

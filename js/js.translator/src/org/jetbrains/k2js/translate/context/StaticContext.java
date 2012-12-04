@@ -30,6 +30,7 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.config.LibrarySourcesConfig;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
@@ -178,8 +179,9 @@ public final class StaticContext {
             return getNameRefForDescriptor(((ConstructorDescriptor) descriptor).getContainingDeclaration(), context);
         }
 
-        if (standardClasses.isStandardObject(descriptor)) {
-            return new JsNameRef(standardClasses.getStandardObjectName(descriptor));
+        String standardObjectName = standardClasses.getStandardObjectName(descriptor);
+        if (standardObjectName != null) {
+            return new JsNameRef(standardObjectName);
         }
 
         for (PredefinedAnnotation annotation : PredefinedAnnotation.values()) {
@@ -192,6 +194,10 @@ public final class StaticContext {
                 name = descriptor.getName().getName();
             }
             return new JsNameRef(name);
+        }
+
+        if (isNativeObjectByModule(descriptor)) {
+            return new JsNameRef(descriptor.getName().getName());
         }
 
         // property cannot be overloaded, so, name collision is not possible, we don't need create extra JsName and keep generated ref
@@ -234,18 +240,18 @@ public final class StaticContext {
         }
 
         DeclarationDescriptor namespace = descriptor.getContainingDeclaration();
-        if (!(namespace instanceof NamespaceDescriptor)) {
-            return null;
-        }
-
-        if (descriptor instanceof PropertyDescriptor ||
-            (descriptor instanceof NamespaceDescriptor && DescriptorUtils.isRootNamespace((NamespaceDescriptor) descriptor)) ||
-            AnnotationsUtils.isNativeObject(descriptor)) {
+        if (!(namespace instanceof NamespaceDescriptor) || descriptor instanceof PropertyDescriptor) {
             return null;
         }
 
         if (isLibraryObject(descriptor) || standardClasses.isStandardObject(descriptor)) {
             return Namer.KOTLIN_OBJECT_NAME_REF;
+        }
+
+        ModuleDescriptor module = DescriptorUtils.getParentOfType(namespace, ModuleDescriptor.class);
+        assert module != null;
+        if (module.getName().equals(JsModuleConfiguration.STUBS_MODULE_NAME) || AnnotationsUtils.isNativeObject(descriptor)) {
+            return null;
         }
 
         JsNameRef qualifier = qualifierMap.get(namespace);
@@ -280,11 +286,8 @@ public final class StaticContext {
 
         if (element != null) {
             PsiFile file = element.getContainingFile();
-            String moduleName = file.getUserData(LibrarySourcesConfig.EXTERNAL_MODULE_NAME);
-            if (LibrarySourcesConfig.UNKNOWN_EXTERNAL_MODULE_NAME.equals(moduleName)) {
-                return null;
-            }
-            else if (moduleName != null) {
+            String moduleName = file.getUserData(LibrarySourcesConfig.MODULE_NAME_KEY);
+            if (moduleName != null) {
                 qualifier.setQualifier(new JsArrayAccess(namer.kotlin("modules"), program.getStringLiteral(moduleName)));
             }
         }

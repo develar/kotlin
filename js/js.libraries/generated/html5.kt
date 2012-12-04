@@ -204,7 +204,7 @@ public native trait Console {
 	public fun time(): Unit
 }
 
-public native val console: Console = noImpl
+public native val console: Console
 
 public native trait Window {
 
@@ -289,7 +289,7 @@ public native trait Window {
 	public fun openDatabaseSync(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: (()->Unit)? = null): Database
 }
 
-public native val window: Window = noImpl
+public native val window: Window
 
 public native trait ClipboardData {
 	public fun setData(sDataFormat: String, sData: String): Boolean
@@ -346,7 +346,7 @@ public native trait HTMLDocument : Document {
 	public fun getAnonymousElementByAttribute(node: HTMLElement, attrName: String, attrValue: String): NodeList
 }
 
-public native val document: HTMLDocument = noImpl
+public native val document: HTMLDocument
 
 public native trait CommandDispatcher {
 	public var focusedElement: HTMLElement
@@ -1376,48 +1376,48 @@ public native class WebSocket<T: Any>(url: String, vararg protocols: String) {
 		public val CLOSED: Int = 3
 	}
 
-	public var url: String = noImpl
-	public val readyState: Int = noImpl
-	public val bufferedAmount: Long = noImpl
-	public val extensions: String = noImpl
-	public val protocol: String = noImpl
-	public var onopen: (org.w3c.dom.Event)->Unit = noImpl
+	public var url: String
+	public val readyState: Int
+	public val bufferedAmount: Long
+	public val extensions: String
+	public val protocol: String
+	public var onopen: (org.w3c.dom.Event)->Unit
 
 	public native trait MessageEvent : org.w3c.dom.Event {
 		public val data: T
 	}
-	public var onmessage: (event: MessageEvent)->Unit = noImpl
-	public var onerror: (org.w3c.dom.Event)->Unit = noImpl
+	public var onmessage: (event: MessageEvent)->Unit
+	public var onerror: (org.w3c.dom.Event)->Unit
 
 	public native trait CloseEvent : org.w3c.dom.Event {
 		public val wasClean: Boolean
 	}
-	public var onclose: (event: CloseEvent)->Unit = noImpl
+	public var onclose: (event: CloseEvent)->Unit
 
-	public fun send(data: String): Unit = noImpl
-	public fun send(data: ArrayBuffer): Unit = noImpl
-	public fun send(data: ArrayBufferView): Unit = noImpl
-	public fun send(data: Blob): Unit = noImpl
-	public fun close(code: Long? = null, reason: String? = null): Unit = noImpl
+	public fun send(data: String): Unit
+	public fun send(data: ArrayBuffer): Unit
+	public fun send(data: ArrayBufferView): Unit
+	public fun send(data: Blob): Unit
+	public fun close(code: Long? = null, reason: String? = null): Unit
 }
 
 public native class ArrayBuffer(length: Long) {
-	public var byteLength: Long = noImpl
+	public var byteLength: Long
 
 }
 
 public native class DataView(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) {
-	public val buffer: ArrayBuffer = noImpl
-	public val byteOffset: Long = noImpl
-	public val byteLength: Long = noImpl
+	public val buffer: ArrayBuffer
+	public val byteOffset: Long
+	public val byteLength: Long
 
-	public fun getInt8(byteOffset: Long? = null): Byte = noImpl
+	public fun getInt8(byteOffset: Long? = null): Byte
 }
 
 public native open class ArrayBufferView() {
-	public val buffer: ArrayBuffer = noImpl
-	public val byteOffset: Long = noImpl
-	public val byteLength: Long = noImpl
+	public val buffer: ArrayBuffer
+	public val byteOffset: Long
+	public val byteLength: Long
 
 }
 
@@ -1426,10 +1426,10 @@ public native class Int8Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = n
 		public val BYTES_PER_ELEMENT: Int = 8
 	}
 
-	public val length: Unit = noImpl
+	public val length: Unit
 
-	public fun set(array: Int8Array, offset: Long? = null): Unit = noImpl
-	public fun subarray(begin: Long, end: Long? = null): Int8Array = noImpl
+	public fun set(array: Int8Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Int8Array
 }
 
 public native class Uint8Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
@@ -1437,10 +1437,10 @@ public native class Uint8Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = 
 		public val BYTES_PER_ELEMENT: Int = 8
 	}
 
-	public val length: Long = noImpl
+	public val length: Long
 
-	public fun set(array: Uint8Array, offset: Long? = null): Unit = noImpl
-	public fun subarray(begin: Long, end: Long? = null): Uint8Array = noImpl
+	public fun set(array: Uint8Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Uint8Array
 }
 
 public native class Int16Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
@@ -1448,10 +1448,10 @@ public native class Int16Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = 
 		public val BYTES_PER_ELEMENT: Int = 16
 	}
 
-	public val length: Long = noImpl
+	public val length: Long
 
-	public fun set(array: Int16Array, offset: Long? = null): Unit = noImpl
-	public fun subarray(begin: Long, end: Long? = null): Int16Array = noImpl
+	public fun set(array: Int16Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Int16Array
 }
 
 public native class Uint16Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
@@ -1459,10 +1459,10 @@ public native class Uint16Array(bufferOrArrayOrLength: Unit, byteOffset: Long? =
 		public val BYTES_PER_ELEMENT: Int = 16
 	}
 
-	public val length: Long = noImpl
+	public val length: Long
 
-	public fun set(array: Uint16Array, offset: Long? = null): Unit = noImpl
-	public fun subarray(begin: Long, end: Long? = null): Uint16Array = noImpl
+	public fun set(array: Uint16Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Uint16Array
 }
 
 public native class Int32Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
@@ -1470,10 +1470,10 @@ public native class Int32Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = 
 		public val BYTES_PER_ELEMENT: Int = 32
 	}
 
-	public val length: Long = noImpl
+	public val length: Long
 
-	public fun set(array: Int32Array, offset: Long? = null): Unit = noImpl
-	public fun subarray(begin: Long, end: Long? = null): Int32Array = noImpl
+	public fun set(array: Int32Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Int32Array
 }
 
 public native class Uint32Array(bufferOrArrayOrLength: Unit, byteOffset: Number? = null, length: Number? = null) : ArrayBufferView() {
@@ -1481,10 +1481,10 @@ public native class Uint32Array(bufferOrArrayOrLength: Unit, byteOffset: Number?
 		public val BYTES_PER_ELEMENT: Int = 32
 	}
 
-	public val length: Long = noImpl
+	public val length: Long
 
-	public fun set(array: Uint32Array, offset: Number? = null): Unit = noImpl
-	public fun subarray(begin: Number, end: Number? = null): Uint32Array = noImpl
+	public fun set(array: Uint32Array, offset: Number? = null): Unit
+	public fun subarray(begin: Number, end: Number? = null): Uint32Array
 }
 
 public native class Float32Array(bufferOrArrayOrLength: Unit, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
@@ -1492,10 +1492,10 @@ public native class Float32Array(bufferOrArrayOrLength: Unit, byteOffset: Long? 
 		public val BYTES_PER_ELEMENT: Int = 32
 	}
 
-	public val length: Long = noImpl
+	public val length: Long
 
-	public fun set(array: Float32Array, offset: Long? = null): Unit = noImpl
-	public fun subarray(begin: Long, end: Long? = null): Float32Array = noImpl
+	public fun set(array: Float32Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Float32Array
 }
 
 public native class Float64Array(bufferOrArrayOrLength: Long, byteOffset: Long? = null, length: Long? = null) : ArrayBufferView() {
@@ -1503,10 +1503,10 @@ public native class Float64Array(bufferOrArrayOrLength: Long, byteOffset: Long? 
 		public val BYTES_PER_ELEMENT: Int = 64
 	}
 
-	public val length: Long = noImpl
+	public val length: Long
 
-	public fun set(array: Float64Array, offset: Long? = null): Unit = noImpl
-	public fun subarray(begin: Long, end: Long? = null): Float64Array = noImpl
+	public fun set(array: Float64Array, offset: Long? = null): Unit
+	public fun subarray(begin: Long, end: Long? = null): Float64Array
 }
 
 public native trait Geolocation {

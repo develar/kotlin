@@ -17,13 +17,17 @@
 package org.jetbrains.k2js.translate.intrinsic.functions;
 
 import com.google.common.collect.Lists;
+import com.intellij.openapi.util.Pair;
+import com.intellij.util.containers.MultiMap;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.factories.*;
+import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +35,19 @@ import java.util.Map;
  * @author Pavel Talanov
  */
 public final class FunctionIntrinsics {
+    public static final String ANY_MEMBER = "";
+
+    // member name -> package name predicate : intrinsic
+    private static final MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics = MultiMap.createSmartList();
+    private static final Collection<Pair<DescriptorPredicate, FunctionIntrinsic>> anyIntrinsics;
+
+    static {
+        new ArrayFIF(intrinsics);
+        new TopLevelFIF(intrinsics);
+        new StringOperationFIF(intrinsics);
+        new NumberConversionFIF(intrinsics);
+        anyIntrinsics = intrinsics.get(ANY_MEMBER);
+    }
 
     @NotNull
     private final Map<FunctionDescriptor, FunctionIntrinsic> intrinsicCache = new THashMap<FunctionDescriptor, FunctionIntrinsic>();
@@ -45,10 +62,6 @@ public final class FunctionIntrinsics {
     private void registerFactories() {
         register(PrimitiveUnaryOperationFIF.INSTANCE);
         register(PrimitiveBinaryOperationFIF.INSTANCE);
-        register(StringOperationFIF.INSTANCE);
-        register(ArrayFIF.INSTANCE);
-        register(TopLevelFIF.getInstance());
-        register(NumberConversionFIF.INSTANCE);
     }
 
     private void register(@NotNull FunctionIntrinsicFactory instance) {
@@ -73,8 +86,36 @@ public final class FunctionIntrinsics {
         return result;
     }
 
+    @Nullable
+    private static FunctionIntrinsic findIntrinsic(
+            @NotNull FunctionDescriptor descriptor,
+            @NotNull Collection<Pair<DescriptorPredicate, FunctionIntrinsic>> pairs
+    ) {
+        for (Pair<DescriptorPredicate, FunctionIntrinsic> pair : pairs) {
+            if (pair.first.apply(descriptor)) {
+                return pair.second;
+            }
+        }
+        return null;
+    }
+
     @NotNull
     private FunctionIntrinsic computeIntrinsic(@NotNull FunctionDescriptor descriptor) {
+        Collection<Pair<DescriptorPredicate,FunctionIntrinsic>> pairs = intrinsics.get(descriptor.getName().getName());
+        if (!pairs.isEmpty()) {
+            FunctionIntrinsic intrinsic = findIntrinsic(descriptor, pairs);
+            if (intrinsic != null) {
+                return intrinsic;
+            }
+        }
+
+        if (anyIntrinsics != null) {
+            FunctionIntrinsic intrinsic = findIntrinsic(descriptor, anyIntrinsics);
+            if (intrinsic != null) {
+                return intrinsic;
+            }
+        }
+
         for (FunctionIntrinsicFactory factory : factories) {
             FunctionIntrinsic intrinsic = factory.getIntrinsic(descriptor);
             if (intrinsic != null) {

@@ -29,7 +29,6 @@ import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.BodiesResolveContext;
 import org.jetbrains.jet.lang.resolve.lazy.FileBasedDeclarationProviderFactory;
@@ -62,8 +61,10 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             @NotNull List<AnalyzerScriptParameter> scriptParameters,
             @NotNull Predicate<PsiFile> filesToAnalyzeCompletely
     ) {
-        BindingContext libraryBindingContext = AnalyzerFacadeForJS.analyzeFiles(getLibraryFiles(project), project, null, false).getBindingContext();
-        return AnalyzerFacadeForJS.analyzeFilesAndStoreBodyContext(files, project, libraryBindingContext, false);
+        JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
+        AnalyzerFacadeForJS.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
+        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("module")), project, libraryModuleConfiguration);
+        return AnalyzerFacadeForJS.analyzeFilesAndStoreBodyContext(moduleConfiguration, files, false);
     }
 
     @NotNull
@@ -93,9 +94,9 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
 
         FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(allFiles, Predicates.<FqName>alwaysFalse());
         ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
-        // todo cache libraryBindingContext
-        BindingContext libraryBindingContext = AnalyzerFacadeForJS.analyzeFiles(getLibraryFiles(project), project, null, false).getBindingContext();
-        return new ResolveSession(project, lazyModule, new JsModuleConfiguration(project, libraryBindingContext), declarationProviderFactory);
+        JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
+        AnalyzerFacadeForJS.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
+        return new ResolveSession(project, lazyModule, new JsModuleConfiguration(new ModuleDescriptor(Name.special("module")), project, libraryModuleConfiguration), declarationProviderFactory);
     }
 
     private static List<JetFile> getLibraryFiles(Project project) {

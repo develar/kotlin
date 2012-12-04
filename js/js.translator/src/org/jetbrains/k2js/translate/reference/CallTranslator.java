@@ -93,7 +93,7 @@ public final class CallTranslator extends AbstractTranslator {
         }
         if (resolvedCall.getReceiverArgument().exists()) {
             if (AnnotationsUtils.isNativeObject(descriptor)) {
-                return nativeExtensionCall();
+                return methodCall(callParameters.getReceiver());
             }
             return extensionFunctionCall(!(descriptor instanceof ExpressionAsFunctionDescriptor));
         }
@@ -142,11 +142,6 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression translateAsFunctionWithNoThisObject(@NotNull DeclarationDescriptor descriptor) {
         return ReferenceTranslator.translateAsFQReference(descriptor, context());
-    }
-
-    @NotNull
-    private JsExpression nativeExtensionCall() {
-        return methodCall(callParameters.getReceiver());
     }
 
     @NotNull

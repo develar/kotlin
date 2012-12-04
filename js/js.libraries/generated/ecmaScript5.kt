@@ -6,50 +6,50 @@ package js
 
 public native class Date(time: Long? = null) {
 	public native class object {
-		public fun now(): Long = noImpl
-		public fun parse(dateString: String): Long = noImpl
-		public fun UTC(year: Int, month: Int, date: Int? = null, hours: Int? = null, minutes: Int? = null, seconds: Int? = null, milliseconds: Int? = null): Long = noImpl
+		public fun now(): Long
+		public fun parse(dateString: String): Long
+		public fun UTC(year: Int, month: Int, date: Int? = null, hours: Int? = null, minutes: Int? = null, seconds: Int? = null, milliseconds: Int? = null): Long
 	}
 
-	public fun getDate(): Int = noImpl
-	public fun getDay(): Int = noImpl
-	public fun getFullYear(): Int = noImpl
-	public fun getHours(): Int = noImpl
-	public fun getMilliseconds(): Int = noImpl
-	public fun getMinutes(): Int = noImpl
-	public fun getMonth(): Int = noImpl
-	public fun getSeconds(): Int = noImpl
-	public fun getTime(): Long = noImpl
-	public fun getTimezoneOffset(): Int = noImpl
-	public fun getUTCDate(): Int = noImpl
-	public fun getUTCDay(): Int = noImpl
-	public fun getUTCFullYear(): Int = noImpl
-	public fun getUTCHours(): Int = noImpl
-	public fun getUTCMilliseconds(): Int = noImpl
-	public fun getUTCMinutes(): Int = noImpl
-	public fun getUTCMonth(): Int = noImpl
-	public fun getUTCSeconds(): Int = noImpl
-	public fun setDate(value: Int): Unit = noImpl
-	public fun setFullYear(value: Int): Unit = noImpl
-	public fun setHours(value: Int): Unit = noImpl
-	public fun setMilliseconds(value: Int): Unit = noImpl
-	public fun setMinutes(value: Int): Unit = noImpl
-	public fun setMonth(value: Int): Unit = noImpl
-	public fun setSeconds(value: Int): Unit = noImpl
-	public fun setTime(value: Long): Unit = noImpl
-	public fun setUTCDate(value: Int): Unit = noImpl
-	public fun setUTCFullYear(value: Int): Unit = noImpl
-	public fun setUTCHours(value: Int): Unit = noImpl
-	public fun setUTCMilliseconds(value: Int): Unit = noImpl
-	public fun setUTCMinutes(value: Int): Unit = noImpl
-	public fun setUTCMonth(value: Int): Unit = noImpl
-	public fun setUTCSeconds(value: Int): Unit = noImpl
-	public fun toDateString(): String = noImpl
-	public fun toISOString(): String = noImpl
-	public fun toJSON(): String = noImpl
-	public fun toLocaleDateString(): String = noImpl
-	public fun toLocaleString(): String = noImpl
-	public fun toLocaleTimeString(): String = noImpl
-	public fun toTimeString(): String = noImpl
-	public fun toUTCString(): String = noImpl
+	public fun getDate(): Int
+	public fun getDay(): Int
+	public fun getFullYear(): Int
+	public fun getHours(): Int
+	public fun getMilliseconds(): Int
+	public fun getMinutes(): Int
+	public fun getMonth(): Int
+	public fun getSeconds(): Int
+	public fun getTime(): Long
+	public fun getTimezoneOffset(): Int
+	public fun getUTCDate(): Int
+	public fun getUTCDay(): Int
+	public fun getUTCFullYear(): Int
+	public fun getUTCHours(): Int
+	public fun getUTCMilliseconds(): Int
+	public fun getUTCMinutes(): Int
+	public fun getUTCMonth(): Int
+	public fun getUTCSeconds(): Int
+	public fun setDate(value: Int): Unit
+	public fun setFullYear(value: Int): Unit
+	public fun setHours(value: Int): Unit
+	public fun setMilliseconds(value: Int): Unit
+	public fun setMinutes(value: Int): Unit
+	public fun setMonth(value: Int): Unit
+	public fun setSeconds(value: Int): Unit
+	public fun setTime(value: Long): Unit
+	public fun setUTCDate(value: Int): Unit
+	public fun setUTCFullYear(value: Int): Unit
+	public fun setUTCHours(value: Int): Unit
+	public fun setUTCMilliseconds(value: Int): Unit
+	public fun setUTCMinutes(value: Int): Unit
+	public fun setUTCMonth(value: Int): Unit
+	public fun setUTCSeconds(value: Int): Unit
+	public fun toDateString(): String
+	public fun toISOString(): String
+	public fun toJSON(): String
+	public fun toLocaleDateString(): String
+	public fun toLocaleString(): String
+	public fun toLocaleTimeString(): String
+	public fun toTimeString(): String
+	public fun toUTCString(): String
 }

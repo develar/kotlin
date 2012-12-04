@@ -33,53 +33,35 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedTh
  *         For native apis that use .property notation for access.
  */
 public final class NativePropertyAccessTranslator extends PropertyAccessTranslator {
-
-    @Nullable
-    private final JsExpression receiver;
-    @NotNull
-    private final PropertyDescriptor propertyDescriptor;
-
-    /*package*/
-    NativePropertyAccessTranslator(@NotNull PropertyDescriptor descriptor,
-            @Nullable JsExpression receiver,
-            @NotNull TranslationContext context) {
-        super(context);
-        this.receiver = receiver;
-        this.propertyDescriptor = descriptor.getOriginal();
-    }
-
-    @Override
-    @NotNull
-    public JsExpression translateAsGet() {
-        return translateAsGet(getReceiver());
+    NativePropertyAccessTranslator(
+            @NotNull PropertyDescriptor descriptor,
+            CallType callType, @Nullable JsExpression receiver,
+            @NotNull TranslationContext context
+    ) {
+        super(descriptor, callType, receiver, context);
     }
 
     @NotNull
     @Override
     protected JsExpression translateAsGet(@Nullable JsExpression receiver) {
-        return getCallType().constructCall(receiver, new CallType.CallConstructor() {
+        return callType.constructCall(receiver, new CallType.CallConstructor() {
             @NotNull
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
-                return doTranslateAsGet(receiver);
+                JsNameRef ref = context().getNameRefForDescriptor(propertyDescriptor);
+                if (receiver != null) {
+                    ref.setQualifier(receiver);
+                }
+                return ref;
             }
         }, context());
-    }
-
-    @NotNull
-    private JsExpression doTranslateAsGet(JsExpression receiver) {
-        JsNameRef ref = context().getNameRefForDescriptor(propertyDescriptor);
-        if (receiver != null) {
-            ref.setQualifier(receiver);
-        }
-        return ref;
     }
 
     @Override
     @NotNull
     protected JsExpression translateAsSet(@Nullable JsExpression receiver, @NotNull final JsExpression setTo) {
         assert receiver != null;
-        return getCallType().constructCall(receiver, new CallType.CallConstructor() {
+        return callType.constructCall(receiver, new CallType.CallConstructor() {
             @NotNull
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
@@ -88,28 +70,18 @@ public final class NativePropertyAccessTranslator extends PropertyAccessTranslat
         }, context());
     }
 
-    @NotNull
-    @Override
-    public JsExpression translateAsSet(@NotNull JsExpression setTo) {
-        return translateAsSet(getReceiver(), setTo);
-    }
-
     @Nullable
-    private JsExpression getReceiver() {
+    @Override
+    protected JsExpression getReceiver() {
         if (receiver != null) {
             return receiver;
         }
+
         assert propertyDescriptor.getReceiverParameter() == null : "Can't have native extension properties.";
         DeclarationDescriptor expectedThisDescriptor = getExpectedThisDescriptor(propertyDescriptor);
         if (expectedThisDescriptor == null) {
             return null;
         }
         return context().getThisObject(expectedThisDescriptor);
-    }
-
-    @NotNull
-    @Override
-    public CachedAccessTranslator getCached() {
-        return new CachedPropertyAccessTranslator(getReceiver(), this, context());
     }
 }

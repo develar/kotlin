@@ -18,38 +18,38 @@ package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.openapi.util.Pair;
+import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.BuiltInFunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
+import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPattern;
+import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.intrinsic.functions.patterns.PatternBuilder.pattern;
-
 /**
  * @author Pavel Talanov
  */
 public final class StringOperationFIF extends CompositeFIF {
-    @NotNull
-    public static final FunctionIntrinsicFactory INSTANCE = new StringOperationFIF();
+    public StringOperationFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+        super(intrinsics);
 
-    private StringOperationFIF() {
-        add(pattern("jet", "String", "get"), new BuiltInFunctionIntrinsic("charAt"));
+        DescriptorPattern string = new DescriptorPattern("jet", "String");
+        add("get", string, new BuiltInFunctionIntrinsic("charAt"));
+        add("toString", string, RETURN_RECEIVER_INTRINSIC);
+        add("<get-length>", string, LENGTH_PROPERTY_INTRINSIC);
 
-        add(pattern("jet", "String", "<get-length>"), LENGTH_PROPERTY_INTRINSIC);
-        add(pattern("js", "<get-size>").receiverExists(), LENGTH_PROPERTY_INTRINSIC);
-        add(pattern("js", "length").receiverExists(), LENGTH_PROPERTY_INTRINSIC);
+        DescriptorPattern kotlinWithReceiver = new DescriptorPattern("kotlin").receiverExists();
+        add("length", kotlinWithReceiver, LENGTH_PROPERTY_INTRINSIC);
 
-        add(pattern("jet", "String", "toString"), RETURN_RECEIVER_INTRINSIC);
-
-        add(pattern("js", "startsWith").receiverExists(), new ContainsFunctionIntrinsic(false));
-        add(pattern("js", "contains").receiverExists(), new ContainsFunctionIntrinsic(true));
-        add(pattern("js", "endsWith").receiverExists(), new FunctionIntrinsic() {
+        add("startsWith", kotlinWithReceiver, new ContainsFunctionIntrinsic(false));
+        add("contains", kotlinWithReceiver, new ContainsFunctionIntrinsic(true));
+        add("endsWith", kotlinWithReceiver, new FunctionIntrinsic() {
             @NotNull
             @Override
             public JsExpression apply(
@@ -61,7 +61,18 @@ public final class StringOperationFIF extends CompositeFIF {
                 return JsAstUtils.inequality(new JsInvocation(new JsNameRef("indexOf", a.first), Arrays.asList(b.first, JsAstUtils.subtract(new JsNameRef("length", a.second), new JsNameRef("length", b.second)))), context.program().getNumberLiteral(-1));
             }
         });
-        add(pattern("js", "isEmpty").receiverExists(), IS_EMPTY_INTRINSIC);
+        add("isEmpty", kotlinWithReceiver, IS_EMPTY_INTRINSIC);
+
+        add("matches", kotlinWithReceiver, new FunctionIntrinsic() {
+            @NotNull
+            @Override
+            public JsExpression apply(
+                    @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
+            ) {
+                assert receiver != null;
+                return JsAstUtils.inequality(new JsInvocation(new JsNameRef("match", receiver), arguments), JsLiteral.NULL);
+            }
+        });
     }
 
     private static class ContainsFunctionIntrinsic extends FunctionIntrinsic {

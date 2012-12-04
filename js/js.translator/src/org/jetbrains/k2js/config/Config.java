@@ -25,32 +25,21 @@ import org.jetbrains.k2js.translate.test.JSTester;
 import org.jetbrains.k2js.translate.test.QUnitTester;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Pavel Talanov
  *         <p/>
  *         Base class representing a configuration of translator.
  */
-public abstract class Config {
-    @NotNull
-    public static Config getEmptyConfig(@NotNull Project project, @NotNull EcmaVersion ecmaVersion) {
-        return new Config(project, "main", ecmaVersion) {
-            @NotNull
-            @Override
-            protected List<JetFile> generateLibFiles() {
-                return Collections.emptyList();
-            }
-        };
-    }
-
+public class Config {
     //NOTE: used by mvn build
     @SuppressWarnings("UnusedDeclaration")
     @NotNull
     public static Config getEmptyConfig(@NotNull Project project) {
-        return getEmptyConfig(project, EcmaVersion.defaultVersion());
+        return new Config(project, "main", EcmaVersion.defaultVersion());
     }
 
     @NotNull
@@ -65,7 +54,7 @@ public abstract class Config {
             "src/json.kt",
             "src/core/kotlin.kt",
             "src/core/math.kt",
-            "src/core/string.kt",
+            "src/string.kt",
             "generated/html5.kt",
             "src/jquery/common.kt",
             "src/jquery/ui.kt",
@@ -136,7 +125,7 @@ public abstract class Config {
     @NotNull
     protected final Project project;
     @Nullable
-    private List<JetFile> libFiles = null;
+    protected Map<String, List<JetFile>> modules;
     @NotNull
     private final EcmaVersion target;
 
@@ -176,27 +165,16 @@ public abstract class Config {
     }
 
     @NotNull
-    public List<String> getModuleDependencies() {
-        return Collections.emptyList();
+    protected Map<String, List<JetFile>> collectModules() {
+        return Collections.emptyMap();
     }
 
     @NotNull
-    protected abstract List<JetFile> generateLibFiles();
-
-    @NotNull
-    public final List<JetFile> getLibFiles() {
-        if (libFiles == null) {
-            libFiles = generateLibFiles();
+    public final Map<String, List<JetFile>> getModules() {
+        if (modules == null) {
+            modules = collectModules();
         }
-        return libFiles;
-    }
-
-    @NotNull
-    public static Collection<JetFile> withJsLibAdded(@NotNull Collection<JetFile> files, @NotNull Config config) {
-        Collection<JetFile> allFiles = Lists.newArrayList();
-        allFiles.addAll(files);
-        allFiles.addAll(config.getLibFiles());
-        return allFiles;
+        return modules;
     }
 
     //TODO: should be null by default I suppose but we can't communicate it to K2JSCompiler atm

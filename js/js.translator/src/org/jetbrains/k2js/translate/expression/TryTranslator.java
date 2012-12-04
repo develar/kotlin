@@ -27,6 +27,7 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.intrinsic.functions.factories.TopLevelFIF;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.Collection;
@@ -89,7 +90,7 @@ public final class TryTranslator {
                 if (classDescriptor instanceof ClassDescriptor) {
                     Collection<ConstructorDescriptor> constructors = ((ClassDescriptor) classDescriptor).getConstructors();
                     for (ConstructorDescriptor constructor : constructors) {
-                        if (constructor.isPrimary() && context.intrinsics().getFunctionIntrinsics().getIntrinsic(constructor).exists()) {
+                        if (constructor.isPrimary() && TopLevelFIF.JAVA_EXCEPTION_PATTERN.apply(constructor)) {
                             errorName = classDescriptor.getName().getName();
                             break;
                         }

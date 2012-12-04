@@ -16,18 +16,17 @@
 
 package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.intellij.openapi.util.Pair;
+import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.BuiltInPropertyIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
+import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.List;
@@ -35,7 +34,7 @@ import java.util.List;
 /**
  * @author Pavel Talanov
  */
-public abstract class CompositeFIF implements FunctionIntrinsicFactory {
+public abstract class CompositeFIF {
     @NotNull
     public static final FunctionIntrinsic LENGTH_PROPERTY_INTRINSIC = new BuiltInPropertyIntrinsic("length");
     public static final FunctionIntrinsic IS_EMPTY_INTRINSIC = new FunctionIntrinsic() {
@@ -60,25 +59,14 @@ public abstract class CompositeFIF implements FunctionIntrinsicFactory {
         }
     };
 
-    @NotNull
-    private final List<Pair<Predicate<FunctionDescriptor>, FunctionIntrinsic>> patternsAndIntrinsics = Lists.newArrayList();
+    private final MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics;
 
-    protected CompositeFIF() {
+    protected CompositeFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+        this.intrinsics = intrinsics;
     }
 
-    @Nullable
-    @Override
-    public FunctionIntrinsic getIntrinsic(@NotNull FunctionDescriptor descriptor) {
-        for (Pair<Predicate<FunctionDescriptor>, FunctionIntrinsic> entry : patternsAndIntrinsics) {
-            if (entry.first.apply(descriptor)) {
-                return entry.second;
-            }
-        }
-        return null;
-    }
-
-    protected void add(@NotNull Predicate<FunctionDescriptor> pattern, @NotNull FunctionIntrinsic intrinsic) {
-        patternsAndIntrinsics.add(Pair.create(pattern, intrinsic));
+    protected void add(@NotNull String memberName, @NotNull DescriptorPredicate packageNamePattern, @NotNull FunctionIntrinsic intrinsic) {
+        intrinsics.putValue(memberName, Pair.create(packageNamePattern, intrinsic));
     }
 
     protected static FunctionIntrinsic kotlinFunction(@NotNull String functionName) {

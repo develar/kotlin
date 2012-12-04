@@ -16,6 +16,7 @@
 
 package org.jetbrains.k2js.config;
 
+import com.google.common.collect.Maps;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.*;
@@ -24,25 +25,19 @@ import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Pavel Talanov
  */
 public class LibrarySourcesConfig extends Config {
     @NotNull
-    public static final Key<String> EXTERNAL_MODULE_NAME = Key.create("externalModule");
-    @NotNull
-    public static final String UNKNOWN_EXTERNAL_MODULE_NAME = "<unknown>";
+    public static final Key<String> MODULE_NAME_KEY = Key.create("externalModule");
 
     @NotNull
     private final List<String> files;
-
-    private final List<String> moduleDependencies = new ArrayList<String>();
 
     public LibrarySourcesConfig(
             @NotNull Project project,
@@ -57,26 +52,38 @@ public class LibrarySourcesConfig extends Config {
 
     @NotNull
     @Override
-    protected List<JetFile> generateLibFiles() {
+    protected Map<String, List<JetFile>> collectModules() {
         if (files.isEmpty()) {
-            return Collections.emptyList();
+            return Collections.emptyMap();
         }
 
-        final List<JetFile> psiFiles = new ArrayList<JetFile>();
-        String moduleName = UNKNOWN_EXTERNAL_MODULE_NAME;
+        final Map<String, List<JetFile>> modules = Maps.newLinkedHashMap();
+        List<JetFile> psiFiles = null;
+        String moduleName = JsModuleConfiguration.STUBS_MODULE_NAME.getName();
         VirtualFileSystem fileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.FILE_PROTOCOL);
         final PsiManager psiManager = PsiManager.getInstance(project);
         for (String path : files) {
             if (path.charAt(0) == '@') {
                 moduleName = path.substring(1);
-                moduleDependencies.add(moduleName);
+                psiFiles = null;
             }
             else {
+                if (psiFiles == null) {
+                    psiFiles = modules.get(moduleName);
+                    if (psiFiles == null) {
+                        psiFiles = new ArrayList<JetFile>();
+                        modules.put(moduleName, psiFiles);
+                    }
+                }
+
                 VirtualFile file = fileSystem.findFileByPath(path);
                 assert file != null;
                 VirtualFile jarFile = StandardFileSystems.getJarRootForLocalFile(file);
                 if (jarFile != null) {
-                    traverseFile(project, jarFile, psiFiles, UNKNOWN_EXTERNAL_MODULE_NAME);
+                    psiFiles = new ArrayList<JetFile>();
+                    moduleName = null;
+                    modules.put(JsModuleConfiguration.STUBS_MODULE_NAME.getName(), psiFiles);
+                    traverseFile(project, jarFile, psiFiles, null);
                 }
                 else if (file.isDirectory()) {
                     traverseFile(project, file, psiFiles, moduleName);
@@ -87,13 +94,7 @@ public class LibrarySourcesConfig extends Config {
             }
         }
 
-        return psiFiles;
-    }
-
-    @NotNull
-    @Override
-    public List<String> getModuleDependencies() {
-        return moduleDependencies;
+        return modules;
     }
 
     private static void addPsiFile(
@@ -105,7 +106,7 @@ public class LibrarySourcesConfig extends Config {
         PsiFile psiFile = psiManager.findFile(file);
         assert psiFile != null;
         if (moduleName != null) {
-            psiFile.putUserData(EXTERNAL_MODULE_NAME, moduleName);
+            psiFile.putUserData(MODULE_NAME_KEY, moduleName);
         }
         result.add((JetFile) psiFile);
     }
