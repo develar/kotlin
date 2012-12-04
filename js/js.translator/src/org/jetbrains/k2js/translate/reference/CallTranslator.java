@@ -16,23 +16,27 @@
 
 package org.jetbrains.k2js.translate.reference;
 
-import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.HasArguments;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsInvocation;
+import com.google.dart.compiler.backend.js.ast.JsNew;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
-import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.model.VariableAsFunctionResolvedCall;
+import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
-import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.ErrorReportingUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.reference.CallParametersResolver.resolveCallParameters;
+import static org.jetbrains.k2js.translate.utils.AnnotationsUtils.isLibraryObject;
+import static org.jetbrains.k2js.translate.utils.AnnotationsUtils.isNativeObject;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
@@ -89,10 +93,10 @@ public final class CallTranslator extends AbstractTranslator {
             return result;
         }
         if ((descriptor instanceof ConstructorDescriptor)) {
-            return createConstructorCallExpression(translateAsFunctionWithNoThisObject(descriptor));
+            return createConstructorCallExpression(ReferenceTranslator.translateAsFQReference(descriptor, context()));
         }
         if (resolvedCall.getReceiverArgument().exists()) {
-            if (AnnotationsUtils.isNativeObject(descriptor)) {
+            if (isNativeObject(descriptor)) {
                 return methodCall(callParameters.getReceiver());
             }
             return extensionFunctionCall(!(descriptor instanceof ExpressionAsFunctionDescriptor));
@@ -131,17 +135,13 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
     public HasArguments createConstructorCallExpression(@NotNull JsExpression constructorReference) {
-        if (context().isEcma5() && !AnnotationsUtils.isNativeObject(resolvedCall.getCandidateDescriptor())) {
-            return new JsInvocation(constructorReference, arguments);
-        }
-        else {
+        if (!context().isEcma5() ||
+            (isNativeObject(resolvedCall.getCandidateDescriptor()) && !isLibraryObject(resolvedCall.getCandidateDescriptor()))) {
             return new JsNew(constructorReference, arguments);
         }
-    }
-
-    @NotNull
-    private JsExpression translateAsFunctionWithNoThisObject(@NotNull DeclarationDescriptor descriptor) {
-        return ReferenceTranslator.translateAsFQReference(descriptor, context());
+        else {
+            return new JsInvocation(constructorReference, arguments);
+        }
     }
 
     @NotNull

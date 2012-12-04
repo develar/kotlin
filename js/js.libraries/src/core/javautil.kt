@@ -58,11 +58,11 @@ public native abstract class AbstractList<E>(): AbstractCollection<E>(), Mutable
     override fun size(): Int
 }
 
-native public class ArrayList<E>(): AbstractList<E>() {
+public class ArrayList<E>(): AbstractList<E>() {
 }
 
 // JS array is sparse, so, there is no any difference between ArrayList and LinkedList
-native public class LinkedList<E>(): AbstractList<E>() {
+public class LinkedList<E>(): AbstractList<E>() {
     public fun poll(): E
     public fun peek(): E
     public fun offer(e: E): Boolean
@@ -88,7 +88,7 @@ public open class HashMap<K, V>(): MutableMap<K, V> {
     override public fun entrySet(): MutableSet<MutableMap.MutableEntry<K, V>>
 }
 
-native public class StringBuilder(): Appendable {
+public class StringBuilder(): Appendable {
     override fun append(c: Char): Appendable?
     override fun append(csq: CharSequence?): Appendable?
     override fun append(csq: CharSequence?, start: Int, end: Int): Appendable?
@@ -103,9 +103,4 @@ library
 public trait Enumeration<E> {
     open public fun hasMoreElements() : Boolean
     open public fun nextElement() : E
-}
-
-native
-public class Date() {
-    public fun getTime() : Int
 }
