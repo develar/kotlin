@@ -68,7 +68,7 @@ public class KotlinBuilder extends ModuleLevelBuilder {
 
         if (chunk.getModules().size() > 1) {
             messageCollector.report(
-                    ERROR, "Circular dependencies are not supported: " + chunk.getModules(),
+                    ERROR, "Circular dependencies are not supported: " + chunk.getName(),
                     CompilerMessageLocation.NO_LOCATION);
             return ExitCode.ABORT;
         }
