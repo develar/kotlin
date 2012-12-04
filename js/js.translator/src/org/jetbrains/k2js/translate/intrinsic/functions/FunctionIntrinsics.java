@@ -46,6 +46,7 @@ public final class FunctionIntrinsics {
         new TopLevelFIF(intrinsics);
         new StringOperationFIF(intrinsics);
         new NumberConversionFIF(intrinsics);
+        new PrimitiveUnaryOperationFIF(intrinsics);
         anyIntrinsics = intrinsics.get(ANY_MEMBER);
     }
 
@@ -60,7 +61,6 @@ public final class FunctionIntrinsics {
     }
 
     private void registerFactories() {
-        register(PrimitiveUnaryOperationFIF.INSTANCE);
         register(PrimitiveBinaryOperationFIF.INSTANCE);
     }
 

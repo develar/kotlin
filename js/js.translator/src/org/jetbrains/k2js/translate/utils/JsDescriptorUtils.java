@@ -37,14 +37,6 @@ public final class JsDescriptorUtils {
     private JsDescriptorUtils() {
     }
 
-    private static int valueParametersCount(@NotNull FunctionDescriptor functionDescriptor) {
-        return functionDescriptor.getValueParameters().size();
-    }
-
-    public static boolean hasParameters(@NotNull FunctionDescriptor functionDescriptor) {
-        return (valueParametersCount(functionDescriptor) > 0);
-    }
-
     public static boolean isCompareTo(@NotNull FunctionDescriptor functionDescriptor) {
         return (functionDescriptor.getName().equals(OperatorConventions.COMPARE_TO));
     }
