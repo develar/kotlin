@@ -139,6 +139,11 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
         doTest("compiler/testData/loadJava/MyException.java");
     }
     
+    @TestMetadata("RemoveRedundantProjectionKind.java")
+    public void testRemoveRedundantProjectionKind() throws Exception {
+        doTest("compiler/testData/loadJava/RemoveRedundantProjectionKind.java");
+    }
+    
     @TestMetadata("Simple.java")
     public void testSimple() throws Exception {
         doTest("compiler/testData/loadJava/Simple.java");
@@ -147,6 +152,11 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
     @TestMetadata("TwoFields.java")
     public void testTwoFields() throws Exception {
         doTest("compiler/testData/loadJava/TwoFields.java");
+    }
+    
+    @TestMetadata("UnboundWildcard.java")
+    public void testUnboundWildcard() throws Exception {
+        doTest("compiler/testData/loadJava/UnboundWildcard.java");
     }
     
     @TestMetadata("compiler/testData/loadJava/annotation")
@@ -303,6 +313,11 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
         @TestMetadata("PropertySimpleType.java")
         public void testPropertySimpleType() throws Exception {
             doTest("compiler/testData/loadJava/kotlinSignature/PropertySimpleType.java");
+        }
+        
+        @TestMetadata("StarProjection.java")
+        public void testStarProjection() throws Exception {
+            doTest("compiler/testData/loadJava/kotlinSignature/StarProjection.java");
         }
         
         @TestMetadata("compiler/testData/loadJava/kotlinSignature/error")
@@ -584,6 +599,11 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
                     JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/kotlinSignature/propagation/return"), "java", true);
                 }
                 
+                @TestMetadata("CantMakeImmutableInSubclass.java")
+                public void testCantMakeImmutableInSubclass() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/return/CantMakeImmutableInSubclass.java");
+                }
+                
                 @TestMetadata("HalfSubstitutedTypeParameters.java")
                 public void testHalfSubstitutedTypeParameters() throws Exception {
                     doTest("compiler/testData/loadJava/kotlinSignature/propagation/return/HalfSubstitutedTypeParameters.java");
@@ -634,9 +654,29 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
                     doTest("compiler/testData/loadJava/kotlinSignature/propagation/return/SameProjectionKind.java");
                 }
                 
+                @TestMetadata("SubclassOfCollection.java")
+                public void testSubclassOfCollection() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/return/SubclassOfCollection.java");
+                }
+                
+                @TestMetadata("SubclassOfMapEntry.java")
+                public void testSubclassOfMapEntry() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/return/SubclassOfMapEntry.java");
+                }
+                
                 @TestMetadata("TwoSuperclassesConflictingProjectionKinds.java")
                 public void testTwoSuperclassesConflictingProjectionKinds() throws Exception {
                     doTest("compiler/testData/loadJava/kotlinSignature/propagation/return/TwoSuperclassesConflictingProjectionKinds.java");
+                }
+                
+                @TestMetadata("TwoSuperclassesInvariantAndCovariantInferMutability.java")
+                public void testTwoSuperclassesInvariantAndCovariantInferMutability() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/return/TwoSuperclassesInvariantAndCovariantInferMutability.java");
+                }
+                
+                @TestMetadata("TwoSuperclassesInvariantAndCovariantInferNullability.java")
+                public void testTwoSuperclassesInvariantAndCovariantInferNullability() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/return/TwoSuperclassesInvariantAndCovariantInferNullability.java");
                 }
                 
                 @TestMetadata("TwoSuperclassesMutableAndNot.java")
@@ -720,6 +760,11 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
                 @TestMetadata("UseParameterInUpperBound.java")
                 public void testUseParameterInUpperBound() throws Exception {
                     doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/UseParameterInUpperBound.java");
+                }
+                
+                @TestMetadata("UseParameterInUpperBoundWithKotlinSignature.java")
+                public void testUseParameterInUpperBoundWithKotlinSignature() throws Exception {
+                    doTest("compiler/testData/loadJava/kotlinSignature/propagation/typeParameter/UseParameterInUpperBoundWithKotlinSignature.java");
                 }
                 
             }

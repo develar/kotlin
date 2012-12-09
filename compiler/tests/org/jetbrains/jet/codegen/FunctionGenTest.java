@@ -96,7 +96,7 @@ public class FunctionGenTest extends CodegenTestCase {
         final Method f = foo.getMethod("f");
         final Object closure = f.invoke(obj);
         final Class<? extends Object> aClass = closure.getClass();
-        final Field[] fields = aClass.getFields();
+        final Field[] fields = aClass.getDeclaredFields();
         assertEquals(1, fields.length);
         assertEquals("$s", fields[0].getName());
     }
@@ -194,5 +194,12 @@ public class FunctionGenTest extends CodegenTestCase {
 
     public void testKt2929() {
         blackBoxFile("regressions/kt2929.kt");
+    }
+
+    public void testPrivateDefaultArgs() throws Exception {
+        loadFile("functions/privateDefaultArgs.kt");
+        String text = generateToText();
+        assertFalse(text.contains("INVOKEVIRTUAL"));
+        assertTrue(text.contains("INVOKESPECIAL"));
     }
 }

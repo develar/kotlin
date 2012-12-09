@@ -30,6 +30,7 @@ import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.java.wrapper.PsiMethodWrapper;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.*;
+import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.ArrayList;
@@ -76,12 +77,12 @@ public class AlternativeMethodSignatureData extends ElementAlternativeSignatureD
             computeTypeParameters(methodTypeParameters);
             computeValueParameters(valueParameterDescriptors);
 
-            if (hasSuperMethods) {
-                checkSameParameterTypes(valueParameterDescriptors, methodTypeParameters);
-            }
-
             if (originalReturnType != null) {
                 altReturnType = computeReturnType(originalReturnType, altFunDeclaration.getReturnTypeRef(), originalToAltTypeParameters);
+            }
+
+            if (hasSuperMethods) {
+                checkParameterAndReturnTypesForOverridingMethods(valueParameterDescriptors, methodTypeParameters, originalReturnType);
             }
         }
         catch (AlternativeSignatureMismatchException e) {
@@ -89,9 +90,10 @@ public class AlternativeMethodSignatureData extends ElementAlternativeSignatureD
         }
     }
 
-    private void checkSameParameterTypes(
+    private void checkParameterAndReturnTypesForOverridingMethods(
             @NotNull JavaDescriptorResolver.ValueParameterDescriptors valueParameterDescriptors,
-            @NotNull List<TypeParameterDescriptor> methodTypeParameters
+            @NotNull List<TypeParameterDescriptor> methodTypeParameters,
+            @Nullable JetType returnType
     ) {
         TypeSubstitutor substitutor = SignaturesUtil.createSubstitutorForFunctionTypeParameters(originalToAltTypeParameters);
 
@@ -114,13 +116,23 @@ public class AlternativeMethodSignatureData extends ElementAlternativeSignatureD
         for (TypeParameterDescriptor parameter : methodTypeParameters) {
             int index = parameter.getIndex();
 
-            JetType substituted = substitutor.substitute(altTypeParameters.get(index).getUpperBoundsAsType(), Variance.INVARIANT);
+            JetType substituted = substitutor.substitute(parameter.getUpperBoundsAsType(), Variance.INVARIANT);
             assert substituted != null;
 
-            if (!TypeUtils.equalTypes(substituted, parameter.getUpperBoundsAsType())) {
+            if (!TypeUtils.equalTypes(substituted, altTypeParameters.get(index).getUpperBoundsAsType())) {
                 throw new AlternativeSignatureMismatchException(
                         "Type parameter's upper bound changed for method which overrides another: "
                         + altTypeParameters.get(index).getUpperBoundsAsType() + ", was: " + parameter.getUpperBoundsAsType());
+            }
+        }
+
+        if (returnType != null) {
+            JetType substitutedReturnType = substitutor.substitute(returnType, Variance.INVARIANT);
+            assert substitutedReturnType != null;
+
+            if (!JetTypeChecker.INSTANCE.isSubtypeOf(altReturnType, substitutedReturnType)) {
+                throw new AlternativeSignatureMismatchException(
+                        "Return type is changed to not subtype for method which overrides another: " + altReturnType + ", was: " + returnType);
             }
         }
     }

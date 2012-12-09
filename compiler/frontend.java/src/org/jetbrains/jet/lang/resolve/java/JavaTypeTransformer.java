@@ -30,7 +30,10 @@ import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.rt.signature.JetSignatureReader;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.jetbrains.jet.lang.resolve.java.JavaTypeTransformer.TypeUsage.*;
 
@@ -161,7 +164,14 @@ public class JavaTypeTransformer {
                     if (classType.isRaw()) {
                         List<TypeParameterDescriptor> parameters = classData.getTypeConstructor().getParameters();
                         for (TypeParameterDescriptor parameter : parameters) {
-                            arguments.add(SubstitutionUtils.makeStarProjection(parameter));
+                            TypeProjection starProjection = SubstitutionUtils.makeStarProjection(parameter);
+                            if (howThisTypeIsUsed == SUPERTYPE) {
+                                // projections are not allowed in immediate arguments of supertypes
+                                arguments.add(new TypeProjection(starProjection.getType()));
+                            }
+                            else {
+                                arguments.add(starProjection);
+                            }
                         }
                     }
                     else {
@@ -179,7 +189,16 @@ public class JavaTypeTransformer {
                             TypeParameterDescriptor typeParameterDescriptor = parameters.get(i);
 
                             TypeUsage howTheProjectionIsUsed = howThisTypeIsUsed == SUPERTYPE ? SUPERTYPE_ARGUMENT : TYPE_ARGUMENT;
-                            arguments.add(transformToTypeProjection(psiArgument, typeParameterDescriptor, typeVariableResolver, howTheProjectionIsUsed));
+                            TypeProjection typeProjection = transformToTypeProjection(
+                                    psiArgument, typeParameterDescriptor, typeVariableResolver, howTheProjectionIsUsed);
+
+                            if (typeProjection.getProjectionKind() == typeParameterDescriptor.getVariance()) {
+                                // remove redundant 'out' and 'in'
+                                arguments.add(new TypeProjection(Variance.INVARIANT, typeProjection.getType()));
+                            }
+                            else {
+                                arguments.add(typeProjection);
+                            }
                         }
                     }
 
