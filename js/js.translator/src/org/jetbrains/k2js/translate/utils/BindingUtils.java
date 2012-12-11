@@ -168,12 +168,6 @@ public final class BindingUtils {
         return (FunctionDescriptor) descriptorForReferenceExpression;
     }
 
-    @NotNull
-    public static DeclarationDescriptor getDescriptorForElement(@NotNull BindingContext context,
-            @NotNull PsiElement element) {
-        return BindingContextUtils.getNotNull(context, BindingContext.DECLARATION_TO_DESCRIPTOR, element);
-    }
-
     @Nullable
     public static Object getCompileTimeValue(@NotNull BindingContext context, @NotNull JetExpression expression) {
         CompileTimeConstant<?> compileTimeValue = context.get(BindingContext.COMPILE_TIME_VALUE, expression);

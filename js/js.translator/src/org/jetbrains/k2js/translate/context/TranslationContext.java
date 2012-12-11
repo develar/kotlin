@@ -23,13 +23,13 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 
 import java.util.Map;
 
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForElement;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
 /**
@@ -136,12 +136,13 @@ public class TranslationContext {
 
     @NotNull
     public JsName getNameForElement(@NotNull PsiElement element) {
-        DeclarationDescriptor descriptor = getDescriptorForElement(bindingContext(), element);
+        VariableDescriptor descriptor = (VariableDescriptor) BindingContextUtils
+                .getNotNull(bindingContext(), BindingContext.DECLARATION_TO_DESCRIPTOR, element);
         return getNameForDescriptor(descriptor);
     }
 
     @NotNull
-    public JsName getNameForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+    public JsName getNameForDescriptor(@NotNull VariableDescriptor descriptor) {
         return staticContext.getNameForDescriptor(descriptor, this);
     }
 

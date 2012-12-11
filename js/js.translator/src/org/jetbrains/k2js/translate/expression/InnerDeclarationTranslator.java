@@ -53,7 +53,7 @@ abstract class InnerDeclarationTranslator {
                 public void consume(CallableDescriptor descriptor) {
                     JsName name;
                     if (descriptor instanceof VariableDescriptor) {
-                        name = context.getNameForDescriptor(descriptor);
+                        name = context.getNameForDescriptor((VariableDescriptor) descriptor);
                     }
                     else {
                         //noinspection ConstantConditions

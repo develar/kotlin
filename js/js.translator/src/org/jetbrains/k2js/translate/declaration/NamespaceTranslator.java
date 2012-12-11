@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
@@ -32,7 +34,6 @@ import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
 import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
-import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.List;
@@ -82,7 +83,8 @@ final class NamespaceTranslator extends AbstractTranslator {
     public void translate(JetFile file) {
         context().literalFunctionTranslator().setDefinitionPlace(definitionPlace);
         for (JetDeclaration declaration : file.getDeclarations()) {
-            if (!AnnotationsUtils.isPredefinedObject(BindingUtils.getDescriptorForElement(bindingContext(), declaration))) {
+            if (!AnnotationsUtils.isPredefinedObject(
+                    BindingContextUtils.getNotNull(bindingContext(), BindingContext.DECLARATION_TO_DESCRIPTOR, declaration))) {
                 declaration.accept(visitor, context());
             }
         }

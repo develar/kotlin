@@ -17,12 +17,10 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
-import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
-import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
@@ -63,28 +61,40 @@ public final class TryTranslator {
         return convertToBlock(translateAsStatement(expression.getTryBlock(), context));
     }
 
+    private static VariableDescriptor getCatchParameterDescriptor(JetCatchClause clause, TranslationContext context) {
+        JetParameter catchParameter = clause.getCatchParameter();
+        assert catchParameter != null;
+        return BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.VALUE_PARAMETER, catchParameter);
+    }
+
     @NotNull
-    private static List<JsCatch> translateCatches(JetTryExpression expression, TranslationContext context) {
+    private static List<JsCatch> translateCatches(JetTryExpression expression, TranslationContext outerContext) {
         List<JetCatchClause> clauses = expression.getCatchClauses();
         if (clauses.isEmpty()) {
             return Collections.emptyList();
         }
 
-        JsCatch jsCatch = new JsCatch(context.scope(), "e");
+        JsName catchIdent = outerContext.scope().declareFreshName("e");
+        JsNameRef catchIdentRef = catchIdent.makeRef();
+        JsCatch jsCatch = new JsCatch(catchIdent);
         if (clauses.size() == 1) {
-            JetExpression catchBody = clauses.get(0).getCatchBody();
+            JetCatchClause clause = clauses.get(0);
+            TranslationContext context = outerContext.innerContextWithDescriptorsAliased(
+                    Collections.<DeclarationDescriptor, JsExpression>singletonMap(getCatchParameterDescriptor(clause, outerContext), catchIdentRef));
+            JetExpression catchBody = clause.getCatchBody();
             assert catchBody != null;
             jsCatch.setBody(new JsBlock(translateAsStatement(catchBody, context)));
         }
         else if (clauses.size() > 1) {
             JsIf prevIf = null;
+            THashMap<DeclarationDescriptor, JsExpression> aliasingMap = new THashMap<DeclarationDescriptor, JsExpression>(clauses.size());
+            TranslationContext context = outerContext.innerContextWithDescriptorsAliased(aliasingMap);
             for (JetCatchClause clause : clauses) {
                 JetExpression catchBody = clause.getCatchBody();
-                JetParameter catchParameter = clause.getCatchParameter();
-                assert catchParameter != null && catchBody != null;
+                assert catchBody != null;
 
-                VariableDescriptor descriptor =
-                        BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.VALUE_PARAMETER, catchParameter);
+                VariableDescriptor descriptor = getCatchParameterDescriptor(clause, outerContext);
+                aliasingMap.put(descriptor, catchIdentRef);
                 ClassifierDescriptor classDescriptor = descriptor.getType().getConstructor().getDeclarationDescriptor();
                 String errorName = null;
                 if (classDescriptor instanceof ClassDescriptor) {

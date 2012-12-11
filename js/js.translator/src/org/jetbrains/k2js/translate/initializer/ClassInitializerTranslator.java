@@ -25,6 +25,8 @@ import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetDelegationSpecifier;
 import org.jetbrains.jet.lang.psi.JetDelegatorToSuperCall;
 import org.jetbrains.jet.lang.psi.JetParameter;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.context.Namer;
@@ -33,7 +35,6 @@ import org.jetbrains.k2js.translate.general.AbstractTranslator;
 
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForElement;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForConstructorParameter;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateArgumentList;
@@ -143,7 +144,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
 
     @NotNull
     private JsParameter translateParameter(@NotNull JetParameter jetParameter) {
-        DeclarationDescriptor parameterDescriptor = getDescriptorForElement(bindingContext(), jetParameter);
+        VariableDescriptor parameterDescriptor = BindingContextUtils.getNotNull(bindingContext(), BindingContext.VALUE_PARAMETER, jetParameter);
         JsParameter jsParameter = new JsParameter(context().getNameForDescriptor(parameterDescriptor));
         mayBeAddInitializerStatementForProperty(jsParameter, jetParameter);
         return jsParameter;

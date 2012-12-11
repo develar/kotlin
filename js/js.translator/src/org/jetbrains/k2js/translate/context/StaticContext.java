@@ -81,7 +81,7 @@ public final class StaticContext {
     private ClassDeclarationTranslator classDeclarationTranslator;
 
     private final OverloadedMemberNameGenerator overloadedMemberNameGenerator = new OverloadedMemberNameGenerator();
-    private final Map<DeclarationDescriptor, JsName> nameMap = new THashMap<DeclarationDescriptor, JsName>();
+    private final Map<VariableDescriptor, JsName> nameMap = new THashMap<VariableDescriptor, JsName>();
     private final Map<DeclarationDescriptor, JsNameRef> qualifierMap = new THashMap<DeclarationDescriptor, JsNameRef>();
 
     //TODO: too many parameters in constructor
@@ -162,7 +162,7 @@ public final class StaticContext {
     }
 
     @NotNull
-    public JsName getNameForDescriptor(@NotNull DeclarationDescriptor descriptor, @Nullable TranslationContext context) {
+    public JsName getNameForDescriptor(@NotNull VariableDescriptor descriptor, @Nullable TranslationContext context) {
         assert descriptor instanceof LocalVariableDescriptor || descriptor instanceof ValueParameterDescriptor;
         JsName name = nameMap.get(descriptor);
         if (name == null) {
@@ -230,7 +230,7 @@ public final class StaticContext {
         }
 
         assert context != null;
-        return getNameForDescriptor(descriptor, context).makeRef();
+        return getNameForDescriptor((VariableDescriptor) descriptor, context).makeRef();
     }
 
     @Nullable

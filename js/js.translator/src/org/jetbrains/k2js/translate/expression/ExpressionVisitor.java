@@ -21,7 +21,6 @@ import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.JetNodeTypes;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.*;
@@ -460,7 +459,8 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     public JsNode visitObjectDeclaration(@NotNull JetObjectDeclaration expression,
             @NotNull TranslationContext context) {
         JetObjectDeclarationName objectDeclarationName = getObjectDeclarationName(expression);
-        DeclarationDescriptor descriptor = getDescriptorForElement(context.bindingContext(), objectDeclarationName);
+        VariableDescriptor descriptor = (VariableDescriptor) BindingContextUtils.getNotNull(context.bindingContext(),
+                                                                                            BindingContext.DECLARATION_TO_DESCRIPTOR, objectDeclarationName);
         JsName propertyName = context.getNameForDescriptor(descriptor);
         JsExpression value = ClassTranslator.generateClassCreation(expression, context);
         return newVar(propertyName, value).source(expression);
