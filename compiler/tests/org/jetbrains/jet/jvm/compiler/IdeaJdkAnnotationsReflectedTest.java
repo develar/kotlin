@@ -16,15 +16,10 @@
 
 package org.jetbrains.jet.jvm.compiler;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.intellij.codeInsight.AnnotationUtil;
-import com.intellij.codeInsight.ExternalAnnotationsManager;
-import com.intellij.openapi.util.io.StreamUtil;
-import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiFormatUtil;
@@ -35,26 +30,13 @@ import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.TestJdkKind;
 import org.jetbrains.jet.cli.jvm.compiler.CoreExternalAnnotationsManager;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
-import org.jetbrains.jet.di.InjectorForJavaSemanticServices;
-import org.jetbrains.jet.lang.descriptors.*;
-import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
-import org.jetbrains.jet.lang.resolve.java.JavaToKotlinClassMap;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.lang.resolve.lazy.KotlinTestWithEnvironment;
 import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.resolve.DescriptorRenderer;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-public class JdkAnnotationsSanityTest extends KotlinTestWithEnvironment {
+public class IdeaJdkAnnotationsReflectedTest extends KotlinTestWithEnvironment {
     private VirtualFile kotlinAnnotationsRoot;
     private VirtualFile ideaAnnotationsRoot;
 
@@ -78,37 +60,6 @@ public class JdkAnnotationsSanityTest extends KotlinTestWithEnvironment {
         super.tearDown();
     }
 
-    public void testNoErrorsInAlternativeSignatures() {
-        InjectorForJavaSemanticServices injector = new InjectorForJavaSemanticServices(getProject());
-
-        final BindingContext bindingContext = injector.getBindingTrace().getBindingContext();
-        JavaDescriptorResolver javaDescriptorResolver = injector.getJavaDescriptorResolver();
-
-        final Map<DeclarationDescriptor, List<String>> errors = Maps.newHashMap();
-
-        Iterable<FqName> affectedClasses = getAffectedClasses(kotlinAnnotationsRoot);
-        AlternativeSignatureErrorFindingVisitor visitor = new AlternativeSignatureErrorFindingVisitor(bindingContext, errors);
-        for (FqName javaClass : affectedClasses) {
-            ClassDescriptor topLevelClass = javaDescriptorResolver.resolveClass(javaClass);
-            NamespaceDescriptor topLevelNamespace = javaDescriptorResolver.resolveNamespace(javaClass);
-            assertNotNull("Class has annotation, but it is not found: " + javaClass, topLevelClass);
-
-            topLevelClass.acceptVoid(visitor);
-
-            if (topLevelNamespace != null) {
-                topLevelNamespace.acceptVoid(visitor);
-            }
-        }
-
-        if (!errors.isEmpty()) {
-            StringBuilder sb = new StringBuilder("Error(s) in JDK alternative signatures: \n");
-            for (Map.Entry<DeclarationDescriptor, List<String>> entry : errors.entrySet()) {
-                sb.append(DescriptorRenderer.TEXT.render(entry.getKey())).append(" : ").append(entry.getValue()).append("\n");
-            }
-            fail(sb.toString());
-        }
-    }
-
     private CoreExternalAnnotationsManager createFakeAnnotationsManager(VirtualFile annotationsRoot) {
         CoreExternalAnnotationsManager annotationsManager = new CoreExternalAnnotationsManager(PsiManager.getInstance(getProject()));
         annotationsManager.addExternalAnnotationsRoot(annotationsRoot);
@@ -124,7 +75,7 @@ public class JdkAnnotationsSanityTest extends KotlinTestWithEnvironment {
 
         final Set<PsiModifierListOwner> declarationsWithMissingAnnotations = Sets.newLinkedHashSet();
 
-        for (FqName classFqName : getAffectedClasses(ideaAnnotationsRoot)) {
+        for (FqName classFqName : JdkAnnotationsValidityTest.getAffectedClasses("jar://ideaSDK/lib/jdkAnnotations.jar!/")) {
             if (new FqName("org.jdom").equals(classFqName.parent())) continue; // filter unrelated jdom annotations
             if (new FqName("java.util.concurrent.TransferQueue").equals(classFqName)) continue; // filter JDK7-specific class
 
@@ -186,80 +137,6 @@ public class JdkAnnotationsSanityTest extends KotlinTestWithEnvironment {
                 builder.append(PsiFormatUtil.getExternalName(declaration)).append("\n");
             }
             fail(builder.toString());
-        }
-    }
-
-    private static Iterable<FqName> getAffectedClasses(final VirtualFile root) {
-        final Set<FqName> result = Sets.newLinkedHashSet();
-        VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor() {
-            @Override
-            public boolean visitFile(@NotNull VirtualFile file) {
-                if (ExternalAnnotationsManager.ANNOTATIONS_XML.equals(file.getName())) {
-                    try {
-                        String text = StreamUtil.readText(file.getInputStream());
-                        Matcher matcher = Pattern.compile("<item name=['\"]([\\w\\d\\.]+)[\\s'\"]").matcher(text);
-                        while (matcher.find()) {
-                            result.add(new FqName(matcher.group(1)));
-                        }
-                    }
-                    catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                return true;
-            }
-        });
-        return result;
-    }
-
-    private static class AlternativeSignatureErrorFindingVisitor extends DeclarationDescriptorVisitorEmptyBodies<Void, Void> {
-        private final BindingContext bindingContext;
-        private final Map<DeclarationDescriptor, List<String>> errors;
-
-        public AlternativeSignatureErrorFindingVisitor(BindingContext bindingContext, Map<DeclarationDescriptor, List<String>> errors) {
-            this.bindingContext = bindingContext;
-            this.errors = errors;
-        }
-
-        @Override
-        public Void visitNamespaceDescriptor(NamespaceDescriptor descriptor, Void data) {
-            return visitDeclarationRecursively(descriptor, descriptor.getMemberScope());
-        }
-
-        @Override
-        public Void visitClassDescriptor(ClassDescriptor descriptor, Void data) {
-            // skip java.util.Collection, etc.
-            if (!JavaToKotlinClassMap.getInstance().mapPlatformClass(DescriptorUtils.getFQName(descriptor).toSafe()).isEmpty()) {
-                return null;
-            }
-
-            return visitDeclarationRecursively(descriptor, descriptor.getDefaultType().getMemberScope());
-        }
-
-        @Override
-        public Void visitFunctionDescriptor(FunctionDescriptor descriptor, Void data) {
-            return visitDeclaration(descriptor);
-        }
-
-        @Override
-        public Void visitPropertyDescriptor(PropertyDescriptor descriptor, Void data) {
-            return visitDeclaration(descriptor);
-        }
-
-        private Void visitDeclaration(@NotNull DeclarationDescriptor descriptor) {
-            List<String> errors = bindingContext.get(BindingContext.LOAD_FROM_JAVA_SIGNATURE_ERRORS, descriptor);
-            if (errors != null) {
-                this.errors.put(descriptor, errors);
-            }
-            return null;
-        }
-
-        private Void visitDeclarationRecursively(@NotNull DeclarationDescriptor descriptor, @NotNull JetScope memberScope) {
-            for (DeclarationDescriptor member : memberScope.getAllDescriptors()) {
-                member.acceptVoid(this);
-            }
-
-            return visitDeclaration(descriptor);
         }
     }
 }
