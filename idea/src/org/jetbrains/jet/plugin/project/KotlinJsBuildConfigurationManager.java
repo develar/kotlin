@@ -41,8 +41,6 @@ public final class KotlinJsBuildConfigurationManager implements PersistentStateC
         return ModuleServiceManager.getService(module, KotlinJsBuildConfigurationManager.class);
     }
 
-    private boolean isJavaScriptModule;
-
     @NotNull
     private EcmaVersion ecmaVersion = EcmaVersion.defaultVersion();
 
@@ -75,14 +73,6 @@ public final class KotlinJsBuildConfigurationManager implements PersistentStateC
     @SuppressWarnings("UnusedDeclaration")
     public void setSourcemap(boolean sourcemap) {
         this.sourcemap = sourcemap;
-    }
-
-    public boolean isJavaScriptModule() {
-        return isJavaScriptModule;
-    }
-
-    public void setJavaScriptModule(boolean javaScriptModule) {
-        isJavaScriptModule = javaScriptModule;
     }
 
     @Override

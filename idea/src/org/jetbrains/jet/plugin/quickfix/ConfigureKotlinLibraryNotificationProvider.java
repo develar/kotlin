@@ -61,7 +61,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.plugin.JetFileType;
-import org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager;
 import org.jetbrains.jet.utils.KotlinPaths;
 import org.jetbrains.jet.utils.PathUtil;
 
@@ -74,7 +73,7 @@ import static org.jetbrains.jet.plugin.project.JsModuleDetector.isJsModule;
 public class ConfigureKotlinLibraryNotificationProvider extends EditorNotifications.Provider<EditorNotificationPanel> {
     private static final Key<EditorNotificationPanel> KEY = Key.create("configure.kotlin.library");
     private static final String LIBRARY_NAME = "KotlinRuntime";
-    private static final String JS_LIBRARY_NAME = "KotlinJsRuntime";
+    public static final String JS_LIBRARY_NAME = "KotlinJsRuntime";
 
     private final Project myProject;
 
@@ -124,7 +123,7 @@ public class ConfigureKotlinLibraryNotificationProvider extends EditorNotificati
     }
 
     @Nullable
-    private static VirtualFile findLibraryFile(Library library, boolean isJvm) {
+    public static VirtualFile findLibraryFile(Library library, boolean isJvm) {
         for (VirtualFile file : library.getFiles(isJvm ? OrderRootType.CLASSES : OrderRootType.SOURCES)) {
             if (file.getName().equals(KotlinPaths.getRuntimeName(isJvm))) {
                 return file;
@@ -227,11 +226,7 @@ public class ConfigureKotlinLibraryNotificationProvider extends EditorNotificati
                         }
                         updateNotifications();
                     }
-                    if (!asJvm) {
-                        KotlinJsBuildConfigurationManager jsModuleComponent = KotlinJsBuildConfigurationManager.getInstance(module);
-                        jsModuleComponent.setJavaScriptModule(true);
-                    }
-                    else if (!jdkAnnotationsArePresent(module)) {
+                    if (asJvm && !jdkAnnotationsArePresent(module)) {
                         addJdkAnnotations(module);
                     }
                 }
