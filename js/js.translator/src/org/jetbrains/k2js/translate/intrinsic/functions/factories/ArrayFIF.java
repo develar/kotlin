@@ -28,6 +28,7 @@ import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lang.types.lang.PrimitiveType;
+import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.BuiltInFunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
@@ -150,7 +151,7 @@ public final class ArrayFIF extends CompositeFIF {
                     @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
             ) {
                 assert receiver != null && arguments.size() == 1;
-                return inequality(new JsInvocation(context.namer().kotlin("arrayIndexOf"), receiver, arguments.get(0)),
+                return inequality(new JsInvocation(Namer.kotlin("arrayIndexOf"), receiver, arguments.get(0)),
                                   context.program().getNumberLiteral(-1));
             }
         });

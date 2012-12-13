@@ -70,14 +70,14 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         ClassDescriptor outerClass;
         AliasingContext aliasingContext;
         DeclarationDescriptor receiverDescriptor = getExpectedReceiverDescriptor(descriptor);
-        JsName receiverName;
+        String receiverName;
         if (receiverDescriptor == null) {
             receiverName = null;
             aliasingContext = null;
         }
         else {
             receiverName = fun.getScope().declareName(Namer.getReceiverParameterName());
-            aliasingContext = outerContext.aliasingContext().inner(receiverDescriptor, receiverName.makeRef());
+            aliasingContext = outerContext.aliasingContext().inner(receiverDescriptor, new JsNameRef(receiverName));
         }
 
         if (descriptor.getContainingDeclaration() instanceof ConstructorDescriptor) {
@@ -87,7 +87,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
             outerClass = (ClassDescriptor) descriptor.getContainingDeclaration().getContainingDeclaration();
             assert outerClass != null;
             if (receiverDescriptor == null) {
-                aliasingContext = outerContext.aliasingContext().notShareableThisAliased(outerClass, new JsNameRef("o", fun.getName().makeRef()));
+                aliasingContext = outerContext.aliasingContext().notShareableThisAliased(outerClass, new JsNameRef("o", new JsNameRef(fun.getName())));
             }
         }
         else {
@@ -104,7 +104,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
                 UsageTracker usageTracker = funContext.usageTracker();
                 assert usageTracker != null;
                 if (usageTracker.isUsed()) {
-                    return new JsInvocation(context().namer().kotlin("assignOwner"), fun, JsLiteral.THIS);
+                    return new JsInvocation(Namer.kotlin("assignOwner"), fun, JsLiteral.THIS);
                 }
                 else {
                     fun.setName(null);
@@ -139,7 +139,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
             @NotNull ClassTranslator classTranslator
     ) {
         JsFunction fun = createFunction();
-        JsNameRef outerClassRef = fun.getScope().declareName(Namer.OUTER_CLASS_NAME).makeRef();
+        JsNameRef outerClassRef = new JsNameRef(fun.getScope().declareName(Namer.OUTER_CLASS_NAME));
         UsageTracker usageTracker = new UsageTracker(descriptor, outerClassContext.usageTracker(), outerClass);
         TranslationContext funContext = outerClassContext.newFunctionBody(fun, outerClassContext.aliasingContext().inner(outerClass, outerClassRef),
                                                                           usageTracker);

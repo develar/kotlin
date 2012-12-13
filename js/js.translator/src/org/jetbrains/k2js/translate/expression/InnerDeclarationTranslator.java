@@ -51,7 +51,7 @@ abstract class InnerDeclarationTranslator {
             context.usageTracker().forEachCaptured(new Consumer<CallableDescriptor>() {
                 @Override
                 public void consume(CallableDescriptor descriptor) {
-                    JsName name;
+                    String name;
                     if (descriptor instanceof VariableDescriptor) {
                         name = context.getNameForDescriptor((VariableDescriptor) descriptor);
                     }
@@ -61,7 +61,7 @@ abstract class InnerDeclarationTranslator {
                         assert name != null;
                     }
                     fun.getParameters().add(new JsParameter(name));
-                    expressions.add(name.makeRef());
+                    expressions.add(new JsNameRef(name));
                 }
             });
         }

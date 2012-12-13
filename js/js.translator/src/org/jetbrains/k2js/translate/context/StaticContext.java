@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
-import com.google.dart.compiler.backend.js.ast.JsName;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.google.dart.compiler.backend.js.ast.JsProgram;
 import com.intellij.psi.PsiElement;
@@ -81,7 +80,7 @@ public final class StaticContext {
     private ClassDeclarationTranslator classDeclarationTranslator;
 
     private final OverloadedMemberNameGenerator overloadedMemberNameGenerator = new OverloadedMemberNameGenerator();
-    private final Map<VariableDescriptor, JsName> nameMap = new THashMap<VariableDescriptor, JsName>();
+    private final Map<VariableDescriptor, String> nameMap = new THashMap<VariableDescriptor, String>();
     private final Map<DeclarationDescriptor, JsNameRef> qualifierMap = new THashMap<DeclarationDescriptor, JsNameRef>();
 
     //TODO: too many parameters in constructor
@@ -162,9 +161,9 @@ public final class StaticContext {
     }
 
     @NotNull
-    public JsName getNameForDescriptor(@NotNull VariableDescriptor descriptor, @Nullable TranslationContext context) {
+    public String getNameForDescriptor(@NotNull VariableDescriptor descriptor, @Nullable TranslationContext context) {
         assert descriptor instanceof LocalVariableDescriptor || descriptor instanceof ValueParameterDescriptor;
-        JsName name = nameMap.get(descriptor);
+        String name = nameMap.get(descriptor);
         if (name == null) {
             assert context != null;
             name = context.scope().declareFreshName(descriptor.getName().getName());
@@ -230,7 +229,7 @@ public final class StaticContext {
         }
 
         assert context != null;
-        return getNameForDescriptor((VariableDescriptor) descriptor, context).makeRef();
+        return new JsNameRef(getNameForDescriptor((VariableDescriptor) descriptor, context));
     }
 
     @Nullable

@@ -120,7 +120,7 @@ public class TranslationContext {
     }
 
     @NotNull
-    public TranslationContext innerContextWithAliasesForExpressions(@NotNull Map<JetExpression, JsName> aliases) {
+    public TranslationContext innerContextWithAliasesForExpressions(@NotNull Map<JetExpression, String> aliases) {
         return new TranslationContext(this, aliasingContext.withExpressionsAliased(aliases));
     }
 
@@ -135,14 +135,13 @@ public class TranslationContext {
     }
 
     @NotNull
-    public JsName getNameForElement(@NotNull PsiElement element) {
-        VariableDescriptor descriptor = (VariableDescriptor) BindingContextUtils
-                .getNotNull(bindingContext(), BindingContext.DECLARATION_TO_DESCRIPTOR, element);
-        return getNameForDescriptor(descriptor);
+    public String getNameForElement(@NotNull PsiElement element) {
+        return getNameForDescriptor(
+                (VariableDescriptor) BindingContextUtils.getNotNull(bindingContext(), BindingContext.DECLARATION_TO_DESCRIPTOR, element));
     }
 
     @NotNull
-    public JsName getNameForDescriptor(@NotNull VariableDescriptor descriptor) {
+    public String getNameForDescriptor(@NotNull VariableDescriptor descriptor) {
         return staticContext.getNameForDescriptor(descriptor, this);
     }
 

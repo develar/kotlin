@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.expression.foreach;
 
 import com.google.dart.compiler.backend.js.ast.JsBlock;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsName;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetForExpression;
@@ -53,17 +52,12 @@ public abstract class ForTranslator extends AbstractTranslator {
     @NotNull
     protected final JetForExpression expression;
     @NotNull
-    protected final JsName parameterName;
+    protected final String parameterName;
 
     protected ForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
         super(context);
         this.expression = forExpression;
-        this.parameterName = declareParameter();
-    }
-
-    @NotNull
-    private JsName declareParameter() {
-        return context().getNameForElement(getLoopParameter(expression));
+        this.parameterName = context().getNameForElement(getLoopParameter(expression));
     }
 
     @NotNull

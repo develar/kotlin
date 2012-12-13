@@ -74,8 +74,8 @@ public final class TryTranslator {
             return Collections.emptyList();
         }
 
-        JsName catchIdent = outerContext.scope().declareFreshName("e");
-        JsNameRef catchIdentRef = catchIdent.makeRef();
+        String catchIdent = outerContext.scope().declareFreshName("e");
+        JsNameRef catchIdentRef = new JsNameRef(catchIdent);
         JsCatch jsCatch = new JsCatch(catchIdent);
         if (clauses.size() == 1) {
             JetCatchClause clause = clauses.get(0);
@@ -109,7 +109,7 @@ public final class TryTranslator {
 
                 JsIf ifStatement = new JsIf();
                 if (errorName != null) {
-                    ifStatement.setIfExpression(JsAstUtils.equality(new JsNameRef("name", jsCatch.getParameter().getName().makeRef()),
+                    ifStatement.setIfExpression(JsAstUtils.equality(new JsNameRef("name", catchIdentRef),
                                                                     context.program().getStringLiteral(errorName)));
                 }
                 else {

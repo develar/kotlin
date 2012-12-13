@@ -94,22 +94,20 @@ public final class Namer {
     }
 
     @NotNull
-    private final JsScope kotlinScope;
+    private final String className;
     @NotNull
-    private final JsName className;
-    @NotNull
-    private final JsName traitName;
+    private final String traitName;
     @NotNull
     private final JsExpression definePackage;
     @NotNull
-    private final JsName objectName;
+    private final String objectName;
 
     @NotNull
-    private final JsName isTypeName;
+    private final String isTypeName;
 
     private Namer(@NotNull JsScope rootScope) {
         rootScope.declareName("Kotlin");
-        kotlinScope = new JsScope(rootScope, "Kotlin standard object");
+        JsScope kotlinScope = new JsScope(rootScope, "Kotlin standard object");
         traitName = kotlinScope.declareName(TRAIT_OBJECT_NAME);
 
         definePackage = kotlin("definePackage");
@@ -141,24 +139,13 @@ public final class Namer {
     }
 
     @NotNull
-    private static JsNameRef kotlin(@NotNull JsName name) {
-        return new JsNameRef(name, KOTLIN_OBJECT_NAME_REF);
-    }
-
-    @SuppressWarnings("MethodMayBeStatic")
-    @NotNull
-    public JsExpression kotlin(@NotNull String name) {
+    public static JsExpression kotlin(@NotNull String name) {
         return new JsNameRef(name, KOTLIN_OBJECT_NAME_REF);
     }
 
     @NotNull
     public JsExpression isOperationReference() {
         return kotlin(isTypeName);
-    }
-
-    @NotNull
-        /*package*/ JsScope getKotlinScope() {
-        return kotlinScope;
     }
 
     @NotNull

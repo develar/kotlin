@@ -87,6 +87,7 @@ public final class JsModuleDetector {
         }
     }
 
+
     private static void addProjectRootsChangedListener(Project project) {
         project.getMessageBus().connect().subscribe(ProjectTopics.PROJECT_ROOTS, new ModuleRootAdapter() {
             @Override

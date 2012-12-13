@@ -57,7 +57,7 @@ public final class FunctionTranslator {
         JsFunction function = new JsFunction(context.scope(), new JsBlock());
         AliasingContext aliasingContext;
         ReceiverParameterDescriptor receiverParameter = descriptor.getReceiverParameter();
-        JsName extensionFunctionReceiverName;
+        String extensionFunctionReceiverName;
         if (receiverParameter == null) {
             aliasingContext = null;
             extensionFunctionReceiverName = null;
@@ -66,7 +66,7 @@ public final class FunctionTranslator {
             DeclarationDescriptor expectedReceiverDescriptor = getDeclarationDescriptorForReceiver(receiverParameter.getValue());
             extensionFunctionReceiverName = function.getScope().declareName(Namer.getReceiverParameterName());
             //noinspection ConstantConditions
-            aliasingContext = context.aliasingContext().inner(expectedReceiverDescriptor, extensionFunctionReceiverName.makeRef());
+            aliasingContext = context.aliasingContext().inner(expectedReceiverDescriptor, new JsNameRef(extensionFunctionReceiverName));
         }
 
         TranslationContext bodyContext = context.newFunctionBody(function, aliasingContext, null);
@@ -118,7 +118,7 @@ public final class FunctionTranslator {
                     }
                 }
                 JetExpression parameter = getParameterForDescriptor(context.bindingContext(), declarator).getDefaultValue();
-                JsNameRef parameterRef = context.getNameForDescriptor(valueParameter).makeRef();
+                JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
                 assert parameter != null;
                 statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
                                         assignment(parameterRef, translateAsExpression(parameter, context)).makeStmt()));
@@ -136,7 +136,7 @@ public final class FunctionTranslator {
     @NotNull
     private static List<JsParameter> translateParameters(
             FunctionDescriptor descriptor,
-            JsName extensionFunctionReceiverName,
+            String extensionFunctionReceiverName,
             TranslationContext functionBodyContext
     ) {
         if (extensionFunctionReceiverName == null && descriptor.getValueParameters().isEmpty()) {
@@ -152,7 +152,7 @@ public final class FunctionTranslator {
             @NotNull FunctionDescriptor descriptor,
             @NotNull List<JsParameter> parameters,
             @NotNull TranslationContext funContext,
-            @Nullable JsName receiverName
+            @Nullable String receiverName
     ) {
         if (receiverName != null) {
             parameters.add(new JsParameter(receiverName));

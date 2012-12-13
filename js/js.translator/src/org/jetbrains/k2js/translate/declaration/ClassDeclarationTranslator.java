@@ -37,12 +37,8 @@ import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
 
-/**
- * @author Pavel Talanov
- *         <p/>
- *         Generates a big block where are all the classes(objects representing them) are created.
- */
 public final class ClassDeclarationTranslator extends AbstractTranslator {
+    private static final String UNRESOLVED_CLASS_NAME = "<unresolved class>";
     private final THashSet<String> nameClashGuard = new THashSet<String>();
 
     private final THashMap<ClassDescriptor, FinalListItem> ownOpenClassDescriptorToItem = new THashMap<ClassDescriptor, FinalListItem>();
@@ -59,7 +55,7 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
                 return ref;
             }
 
-            ref = new JsNameRef("<unresolved class>");
+            ref = new JsNameRef(UNRESOLVED_CLASS_NAME);
             openClassDescriptorToJsNameRef.put(descriptor, ref);
             return ref;
         }
@@ -75,9 +71,9 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         super(context);
 
         dummyFunction = new JsFunction(context.scope());
-        JsName declarationsObject = context.scope().declareName(Namer.nameForClassesVariable());
+        String declarationsObject = context.scope().declareName(Namer.nameForClassesVariable());
         classesVar = new JsVars.JsVar(declarationsObject);
-        declarationsObjectRef = declarationsObject.makeRef();
+        declarationsObjectRef = new JsNameRef(declarationsObject);
     }
 
     private final class OpenClassRefProvider implements ClassAliasingMap {
@@ -138,9 +134,9 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         openClassDescriptorToJsNameRef.forEachEntry(new TObjectObjectProcedure<ClassDescriptor, JsNameRef>() {
             @Override
             public boolean execute(ClassDescriptor descriptor, JsNameRef ref) {
-                if (ref.getName() == null) {
+                if (UNRESOLVED_CLASS_NAME.equals(ref.getName())) {
                     // from library
-                    ref.setIdent(context().getNameRefForDescriptor(descriptor).getIdent());
+                    ref.setName(context().getNameRefForDescriptor(descriptor).getName());
                     ref.setQualifier(context().getQualifierForDescriptor(descriptor));
                 }
                 return true;
@@ -220,19 +216,19 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         }
         else {
             String label = createNameForClass(descriptor);
-            JsName name = dummyFunction.getScope().declareName(label);
+            String name = dummyFunction.getScope().declareName(label);
             JsNameRef qualifiedLabel = openClassDescriptorToJsNameRef.get(descriptor);
             if (qualifiedLabel == null) {
                 qualifiedLabel = new JsNameRef(name);
                 openClassDescriptorToJsNameRef.put(descriptor, qualifiedLabel);
             }
             else {
-                qualifiedLabel.resolve(name);
+                qualifiedLabel.setName(name);
             }
             qualifiedLabel.setQualifier(declarationsObjectRef);
 
             ChameleonJsExpression chameleonExpression = new ChameleonJsExpression(qualifiedLabel);
-            FinalListItem item = new FinalListItem((JetClass) declaration, descriptor, name.makeRef(), chameleonExpression);
+            FinalListItem item = new FinalListItem((JetClass) declaration, descriptor, new JsNameRef(name), chameleonExpression);
             ownOpenClasses.add(item);
             ownOpenClassDescriptorToItem.put(descriptor, item);
             value = chameleonExpression;

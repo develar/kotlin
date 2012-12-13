@@ -61,7 +61,7 @@ public final class DynamicContext {
             currentBlock.getStatements().add(vars);
         }
 
-        JsName temporaryName = currentScope.declareTemporary();
+        String temporaryName = currentScope.declareTemporary();
         vars.add(new JsVar(temporaryName, null));
         return new TemporaryVariable(temporaryName, initExpression);
     }
@@ -69,7 +69,7 @@ public final class DynamicContext {
     @NotNull
     public Pair<JsVar, JsExpression> createTemporary(@Nullable JsExpression initExpression) {
         JsVar var = new JsVar(currentScope.declareTemporary(), initExpression);
-        return new Pair<JsVar, JsExpression>(var, var.getName().makeRef());
+        return new Pair<JsVar, JsExpression>(var, new JsNameRef(var.getName()));
     }
 
     @NotNull

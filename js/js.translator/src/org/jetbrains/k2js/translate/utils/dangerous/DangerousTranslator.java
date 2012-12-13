@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.utils.dangerous;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsName;
 import com.google.dart.compiler.backend.js.ast.JsNode;
 import com.google.dart.compiler.backend.js.ast.JsVars;
 import gnu.trove.THashMap;
@@ -51,15 +50,15 @@ public final class DangerousTranslator extends AbstractTranslator {
 
     @NotNull
     private JsNode translate() {
-        Map<JetExpression, JsName> aliasesForExpressions =
+        Map<JetExpression, String> aliasesForExpressions =
             translateAllExpressionsAndCreateAliasesForThem(data.getNodesToBeGeneratedBefore());
         TranslationContext contextWithAliases = context().innerContextWithAliasesForExpressions(aliasesForExpressions);
         return Translation.doTranslateExpression(data.getRootNode(), contextWithAliases);
     }
 
     @NotNull
-    private Map<JetExpression, JsName> translateAllExpressionsAndCreateAliasesForThem(@NotNull List<JetExpression> expressions) {
-        Map<JetExpression, JsName> aliasesForExpressions = new THashMap<JetExpression, JsName>(expressions.size());
+    private Map<JetExpression, String> translateAllExpressionsAndCreateAliasesForThem(@NotNull List<JetExpression> expressions) {
+        Map<JetExpression, String> aliasesForExpressions = new THashMap<JetExpression, String>(expressions.size());
         List<JsVars.JsVar> vars = new ArrayList<JsVars.JsVar>(expressions.size());
         for (JetExpression expression : expressions) {
             JsExpression translatedExpression = Translation.translateAsExpression(expression, context());

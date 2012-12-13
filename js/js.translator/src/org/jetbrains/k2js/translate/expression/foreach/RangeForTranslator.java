@@ -97,12 +97,12 @@ public final class RangeForTranslator extends ForTranslator {
 
     @NotNull
     private JsExpression getCondition() {
-        return inequality(parameterName.makeRef(), end.reference());
+        return inequality(new JsNameRef(parameterName), end.reference());
     }
 
     @NotNull
     private JsExpression getIncrExpression() {
-        return addAssign(parameterName.makeRef(), incrVar.reference());
+        return addAssign(new JsNameRef(parameterName), incrVar.reference());
     }
 
     @NotNull

@@ -172,7 +172,7 @@ public final class TopLevelFIF extends CompositeFIF {
                         return callTranslator.extensionFunctionCall(false);
                     }
                     else {
-                        if (functionReference instanceof JsNameRef && ((JsNameRef) functionReference).getIdent().equals("invoke")) {
+                        if (functionReference instanceof JsNameRef && ((JsNameRef) functionReference).getName().equals("invoke")) {
                             return callTranslator.explicitInvokeCall();
                         }
                         return new JsInvocation(new JsNameRef("call", functionReference),
@@ -311,7 +311,7 @@ public final class TopLevelFIF extends CompositeFIF {
                 collectionClassName = isSet ? "ComplexHashSet" : "ComplexHashMap";
             }
 
-            return callTranslator.createConstructorCallExpression(context.namer().kotlin(collectionClassName));
+            return callTranslator.createConstructorCallExpression(Namer.kotlin(collectionClassName));
         }
     }
 }

@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsName;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,20 +29,20 @@ public class TemporaryVariable {
     @Nullable
     private final JsExpression assignmentExpression;
     @NotNull
-    private final JsName variableName;
+    private final String variableName;
 
-    /*package*/ TemporaryVariable(@NotNull JsName temporaryName, @Nullable JsExpression initExpression) {
+    /*package*/ TemporaryVariable(@NotNull String temporaryName, @Nullable JsExpression initExpression) {
         this.variableName = temporaryName;
-        this.assignmentExpression = initExpression == null ? null : JsAstUtils.assignment(variableName.makeRef(), initExpression);
+        this.assignmentExpression = initExpression == null ? null : JsAstUtils.assignment(new JsNameRef(variableName), initExpression);
     }
 
     @NotNull
     public JsNameRef reference() {
-        return variableName.makeRef();
+        return new JsNameRef(variableName);
     }
 
     @NotNull
-    public JsName name() {
+    public String name() {
         return variableName;
     }
 

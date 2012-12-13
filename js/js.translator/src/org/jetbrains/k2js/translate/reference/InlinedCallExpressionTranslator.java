@@ -17,10 +17,7 @@
 package org.jetbrains.k2js.translate.reference;
 
 import com.google.common.collect.Maps;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsLiteral;
-import com.google.dart.compiler.backend.js.ast.JsNode;
-import com.google.dart.compiler.backend.js.ast.JsReturn;
+import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -110,7 +107,7 @@ public final class InlinedCallExpressionTranslator extends AbstractCallExpressio
         Map<DeclarationDescriptor, JsExpression> aliases = Maps.newHashMap();
         for (ValueParameterDescriptor parameterDescriptor : resolvedCall.getResultingDescriptor().getValueParameters()) {
             TemporaryVariable aliasForArgument = createAliasForArgument(parameterDescriptor);
-            aliases.put(parameterDescriptor, aliasForArgument.name().makeRef());
+            aliases.put(parameterDescriptor, new JsNameRef(aliasForArgument.name()));
         }
         return contextForInlining.innerContextWithDescriptorsAliased(aliases);
     }
@@ -175,7 +172,7 @@ public final class InlinedCallExpressionTranslator extends AbstractCallExpressio
         public JsNode mutate(@NotNull JsNode node) {
             if (node instanceof JsReturn) {
                 JsExpression returnedExpression = ((JsReturn)node).getExpression();
-                return JsAstUtils.assignment(toAssignTo.name().makeRef(), returnedExpression);
+                return JsAstUtils.assignment(new JsNameRef(toAssignTo.name()), returnedExpression);
             }
             return node;
         }

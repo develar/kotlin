@@ -114,9 +114,9 @@ public final class PropertyTranslator extends AbstractTranslator {
     @NotNull
     private JsFunction generateDefaultSetterFunction() {
         JsFunction fun = new JsFunction(context().scope(), new JsBlock());
-        JsName defaultParameterName = fun.getScope().declareName("value");
+        String defaultParameterName = fun.getScope().declareName("value");
         fun.setParameters(Collections.singletonList(new JsParameter(defaultParameterName)));
-        fun.setBody(new JsBlock(assignmentToBackingField(context(), descriptor, defaultParameterName.makeRef()).makeStmt()));
+        fun.setBody(new JsBlock(assignmentToBackingField(context(), descriptor, new JsNameRef(defaultParameterName)).makeStmt()));
         return fun;
     }
 

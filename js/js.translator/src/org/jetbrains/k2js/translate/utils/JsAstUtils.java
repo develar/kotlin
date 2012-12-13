@@ -152,7 +152,7 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsVars newVar(@NotNull JsName name, @Nullable JsExpression expr) {
+    public static JsVars newVar(@NotNull String name, @Nullable JsExpression expr) {
         return new JsVars(new JsVars.JsVar(name, expr));
     }
 

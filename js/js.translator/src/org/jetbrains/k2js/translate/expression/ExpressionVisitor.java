@@ -158,7 +158,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     public JsNode visitProperty(@NotNull JetProperty expression, @NotNull TranslationContext context) {
         VariableDescriptor descriptor = BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.VARIABLE, expression);
         JsExpression initializer = translateInitializerForProperty(expression, context);
-        JsName name = context.getNameForDescriptor(descriptor);
+        String name = context.getNameForDescriptor(descriptor);
         if (descriptor.isVar() && Boolean.TRUE.equals(context.bindingContext().get(BindingContext.CAPTURED_IN_CLOSURE, descriptor))) {
             // well, wrap it
             JsNameRef alias = new JsNameRef("v", new JsNameRef(name));
@@ -368,14 +368,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @Nullable
     private static String getTargetLabel(JetLabelQualifiedExpression expression, TranslationContext context) {
         JetSimpleNameExpression labelElement = expression.getTargetLabel();
-        if (labelElement == null) {
-            return null;
-        }
-        else {
-            JsName name = context.scope().findName(getReferencedName(labelElement));
-            assert name != null;
-            return name.getIdent();
-        }
+        return labelElement == null ? null : context.scope().findName(getReferencedName(labelElement));
     }
 
     @Override
@@ -404,8 +397,8 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     public JsNode visitNamedFunction(@NotNull JetNamedFunction expression, @NotNull TranslationContext context) {
         FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
         JsExpression alias = context.literalFunctionTranslator().translateFunction(expression, descriptor, context);
-        JsName name = context.scope().declareFreshName(descriptor.getName().getName());
-        context.aliasingContext().registerAlias(descriptor, name.makeRef());
+        String name = context.scope().declareFreshName(descriptor.getName().getName());
+        context.aliasingContext().registerAlias(descriptor, new JsNameRef(name));
         return new JsVars(new JsVars.JsVar(name, alias)).source(expression);
     }
 
@@ -461,7 +454,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         JetObjectDeclarationName objectDeclarationName = getObjectDeclarationName(expression);
         VariableDescriptor descriptor = (VariableDescriptor) BindingContextUtils.getNotNull(context.bindingContext(),
                                                                                             BindingContext.DECLARATION_TO_DESCRIPTOR, objectDeclarationName);
-        JsName propertyName = context.getNameForDescriptor(descriptor);
+        String propertyName = context.getNameForDescriptor(descriptor);
         JsExpression value = ClassTranslator.generateClassCreation(expression, context);
         return newVar(propertyName, value).source(expression);
     }

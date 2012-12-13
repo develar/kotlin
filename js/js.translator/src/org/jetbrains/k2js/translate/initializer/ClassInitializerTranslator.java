@@ -110,13 +110,13 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     private void addCallToSuperMethod(@NotNull JetDelegatorToSuperCall superCall, JsFunction initializer) {
         JsInvocation call;
         if (context().isEcma5()) {
-            JsName ref = context().scope().declareName(Namer.CALLEE_NAME);
+            String ref = context().scope().declareName(Namer.CALLEE_NAME);
             initializer.setName(ref);
-            call = new JsInvocation(new JsNameRef("call", new JsNameRef("baseInitializer", ref.makeRef())));
+            call = new JsInvocation(new JsNameRef("call", new JsNameRef("baseInitializer", new JsNameRef(ref))));
             call.getArguments().add(JsLiteral.THIS);
         }
         else {
-            JsName superMethodName = context().scope().declareName(Namer.superMethodName());
+            String superMethodName = context().scope().declareName(Namer.superMethodName());
             call = new JsInvocation(new JsNameRef(superMethodName, JsLiteral.THIS));
         }
         translateArgumentList(context(), superCall.getValueArguments(), call.getArguments());
@@ -157,7 +157,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         if (propertyDescriptor == null) {
             return;
         }
-        JsNameRef initialValueForProperty = jsParameter.getName().makeRef();
+        JsNameRef initialValueForProperty = new JsNameRef(jsParameter.getName());
         addInitializerOrPropertyDefinition(initialValueForProperty, propertyDescriptor);
     }
 

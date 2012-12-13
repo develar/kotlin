@@ -94,11 +94,11 @@ public final class RangeLiteralForTranslator extends ForTranslator {
 
     @NotNull
     private JsExpression getCondition() {
-        return inequality(parameterName.makeRef(), rangeEnd.reference());
+        return inequality(new JsNameRef(parameterName), rangeEnd.reference());
     }
 
     @NotNull
     private JsExpression getIncrExpression() {
-        return new JsPostfixOperation(JsUnaryOperator.INC, parameterName.makeRef());
+        return new JsPostfixOperation(JsUnaryOperator.INC, new JsNameRef(parameterName));
     }
 }
