@@ -32,6 +32,7 @@ import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.NamePredicate;
 import org.jetbrains.k2js.translate.operation.OperatorTable;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.intrinsic.functions.factories.NumberConversionFIF.INTEGER_NUMBER_TYPES;
@@ -54,13 +55,11 @@ public enum PrimitiveBinaryOperationFIF implements FunctionIntrinsicFactory {
             assert arguments.size() == 1 : "RangeTo must have one argument.";
             assert rangeStart != null;
             JsExpression rangeEnd = arguments.get(0);
-            JsBinaryOperation rangeSize = sum(subtract(rangeEnd, rangeStart),
-                                              context.program().getNumberLiteral(1));
-            JsNameRef expr = new JsNameRef("NumberRange", "Kotlin");
-            HasArguments numberRangeConstructorInvocation = context.isEcma5() ? new JsInvocation(expr) : new JsNew(expr);
+            JsBinaryOperation rangeSize = sum(subtract(rangeEnd, rangeStart), context.program().getNumberLiteral(1));
+            JsNameRef nameRef = new JsNameRef("NumberRange", "Kotlin");
             //TODO: add tests and correct expression for reversed ranges.
-            setArguments(numberRangeConstructorInvocation, rangeStart, rangeSize, /*range is not reversed*/JsLiteral.FALSE);
-            return numberRangeConstructorInvocation;
+            List<JsExpression> args = Arrays.asList(rangeStart, rangeSize, /*range is not reversed*/JsLiteral.FALSE);
+            return context.isEcma5() ? new JsInvocation(nameRef, args) : new JsNew(nameRef, args);
         }
     };
 

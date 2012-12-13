@@ -27,7 +27,6 @@ import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -154,16 +153,6 @@ public final class JsAstUtils {
     @NotNull
     public static JsVars newVar(@NotNull String name, @Nullable JsExpression expr) {
         return new JsVars(new JsVars.JsVar(name, expr));
-    }
-
-    public static void setArguments(@NotNull HasArguments invocation, @NotNull List<JsExpression> newArgs) {
-        List<JsExpression> arguments = invocation.getArguments();
-        assert arguments.isEmpty() : "Arguments already set.";
-        arguments.addAll(newArgs);
-    }
-
-    public static void setArguments(@NotNull HasArguments invocation, JsExpression... arguments) {
-        setArguments(invocation, Arrays.asList(arguments));
     }
 
     @NotNull
