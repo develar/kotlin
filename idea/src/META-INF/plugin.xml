@@ -13,9 +13,6 @@
 
   <project-components>
       <component>
-          <implementation-class>org.jetbrains.jet.plugin.JetStandardLibraryInitializer</implementation-class>
-      </component>
-      <component>
           <implementation-class>org.jetbrains.jet.plugin.references.StandardLibraryReferenceResolver</implementation-class>
       </component>
       <component>
@@ -236,5 +233,6 @@
       <postStartupActivity implementation="org.jetbrains.jet.plugin.compiler.JetCompilerManager"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.OutdatedKotlinRuntimeNotification"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerUpdater"/>
+      <postStartupActivity implementation="org.jetbrains.jet.plugin.JetStandardLibraryInitializer"/>
   </extensions>
 </idea-plugin>

@@ -18,7 +18,7 @@ package org.jetbrains.jet.plugin;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 /**
@@ -27,8 +27,9 @@ import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
  *
  * @author abreslav
  */
-public class JetStandardLibraryInitializer {
-    public JetStandardLibraryInitializer(@NotNull final Project project) {
+class JetStandardLibraryInitializer implements StartupActivity {
+    @Override
+    public void runActivity(final Project project) {
         ProgressManager.getInstance().executeNonCancelableSection(new Runnable() {
             @Override
             public void run() {
