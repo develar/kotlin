@@ -16,9 +16,6 @@
           <implementation-class>org.jetbrains.jet.plugin.JetStandardLibraryInitializer</implementation-class>
       </component>
       <component>
-          <implementation-class>org.jetbrains.jet.plugin.caches.JetCacheManager</implementation-class>
-      </component>
-      <component>
           <implementation-class>org.jetbrains.jet.plugin.references.StandardLibraryReferenceResolver</implementation-class>
       </component>
       <component>
@@ -70,6 +67,9 @@
 
       <projectService serviceInterface="org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider"
                       serviceImplementation="org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider"/>
+    
+      <projectService serviceInterface="org.jetbrains.jet.plugin.caches.JetCacheManager"
+                      serviceImplementation="org.jetbrains.jet.plugin.caches.JetCacheManager"/>
 
       <errorHandler implementation="org.jetbrains.jet.plugin.reporter.KotlinReportSubmitter"/>
 

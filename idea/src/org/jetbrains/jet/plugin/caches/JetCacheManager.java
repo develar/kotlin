@@ -16,7 +16,7 @@
 
 package org.jetbrains.jet.plugin.caches;
 
-import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.search.PsiShortNamesCache;
 import org.jetbrains.annotations.NotNull;
@@ -26,42 +26,17 @@ import org.jetbrains.jet.plugin.project.JsModuleDetector;
 /**
  * @author Nikolay Krasko
  */
-public class JetCacheManager implements ProjectComponent {
-    private Project myProject;
-    private JetShortNamesCache myCache;
+public class JetCacheManager {
+    private final Project myProject;
+    private final JetShortNamesCache myCache;
 
     public static JetCacheManager getInstance(Project project) {
-        return project.getComponent(JetCacheManager.class);
+        return ServiceManager.getService(project, JetCacheManager.class);
     }
 
     public JetCacheManager(Project project) {
         myProject = project;
-    }
-
-    @Override
-    public void projectOpened() {
-
-    }
-
-    @Override
-    public void projectClosed() {
-
-    }
-
-    @Override
-    @NotNull
-    public String getComponentName() {
-        return "Kotlin caches manager";
-    }
-
-    @Override
-    public void initComponent() {
         myCache = new JetShortNamesCache(myProject);
-    }
-
-    @Override
-    public void disposeComponent() {
-
     }
 
     public JetShortNamesCache getNamesCache() {
@@ -69,10 +44,6 @@ public class JetCacheManager implements ProjectComponent {
     }
 
     public PsiShortNamesCache getShortNamesCache(@NotNull JetFile jetFile) {
-        if (JsModuleDetector.isJsModule(jetFile)) {
-            return myCache;
-        }
-
-        return PsiShortNamesCache.getInstance(myProject);
+        return JsModuleDetector.isJsModule(jetFile) ? myCache : PsiShortNamesCache.getInstance(myProject);
     }
 }
