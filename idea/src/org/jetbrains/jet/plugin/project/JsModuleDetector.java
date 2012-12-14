@@ -16,28 +16,10 @@
 
 package org.jetbrains.jet.plugin.project;
 
-import com.intellij.ProjectTopics;
-import com.intellij.openapi.application.AccessToken;
-import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ModuleRootAdapter;
-import com.intellij.openapi.roots.ModuleRootEvent;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.ProjectRootManager;
-import com.intellij.openapi.roots.libraries.Library;
-import com.intellij.openapi.util.Key;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.EditorNotifications;
-import com.intellij.util.Alarm;
-import com.intellij.util.Processor;
+import com.intellij.openapi.module.ModuleUtilCore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.plugin.quickfix.ConfigureKotlinLibraryNotificationProvider;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Pavel Talanov
@@ -45,80 +27,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  *         This class has utility functions to determine whether the project (or module) is js project.
  */
 public final class JsModuleDetector {
-    private static final AtomicInteger modificationCount = new AtomicInteger(1);
-    private static final Key<Integer> IS_JS_MODULE = Key.create("IS_JS_MODULE");
-    private static final Key<Boolean> PROJECT_LISTENER_ADDED = Key.create("kotlinJsModuleDetectorListenerAdded");
-
-    private static final Alarm updateNotificationAlarm = new Alarm();
-
     private JsModuleDetector() {
     }
 
-    public static boolean isJsModule(@NotNull final Module module) {
-        if (module.getProject().getUserData(PROJECT_LISTENER_ADDED) == null) {
-            module.getProject().putUserData(PROJECT_LISTENER_ADDED, true);
-            addProjectRootsChangedListener(module.getProject());
-        }
-
-        Integer stamp = module.getUserData(IS_JS_MODULE);
-        if (stamp != null && stamp == modificationCount.get()) {
-            return true;
-        }
-
-        AccessToken token = ReadAction.start();
-        try {
-            final AtomicBoolean result = new AtomicBoolean();
-            ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
-                @Override
-                public boolean process(Library library) {
-                    if (ConfigureKotlinLibraryNotificationProvider.JS_LIBRARY_NAME.equals(library.getName()) &&
-                        ConfigureKotlinLibraryNotificationProvider.findLibraryFile(library, false) != null) {
-                        module.putUserData(IS_JS_MODULE, modificationCount.get());
-                        result.set(true);
-                        return false;
-                    }
-                    return true;
-                }
-            });
-            return result.get();
-        }
-        finally {
-            token.finish();
-        }
-    }
-
-
-    private static void addProjectRootsChangedListener(Project project) {
-        project.getMessageBus().connect().subscribe(ProjectTopics.PROJECT_ROOTS, new ModuleRootAdapter() {
-            @Override
-            public void rootsChanged(ModuleRootEvent event) {
-                modificationCount.incrementAndGet();
-                final Object source = event.getSource();
-                if (source instanceof Project) {
-                    updateNotificationAlarm.cancelAllRequests();
-                    updateNotificationAlarm.addRequest(new Runnable() {
-                        @Override
-                        public void run() {
-                            Project project = (Project) source;
-                            if (!project.isDisposed()) {
-                                EditorNotifications.getInstance(project).updateAllNotifications();
-                            }
-                        }
-                    }, 300, ModalityState.NON_MODAL);
-                }
-            }
-        });
+    public static boolean isJsModule(@NotNull Module module) {
+        return KotlinJsBuildConfigurationManager.getInstance(module).isJavaScriptModule();
     }
 
     public static boolean isJsModule(@NotNull JetFile file) {
-        VirtualFile virtualFile = file.getOriginalFile().getVirtualFile();
-        if (virtualFile != null) {
-            Module module = ProjectRootManager.getInstance(file.getProject()).getFileIndex().getModuleForFile(virtualFile);
-            if (module != null) {
-                return isJsModule(module);
-            }
-        }
-
-        return false;
+        Module module = ModuleUtilCore.findModuleForPsiElement(file);
+        return module != null && isJsModule(module);
     }
 }
