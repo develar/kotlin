@@ -18,25 +18,23 @@ package org.jetbrains.jet.plugin.codeInsight.ktSignature;
 
 import com.intellij.codeInsight.ExternalAnnotationsListener;
 import com.intellij.codeInsight.ExternalAnnotationsManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupActivity;
 
 /**
  * @author Evgeny Gerashchenko
  * @since 31 August 2012
  */
-public class KotlinSignatureInJavaMarkerUpdater extends AbstractProjectComponent {
-    protected KotlinSignatureInJavaMarkerUpdater(Project project) {
-        super(project);
-    }
-
+class KotlinSignatureInJavaMarkerUpdater implements StartupActivity {
     @Override
-    public void initComponent() {
-        myProject.getMessageBus().connect().subscribe(ExternalAnnotationsManager.TOPIC, new ExternalAnnotationsListener.Adapter() {
-            @Override
-            public void externalAnnotationsChangedExternally() {
-                KotlinSignatureUtil.refreshMarkers(myProject);
-            }
-        });
+    public void runActivity(final Project project) {
+        if (!project.isDefault()) {
+            project.getMessageBus().connect().subscribe(ExternalAnnotationsManager.TOPIC, new ExternalAnnotationsListener.Adapter() {
+                @Override
+                public void externalAnnotationsChangedExternally() {
+                    KotlinSignatureUtil.refreshMarkers(project);
+                }
+            });
+        }
     }
 }
