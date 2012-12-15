@@ -16,7 +16,6 @@
 
 package org.jetbrains.jet.plugin.references;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementResolveResult;
 import com.intellij.psi.PsiPolyVariantReference;
@@ -39,9 +38,6 @@ import static org.jetbrains.jet.lang.resolve.BindingContext.AMBIGUOUS_LABEL_TARG
 import static org.jetbrains.jet.lang.resolve.BindingContext.AMBIGUOUS_REFERENCE_TARGET;
 
 public abstract class JetPsiReference implements PsiPolyVariantReference {
-
-    private static final Logger LOG = Logger.getInstance("#org.jetbrains.jet.plugin.references.JetPsiReference");
-
     @NotNull
     protected final JetReferenceExpression myExpression;
 
@@ -149,7 +145,7 @@ public abstract class JetPsiReference implements PsiPolyVariantReference {
     }
 
     private Collection<PsiElement> resolveStandardLibrarySymbol(@NotNull BindingContext bindingContext) {
-        return myExpression.getProject().getComponent(StandardLibraryReferenceResolver.class)
-                .resolveStandardLibrarySymbol(bindingContext, myExpression);
+        return StandardLibraryReferenceResolver.getInstance(myExpression.getProject()).resolveStandardLibrarySymbol(bindingContext,
+                                                                                                                    myExpression);
     }
 }

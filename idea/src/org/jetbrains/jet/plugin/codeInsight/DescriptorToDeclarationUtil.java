@@ -20,9 +20,7 @@ public final class DescriptorToDeclarationUtil {
         Collection<PsiElement> elements = BindingContextUtils.descriptorToDeclarations(bindingContext, descriptor);
 
         if (elements.isEmpty()) {
-            StandardLibraryReferenceResolver libraryReferenceResolver =
-                    file.getProject().getComponent(StandardLibraryReferenceResolver.class);
-            elements = libraryReferenceResolver.resolveStandardLibrarySymbol(descriptor);
+            elements = StandardLibraryReferenceResolver.getInstance(file.getProject()).resolveStandardLibrarySymbol(descriptor);
         }
 
         if (!elements.isEmpty()) {

@@ -18,6 +18,7 @@ package org.jetbrains.jet.plugin.codeInsight.ktSignature;
 
 import com.intellij.codeInsight.ExternalAnnotationsListener;
 import com.intellij.codeInsight.ExternalAnnotationsManager;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 
@@ -25,7 +26,7 @@ import com.intellij.openapi.startup.StartupActivity;
  * @author Evgeny Gerashchenko
  * @since 31 August 2012
  */
-class KotlinSignatureInJavaMarkerUpdater implements StartupActivity {
+class KotlinSignatureInJavaMarkerUpdater implements StartupActivity, DumbAware {
     @Override
     public void runActivity(final Project project) {
         if (!project.isDefault()) {

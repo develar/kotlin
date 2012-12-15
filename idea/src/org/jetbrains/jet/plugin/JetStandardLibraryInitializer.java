@@ -17,6 +17,7 @@
 package org.jetbrains.jet.plugin;
 
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
@@ -27,7 +28,7 @@ import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
  *
  * @author abreslav
  */
-class JetStandardLibraryInitializer implements StartupActivity {
+public class JetStandardLibraryInitializer implements StartupActivity, DumbAware {
     @Override
     public void runActivity(final Project project) {
         ProgressManager.getInstance().executeNonCancelableSection(new Runnable() {

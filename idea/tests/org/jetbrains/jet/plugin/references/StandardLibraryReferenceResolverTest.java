@@ -80,7 +80,7 @@ public class StandardLibraryReferenceResolverTest extends ResolveTestCase {
     }
 
     public void testAllReferencesResolved() {
-        StandardLibraryReferenceResolver referenceResolver = getProject().getComponent(StandardLibraryReferenceResolver.class);
+        StandardLibraryReferenceResolver referenceResolver = StandardLibraryReferenceResolver.getInstance(getProject());
         for (DeclarationDescriptor descriptor : getAllStandardDescriptors(KotlinBuiltIns.getInstance().getBuiltInsPackage())) {
             if (descriptor instanceof NamespaceDescriptor && "jet".equals(descriptor.getName().getName())) continue;
             assertNotNull("Can't resolve " + descriptor, referenceResolver.resolveStandardLibrarySymbol(descriptor));

@@ -18,9 +18,8 @@ package org.jetbrains.jet.plugin.references;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.intellij.openapi.components.AbstractProjectComponent;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.newvfs.NewVirtualFile;
@@ -44,7 +43,6 @@ import org.jetbrains.jet.lang.resolve.scopes.RedeclarationHandler;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScopeImpl;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
-import org.jetbrains.jet.plugin.JetStandardLibraryInitializer;
 import org.jetbrains.jet.resolve.DescriptorRenderer;
 
 import java.net.URL;
@@ -52,73 +50,51 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class StandardLibraryReferenceResolver extends AbstractProjectComponent {
-    @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-    private BindingContext bindingContext = null;
+public class StandardLibraryReferenceResolver {
+    private final BindingContext bindingContext;
 
-    private final Object lock = new Object();
     private final FqName TUPLE0_FQ_NAME = DescriptorUtils.getFQName(KotlinBuiltIns.getInstance().getTuple(0)).toSafe();
 
-    public StandardLibraryReferenceResolver(
-            Project project,
-            // This parameter is needed to initialize built-ins before this component
-            JetStandardLibraryInitializer makeSureStandardLibraryIsInitialized
-    ) {
-        super(project);
-    }
+    public StandardLibraryReferenceResolver(Project project) {
+        BindingTraceContext context = new BindingTraceContext();
+        FakeJetNamespaceDescriptor jetNamespace = new FakeJetNamespaceDescriptor();
+        context.record(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR, KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), jetNamespace);
 
-    @Override
-    public void initComponent() {
-        StartupManager.getInstance(myProject).registerPostStartupActivity(new Runnable() {
+        WritableScopeImpl scope = new WritableScopeImpl(JetScope.EMPTY, jetNamespace, RedeclarationHandler.THROW_EXCEPTION,
+                                                        "Builtin classes scope");
+        scope.changeLockLevel(WritableScope.LockLevel.BOTH);
+        jetNamespace.setMemberScope(scope);
+
+        Predicate<JetFile> jetFilesIndependentOfUnit = new Predicate<JetFile>() {
             @Override
-            public void run() {
-                ensureInitialized();
+            public boolean apply(@Nullable JetFile file) {
+                return "Unit.jet".equals(file.getName());
             }
-        });
+        };
+        TopDownAnalyzer.processStandardLibraryNamespace(project, context, scope, jetNamespace,
+                                                        getJetFiles("jet", jetFilesIndependentOfUnit, project));
+
+        ClassDescriptor tuple0 = context.get(BindingContext.FQNAME_TO_CLASS_DESCRIPTOR, TUPLE0_FQ_NAME);
+        assert tuple0 != null : "Can't find the declaration for Tuple0";
+        scope = new WritableScopeImpl(scope, jetNamespace, RedeclarationHandler.THROW_EXCEPTION,
+                                      "Builtin classes scope: needed to analyze builtins which depend on Unit type alias");
+        scope.changeLockLevel(WritableScope.LockLevel.BOTH);
+        scope.addClassifierAlias(KotlinBuiltIns.UNIT_ALIAS, tuple0);
+        jetNamespace.setMemberScope(scope);
+
+        TopDownAnalyzer.processStandardLibraryNamespace(project, context, scope, jetNamespace,
+                                                        getJetFiles("jet", Predicates.not(jetFilesIndependentOfUnit), project));
+
+        AnalyzingUtils.throwExceptionOnErrors(context.getBindingContext());
+
+        bindingContext = context.getBindingContext();
     }
 
-    private void ensureInitialized() {
-        synchronized (lock) {
-            if (bindingContext != null) {
-                return;
-            }
-
-            BindingTraceContext context = new BindingTraceContext();
-            FakeJetNamespaceDescriptor jetNamespace = new FakeJetNamespaceDescriptor();
-            context.record(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR, KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), jetNamespace);
-
-            WritableScopeImpl scope = new WritableScopeImpl(JetScope.EMPTY, jetNamespace, RedeclarationHandler.THROW_EXCEPTION,
-                                                            "Builtin classes scope");
-            scope.changeLockLevel(WritableScope.LockLevel.BOTH);
-            jetNamespace.setMemberScope(scope);
-
-            Predicate<JetFile> jetFilesIndependentOfUnit = new Predicate<JetFile>() {
-                @Override
-                public boolean apply(@Nullable JetFile file) {
-                    return "Unit.jet".equals(file.getName());
-                }
-            };
-            TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace,
-                                                            getJetFiles("jet", jetFilesIndependentOfUnit));
-
-            ClassDescriptor tuple0 = context.get(BindingContext.FQNAME_TO_CLASS_DESCRIPTOR, TUPLE0_FQ_NAME);
-            assert tuple0 != null : "Can't find the declaration for Tuple0";
-            scope = new WritableScopeImpl(scope, jetNamespace, RedeclarationHandler.THROW_EXCEPTION,
-                                          "Builtin classes scope: needed to analyze builtins which depend on Unit type alias");
-            scope.changeLockLevel(WritableScope.LockLevel.BOTH);
-            scope.addClassifierAlias(KotlinBuiltIns.UNIT_ALIAS, tuple0);
-            jetNamespace.setMemberScope(scope);
-
-            TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace,
-                                                            getJetFiles("jet", Predicates.not(jetFilesIndependentOfUnit)));
-
-            AnalyzingUtils.throwExceptionOnErrors(context.getBindingContext());
-
-            bindingContext = context.getBindingContext();
-        }
+    public static StandardLibraryReferenceResolver getInstance(Project project) {
+        return ServiceManager.getService(project, StandardLibraryReferenceResolver.class);
     }
 
-    private List<JetFile> getJetFiles(String dir, final Predicate<JetFile> filter) {
+    private static List<JetFile> getJetFiles(String dir, final Predicate<JetFile> filter, Project project) {
         URL url = StandardLibraryReferenceResolver.class.getResource("/" + dir + "/");
         VirtualFile vf = VfsUtil.findFileByURL(url);
         assert vf != null : "Virtual file not found by URL: " + url;
@@ -131,7 +107,7 @@ public class StandardLibraryReferenceResolver extends AbstractProjectComponent {
         vf.getChildren();
         vf.refresh(false, true);
 
-        PsiDirectory psiDirectory = PsiManager.getInstance(myProject).findDirectory(vf);
+        PsiDirectory psiDirectory = PsiManager.getInstance(project).findDirectory(vf);
         assert psiDirectory != null;
         return ContainerUtil.mapNotNull(psiDirectory.getFiles(), new Function<PsiFile, JetFile>() {
             @Override
@@ -200,15 +176,12 @@ public class StandardLibraryReferenceResolver extends AbstractProjectComponent {
     @NotNull
     public Collection<PsiElement> resolveStandardLibrarySymbol(@NotNull BindingContext originalContext,
             @Nullable JetReferenceExpression referenceExpression) {
-        ensureInitialized();
         DeclarationDescriptor declarationDescriptor = originalContext.get(BindingContext.REFERENCE_TARGET, referenceExpression);
-
         return declarationDescriptor != null ? resolveStandardLibrarySymbol(declarationDescriptor) : Collections.<PsiElement>emptyList();
     }
 
     @NotNull
     public Collection<PsiElement> resolveStandardLibrarySymbol(@NotNull DeclarationDescriptor declarationDescriptor) {
-        ensureInitialized();
         DeclarationDescriptor descriptor = declarationDescriptor;
 
         descriptor = descriptor.getOriginal();

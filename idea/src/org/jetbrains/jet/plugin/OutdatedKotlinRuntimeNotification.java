@@ -23,6 +23,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.extensions.PluginId;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.ui.Messages;
@@ -46,7 +47,7 @@ import java.util.jar.JarFile;
  * @author Evgeny Gerashchenko
  * @since 5/22/12
  */
-public class OutdatedKotlinRuntimeNotification implements StartupActivity {
+public class OutdatedKotlinRuntimeNotification implements StartupActivity, DumbAware {
     private static final String UNKNOWN_VERSION = "UNKNOWN";
     private static final String SUPPRESSED_PROPERTY_NAME = "outdated.runtime.suppressed.plugin.version";
 

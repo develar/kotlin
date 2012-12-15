@@ -17,7 +17,10 @@
 package org.jetbrains.jet.checkers;
 
 import com.intellij.codeInsight.daemon.LightDaemonAnalyzerTestCase;
+import com.intellij.ide.startup.impl.StartupManagerImpl;
 import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.startup.StartupManager;
+import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.plugin.PluginTestCaseBase;
 
@@ -25,6 +28,18 @@ import org.jetbrains.jet.plugin.PluginTestCaseBase;
  * @author abreslav
  */
 public abstract class AbstractJetPsiCheckerTest extends LightDaemonAnalyzerTestCase {
+    private final Key<Boolean> POST_STARTUP_ACTIVITIES_PASSED = Key.create("POST_STARTUP_ACTIVITIES_PASSED");
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        if (getProject().getUserData(POST_STARTUP_ACTIVITIES_PASSED) == null) {
+            getProject().putUserData(POST_STARTUP_ACTIVITIES_PASSED, true);
+            // todo fix LightDaemonAnalyzerTestCase (it must works as PlatformTestCase)
+            ((StartupManagerImpl) StartupManager.getInstance(getProject())).runPostStartupActivitiesFromExtensions();
+        }
+    }
+
     public void doTest(@NotNull String filePath) throws Exception {
         doTest(filePath, true, false);
     }
