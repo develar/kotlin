@@ -75,7 +75,8 @@ class DeclarationHintSupport implements StartupActivity {
 
         @Override
         public void mouseMoved(final EditorMouseEvent e) {
-            Project project = e.getEditor().getProject();
+            Editor editor = e.getEditor();
+            Project project = editor.getProject();
             if (project == null || DumbService.isDumb(project)) {
                 return;
             }
@@ -84,7 +85,6 @@ class DeclarationHintSupport implements StartupActivity {
                 return;
             }
 
-            final Editor editor = e.getEditor();
             PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
             if (psiFile == null || psiFile.getLanguage() != JetLanguage.INSTANCE) {
                 return;
