@@ -11,12 +11,6 @@
   <depends optional="true" config-file="javaScriptDebug.xml">JavaScriptDebugger</depends>
   <depends optional="true" config-file="junit.xml">JUnit</depends>
 
-  <project-components>
-      <component>
-          <implementation-class>org.jetbrains.jet.plugin.highlighter.DeclarationHintSupport</implementation-class>
-      </component>
-  </project-components>
-
   <actions>
      <action id="Kotlin.NewFile" class="org.jetbrains.jet.plugin.actions.NewKotlinFileAction">
         <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFromTemplate"/>
@@ -230,9 +224,11 @@
       <project.converterProvider implementation="org.jetbrains.jet.plugin.converters.JetRunConfigurationSettingsFormatConverterProvider"/>
       <moduleService serviceInterface="org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager"
                      serviceImplementation="org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager"/>
+
       <postStartupActivity implementation="org.jetbrains.jet.plugin.compiler.JetCompilerManager"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.OutdatedKotlinRuntimeNotification"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerUpdater"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.JetStandardLibraryInitializer"/>
+      <postStartupActivity implementation="org.jetbrains.jet.plugin.highlighter.DeclarationHintSupport"/>
   </extensions>
 </idea-plugin>

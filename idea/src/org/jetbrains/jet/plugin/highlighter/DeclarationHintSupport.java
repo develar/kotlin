@@ -20,7 +20,6 @@ import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintManagerImpl;
 import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
@@ -31,6 +30,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.util.ProgressIndicatorBase;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -54,34 +54,29 @@ import java.awt.*;
  * @author Evgeny Gerashchenko
  * @since 5/16/12
  */
-public class DeclarationHintSupport extends AbstractProjectComponent {
+class DeclarationHintSupport implements StartupActivity {
     private static final Logger LOG = Logger.getInstance(DeclarationHintSupport.class.getName());
 
-    private final MouseMoveListener mouseMoveListener = new MouseMoveListener();
-
-    public DeclarationHintSupport(Project project) {
-        super(project);
-    }
-
     @Override
-    public void initComponent() {
+    public void runActivity(Project project) {
         EditorFactory instance = EditorFactory.getInstance();
         if (instance != null) {
-            instance.getEventMulticaster().addEditorMouseMotionListener(mouseMoveListener, myProject);
+            instance.getEventMulticaster().addEditorMouseMotionListener(new MouseMoveListener(), project);
         }
         else {
             LOG.error("Couldn't initialize " + DeclarationHintSupport.class.getName() + " component");
         }
     }
 
-    private class MouseMoveListener extends EditorMouseMotionAdapter {
+    private static class MouseMoveListener extends EditorMouseMotionAdapter {
         private JetNamedDeclaration lastNamedDeclaration = null;
         private ProgressIndicator lastIndicator;
         private LightweightHint lastHint;
 
         @Override
         public void mouseMoved(final EditorMouseEvent e) {
-            if (DumbService.getInstance(myProject).isDumb() || !myProject.isInitialized()) {
+            Project project = e.getEditor().getProject();
+            if (project == null || DumbService.getInstance(project).isDumb()) {
                 return;
             }
 
@@ -90,7 +85,7 @@ public class DeclarationHintSupport extends AbstractProjectComponent {
             }
 
             final Editor editor = e.getEditor();
-            PsiFile psiFile = PsiDocumentManager.getInstance(myProject).getPsiFile(editor.getDocument());
+            PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
             if (psiFile == null || psiFile.getLanguage() != JetLanguage.INSTANCE) {
                 return;
             }
