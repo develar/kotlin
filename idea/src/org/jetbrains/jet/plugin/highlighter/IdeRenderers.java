@@ -38,7 +38,7 @@ import org.jetbrains.jet.lang.resolve.calls.model.ResolvedValueArgument;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.resolve.DescriptorRenderer;
+import org.jetbrains.jet.renderer.DescriptorRenderer;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -168,7 +168,7 @@ public class IdeRenderers {
                     first = false;
                 }
                 stringBuilder.append(parametersToHighlight.contains(null) ? String.format(RED_TEMPLATE, ")") : ")");
-                stringBuilder.append(" ").append(htmlRenderer.renderMessage("defined in")).append(" ");
+                stringBuilder.append(" <i>defined in</i> ");
                 DeclarationDescriptor containingDeclaration = funDescriptor.getContainingDeclaration();
                 if (containingDeclaration != null) {
                     FqNameUnsafe fqName = DescriptorUtils.getFQName(containingDeclaration);

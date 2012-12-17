@@ -19,19 +19,20 @@ package org.jetbrains.jet.plugin.highlighter;
 import com.google.common.base.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.diagnostics.rendering.TabledDescriptorRenderer;
-import org.jetbrains.jet.lang.diagnostics.rendering.TabledDescriptorRenderer.TableRenderer.*;
+import org.jetbrains.jet.lang.diagnostics.rendering.TabledDescriptorRenderer.TableRenderer.DescriptorRow;
+import org.jetbrains.jet.lang.diagnostics.rendering.TabledDescriptorRenderer.TableRenderer.FunctionArgumentsRow;
+import org.jetbrains.jet.lang.diagnostics.rendering.TabledDescriptorRenderer.TableRenderer.TableRow;
 import org.jetbrains.jet.lang.resolve.calls.inference.ConstraintPosition;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.resolve.DescriptorRenderer;
+import org.jetbrains.jet.renderer.DescriptorRenderer;
+import org.jetbrains.jet.renderer.DescriptorRendererBuilder;
 
 import java.util.Iterator;
 import java.util.List;
 
-import static org.jetbrains.jet.plugin.highlighter.IdeRenderers.HTML_RENDER_TYPE;
 import static org.jetbrains.jet.plugin.highlighter.IdeRenderers.error;
 import static org.jetbrains.jet.plugin.highlighter.IdeRenderers.strong;
 
@@ -59,7 +60,7 @@ public class HtmlTabledDescriptorRenderer extends TabledDescriptorRenderer {
         }
     }
 
-    private int countColumnNumber(TableRenderer table) {
+    private static int countColumnNumber(TableRenderer table) {
         int argumentsNumber = 0;
         for (TableRow row : table.rows) {
             if (row instanceof DescriptorRow) {
@@ -95,7 +96,8 @@ public class HtmlTabledDescriptorRenderer extends TabledDescriptorRenderer {
                 tdColspan(result, rowText.toString(), rowsNumber);
             }
             if (row instanceof DescriptorRow) {
-                result.append(DESCRIPTOR_IN_TABLE.render(((DescriptorRow) row).descriptor));
+                tdSpace(result);
+                tdRightBoldColspan(result, 2, DESCRIPTOR_IN_TABLE.render(((DescriptorRow) row).descriptor));
             }
             if (row instanceof FunctionArgumentsRow) {
                 FunctionArgumentsRow functionArgumentsRow = (FunctionArgumentsRow) row;
@@ -108,7 +110,12 @@ public class HtmlTabledDescriptorRenderer extends TabledDescriptorRenderer {
         result.append("</table>");
     }
 
-    private void renderFunctionArguments(@Nullable JetType receiverType, @NotNull List<JetType> argumentTypes, Predicate<ConstraintPosition> isErrorPosition, StringBuilder result) {
+    private static void renderFunctionArguments(
+            @Nullable JetType receiverType,
+            @NotNull List<JetType> argumentTypes,
+            Predicate<ConstraintPosition> isErrorPosition,
+            StringBuilder result
+    ) {
         boolean hasReceiver = receiverType != null;
         tdSpace(result);
         String receiver = "";
@@ -150,56 +157,49 @@ public class HtmlTabledDescriptorRenderer extends TabledDescriptorRenderer {
         super();
     }
 
-    public static final DescriptorRenderer DESCRIPTOR_IN_TABLE = new DescriptorRenderer.HtmlDescriptorRenderer() {
+    private static final DescriptorRenderer.ValueParametersHandler VALUE_PARAMETERS_HANDLER = new DescriptorRenderer.ValueParametersHandler() {
         @Override
-        protected boolean shouldRenderDefinedIn() {
-            return false;
+        public void appendBeforeValueParameter(@NotNull ValueParameterDescriptor parameter, @NotNull StringBuilder stringBuilder) {
+            stringBuilder.append("<td align=\"right\" style=\"white-space:nowrap;font-weight:bold;\">");
         }
 
         @Override
-        protected boolean shouldRenderModifiers() {
-            return false;
-        }
-
-        @NotNull
-        @Override
-        public String render(@NotNull DeclarationDescriptor declarationDescriptor) {
-            StringBuilder builder = new StringBuilder();
-            tdSpace(builder);
-            tdRightBoldColspan(builder, 2, super.render(declarationDescriptor));
-            return builder.toString();
-        }
-
-        @Override
-        protected void renderValueParameters(FunctionDescriptor descriptor, StringBuilder builder) {
-            //todo comment
-            builder.append("</div></td>");
-            super.renderValueParameters(descriptor, builder);
-            builder.append("<td><div style=\"white-space:nowrap;font-weight:bold;\">");
-        }
-
-        @Override
-        protected void renderEmptyValueParameters(StringBuilder builder) {
-            tdBold(builder, "( )");
-        }
-
-        @Override
-        protected void renderValueParameter(ValueParameterDescriptor parameterDescriptor, boolean isLast, StringBuilder builder) {
-            if (parameterDescriptor.getIndex() == 0) {
-                tdBold(builder, "(");
+        public void appendAfterValueParameter(@NotNull ValueParameterDescriptor parameter, @NotNull StringBuilder stringBuilder) {
+            boolean last = ((FunctionDescriptor) parameter.getContainingDeclaration()).getValueParameters().size() - 1 == parameter.getIndex();
+            if (!last) {
+                stringBuilder.append(",");
             }
-            StringBuilder parameterBuilder = new StringBuilder();
-            parameterDescriptor.accept(super.subVisitor, parameterBuilder);
+            stringBuilder.append("</td>");
+        }
 
-            tdRightBold(builder, parameterBuilder.toString() + (isLast ? "" : ","));
-            if (isLast) {
-                tdBold(builder, ")");
+        @Override
+        public void appendBeforeValueParameters(@NotNull FunctionDescriptor function, @NotNull StringBuilder stringBuilder) {
+            stringBuilder.append("</td>");
+            if (function.getValueParameters().isEmpty()) {
+                tdBold(stringBuilder, "( )");
             }
+            else {
+                tdBold(stringBuilder, "(");
+            }
+        }
+
+        @Override
+        public void appendAfterValueParameters(@NotNull FunctionDescriptor function, @NotNull StringBuilder stringBuilder) {
+            if (!function.getValueParameters().isEmpty()) {
+                tdBold(stringBuilder, ")");
+            }
+            stringBuilder.append("<td style=\"white-space:nowrap;font-weight:bold;\">");
         }
     };
 
+    public static final DescriptorRenderer DESCRIPTOR_IN_TABLE = new DescriptorRendererBuilder()
+            .setWithDefinedIn(false)
+            .setModifiers(false)
+            .setValueParametersHandler(VALUE_PARAMETERS_HANDLER)
+            .setTextFormat(DescriptorRenderer.TextFormat.HTML).build();
+
     private static void td(StringBuilder builder, String text) {
-        builder.append("<td><div style=\"white-space:nowrap;\">").append(text).append("</div></td>");
+        builder.append("<td style=\"white-space:nowrap;\">").append(text).append("</td>");
     }
 
     private static void tdSpace(StringBuilder builder) {
@@ -207,23 +207,19 @@ public class HtmlTabledDescriptorRenderer extends TabledDescriptorRenderer {
     }
 
     private static void tdColspan(StringBuilder builder, String text, int colspan) {
-        builder.append("<td colspan=\"").append(colspan).append("\"><div style=\"white-space:nowrap;\">").append(text).append("</div></td>");
+        builder.append("<td colspan=\"").append(colspan).append("\" style=\"white-space:nowrap;\">").append(text).append("</td>");
     }
 
     private static void tdBold(StringBuilder builder, String text) {
-        builder.append("<td><div style=\"white-space:nowrap;font-weight:bold;\">").append(text).append("</div></td>");
+        builder.append("<td style=\"white-space:nowrap;font-weight:bold;\">").append(text).append("</td>");
     }
 
     private static void tdRight(StringBuilder builder, String text) {
-        builder.append("<td align=\"right\"><div style=\"white-space:nowrap;\">").append(text).append("</div></td>");
-    }
-
-    private static void tdRightBold(StringBuilder builder, String text) {
-        builder.append("<td align=\"right\"><div style=\"white-space:nowrap;font-weight:bold;\">").append(text).append("</div></td>");
+        builder.append("<td align=\"right\" style=\"white-space:nowrap;\">").append(text).append("</td>");
     }
 
     private static void tdRightBoldColspan(StringBuilder builder, int colspan, String text) {
-        builder.append("<td align=\"right\" colspan=\"").append(colspan).append("\"><div style=\"white-space:nowrap;font-weight:bold;\">").append(text).append("</div></td>");
+        builder.append("<td align=\"right\" colspan=\"").append(colspan).append("\" style=\"white-space:nowrap;font-weight:bold;\">").append(text).append("</td>");
     }
 
     public static String tableForTypes(String message, String firstDescription, TextElementType firstType, String secondDescription, TextElementType secondType) {

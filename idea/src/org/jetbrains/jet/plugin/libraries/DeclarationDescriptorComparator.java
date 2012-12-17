@@ -17,7 +17,7 @@
 package org.jetbrains.jet.plugin.libraries;
 
 import org.jetbrains.jet.lang.descriptors.*;
-import org.jetbrains.jet.resolve.DescriptorRenderer;
+import org.jetbrains.jet.renderer.DescriptorRenderer;
 
 import java.util.Comparator;
 

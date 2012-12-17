@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.resolve;
+package org.jetbrains.jet.renderer;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.impl.DocumentImpl;
@@ -77,6 +77,10 @@ public class DescriptorRendererTest extends JetLiteFixture {
     }
 
     public void testInheritedMembersVisibility() throws IOException {
+        doTest();
+    }
+
+    public void testKeywordsInNames() throws IOException {
         doTest();
     }
 
