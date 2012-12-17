@@ -61,7 +61,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.plugin.JetFileType;
-import org.jetbrains.jet.utils.KotlinPaths;
+import org.jetbrains.jet.utils.KotlinPathsFromHomeDir;
 import org.jetbrains.jet.utils.PathUtil;
 
 import javax.swing.*;
@@ -125,7 +125,7 @@ public class ConfigureKotlinLibraryNotificationProvider extends EditorNotificati
     @Nullable
     public static VirtualFile findLibraryFile(Library library, boolean isJvm) {
         for (VirtualFile file : library.getFiles(isJvm ? OrderRootType.CLASSES : OrderRootType.SOURCES)) {
-            if (file.getName().equals(KotlinPaths.getRuntimeName(isJvm))) {
+            if (file.getName().equals(KotlinPathsFromHomeDir.getRuntimeName(isJvm))) {
                 return file;
             }
         }
@@ -139,7 +139,7 @@ public class ConfigureKotlinLibraryNotificationProvider extends EditorNotificati
             return kotlinRuntime;
         }
 
-        String libraryFileName = KotlinPaths.getRuntimeName(isJvm);
+        String libraryFileName = KotlinPathsFromHomeDir.getRuntimeName(isJvm);
         File runtimePath = PathUtil.getKotlinPathsForIdeaPlugin().getRuntimePath(isJvm);
         if (!runtimePath.exists()) {
             Messages.showErrorDialog(myProject, libraryFileName + " is not found. Make sure plugin is properly installed.",

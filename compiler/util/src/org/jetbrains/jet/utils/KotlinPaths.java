@@ -31,11 +31,8 @@ public interface KotlinPaths {
     File getRuntimePath();
 
     @NotNull
+    File getRuntimePath(boolean forJvm);
+
+    @NotNull
     File getJdkAnnotationsPath();
-
-    @NotNull
-    File getJsLibJsPath();
-
-    @NotNull
-    File getJsLibJarPath();
 }
