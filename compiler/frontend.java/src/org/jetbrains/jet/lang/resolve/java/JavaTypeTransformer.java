@@ -35,7 +35,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.jetbrains.jet.lang.resolve.java.JavaTypeTransformer.TypeUsage.*;
+import static org.jetbrains.jet.lang.resolve.java.TypeUsage.*;
 
 /**
  * @author abreslav
@@ -148,7 +148,7 @@ public class JavaTypeTransformer {
                 }
                 else {
                     // 'L extends List<T>' in Java is a List<T> in Kotlin, not a List<T?>
-                    boolean nullable = !EnumSet.of(SUPERTYPE_ARGUMENT, SUPERTYPE).contains(howThisTypeIsUsed);
+                    boolean nullable = !EnumSet.of(TYPE_ARGUMENT, SUPERTYPE_ARGUMENT, SUPERTYPE).contains(howThisTypeIsUsed);
 
                     ClassDescriptor classData = JavaToKotlinClassMap.getInstance().mapKotlinClass(new FqName(psiClass.getQualifiedName()),
                                                                                                     howThisTypeIsUsed);
@@ -228,16 +228,24 @@ public class JavaTypeTransformer {
                         return TypeUtils.makeNullable(jetType);
                 }
 
+                boolean vararg = arrayType instanceof PsiEllipsisType;
+
+                Variance projectionKind = arrayElementTypeProjectionKind(vararg);
+                TypeUsage howArgumentTypeIsUsed = vararg ? MEMBER_SIGNATURE_CONTRAVARIANT : TYPE_ARGUMENT;
+
+                JetType type = transformToType(componentType, howArgumentTypeIsUsed, typeVariableResolver);
+                return TypeUtils.makeNullable(KotlinBuiltIns.getInstance().getArrayType(projectionKind, type));
+            }
+
+            private Variance arrayElementTypeProjectionKind(boolean vararg) {
                 Variance variance;
-                if (howThisTypeIsUsed == MEMBER_SIGNATURE_CONTRAVARIANT && !(arrayType instanceof PsiEllipsisType)) {
+                if (howThisTypeIsUsed == MEMBER_SIGNATURE_CONTRAVARIANT && !vararg) {
                     variance = Variance.OUT_VARIANCE;
                 }
                 else {
                     variance = Variance.INVARIANT;
                 }
-
-                JetType type = transformToType(componentType, typeVariableResolver);
-                return TypeUtils.makeNullable(KotlinBuiltIns.getInstance().getArrayType(variance, type));
+                return variance;
             }
 
             @Override
@@ -246,20 +254,5 @@ public class JavaTypeTransformer {
             }
         });
         return result;
-    }
-
-    /**
-     * We convert Java types differently, depending on where they occur in the Java code
-     * This enum encodes the kinds of occurrences
-     */
-    public enum TypeUsage {
-        // Type T occurs somewhere as a generic argument, e.g.: List<T> or List<? extends T>
-        TYPE_ARGUMENT,
-        UPPER_BOUND,
-        MEMBER_SIGNATURE_COVARIANT,
-        MEMBER_SIGNATURE_CONTRAVARIANT,
-        MEMBER_SIGNATURE_INVARIANT,
-        SUPERTYPE,
-        SUPERTYPE_ARGUMENT
     }
 }

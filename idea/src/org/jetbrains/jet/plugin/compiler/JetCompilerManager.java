@@ -16,6 +16,8 @@
 
 package org.jetbrains.jet.plugin.compiler;
 
+import com.intellij.diagnostic.PluginException;
+import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.compiler.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileType;
@@ -25,6 +27,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.jet.plugin.JetFileType;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.Collections;
 
 import static org.jetbrains.jet.compiler.runner.CompilerRunnerConstants.INTERNAL_ERROR_PREFIX;
@@ -56,9 +60,9 @@ public class JetCompilerManager implements StartupActivity, DumbAware {
                     boolean aborted, int errors, int warnings, CompileContext compileContext
             ) {
                 for (CompilerMessage error : compileContext.getMessages(CompilerMessageCategory.ERROR)) {
-                    String message = error.getMessage();
+                    final String message = error.getMessage();
                     if (message.startsWith(INTERNAL_ERROR_PREFIX) || message.startsWith(PREFIX_WITH_COMPILER_NAME)) {
-                        LOG.error(message);
+                        LOG.error(new KotlinCompilerException(message));
                     }
                 }
             }
@@ -67,5 +71,42 @@ public class JetCompilerManager implements StartupActivity, DumbAware {
             public void fileGenerated(String outputRoot, String relativePath) {
             }
         }, project);
+    }
+
+    // Extending PluginException ensures that Exception Analyzer recognizes this as a Kotlin exception
+    private static class KotlinCompilerException extends PluginException {
+        private final String text;
+
+        public KotlinCompilerException(String text) {
+            super("", PluginManager.getPluginByClassName(JetCompilerManager.class.getName()));
+            this.text = text;
+        }
+
+        @Override
+        public void printStackTrace(PrintWriter s) {
+            s.print(text);
+        }
+
+        @Override
+        public void printStackTrace(PrintStream s) {
+            s.print(text);
+        }
+
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
+
+        @Override
+        public StackTraceElement[] getStackTrace() {
+            LOG.error("Somebody called getStackTrace() on KotlinCompilerException");
+            // Return some stack trace that originates in Kotlin
+            return new UnsupportedOperationException().getStackTrace();
+        }
+
+        @Override
+        public String getMessage() {
+            return "<Exception from standalone Kotlin compiler>";
+        }
     }
 }

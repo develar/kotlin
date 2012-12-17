@@ -1,40 +1,39 @@
 package org.jetbrains.kotlin.site
 
-import kotlin.test.*
-import junit.framework.TestCase
 import java.io.File
 
-class GenerateSiteTest : TestCase() {
-    val srcDir = findTemplateDir()
-    val siteOutputDir = File(srcDir, "../../../target/site")
+class SiteGeneratorMain(projectRoot: File) {
+    val srcDir = File(projectRoot, "src/main/templates")
+    val apiDocsDir = File(projectRoot, "../apidoc/target/site/apidocs")
+    val jsApiDocsDir = File(projectRoot, "../jsdoc/target/site/apidocs")
+    val siteOutputDir = File(projectRoot, "target/site")
 
     val version = System.getProperty("project.version") ?: "SNAPSHOT"
     val versionDir = if (version.contains("SNAPSHOT")) "snapshot" else version
 
-    fun testGenerateSite(): Unit {
+    fun generateSite(): Unit {
         val generator = SiteGenerator(srcDir, siteOutputDir)
         generator.run()
     }
 
-    fun testCopyApiDocs(): Unit {
-        val apidocDir = File(siteOutputDir, "../../../apidoc/target/site/apidocs")
-        assertTrue(apidocDir.exists(), "Directory does not exist ${apidocDir.getCanonicalPath()}")
+    fun copyApiDocs(): Unit {
+        assertTrue(apiDocsDir.exists(), "Directory does not exist ${apiDocsDir.getCanonicalPath()}")
 
         val outDir = File(siteOutputDir, "versions/$versionDir/apidocs")
         println("Copying API docs to $outDir")
 
         copyDocResources(outDir)
-        copyRecursive(apidocDir, outDir)
+        copyRecursive(apiDocsDir, outDir)
 
         // now lets assert that the API docs generated everything
         assertFilesExist(outDir, "Expected generate API docs are missing - API doc generation failure",
                 "kotlin/package-frame.html", "kotlin/dom/package-frame.html", "kotlin/test/package-frame.html")
     }
 
-    fun testCopyJSApiDocs(): Unit {
-        val apidocDir = File(siteOutputDir, "../../../jsdoc/target/site/apidocs")
-        //assertTrue(apidocDir.exists(), "Directory does not exist ${apidocDir.getCanonicalPath()}")
-        if (!apidocDir.exists()) {
+    fun copyJSApiDocs(): Unit {
+        //assertTrue(jsApiDocsDir.exists(), "Directory does not exist ${jsApiDocsDir.getCanonicalPath()}")
+
+        if (!jsApiDocsDir.exists()) {
             println("WARNING - no JS API docs available. Though they don't work right now so are optional :)")
             return
         }
@@ -44,14 +43,13 @@ class GenerateSiteTest : TestCase() {
 
         copyDocResources(outDir)
 
-        copyRecursive(apidocDir, outDir)
+        copyRecursive(jsApiDocsDir, outDir)
     }
 
     fun copyDocResources(outDir: File): Unit {
         val sourceDir = File(srcDir, "../apidocs")
         copyRecursive(sourceDir, outDir)
     }
-
 
     // TODO this would make a handy extension function on File :)
     fun copyRecursive(sourceDir: File, outDir: File): Unit {
@@ -73,14 +71,19 @@ class GenerateSiteTest : TestCase() {
         }
     }
 
-    fun findTemplateDir(): File {
-        val path = "src/main/templates"
-        for (p in arrayList(".", "website", "library/website")) {
-            val sourceDir = File(".", path)
-            if (sourceDir.exists()) {
-                return sourceDir
-            }
+    fun assertTrue(condition: Boolean, message: String): Unit {
+        if (!condition) {
+            throw RuntimeException(message);
         }
-        throw IllegalArgumentException("Could not find template directory: $path")
     }
+}
+
+fun main(args : Array<String>) {
+    val basedir = File(args.get(0))
+    println("Basedir: $basedir")
+
+    val main = SiteGeneratorMain(basedir)
+    main.generateSite()
+    main.copyApiDocs()
+    main.copyJSApiDocs()
 }

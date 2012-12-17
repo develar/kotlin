@@ -17,6 +17,7 @@
 package org.jetbrains.jet.jvm.compiler;
 
 import com.intellij.openapi.util.Pair;
+import junit.framework.ComparisonFailure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
@@ -49,10 +50,35 @@ public abstract class AbstractLoadJavaTest extends TestCaseWithTmpdir {
         Pair<NamespaceDescriptor, BindingContext> nsbAndBindingContext = compileJavaAndLoadTestNamespaceAndBindingContextFromBinary(
                 Arrays.asList(javaFile, ExpectedLoadErrorsUtil.ANNOTATION_SOURCE_FILE),
                 tmpdir, myTestRootDisposable, ConfigurationKind.JDK_AND_ANNOTATIONS);
+        checkLoadedNamespaces(txtFile, nsa, nsbAndBindingContext);
+    }
+
+    public static void checkLoadedNamespaces(
+            File txtFile,
+            NamespaceDescriptor nsa,
+            Pair<NamespaceDescriptor, BindingContext> nsbAndBindingContext
+    ) {
         NamespaceDescriptor nsb = nsbAndBindingContext.first;
 
+        boolean fail = false;
+        try {
+            ExpectedLoadErrorsUtil.checkForLoadErrors(nsb, nsbAndBindingContext.second);
+        }
+        catch (ComparisonFailure e) {
+            // to let the next check run even if this one failed
+            System.err.println("Expected: " + e.getExpected());
+            System.err.println("Actual  : " + e.getActual());
+            e.printStackTrace();
+            fail = true;
+        }
+        catch (AssertionError e) {
+            e.printStackTrace();
+            fail = true;
+        }
 
         compareNamespaces(nsa, nsb, DONT_INCLUDE_METHODS_OF_OBJECT, txtFile);
-        ExpectedLoadErrorsUtil.checkForLoadErrors(nsb, nsbAndBindingContext.second);
+        if (fail) {
+            fail("See error above");
+        }
     }
 }

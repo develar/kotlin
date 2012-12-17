@@ -36,12 +36,12 @@ public class PathUtil {
 
     @NotNull
     public static KotlinPaths getKotlinPathsForIdeaPlugin() {
-        return new KotlinPaths(getCompilerPathForIdeaPlugin());
+        return new KotlinPathsFromHomeDir(getCompilerPathForIdeaPlugin());
     }
 
     @NotNull
     public static KotlinPaths getKotlinPathsForJpsPlugin() {
-        return new KotlinPaths(getCompilerPathForJpsPlugin());
+        return new KotlinPathsFromHomeDir(getCompilerPathForJpsPlugin());
     }
 
     @NotNull
@@ -58,12 +58,12 @@ public class PathUtil {
             // Not running from a jar, i.e. it is it must be a unit test
             return getKotlinPathsForDistDirectory();
         }
-        return new KotlinPaths(getCompilerPathForCompilerJar());
+        return new KotlinPathsFromHomeDir(getCompilerPathForCompilerJar());
     }
 
     @NotNull
     public static KotlinPaths getKotlinPathsForDistDirectory() {
-        return new KotlinPaths(new File("dist/kotlinc"));
+        return new KotlinPathsFromHomeDir(new File("dist/kotlinc"));
     }
 
     @NotNull
@@ -136,6 +136,7 @@ public class PathUtil {
         }
     }
 
+    @NotNull
     public static File findRtJar() {
         String javaHome = System.getProperty("java.home");
         if ("jre".equals(new File(javaHome).getName())) {
