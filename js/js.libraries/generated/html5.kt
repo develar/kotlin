@@ -1547,9 +1547,48 @@ public native trait PositionError {
 	public val message: String
 }
 
-public native trait XMLHttpRequest {
+public native trait XMLHttpRequestEventTarget : EventTarget {
+	public val onloadstart: (org.w3c.dom.Event)->Unit
+	public val onprogress: (org.w3c.dom.Event)->Unit
+	public val onabort: (org.w3c.dom.Event)->Unit
+	public val onerror: (org.w3c.dom.Event)->Unit
+	public val onload: (org.w3c.dom.Event)->Unit
+	public val ontimeout: (org.w3c.dom.Event)->Unit
+	public val onloadend: (org.w3c.dom.Event)->Unit
+}
+
+public native trait XMLHttpRequestUpload : XMLHttpRequestEventTarget {
+}
+
+public native class XMLHttpRequest(vararg options: Any) {
+	public native class object {
+		public val UNSENT: Int = 0
+		public val OPENED: Int = 1
+		public val HEADERS_RECEIVED: Int = 2
+		public val LOADING: Int = 3
+		public val DONE: Int = 4
+	}
+
 	public var responseType: String
-	public var response: Any
+	public var response: Object?
+	public val responseText: String?
+	public val readyState: Int
+	public val status: Int
+	public val statusText: String
+	public var withCredentials: Boolean
+	public var onreadystatechange: (()->Unit)?
+	public val upload: XMLHttpRequestEventTarget
+
+	public fun abort(): Unit
+	public fun getAllResponseHeaders(): String?
+	public fun send(data: ArrayBuffer): Unit
+	public fun send(data: Blob): Unit
+	public fun send(data: Document): Unit
+	public fun send(data: FormData): Unit
+	public fun send(data: String? = null): Unit
+	public fun open(method: String, url: String, async: Boolean? = null, user: String? = null, password: String? = null): Unit
+	public fun setRequestHeader(header: String, value: String): Unit
+	public fun overrideMimeType(mime: String): Unit
 }
 
 public native trait FormData {

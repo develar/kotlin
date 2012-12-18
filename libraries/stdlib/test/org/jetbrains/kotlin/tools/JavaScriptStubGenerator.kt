@@ -407,6 +407,7 @@ class JavaScriptStubGenerator(packageName: String) {
             "Error" -> "java.lang.Exception"
             "void", null -> "Unit"
             "Function" -> "()->Unit"
+            "Function?" -> "(()->Unit)?"
             "Array" -> "Array<Any>"
             "Object", "*" -> "Any"
             "\$__Type__$" -> currentClassName!!
