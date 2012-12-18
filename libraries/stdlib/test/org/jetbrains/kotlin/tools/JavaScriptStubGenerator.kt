@@ -410,6 +410,7 @@ class JavaScriptStubGenerator(packageName: String) {
             "Function?" -> "(()->Unit)?"
             "Array" -> "Array<Any>"
             "Object", "*" -> "Any"
+            "Object?" -> "Any?"
             "\$__Type__$" -> currentClassName!!
             else -> {
                 if (typeName.endsWith("[]")) {

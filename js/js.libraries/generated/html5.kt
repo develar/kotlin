@@ -1570,7 +1570,7 @@ public native class XMLHttpRequest(vararg options: Any) {
 	}
 
 	public var responseType: String
-	public var response: Object?
+	public var response: Any?
 	public val responseText: String?
 	public val readyState: Int
 	public val status: Int
