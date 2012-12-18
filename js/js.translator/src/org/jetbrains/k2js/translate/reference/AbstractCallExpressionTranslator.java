@@ -62,7 +62,7 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
 
     protected abstract boolean shouldWrapVarargInArray();
 
-    protected boolean translateSingleArgument(@NotNull ResolvedValueArgument argument, @NotNull List<JsExpression> result) {
+    protected void translateSingleArgument(@NotNull ResolvedValueArgument argument, @NotNull List<JsExpression> result) {
         if (argument instanceof VarargValueArgument) {
             translateVarargArgument(argument.getArguments(), result);
         }
@@ -76,8 +76,6 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
             assert argumentExpression != null;
             result.add(Translation.translateAsExpression(argumentExpression, context()));
         }
-
-        return false;
     }
 
     private void translateVarargArgument(@NotNull List<ValueArgument> arguments, @NotNull List<JsExpression> result) {

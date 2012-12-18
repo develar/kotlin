@@ -24,6 +24,7 @@ import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.psi.JetCallExpression;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
+import org.jetbrains.jet.lang.resolve.calls.model.DefaultValueArgument;
 import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedValueArgument;
@@ -118,15 +119,22 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
         List<JsExpression> result = new ArrayList<JsExpression>(valueParameters.size());
         List<ResolvedValueArgument> valueArgumentsByIndex = resolvedCall.getValueArgumentsByIndex();
         for (ValueParameterDescriptor parameterDescriptor : valueParameters) {
-            if (translateSingleArgument(valueArgumentsByIndex.get(parameterDescriptor.getIndex()), result)) {
+            ResolvedValueArgument argument = valueArgumentsByIndex.get(parameterDescriptor.getIndex());
+            if (argument instanceof DefaultValueArgument && isNative()) {
                 break;
             }
+
+            translateSingleArgument(argument, result);
         }
         return result;
     }
 
     @Override
     public boolean shouldWrapVarargInArray() {
-        return !AnnotationsUtils.isNativeObject(resolvedCall.getCandidateDescriptor());
+        return !isNative();
+    }
+
+    private boolean isNative() {
+        return AnnotationsUtils.isNativeObject(resolvedCall.getCandidateDescriptor());
     }
 }
