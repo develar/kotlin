@@ -261,7 +261,7 @@ public final class StaticContext {
         return qualifier;
     }
 
-    @Nullable
+    @NotNull
     private JsNameRef resolveQualifier(NamespaceDescriptor namespace, DeclarationDescriptor requestor) {
         JsNameRef result = new JsNameRef(Namer.generateNamespaceName(namespace));
         if (DescriptorUtils.isRootNamespace(namespace)) {
@@ -287,7 +287,7 @@ public final class StaticContext {
             PsiFile file = element.getContainingFile();
             String moduleName = file.getUserData(LibrarySourcesConfig.MODULE_NAME_KEY);
             if (moduleName != null) {
-                qualifier.setQualifier(new JsArrayAccess(namer.kotlin("modules"), program.getStringLiteral(moduleName)));
+                qualifier.setQualifier(new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(moduleName)));
             }
         }
 
