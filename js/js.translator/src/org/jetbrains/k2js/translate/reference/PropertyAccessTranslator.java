@@ -20,6 +20,7 @@ import com.google.dart.compiler.backend.js.ast.JsExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
+import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -27,7 +28,6 @@ import org.jetbrains.k2js.translate.general.AbstractTranslator;
 
 import static org.jetbrains.k2js.translate.utils.AnnotationsUtils.isNativeObject;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getResolvedCallForProperty;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.isBackingFieldReference;
 
 /**
  * @author Pavel Talanov
@@ -62,7 +62,7 @@ public abstract class PropertyAccessTranslator extends AbstractTranslator implem
             @NotNull CallType callType,
             @NotNull TranslationContext context
     ) {
-        if (isBackingFieldReference(expression) || isNativeObject(propertyDescriptor)) {
+        if (JetPsiUtil.isBackingFieldReference(expression) || isNativeObject(propertyDescriptor)) {
             return new NativePropertyAccessTranslator(propertyDescriptor, callType, qualifier, context);
         }
         else {
