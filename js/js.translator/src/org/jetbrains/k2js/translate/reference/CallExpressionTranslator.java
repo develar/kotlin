@@ -25,16 +25,16 @@ import org.jetbrains.jet.lang.psi.JetCallExpression;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.calls.model.DefaultValueArgument;
-import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedValueArgument;
 import org.jetbrains.jet.lang.resolve.calls.model.VariableAsFunctionResolvedCall;
+import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
+import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.PsiUtils;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -116,12 +116,15 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
             return Collections.emptyList();
         }
 
-        List<JsExpression> result = new ArrayList<JsExpression>(valueParameters.size());
+        List<JsExpression> result = JsAstUtils.newList(valueParameters.size());
         List<ResolvedValueArgument> valueArgumentsByIndex = resolvedCall.getValueArgumentsByIndex();
         for (ValueParameterDescriptor parameterDescriptor : valueParameters) {
             ResolvedValueArgument argument = valueArgumentsByIndex.get(parameterDescriptor.getIndex());
             if (argument instanceof DefaultValueArgument && isNative()) {
-                break;
+                // see http://developer.chrome.com/extensions/windows.html
+                // chrome.windows.getLastFocused(optional object getInfo, function callback)
+                // getInfo is optional, but we don't need pass undefined, we can just skip parameter
+                continue;
             }
 
             translateSingleArgument(argument, result);

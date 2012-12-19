@@ -19,7 +19,6 @@ package org.jetbrains.k2js.translate.reference;
 import com.google.dart.compiler.backend.js.ast.JsArrayLiteral;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsLiteral;
-import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetCallExpression;
@@ -29,8 +28,8 @@ import org.jetbrains.jet.lang.resolve.calls.model.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
+import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -88,7 +87,7 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
 
         List<JsExpression> list;
         if (shouldWrapVarargInArray()) {
-            list = arguments.size() == 1 ? new SmartList<JsExpression>() : new ArrayList<JsExpression>(arguments.size());
+            list = JsAstUtils.newList(arguments.size());
             result.add(new JsArrayLiteral(list));
         }
         else {

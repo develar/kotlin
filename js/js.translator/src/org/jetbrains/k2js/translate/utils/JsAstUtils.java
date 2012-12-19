@@ -174,12 +174,17 @@ public final class JsAstUtils {
     }
 
     @NotNull
+    public static <T> List<T> newList(int size) {
+        return size == 1 ? new SmartList<T>() : new ArrayList<T>(size);
+    }
+
+    @NotNull
     public static List<JsExpression> toStringLiteralList(@NotNull List<String> strings, @NotNull JsProgram program) {
         if (strings.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<JsExpression> result = strings.size() == 1 ? new SmartList<JsExpression>() : new ArrayList<JsExpression>(strings.size());
+        List<JsExpression> result = newList(strings.size());
         for (String s : strings) {
             result.add(program.getStringLiteral(s));
         }
