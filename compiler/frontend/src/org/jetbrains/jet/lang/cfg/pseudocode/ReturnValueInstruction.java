@@ -48,4 +48,9 @@ public class ReturnValueInstruction extends AbstractJumpInstruction implements J
     public JetElement getElement() {
         return element;
     }
+
+    @Override
+    protected AbstractJumpInstruction createCopy(@NotNull Label newLabel) {
+        return new ReturnValueInstruction((JetExpression) element, newLabel);
+    }
 }

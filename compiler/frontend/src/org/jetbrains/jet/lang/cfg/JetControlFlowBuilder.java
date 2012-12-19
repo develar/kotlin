@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.cfg.pseudocode.Pseudocode;
 import org.jetbrains.jet.lang.psi.*;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -33,10 +34,10 @@ public interface JetControlFlowBuilder {
     // General label management
     @NotNull
     Label createUnboundLabel();
+    @NotNull
+    Label createUnboundLabel(@NotNull String name);
 
     void bindLabel(@NotNull Label label);
-    void allowDead();
-    void stopAllowDead();
 
     // Jumps
     void jump(@NotNull Label label);
@@ -44,8 +45,7 @@ public interface JetControlFlowBuilder {
     void jumpOnTrue(@NotNull Label label);
     void nondeterministicJump(Label label); // Maybe, jump to label
     void nondeterministicJump(List<Label> label);
-    void jumpToError(JetThrowExpression expression);
-    void jumpToError(JetExpression nothingExpression);
+    void jumpToError();
 
     // Entry/exit points
     Label getEntryPoint(@NotNull JetElement labelElement);
@@ -63,17 +63,20 @@ public interface JetControlFlowBuilder {
     void exitTryFinally();
 
     // Subroutines
-    void enterSubroutine(@NotNull JetDeclaration subroutine);
+    void enterSubroutine(@NotNull JetElement subroutine);
 
-    Pseudocode exitSubroutine(@NotNull JetDeclaration subroutine);
+    Pseudocode exitSubroutine(@NotNull JetElement subroutine);
 
     @NotNull
     JetElement getCurrentSubroutine();
     @Nullable
     JetElement getReturnSubroutine();
+    
     void returnValue(@NotNull JetExpression returnExpression, @NotNull JetElement subroutine);
 
     void returnNoValue(@NotNull JetElement returnExpression, @NotNull JetElement subroutine);
+    
+    void throwException(@NotNull JetThrowExpression throwExpression);
 
     void write(@NotNull JetElement assignment, @NotNull JetElement lValue);
     
@@ -82,4 +85,6 @@ public interface JetControlFlowBuilder {
 
     // Other
     void unsupported(JetElement element);
+
+    void repeatPseudocode(@NotNull Label startLabel, @NotNull Label finishLabel);
 }

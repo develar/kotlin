@@ -80,10 +80,6 @@ public final class PsiUtils {
         return (token == JetTokens.EQ);
     }
 
-    public static boolean isBackingFieldReference(@NotNull JetSimpleNameExpression expression) {
-        return expression.getReferencedNameElementType() == JetTokens.FIELD_IDENTIFIER;
-    }
-
     public static boolean isInOrNotInOperation(@NotNull JetBinaryExpression binaryExpression) {
         return isInOperation(binaryExpression) || isNotInOperation(binaryExpression);
     }

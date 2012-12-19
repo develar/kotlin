@@ -37,4 +37,9 @@ public class ReadUnitValueInstruction extends InstructionWithNext {
     public String toString() {
         return "read (Unit)";
     }
+
+    @Override
+    protected Instruction createCopy() {
+        return new ReadUnitValueInstruction((JetExpression) element);
+    }
 }

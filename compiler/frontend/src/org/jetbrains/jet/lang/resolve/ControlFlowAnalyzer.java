@@ -25,6 +25,7 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.types.JetType;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Map;
 
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
@@ -47,13 +48,16 @@ public class ControlFlowAnalyzer {
     }
 
     public void process(@NotNull BodiesResolveContext bodiesResolveContext) {
+        for (JetFile file : bodiesResolveContext.getFiles()) {
+            checkDeclarationContainer(file);
+        }
         for (JetClass aClass : bodiesResolveContext.getClasses().keySet()) {
             if (!bodiesResolveContext.completeAnalysisNeeded(aClass)) continue;
-            checkClassOrObject(aClass);
+            checkDeclarationContainer(aClass);
         }
         for (JetObjectDeclaration objectDeclaration : bodiesResolveContext.getObjects().keySet()) {
             if (!bodiesResolveContext.completeAnalysisNeeded(objectDeclaration)) continue;
-            checkClassOrObject(objectDeclaration);
+            checkDeclarationContainer(objectDeclaration);
         }
         for (Map.Entry<JetNamedFunction, SimpleFunctionDescriptor> entry : bodiesResolveContext.getFunctions().entrySet()) {
             JetNamedFunction function = entry.getKey();
@@ -72,10 +76,15 @@ public class ControlFlowAnalyzer {
         }
     }
 
-    private void checkClassOrObject(JetClassOrObject klass) {
-        // A pseudocode of class initialization corresponds to a class
-        JetFlowInformationProvider flowInformationProvider = new JetFlowInformationProvider((JetDeclaration) klass, trace);
-        flowInformationProvider.markUninitializedVariables(topDownAnalysisParameters.isDeclaredLocally());
+    private void checkDeclarationContainer(JetDeclarationContainer declarationContainer) {
+        // A pseudocode of class/object initialization corresponds to a class/object
+        // or initialization of properties corresponds to a package declared in a file
+        JetFlowInformationProvider flowInformationProvider = new JetFlowInformationProvider((JetElement) declarationContainer, trace);
+        flowInformationProvider.recordInitializedVariables();
+
+        if (topDownAnalysisParameters.isDeclaredLocally()) return;
+
+        flowInformationProvider.markUninitializedVariables();
     }
 
     private void checkProperty(JetProperty property, PropertyDescriptor propertyDescriptor) {
@@ -95,11 +104,19 @@ public class ControlFlowAnalyzer {
         if (bodyExpression == null) return;
         JetFlowInformationProvider flowInformationProvider = new JetFlowInformationProvider((JetDeclaration) function, trace);
 
+        boolean isPropertyAccessor = function instanceof JetPropertyAccessor;
+        if (!isPropertyAccessor) {
+            flowInformationProvider.recordInitializedVariables();
+        }
+
+        if (topDownAnalysisParameters.isDeclaredLocally()) return;
+
         flowInformationProvider.checkDefiniteReturn(expectedReturnType);
 
-        // Property accessor is checked through initialization of a class check (at 'checkClassOrObject')
-        boolean isPropertyAccessor = function instanceof JetPropertyAccessor;
-        flowInformationProvider.markUninitializedVariables(topDownAnalysisParameters.isDeclaredLocally() || isPropertyAccessor);
+        if (!isPropertyAccessor) {
+            // Property accessor is checked through initialization of a class/object or package properties (at 'checkDeclarationContainer')
+            flowInformationProvider.markUninitializedVariables();
+        }
 
         flowInformationProvider.markUnusedVariables();
 

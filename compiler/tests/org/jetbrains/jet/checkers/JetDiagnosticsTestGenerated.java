@@ -824,6 +824,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/controlFlowAnalysis"), "kt", true);
             }
             
+            @TestMetadata("backingFieldInsideGetter.kt")
+            public void testBackingFieldInsideGetter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/backingFieldInsideGetter.kt");
+            }
+            
             @TestMetadata("checkInnerLocalDeclarations.kt")
             public void testCheckInnerLocalDeclarations() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/checkInnerLocalDeclarations.kt");
@@ -894,6 +899,41 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt2330.kt");
             }
             
+            @TestMetadata("kt2369.kt")
+            public void testKt2369() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt2369.kt");
+            }
+            
+            @TestMetadata("kt2585_1.kt")
+            public void testKt2585_1() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt2585_1.kt");
+            }
+            
+            @TestMetadata("kt2585_2.kt")
+            public void testKt2585_2() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt2585_2.kt");
+            }
+            
+            @TestMetadata("kt2585_3.kt")
+            public void testKt2585_3() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt2585_3.kt");
+            }
+            
+            @TestMetadata("kt2845.kt")
+            public void testKt2845() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt2845.kt");
+            }
+            
+            @TestMetadata("kt2960.kt")
+            public void testKt2960() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt2960.kt");
+            }
+            
+            @TestMetadata("kt2972.kt")
+            public void testKt2972() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt2972.kt");
+            }
+            
             @TestMetadata("kt510.kt")
             public void testKt510() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt510.kt");
@@ -927,6 +967,21 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("kt897.kt")
             public void testKt897() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt897.kt");
+            }
+            
+            @TestMetadata("propertiesOrderInPackage.kt")
+            public void testPropertiesOrderInPackage() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/propertiesOrderInPackage.kt");
+            }
+            
+            @TestMetadata("repeatUnitializedErrorOnlyForLocalVars.kt")
+            public void testRepeatUnitializedErrorOnlyForLocalVars() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/repeatUnitializedErrorOnlyForLocalVars.kt");
+            }
+            
+            @TestMetadata("uninitializedInLocalDeclarations.kt")
+            public void testUninitializedInLocalDeclarations() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/uninitializedInLocalDeclarations.kt");
             }
             
         }

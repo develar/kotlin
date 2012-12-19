@@ -32,19 +32,13 @@ public class LocalDeclarationInstruction extends InstructionWithNext {
     private final Pseudocode body;
     private Instruction sink;
 
-    public LocalDeclarationInstruction(@NotNull JetDeclaration element, Pseudocode body) {
+    public LocalDeclarationInstruction(@NotNull JetElement element, Pseudocode body) {
         super(element);
         this.body = body;
     }
 
     public Pseudocode getBody() {
         return body;
-    }
-
-    @NotNull
-    @Override
-    public JetDeclaration getElement() {
-        return (JetDeclaration) super.getElement();
     }
 
     @NotNull
@@ -70,5 +64,10 @@ public class LocalDeclarationInstruction extends InstructionWithNext {
     @Override
     public String toString() {
         return "d" + "(" + element.getText() + ")";
+    }
+
+    @Override
+    protected Instruction createCopy() {
+        return new LocalDeclarationInstruction((JetDeclaration) element, body);
     }
 }

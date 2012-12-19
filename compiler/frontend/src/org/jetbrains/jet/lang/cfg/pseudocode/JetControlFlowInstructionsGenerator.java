@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.cfg.pseudocode;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.cfg.*;
 import org.jetbrains.jet.lang.psi.*;
 
@@ -30,6 +31,7 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
     private final Stack<BreakableBlockInfo> loopInfo = new Stack<BreakableBlockInfo>();
     private final Map<JetElement, BreakableBlockInfo> elementToBlockInfo = new HashMap<JetElement, BreakableBlockInfo>();
     private int labelCount = 0;
+    private int allowDeadLabelCount = 0;
 
     private final Stack<JetControlFlowInstructionsGeneratorWorker> builders = new Stack<JetControlFlowInstructionsGeneratorWorker>();
 
@@ -53,7 +55,7 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
     }
 
     @Override
-    public void enterSubroutine(@NotNull JetDeclaration subroutine) {
+    public void enterSubroutine(@NotNull JetElement subroutine) {
         if (builder != null && subroutine instanceof JetFunctionLiteral) {
             pushBuilder(subroutine, builder.getReturnSubroutine());
         }
@@ -65,7 +67,7 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
     }
 
     @Override
-    public Pseudocode exitSubroutine(@NotNull JetDeclaration subroutine) {
+    public Pseudocode exitSubroutine(@NotNull JetElement subroutine) {
         super.exitSubroutine(subroutine);
         JetControlFlowInstructionsGeneratorWorker worker = popBuilder(subroutine);
         if (!builders.empty()) {
@@ -101,19 +103,25 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
         @NotNull
         @Override
         public final Label createUnboundLabel() {
-            return pseudocode.createLabel("l" + labelCount++);
+            return pseudocode.createLabel("L" + labelCount++);
+        }
+
+        @NotNull
+        @Override
+        public Label createUnboundLabel(@NotNull String name) {
+            return pseudocode.createLabel("L" + labelCount++ + " [" + name + "]");
         }
 
         @Override
-        public final LoopInfo enterLoop(@NotNull JetExpression expression, Label loopExitPoint, Label conditionEntryPoint) {
-            Label label = createUnboundLabel();
-            bindLabel(label);
+        public final LoopInfo enterLoop(@NotNull JetExpression expression, @Nullable Label loopExitPoint, Label conditionEntryPoint) {
+            Label loopEntryLabel = createUnboundLabel("loop entry point");
+            bindLabel(loopEntryLabel);
             LoopInfo blockInfo = new LoopInfo(
                     expression,
-                    label,
-                    loopExitPoint != null ? loopExitPoint : createUnboundLabel(),
-                    createUnboundLabel(),
-                    conditionEntryPoint != null ? conditionEntryPoint : createUnboundLabel());
+                    loopEntryLabel,
+                    loopExitPoint != null ? loopExitPoint : createUnboundLabel("loop exit point"),
+                    createUnboundLabel("body entry point"),
+                    conditionEntryPoint != null ? conditionEntryPoint : createUnboundLabel("condition entry point"));
             loopInfo.push(blockInfo);
             elementToBlockInfo.put(expression, blockInfo);
             allBlocks.push(blockInfo);
@@ -135,7 +143,7 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
         }
 
         @Override
-        public void enterSubroutine(@NotNull JetDeclaration subroutine) {
+        public void enterSubroutine(@NotNull JetElement subroutine) {
             Label entryPoint = createUnboundLabel();
             BreakableBlockInfo blockInfo = new BreakableBlockInfo(subroutine, entryPoint, createUnboundLabel());
 //            subroutineInfo.push(blockInfo);
@@ -177,7 +185,8 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
                 BlockInfo blockInfo = allBlocks.get(i);
                 if (blockInfo instanceof BreakableBlockInfo) {
                     BreakableBlockInfo breakableBlockInfo = (BreakableBlockInfo) blockInfo;
-                    if (jumpTarget == breakableBlockInfo.getExitPoint() || jumpTarget == breakableBlockInfo.getEntryPoint()) {
+                    if (jumpTarget == breakableBlockInfo.getExitPoint() || jumpTarget == breakableBlockInfo.getEntryPoint()
+                        || jumpTarget == error) {
                         for (int j = finallyBlocks.size() - 1; j >= 0; j--) {
                             finallyBlocks.get(j).generateFinallyBlock();
                         }
@@ -192,7 +201,7 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
         }
 
         @Override
-        public Pseudocode exitSubroutine(@NotNull JetDeclaration subroutine) {
+        public Pseudocode exitSubroutine(@NotNull JetElement subroutine) {
             bindLabel(getExitPoint(subroutine));
             pseudocode.addExitInstruction(new SubroutineExitInstruction(subroutine, "<END>"));
             bindLabel(error);
@@ -267,20 +276,6 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
         }
 
         @Override
-        public void allowDead() {
-            Label allowedDeadLabel = createUnboundLabel();
-            bindLabel(allowedDeadLabel);
-            pseudocode.allowDead(allowedDeadLabel);
-        }
-
-        @Override
-        public void stopAllowDead() {
-            Label allowedDeadLabel = createUnboundLabel();
-            bindLabel(allowedDeadLabel);
-            pseudocode.stopAllowDead(allowedDeadLabel);
-        }
-
-        @Override
         public void nondeterministicJump(Label label) {
             handleJumpInsideTryFinally(label);
             add(new NondeterministicJumpInstruction(label));
@@ -294,12 +289,8 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
         }
 
         @Override
-        public void jumpToError(JetThrowExpression expression) {
-            add(new UnconditionalJumpInstruction(error));
-        }
-        
-        @Override
-        public void jumpToError(JetExpression nothingExpression) {
+        public void jumpToError() {
+            handleJumpInsideTryFinally(error);
             add(new UnconditionalJumpInstruction(error));
         }
 
@@ -309,6 +300,11 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
         }
 
         @Override
+        public void throwException(@NotNull JetThrowExpression expression) {
+            handleJumpInsideTryFinally(error);
+            add(new ThrowExceptionInstruction(expression, error));
+        }
+        
         public void exitTryFinally() {
             BlockInfo pop = allBlocks.pop();
             assert pop instanceof TryFinallyBlockInfo;
@@ -317,6 +313,11 @@ public class JetControlFlowInstructionsGenerator extends JetControlFlowBuilderAd
         @Override
         public void unsupported(JetElement element) {
             add(new UnsupportedElementInstruction(element));
+        }
+
+        @Override
+        public void repeatPseudocode(@NotNull Label startLabel, @NotNull Label finishLabel) {
+            pseudocode.repeatPart(startLabel, finishLabel);
         }
     }
 

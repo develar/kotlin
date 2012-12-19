@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.cfg.pseudocode.Pseudocode;
 import org.jetbrains.jet.lang.psi.*;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -48,22 +49,17 @@ public class JetControlFlowBuilderAdapter implements JetControlFlowBuilder {
         return builder.createUnboundLabel();
     }
 
+    @NotNull
+    @Override
+    public Label createUnboundLabel(@NotNull String name) {
+        assert builder != null;
+        return builder.createUnboundLabel(name);
+    }
+
     @Override
     public void bindLabel(@NotNull Label label) {
         assert builder != null;
         builder.bindLabel(label);
-    }
-
-    @Override
-    public void allowDead() {
-        assert builder != null;
-        builder.allowDead();
-    }
-
-    @Override
-    public void stopAllowDead() {
-        assert builder != null;
-        builder.stopAllowDead();
     }
 
     @Override
@@ -97,18 +93,17 @@ public class JetControlFlowBuilderAdapter implements JetControlFlowBuilder {
     }
 
     @Override
-    public void jumpToError(JetThrowExpression expression) {
+    public void jumpToError() {
         assert builder != null;
-        builder.jumpToError(expression);
+        builder.jumpToError();
     }
 
     @Override
-    public void jumpToError(JetExpression nothingExpression) {
+    public void throwException(@NotNull JetThrowExpression throwExpression) {
         assert builder != null;
-        builder.jumpToError(nothingExpression);
+        builder.throwException(throwExpression);
     }
-
-    @Override
+    
     public Label getEntryPoint(@NotNull JetElement labelElement) {
         assert builder != null;
         return builder.getEntryPoint(labelElement);
@@ -121,7 +116,7 @@ public class JetControlFlowBuilderAdapter implements JetControlFlowBuilder {
     }
 
     @Override
-    public LoopInfo enterLoop(@NotNull JetExpression expression, Label loopExitPoint, Label conditionEntryPoint) {
+    public LoopInfo enterLoop(@NotNull JetExpression expression, @Nullable Label loopExitPoint, Label conditionEntryPoint) {
         assert builder != null;
         return builder.enterLoop(expression, loopExitPoint, conditionEntryPoint);
     }
@@ -152,13 +147,13 @@ public class JetControlFlowBuilderAdapter implements JetControlFlowBuilder {
     }
 
     @Override
-    public void enterSubroutine(@NotNull JetDeclaration subroutine) {
+    public void enterSubroutine(@NotNull JetElement subroutine) {
         assert builder != null;
         builder.enterSubroutine(subroutine);
     }
 
     @Override
-    public Pseudocode exitSubroutine(@NotNull JetDeclaration subroutine) {
+    public Pseudocode exitSubroutine(@NotNull JetElement subroutine) {
         assert builder != null;
         return builder.exitSubroutine(subroutine);
     }
@@ -211,5 +206,11 @@ public class JetControlFlowBuilderAdapter implements JetControlFlowBuilder {
     public void declare(@NotNull JetVariableDeclaration property) {
         assert builder != null;
         builder.declare(property);
+    }
+
+    @Override
+    public void repeatPseudocode(@NotNull Label startLabel, @NotNull Label finishLabel) {
+        assert builder != null;
+        builder.repeatPseudocode(startLabel, finishLabel);
     }
 }

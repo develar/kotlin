@@ -50,4 +50,9 @@ public class WriteValueInstruction extends InstructionWithNext {
         }
         return "w(" + lValue.getText() + ")";
     }
+
+    @Override
+    protected Instruction createCopy() {
+        return new WriteValueInstruction(element, lValue);
+    }
 }

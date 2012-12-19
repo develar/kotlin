@@ -16,9 +16,7 @@
 
 package org.jetbrains.jet.lang.cfg.pseudocode;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.cfg.Label;
@@ -72,12 +70,13 @@ public class PseudocodeImpl implements Pseudocode {
             return mutableInstructionList.get(targetInstructionIndex);
         }
 
+        public Label copy() {
+            return new PseudocodeLabel("copy " + name);
+        }
     }
 
     private final List<Instruction> mutableInstructionList = new ArrayList<Instruction>();
     private final List<Instruction> instructions = new ArrayList<Instruction>();
-    private List<Instruction> reversedInstructions = null;
-    private List<Instruction> deadInstructions;
 
     private Set<LocalDeclarationInstruction> localDeclarations = null;
     //todo getters
@@ -85,8 +84,6 @@ public class PseudocodeImpl implements Pseudocode {
     private final Map<JetExpression, LoopInfo> loopInfo = Maps.newHashMap();
     
     private final List<PseudocodeLabel> labels = new ArrayList<PseudocodeLabel>();
-    private final List<PseudocodeLabel> allowedDeadLabels = new ArrayList<PseudocodeLabel>();
-    private final List<PseudocodeLabel> stopAllowDeadLabels = new ArrayList<PseudocodeLabel>();
 
     private final JetElement correspondingElement;
     private SubroutineExitInstruction exitInstruction;
@@ -131,14 +128,6 @@ public class PseudocodeImpl implements Pseudocode {
         return label;
     }
     
-    /*package*/ void allowDead(Label label) {
-        allowedDeadLabels.add((PseudocodeLabel) label);
-    }
-    
-    /*package*/ void stopAllowDead(Label label) {
-        stopAllowDeadLabels.add((PseudocodeLabel) label);
-    }
-
     @Override
     @NotNull
     public List<Instruction> getInstructions() {
@@ -148,32 +137,19 @@ public class PseudocodeImpl implements Pseudocode {
     @NotNull
     @Override
     public List<Instruction> getReversedInstructions() {
-        if (reversedInstructions == null) {
-            LinkedHashSet<Instruction> traversedInstructions = Sets.newLinkedHashSet();
-            traverseInstructionsInReverseOrder(sinkInstruction, traversedInstructions);
-            if (traversedInstructions.size() < instructions.size()) {
-                List<Instruction> simplyReversedInstructions = Lists.newArrayList(instructions);
-                Collections.reverse(simplyReversedInstructions);
-                for (Instruction instruction : simplyReversedInstructions) {
-                    if (!traversedInstructions.contains(instruction)) {
-                        traverseInstructionsInReverseOrder(instruction, traversedInstructions);
-                    }
+        LinkedHashSet<Instruction> traversedInstructions = Sets.newLinkedHashSet();
+        traverseFollowingInstructions(sinkInstruction, traversedInstructions, false);
+        if (traversedInstructions.size() < instructions.size()) {
+            List<Instruction> simplyReversedInstructions = Lists.newArrayList(instructions);
+            Collections.reverse(simplyReversedInstructions);
+            for (Instruction instruction : simplyReversedInstructions) {
+                if (!traversedInstructions.contains(instruction)) {
+                    traverseFollowingInstructions(instruction, traversedInstructions, false);
                 }
             }
-            reversedInstructions = Lists.newArrayList(traversedInstructions);
         }
-        return reversedInstructions;
+        return Lists.newArrayList(traversedInstructions);
     }
-
-    private static void traverseInstructionsInReverseOrder(@NotNull Instruction instruction,
-            @NotNull LinkedHashSet<Instruction> instructions) {
-        if (instructions.contains(instruction)) return;
-        instructions.add(instruction);
-        for (Instruction previousInstruction : instruction.getPreviousInstructions()) {
-            traverseInstructionsInReverseOrder(previousInstruction, instructions);
-        }
-    }
-
 
     //for tests only
     @NotNull
@@ -184,20 +160,21 @@ public class PseudocodeImpl implements Pseudocode {
     @Override
     @NotNull
     public List<Instruction> getDeadInstructions() {
-        if (deadInstructions != null) {
-            return deadInstructions;
-        }
-        deadInstructions = Lists.newArrayList();
-        Collection<Instruction> allowedDeadInstructions = collectAllowedDeadInstructions();
-
+        List<Instruction> deadInstructions = Lists.newArrayList();
         for (Instruction instruction : mutableInstructionList) {
-            if (((InstructionImpl)instruction).isDead()) {
-                if (!allowedDeadInstructions.contains(instruction)) {
-                    deadInstructions.add(instruction);
-                }
+            if (isDead(instruction)) {
+                deadInstructions.add(instruction);
             }
         }
         return deadInstructions;
+    }
+
+    private static boolean isDead(@NotNull Instruction instruction) {
+        if (!((InstructionImpl)instruction).isDead()) return false;
+        for (Instruction copy : instruction.getCopies()) {
+            if (!((InstructionImpl)copy).isDead()) return false;
+        }
+        return true;
     }
 
     //for tests only
@@ -338,7 +315,7 @@ public class PseudocodeImpl implements Pseudocode {
 
     private Set<Instruction> collectReachableInstructions() {
         Set<Instruction> visited = Sets.newHashSet();
-        traverseNextInstructions(getEnterInstruction(), visited);
+        traverseFollowingInstructions(getEnterInstruction(), visited, true);
         if (!visited.contains(getExitInstruction())) {
             visited.add(getExitInstruction());
         }
@@ -351,12 +328,26 @@ public class PseudocodeImpl implements Pseudocode {
         return visited;
     }
     
-    private void traverseNextInstructions(@NotNull Instruction instruction, @NotNull Set<Instruction> visited) {
-        if (visited.contains(instruction)) return;
-        visited.add(instruction);
-        for (Instruction nextInstruction : instruction.getNextInstructions()) {
-            if (nextInstruction == null) continue; //todo it might be null on incomplete code
-            traverseNextInstructions(nextInstruction, visited);
+    private static void traverseFollowingInstructions(
+            @NotNull Instruction rootInstruction,
+            @NotNull Set<Instruction> visited,
+            boolean directOrder
+    ) {
+        Deque<Instruction> stack = Queues.newArrayDeque();
+        stack.push(rootInstruction);
+
+        while (!stack.isEmpty()) {
+            Instruction instruction = stack.pop();
+            visited.add(instruction);
+
+            Collection<Instruction> followingInstructions =
+                    directOrder ? instruction.getNextInstructions() : instruction.getPreviousInstructions();
+
+            for (Instruction followingInstruction : followingInstructions) {
+                if (followingInstruction != null && !visited.contains(followingInstruction)) {
+                    stack.push(followingInstruction);
+                }
+            }
         }
     }
 
@@ -373,52 +364,6 @@ public class PseudocodeImpl implements Pseudocode {
     }
 
     @NotNull
-    private Set<Instruction> prepareAllowedDeadInstructions() {
-        Set<Instruction> allowedDeadStartInstructions = Sets.newHashSet();
-        for (PseudocodeLabel allowedDeadLabel : allowedDeadLabels) {
-            Instruction allowedDeadInstruction = getJumpTarget(allowedDeadLabel);
-            if (((InstructionImpl)allowedDeadInstruction).isDead()) {
-                allowedDeadStartInstructions.add(allowedDeadInstruction);
-            }
-        }
-        return allowedDeadStartInstructions;
-    }
-    
-    @NotNull
-    private Set<Instruction> prepareStopAllowedDeadInstructions() {
-        Set<Instruction> stopAllowedDeadInstructions = Sets.newHashSet();
-        for (PseudocodeLabel stopAllowedDeadLabel : stopAllowDeadLabels) {
-            Instruction stopAllowDeadInsruction = getJumpTarget(stopAllowedDeadLabel);
-            if (((InstructionImpl)stopAllowDeadInsruction).isDead()) {
-                stopAllowedDeadInstructions.add(stopAllowDeadInsruction);
-            }
-        }
-        return stopAllowedDeadInstructions;
-    }
-
-    @NotNull
-    private Collection<Instruction> collectAllowedDeadInstructions() {
-        Set<Instruction> allowedDeadStartInstructions = prepareAllowedDeadInstructions();
-        Set<Instruction> stopAllowDeadInstructions = prepareStopAllowedDeadInstructions();
-        Set<Instruction> allowedDeadInstructions = Sets.newHashSet();
-
-        for (Instruction allowedDeadStartInstruction : allowedDeadStartInstructions) {
-            collectAllowedDeadInstructions(allowedDeadStartInstruction, allowedDeadInstructions, stopAllowDeadInstructions);
-        }
-        return allowedDeadInstructions;
-    }
-    
-    private void collectAllowedDeadInstructions(Instruction allowedDeadInstruction, Set<Instruction> instructionSet, Set<Instruction> stopAllowDeadInstructions) {
-        if (instructionSet.contains(allowedDeadInstruction) || stopAllowDeadInstructions.contains(allowedDeadInstruction)) return;
-        if (((InstructionImpl)allowedDeadInstruction).isDead()) {
-            instructionSet.add(allowedDeadInstruction);
-            for (Instruction instruction : allowedDeadInstruction.getNextInstructions()) {
-                collectAllowedDeadInstructions(instruction, instructionSet, stopAllowDeadInstructions);
-            }
-        }
-    }
-
-    @NotNull
     private Instruction getJumpTarget(@NotNull Label targetLabel) {
         return ((PseudocodeLabel)targetLabel).resolveToInstruction();
     }
@@ -428,5 +373,66 @@ public class PseudocodeImpl implements Pseudocode {
         int targetPosition = currentPosition + 1;
         assert targetPosition < mutableInstructionList.size() : currentPosition;
         return mutableInstructionList.get(targetPosition);
+    }
+
+    public void repeatPart(@NotNull Label startLabel, @NotNull Label finishLabel) {
+        Integer startIndex = ((PseudocodeLabel) startLabel).getTargetInstructionIndex();
+        assert startIndex != null;
+        Integer finishIndex = ((PseudocodeLabel) finishLabel).getTargetInstructionIndex();
+        assert finishIndex != null;
+
+        Map<Label, Label> originalToCopy = Maps.newHashMap();
+        Multimap<Instruction, Label> originalLabelsForInstruction = HashMultimap.create();
+        for (PseudocodeLabel label : labels) {
+            Integer index = label.getTargetInstructionIndex();
+            if (index == null) continue; //label is not bounded yet
+            if (label == startLabel || label == finishLabel) continue;
+
+            if (startIndex <= index && index <= finishIndex) {
+                originalToCopy.put(label, label.copy());
+                originalLabelsForInstruction.put(getJumpTarget(label), label);
+            }
+        }
+        for (int index = startIndex; index < finishIndex; index++) {
+            Instruction originalInstruction = mutableInstructionList.get(index);
+            repeatLabelsBindingForInstruction(originalInstruction, originalToCopy, originalLabelsForInstruction);
+            addInstruction(copyInstruction(originalInstruction, originalToCopy));
+        }
+        repeatLabelsBindingForInstruction(mutableInstructionList.get(finishIndex), originalToCopy, originalLabelsForInstruction);
+    }
+
+    private void repeatLabelsBindingForInstruction(
+            @NotNull Instruction originalInstruction,
+            @NotNull Map<Label, Label> originalToCopy,
+            @NotNull Multimap<Instruction, Label> originalLabelsForInstruction
+    ) {
+        for (Label originalLabel : originalLabelsForInstruction.get(originalInstruction)) {
+            bindLabel(originalToCopy.get(originalLabel));
+        }
+    }
+
+    private Instruction copyInstruction(@NotNull Instruction instruction, @NotNull Map<Label, Label> originalToCopy) {
+        if (instruction instanceof AbstractJumpInstruction) {
+            Label originalTarget = ((AbstractJumpInstruction) instruction).getTargetLabel();
+            if (originalToCopy.containsKey(originalTarget)) {
+                return ((AbstractJumpInstruction)instruction).copy(originalToCopy.get(originalTarget));
+            }
+        }
+        if (instruction instanceof NondeterministicJumpInstruction) {
+            List<Label> originalTargets = ((NondeterministicJumpInstruction) instruction).getTargetLabels();
+            List<Label> copyTargets = copyLabels(originalTargets, originalToCopy);
+            return ((NondeterministicJumpInstruction) instruction).copy(copyTargets);
+        }
+        return ((InstructionImpl)instruction).copy();
+    }
+
+    @NotNull
+    private List<Label> copyLabels(Collection<Label> labels, Map<Label, Label> originalToCopy) {
+        List<Label> newLabels = Lists.newArrayList();
+        for (Label label : labels) {
+            Label newLabel = originalToCopy.get(label);
+            newLabels.add(newLabel != null ? newLabel : label);
+        }
+        return newLabels;
     }
 }
