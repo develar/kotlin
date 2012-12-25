@@ -24,8 +24,8 @@ import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.utils.BindingUtils;
 
 import static org.jetbrains.jet.lang.psi.JetPsiUtil.isBackingFieldReference;
 
@@ -76,11 +76,10 @@ public final class ReferenceTranslator {
             return BackingFieldAccessTranslator.newInstance(expression, context);
         }
 
-        DeclarationDescriptor descriptor = context.bindingContext().get(BindingContext.REFERENCE_TARGET, expression);
+        DeclarationDescriptor descriptor = BindingUtils.getDescriptorForReferenceExpression(context.bindingContext(), expression);
         if (descriptor instanceof PropertyDescriptor) {
             return PropertyAccessTranslator.newInstance((PropertyDescriptor) descriptor, expression, receiver, CallType.NORMAL, context);
         }
-        assert descriptor != null;
         return new ReferenceAccessTranslator(descriptor, context);
     }
 }

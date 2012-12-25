@@ -119,12 +119,6 @@ public final class BindingUtils {
         return BindingContextUtils.getNotNull(context, BindingContext.REFERENCE_TARGET, reference);
     }
 
-    @Nullable
-    public static DeclarationDescriptor getNullableDescriptorForReferenceExpression(@NotNull BindingContext context,
-            @NotNull JetReferenceExpression reference) {
-        return context.get(BindingContext.REFERENCE_TARGET, reference);
-    }
-
     @NotNull
     public static ResolvedCall<?> getResolvedCall(@NotNull BindingContext context,
             @NotNull JetExpression expression) {
@@ -158,14 +152,12 @@ public final class BindingUtils {
     @Nullable
     public static FunctionDescriptor getFunctionDescriptorForOperationExpression(@NotNull BindingContext context,
             @NotNull JetOperationExpression expression) {
-        DeclarationDescriptor descriptorForReferenceExpression = getNullableDescriptorForReferenceExpression
-                (context, expression.getOperationReference());
+        DeclarationDescriptor referenceTarget = context.get(BindingContext.REFERENCE_TARGET, expression.getOperationReference());
+        if (referenceTarget == null) return null;
 
-        if (descriptorForReferenceExpression == null) return null;
-
-        assert descriptorForReferenceExpression instanceof FunctionDescriptor
+        assert referenceTarget instanceof FunctionDescriptor
                 : message(expression.getOperationReference(), "Operation should resolve to function descriptor");
-        return (FunctionDescriptor) descriptorForReferenceExpression;
+        return (FunctionDescriptor) referenceTarget;
     }
 
     @Nullable
