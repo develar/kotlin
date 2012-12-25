@@ -45,7 +45,7 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateArgum
 public final class ClassInitializerTranslator extends AbstractTranslator {
     @NotNull
     private final JetClassOrObject declaration;
-    private final ClassDescriptorFromSource descriptor;
+    private final ClassDescriptor descriptor;
     @NotNull
     private final List<JsStatement> initializerStatements = new SmartList<JsStatement>();
 
@@ -53,7 +53,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
 
     public static JsFunction translateInitializerFunction(
             @NotNull JetClassOrObject declaration,
-            @NotNull ClassDescriptorFromSource descriptor,
+            @NotNull ClassDescriptor descriptor,
             @NotNull TranslationContext classContext
     ) {
         JsFunction fun = new JsFunction(classContext.scope(), new JsBlock());
@@ -63,7 +63,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
 
     private ClassInitializerTranslator(
             @NotNull JetClassOrObject declaration,
-            @NotNull ClassDescriptorFromSource descriptor,
+            @NotNull ClassDescriptor descriptor,
             @NotNull JsFunction initializerFunction,
             @NotNull TranslationContext context
     ) {
