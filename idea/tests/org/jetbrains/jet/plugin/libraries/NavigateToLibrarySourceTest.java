@@ -40,7 +40,7 @@ import java.util.*;
  * @author Evgeny Gerashchenko
  * @since 3/23/12
  */
-public class LibrariesWithSourcesTest extends AbstractLibrariesTest {
+public class NavigateToLibrarySourceTest extends AbstractNavigateToLibraryTest {
     private VirtualFile userFile;
 
     public void testEnum() {
@@ -72,6 +72,10 @@ public class LibrariesWithSourcesTest extends AbstractLibrariesTest {
     }
 
     public void testSameNameInDifferentSources() {
+        doTest();
+    }
+
+    public void testConstructor() {
         doTest();
     }
 

@@ -205,7 +205,18 @@ public final class BindingUtils {
     public static ResolvedCall<FunctionDescriptor> getResolvedCallForArrayAccess(@NotNull BindingContext context,
             @NotNull JetArrayAccessExpression arrayAccessExpression,
             boolean isGet) {
-        return BindingContextUtils.getNotNull(context, isGet ? INDEXED_LVALUE_GET : INDEXED_LVALUE_SET, arrayAccessExpression);
+        ResolvedCall<FunctionDescriptor> resolvedCall = context.get(isGet
+                                                                    ? INDEXED_LVALUE_GET
+                                                                    : INDEXED_LVALUE_SET, arrayAccessExpression);
+        assert resolvedCall != null : message(arrayAccessExpression);
+        return resolvedCall;
+    }
+
+    public static ConstructorDescriptor getConstructor(@NotNull BindingContext bindingContext,
+            @NotNull JetClassOrObject declaration) {
+        ConstructorDescriptor primaryConstructor = getClassDescriptor(bindingContext, declaration).getUnsubstitutedPrimaryConstructor();
+        assert primaryConstructor != null : message(declaration, "Traits do not have initialize methods");
+        return primaryConstructor;
     }
 
     @Nullable

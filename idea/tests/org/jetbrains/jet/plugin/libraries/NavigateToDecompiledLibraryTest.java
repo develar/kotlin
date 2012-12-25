@@ -32,7 +32,7 @@ import java.util.Map;
  * @author Evgeny Gerashchenko
  * @since 3/11/12
  */
-public class LibrariesWithoutSourcesTest extends AbstractLibrariesTest {
+public class NavigateToDecompiledLibraryTest extends AbstractNavigateToLibraryTest {
     private VirtualFile classFile;
 
     public void testAbstractClass() {
@@ -68,6 +68,10 @@ public class LibrariesWithoutSourcesTest extends AbstractLibrariesTest {
     }
 
     public void testWithTraitClassObject() {
+        doTest();
+    }
+
+    public void testClassWithConstructor() {
         doTest();
     }
 
