@@ -48,6 +48,7 @@ import java.util.Set;
 
 import static org.jetbrains.jet.lang.diagnostics.Errors.PROJECTION_ON_NON_CLASS_TYPE_ARGUMENT;
 import static org.jetbrains.jet.lang.diagnostics.Errors.SUPER_IS_NOT_AN_EXPRESSION;
+import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.DONT_CARE;
 import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.PLACEHOLDER_FUNCTION_TYPE;
 import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveMode;
 import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveMode.RESOLVE_FUNCTION_ARGUMENTS;
@@ -171,7 +172,7 @@ public class CandidateResolver {
         assert constraintSystem != null;
 
         TypeSubstitutor substituteDontCare = ConstraintSystemWithPriorities
-                .makeConstantSubstitutor(resolvedCall.getCandidateDescriptor().getTypeParameters(), ConstraintSystemImpl.DONT_CARE);
+                .makeConstantSubstitutor(resolvedCall.getCandidateDescriptor().getTypeParameters(), DONT_CARE);
 
         // constraints for function literals
         // Value parameters
@@ -231,7 +232,7 @@ public class CandidateResolver {
 
         context.trace.get(ResolutionDebugInfo.RESOLUTION_DEBUG_INFO, context.call.getCallElement());
 
-        ConstraintSystemImpl constraintsSystem = new ConstraintSystemImpl();
+        ConstraintSystemImpl constraintSystem = new ConstraintSystemImpl();
 
         // If the call is recursive, e.g.
         //   fun foo<T>(t : T) : T = foo(t)
@@ -243,11 +244,11 @@ public class CandidateResolver {
 
 
         for (TypeParameterDescriptor typeParameterDescriptor : candidateWithFreshVariables.getTypeParameters()) {
-            constraintsSystem.registerTypeVariable(typeParameterDescriptor, Variance.INVARIANT); // TODO: variance of the occurrences
+            constraintSystem.registerTypeVariable(typeParameterDescriptor, Variance.INVARIANT); // TODO: variance of the occurrences
         }
 
         TypeSubstitutor substituteDontCare = ConstraintSystemWithPriorities
-            .makeConstantSubstitutor(candidateWithFreshVariables.getTypeParameters(), ConstraintSystemImpl.DONT_CARE);
+            .makeConstantSubstitutor(candidateWithFreshVariables.getTypeParameters(), DONT_CARE);
 
         // Value parameters
         for (Map.Entry<ValueParameterDescriptor, ResolvedValueArgument> entry : candidateCall.getValueArguments().entrySet()) {
@@ -256,14 +257,13 @@ public class CandidateResolver {
 
 
             for (ValueArgument valueArgument : resolvedValueArgument.getArguments()) {
-                if (JetPsiUtil.isFunctionLiteralWithoutDeclaredParameterTypes(valueArgument.getArgumentExpression())) continue;
                 // TODO : more attempts, with different expected types
 
                 // Here we type check expecting an error type (DONT_CARE, substitution with substituteDontCare)
                 // and throw the results away
                 // We'll type check the arguments later, with the inferred types expected
                 boolean[] isErrorType = new boolean[1];
-                addConstraintForValueArgument(valueArgument, valueParameterDescriptor, substituteDontCare, constraintsSystem,
+                addConstraintForValueArgument(valueArgument, valueParameterDescriptor, substituteDontCare, constraintSystem,
                                               context, isErrorType, SKIP_FUNCTION_ARGUMENTS);
                 if (isErrorType[0]) {
                     candidateCall.argumentHasNoType();
@@ -276,12 +276,15 @@ public class CandidateResolver {
         ReceiverValue receiverArgument = candidateCall.getReceiverArgument();
         ReceiverParameterDescriptor receiverParameter = candidateWithFreshVariables.getReceiverParameter();
         if (receiverArgument.exists() && receiverParameter != null) {
-            constraintsSystem.addSubtypeConstraint(receiverParameter.getType(), receiverArgument.getType(),
-                                                   ConstraintPosition.RECEIVER_POSITION);
+            JetType receiverType =
+                    context.candidateCall.isSafeCall()
+                    ? TypeUtils.makeNotNullable(receiverArgument.getType())
+                    : receiverArgument.getType();
+            constraintSystem.addSubtypeConstraint(receiverParameter.getType(), receiverType, ConstraintPosition.RECEIVER_POSITION);
         }
 
         ConstraintSystem
-                constraintSystemWithRightTypeParameters = constraintsSystem.replaceTypeVariables(new Function<TypeParameterDescriptor, TypeParameterDescriptor>() {
+                constraintSystemWithRightTypeParameters = constraintSystem.replaceTypeVariables(new Function<TypeParameterDescriptor, TypeParameterDescriptor>() {
             @Override
             public TypeParameterDescriptor apply(@Nullable TypeParameterDescriptor typeParameterDescriptor) {
                 assert typeParameterDescriptor != null;
@@ -292,8 +295,8 @@ public class CandidateResolver {
 
 
         // Solution
-        boolean hasContradiction = constraintsSystem.hasContradiction();
-        boolean boundsAreSatisfied = ConstraintsUtil.checkBoundsAreSatisfied(constraintsSystem);
+        boolean hasContradiction = constraintSystem.hasContradiction();
+        boolean boundsAreSatisfied = ConstraintsUtil.checkBoundsAreSatisfied(constraintSystem);
         if (!hasContradiction && boundsAreSatisfied) {
             candidateCall.setHasUnknownTypeParameters(true);
             return SUCCESS;
@@ -480,7 +483,7 @@ public class CandidateResolver {
         if (argument.getSpreadElement() != null) {
             if (parameterDescriptor.getVarargElementType() == null) {
                 // Spread argument passed to a non-vararg parameter, an error is already reported by ValueArgumentsToParametersMapper
-                return ConstraintSystemImpl.DONT_CARE;
+                return DONT_CARE;
             }
             else {
                 return parameterDescriptor.getType();

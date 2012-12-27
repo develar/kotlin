@@ -24,6 +24,7 @@ import org.jetbrains.jet.codegen.AbstractCheckLocalVariablesTableTest;
 import org.jetbrains.jet.codegen.AbstractDataClassCodegenTest;
 import org.jetbrains.jet.codegen.AbstractIntrinsicsTestCase;
 import org.jetbrains.jet.codegen.AbstractMultiDeclTestCase;
+import org.jetbrains.jet.codegen.defaultConstructor.AbstractDefaultConstructorCodegenTest;
 import org.jetbrains.jet.codegen.flags.AbstractWriteFlagsTest;
 import org.jetbrains.jet.codegen.generated.AbstractCodegenTest;
 import org.jetbrains.jet.jvm.compiler.AbstractCompileJavaAgainstKotlinTest;
@@ -103,6 +104,20 @@ public class GenerateTests {
 
         generateTest(
                 "compiler/tests/",
+                "DefaultArgumentsReflectionTestGenerated",
+                AbstractDefaultConstructorCodegenTest.class,
+                testModel("compiler/testData/codegen/defaultArguments/reflection")
+        );
+
+        generateTest(
+                "compiler/tests/",
+                "DefaultArgumentsBlackBoxTestGenerated",
+                AbstractCodegenTest.class,
+                testModel("compiler/testData/codegen/defaultArguments/blackBox")
+        );
+
+        generateTest(
+                "compiler/tests/",
                 "LabelGenTestGenerated",
                 AbstractCodegenTest.class,
                 testModel("compiler/testData/codegen/label")
@@ -172,9 +187,9 @@ public class GenerateTests {
                 "compiler/tests/",
                 "LazyResolveNamespaceComparingTestGenerated",
                 AbstractLazyResolveNamespaceComparingTest.class,
-                testModel("compiler/testData/loadKotlin", "doTestCheckingConstructors"),
-                testModel("compiler/testData/loadJava", "doTestNotCheckingConstructors"),
-                testModel("compiler/testData/lazyResolve/namespaceComparator", "doTestCheckingConstructors")
+                testModel("compiler/testData/loadKotlin", "doTestCheckingPrimaryConstructors"),
+                testModel("compiler/testData/loadJava", "doTestNotCheckingPrimaryConstructors"),
+                testModel("compiler/testData/lazyResolve/namespaceComparator", "doTestCheckingPrimaryConstructors")
         );
 
         generateTest(
@@ -194,7 +209,7 @@ public class GenerateTests {
                 testModel("idea/testData/highlighter/deprecated")
         );
     }
-    
+
     private static SimpleTestClassModel testModel(@NotNull String rootPath) {
         return testModel(rootPath, true, "kt", "doTest");
     }

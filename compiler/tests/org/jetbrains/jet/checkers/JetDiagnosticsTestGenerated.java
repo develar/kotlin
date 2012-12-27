@@ -1791,6 +1791,16 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/functionLiterals"), "kt", true);
             }
             
+            @TestMetadata("ExpectedParameterTypeMismatchVariance.kt")
+            public void testExpectedParameterTypeMismatchVariance() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/functionLiterals/ExpectedParameterTypeMismatchVariance.kt");
+            }
+            
+            @TestMetadata("ExpectedParametersTypesMismatch.kt")
+            public void testExpectedParametersTypesMismatch() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/functionLiterals/ExpectedParametersTypesMismatch.kt");
+            }
+            
             @TestMetadata("kt2906.kt")
             public void testKt2906() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/functionLiterals/kt2906.kt");
@@ -1950,7 +1960,7 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
         }
         
         @TestMetadata("compiler/testData/diagnostics/tests/inference")
-        @InnerTestClasses({Inference.Regressions.class, Inference.Varargs.class})
+        @InnerTestClasses({Inference.Regressions.class, Inference.ReportingImprovements.class, Inference.Varargs.class})
         public static class Inference extends AbstractDiagnosticsTestWithEagerResolve {
             public void testAllFilesPresentInInference() throws Exception {
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/inference"), "kt", true);
@@ -2024,6 +2034,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("kt1293.kt")
             public void testKt1293() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/inference/kt1293.kt");
+            }
+            
+            @TestMetadata("kt3184.kt")
+            public void testKt3184() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inference/kt3184.kt");
             }
             
             @TestMetadata("kt619.kt")
@@ -2187,6 +2202,16 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                     doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2514.kt");
                 }
                 
+                @TestMetadata("kt2741.kt")
+                public void testKt2741() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2741.kt");
+                }
+                
+                @TestMetadata("kt2838.kt")
+                public void testKt2838() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2838.kt");
+                }
+                
                 @TestMetadata("kt2841.kt")
                 public void testKt2841() throws Exception {
                     doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2841.kt");
@@ -2210,6 +2235,31 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 @TestMetadata("kt2842.kt")
                 public void testKt2842() throws Exception {
                     doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2842.kt");
+                }
+                
+                @TestMetadata("kt2883.kt")
+                public void testKt2883() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt2883.kt");
+                }
+                
+                @TestMetadata("kt3007.kt")
+                public void testKt3007() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt3007.kt");
+                }
+                
+                @TestMetadata("kt3038.kt")
+                public void testKt3038() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt3038.kt");
+                }
+                
+                @TestMetadata("kt3150.kt")
+                public void testKt3150() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt3150.kt");
+                }
+                
+                @TestMetadata("kt3174.kt")
+                public void testKt3174() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt3174.kt");
                 }
                 
                 @TestMetadata("kt702.kt")
@@ -2244,6 +2294,39 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 
             }
             
+            @TestMetadata("compiler/testData/diagnostics/tests/inference/reportingImprovements")
+            public static class ReportingImprovements extends AbstractDiagnosticsTestWithEagerResolve {
+                public void testAllFilesPresentInReportingImprovements() throws Exception {
+                    JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/inference/reportingImprovements"), "kt", true);
+                }
+                
+                @TestMetadata("cannotInferParameterTypeWithInference.kt")
+                public void testCannotInferParameterTypeWithInference() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/reportingImprovements/cannotInferParameterTypeWithInference.kt");
+                }
+                
+                @TestMetadata("ErrorTypeAsGenericParameter.kt")
+                public void testErrorTypeAsGenericParameter() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/reportingImprovements/ErrorTypeAsGenericParameter.kt");
+                }
+                
+                @TestMetadata("FunctionPlaceholder.kt")
+                public void testFunctionPlaceholder() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/reportingImprovements/FunctionPlaceholder.kt");
+                }
+                
+                @TestMetadata("NoAmbiguityForDifferentFunctionTypes.kt")
+                public void testNoAmbiguityForDifferentFunctionTypes() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/reportingImprovements/NoAmbiguityForDifferentFunctionTypes.kt");
+                }
+                
+                @TestMetadata("subtypeForInvariantWithErrorGenerics.kt")
+                public void testSubtypeForInvariantWithErrorGenerics() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/reportingImprovements/subtypeForInvariantWithErrorGenerics.kt");
+                }
+                
+            }
+            
             @TestMetadata("compiler/testData/diagnostics/tests/inference/varargs")
             public static class Varargs extends AbstractDiagnosticsTestWithEagerResolve {
                 public void testAllFilesPresentInVarargs() throws Exception {
@@ -2261,6 +2344,7 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 TestSuite suite = new TestSuite("Inference");
                 suite.addTestSuite(Inference.class);
                 suite.addTestSuite(Regressions.class);
+                suite.addTestSuite(ReportingImprovements.class);
                 suite.addTestSuite(Varargs.class);
                 return suite;
             }

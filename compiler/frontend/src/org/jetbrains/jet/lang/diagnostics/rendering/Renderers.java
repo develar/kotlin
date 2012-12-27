@@ -19,7 +19,9 @@ package org.jetbrains.jet.lang.diagnostics.rendering;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiElement;
+import com.intellij.util.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -309,6 +311,20 @@ public class Renderers {
             return sb.toString();
         }
     };
+
+    public static final Renderer<Collection<JetType>> RENDER_COLLECTION_OF_TYPES = new Renderer<Collection<JetType>>() {
+        @NotNull
+        @Override
+        public String render(@NotNull Collection<JetType> types) {
+            return StringUtil.join(types, new Function<JetType, String>() {
+                @Override
+                public String fun(JetType type) {
+                    return RENDER_TYPE.render(type);
+                }
+            }, ", ");
+        }
+    };
+
 
     private Renderers() {
     }
