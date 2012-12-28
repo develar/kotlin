@@ -1,4 +1,4 @@
-package org.jetbrains.jet.jps.build;
+package org.jetbrains.jet.jps.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.JpsElementChildRole;

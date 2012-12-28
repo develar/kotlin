@@ -2,8 +2,8 @@ package org.jetbrains.jet.jps.build;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.jps.build.model.JpsJsExtensionService;
-import org.jetbrains.jet.jps.build.model.JpsJsModuleExtension;
+import org.jetbrains.jet.jps.model.JpsJsExtensionService;
+import org.jetbrains.jet.jps.model.JpsJsModuleExtension;
 import org.jetbrains.jps.builders.BuildTargetLoader;
 import org.jetbrains.jps.builders.BuildTargetType;
 import org.jetbrains.jps.model.JpsModel;
