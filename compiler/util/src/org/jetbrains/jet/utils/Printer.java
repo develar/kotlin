@@ -18,16 +18,23 @@ package org.jetbrains.jet.utils;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
-* @author abreslav
-*/
 public class Printer {
     private static final String INDENTATION_UNIT = "    ";
-    private String indent = "";
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
     private final StringBuilder out;
+    private final int maxBlankLines;
+
+    private String indent = "";
+    private int blankLineCountIncludingCurrent = 0;
 
     public Printer(@NotNull StringBuilder out) {
+        this(out, Integer.MAX_VALUE);
+    }
+
+    public Printer(@NotNull StringBuilder out, int maxBlankLines) {
         this.out = out;
+        this.maxBlankLines = maxBlankLines;
     }
 
     @NotNull
@@ -39,7 +46,10 @@ public class Printer {
     }
 
     private void printLineSeparator() {
-        out.append(System.getProperty("line.separator"));
+        if (blankLineCountIncludingCurrent <= maxBlankLines) {
+            blankLineCountIncludingCurrent++;
+            out.append(LINE_SEPARATOR);
+        }
     }
 
     @NotNull
@@ -53,6 +63,7 @@ public class Printer {
     @NotNull
     public Printer printWithNoIndent(Object... objects) {
         for (Object object : objects) {
+            blankLineCountIncludingCurrent = 0;
             out.append(object);
         }
 

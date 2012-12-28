@@ -36,9 +36,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * @author abreslav
- */
 public class LazyResolveStdlibLoadingTest extends KotlinTestWithEnvironmentManagement {
 
     private static final File STD_LIB_SRC = new File("libraries/stdlib/src");
@@ -59,9 +56,9 @@ public class LazyResolveStdlibLoadingTest extends KotlinTestWithEnvironmentManag
         ModuleDescriptor lazyModule = LazyResolveTestUtil.resolveLazily(files, stdlibEnvironment);
 
         for (Name name : namespaceShortNames) {
-            NamespaceDescriptor a = module.getRootNamespace().getMemberScope().getNamespace(name);
-            NamespaceDescriptor b = lazyModule.getRootNamespace().getMemberScope().getNamespace(name);
-            NamespaceComparator.assertNamespacesEqual(a, b, NamespaceComparator.RECURSIVE);
+            NamespaceDescriptor eager = module.getRootNamespace().getMemberScope().getNamespace(name);
+            NamespaceDescriptor lazy = lazyModule.getRootNamespace().getMemberScope().getNamespace(name);
+            NamespaceComparator.compareNamespaces(eager, lazy, NamespaceComparator.RECURSIVE, null);
         }
     }
 

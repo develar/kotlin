@@ -32,6 +32,7 @@ import org.jetbrains.jet.lang.psi.JetDeclaration;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
+import org.jetbrains.jet.lang.resolve.MemberComparator;
 import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
@@ -43,10 +44,6 @@ import org.jetbrains.jet.renderer.DescriptorRendererBuilder;
 
 import java.util.*;
 
-/**
- * @author Evgeny Gerashchenko
- * @since 3/11/12
- */
 public class DecompiledDataFactory {
     private static final String JET_CLASS = JetClass.class.getName();
     private static final String JET_METHOD = JetMethod.class.getName();
@@ -125,7 +122,7 @@ public class DecompiledDataFactory {
 
     private static List<DeclarationDescriptor> sortDeclarations(Collection<DeclarationDescriptor> input) {
         ArrayList<DeclarationDescriptor> r = new ArrayList<DeclarationDescriptor>(input);
-        Collections.sort(r, new DeclarationDescriptorComparator());
+        Collections.sort(r, MemberComparator.INSTANCE);
         return r;
     }
 

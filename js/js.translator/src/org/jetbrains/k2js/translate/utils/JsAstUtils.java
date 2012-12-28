@@ -30,9 +30,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public final class JsAstUtils {
     private static final JsNameRef DEFINE_PROPERTY = new JsNameRef("defineProperty");
     public static final JsNameRef CREATE_OBJECT = new JsNameRef("create");

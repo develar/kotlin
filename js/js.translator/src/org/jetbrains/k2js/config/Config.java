@@ -30,9 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Pavel Talanov
- *         <p/>
- *         Base class representing a configuration of translator.
+ * Base class representing a configuration of translator.
  */
 public class Config {
     //NOTE: used by mvn build

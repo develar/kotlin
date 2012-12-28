@@ -43,9 +43,6 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionForDesc
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedThisDescriptor;
 
-/**
- * @author Pavel Talanov
- */
 public final class InlinedCallExpressionTranslator extends AbstractCallExpressionTranslator {
 
     @SuppressWarnings("UnusedParameters")

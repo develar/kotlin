@@ -51,9 +51,6 @@ import java.util.Map;
 
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageLocation.NO_LOCATION;
 
-/**
- * @author Pavel Talanov
- */
 public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
 
     public static void main(String... args) {

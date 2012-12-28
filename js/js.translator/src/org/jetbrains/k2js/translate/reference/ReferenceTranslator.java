@@ -29,9 +29,6 @@ import org.jetbrains.k2js.translate.utils.BindingUtils;
 
 import static org.jetbrains.jet.lang.psi.JetPsiUtil.isBackingFieldReference;
 
-/**
- * @author Pavel Talanov
- */
 public final class ReferenceTranslator {
 
     private ReferenceTranslator() {

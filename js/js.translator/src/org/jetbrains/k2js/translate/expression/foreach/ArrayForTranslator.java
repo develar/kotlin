@@ -35,9 +35,6 @@ import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorF
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.inequality;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopRange;
 
-/**
- * @author Pavel Talanov
- */
 public final class ArrayForTranslator extends ForTranslator {
     @NotNull
     private final Pair<JsVar, JsExpression> loopRange;

@@ -37,9 +37,6 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getTypeByReference
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getNameIfStandardType;
 
-/**
- * @author Pavel Talanov
- */
 public final class PatternTranslator extends AbstractTranslator {
 
     @NotNull

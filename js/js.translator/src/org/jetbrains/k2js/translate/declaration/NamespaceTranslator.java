@@ -44,9 +44,6 @@ import static org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator.
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
 
-/**
- * @author Pavel.Talanov
- */
 final class NamespaceTranslator extends AbstractTranslator {
     @NotNull
     private final NamespaceDescriptor descriptor;

@@ -25,9 +25,6 @@ import org.jetbrains.k2js.translate.test.JSTester;
 
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public class TestConfigWithUnitTests extends TestConfig {
 
     @NotNull

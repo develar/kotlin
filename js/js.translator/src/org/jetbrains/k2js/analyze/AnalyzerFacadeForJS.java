@@ -30,9 +30,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public final class AnalyzerFacadeForJS {
 
     private AnalyzerFacadeForJS() {

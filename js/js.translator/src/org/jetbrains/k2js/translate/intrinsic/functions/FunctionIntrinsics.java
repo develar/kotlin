@@ -31,9 +31,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author Pavel Talanov
- */
 public final class FunctionIntrinsics {
     public static final String ANY_MEMBER = "";
 

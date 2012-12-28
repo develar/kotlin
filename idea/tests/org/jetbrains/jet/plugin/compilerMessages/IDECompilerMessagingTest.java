@@ -33,9 +33,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-/**
- * @author Pavel Talanov
- */
 public abstract class IDECompilerMessagingTest extends PlatformTestCase {
     @Override
     protected void runStartupActivities() {

@@ -31,9 +31,6 @@ import java.util.*;
 import static org.jetbrains.jet.utils.ExceptionUtils.rethrow;
 import static org.jetbrains.k2js.test.BasicTest.pathToTestFilesRoot;
 
-/**
- * @author Pavel Talanov
- */
 public final class RhinoUtils {
     private static final String KOTLIN_JS_LIB_ECMA_3 = pathToTestFilesRoot() + "kotlin_lib_ecma3.js";
     private static final String KOTLIN_JS_LIB_ECMA_5 = pathToTestFilesRoot() + "kotlin_lib_ecma5.js";

@@ -14,33 +14,41 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.plugin.libraries;
+package org.jetbrains.jet.lang.resolve;
 
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.renderer.DescriptorRenderer;
 
 import java.util.Comparator;
 
-/**
-* @author Evgeny Gerashchenko
-* @since 4/8/12
-*/
-class DeclarationDescriptorComparator implements Comparator<DeclarationDescriptor> {
+public class MemberComparator implements Comparator<DeclarationDescriptor> {
+    public static final MemberComparator INSTANCE = new MemberComparator();
+
+    private MemberComparator() {
+    }
+
     private static int getDeclarationPriority(DeclarationDescriptor descriptor) {
-        if (descriptor instanceof ClassDescriptor) {
-            return 4;
+        if (descriptor instanceof ConstructorDescriptor) {
+            return 6;
         }
         else if (descriptor instanceof PropertyDescriptor) {
-            return 3;
-        }
-        else if (descriptor instanceof FunctionDescriptor) {
-            FunctionDescriptor fun = (FunctionDescriptor)descriptor;
-            if (fun.getReceiverParameter() == null) {
-                return 2;
+            if (((PropertyDescriptor)descriptor).getReceiverParameter() == null) {
+                return 5;
             }
             else {
-                return 1;
+                return 4;
             }
+        }
+        else if (descriptor instanceof FunctionDescriptor) {
+            if (((FunctionDescriptor)descriptor).getReceiverParameter() == null) {
+                return 3;
+            }
+            else {
+                return 2;
+            }
+        }
+        else if (descriptor instanceof ClassDescriptor) {
+            return 1;
         }
         return 0;
     }
@@ -66,7 +74,8 @@ class DeclarationDescriptorComparator implements Comparator<DeclarationDescripto
 
         ReceiverParameterDescriptor c1ReceiverParameter = c1.getReceiverParameter();
         ReceiverParameterDescriptor c2ReceiverParameter = c2.getReceiverParameter();
-        if (c1ReceiverParameter != null && c2ReceiverParameter != null) {
+        assert (c1ReceiverParameter != null) == (c2ReceiverParameter != null);
+        if (c1ReceiverParameter != null) {
             String r1 = DescriptorRenderer.TEXT.renderType(c1ReceiverParameter.getType());
             String r2 = DescriptorRenderer.TEXT.renderType(c2ReceiverParameter.getType());
             int receiversCompareTo = r1.compareTo(r2);

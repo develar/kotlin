@@ -24,9 +24,6 @@ import org.jetbrains.k2js.config.Config;
 
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public final class LibraryFilePathsUtil {
     private LibraryFilePathsUtil() {
     }

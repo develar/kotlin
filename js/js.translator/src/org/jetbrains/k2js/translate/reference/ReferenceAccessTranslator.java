@@ -29,9 +29,6 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.reference.ReferenceTranslator.translateAsLocalNameReference;
 
-/**
- * @author Pavel Talanov
- */
 public final class ReferenceAccessTranslator extends AbstractTranslator implements CachedAccessTranslator {
     @NotNull
     private final JsExpression reference;

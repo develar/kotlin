@@ -29,9 +29,6 @@ import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import static org.jetbrains.k2js.translate.utils.AnnotationsUtils.isNativeObject;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getResolvedCallForProperty;
 
-/**
- * @author Pavel Talanov
- */
 public abstract class PropertyAccessTranslator extends AbstractTranslator implements AccessTranslator {
     protected final  CallType callType;
 

@@ -38,9 +38,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * @author abreslav
- */
 public abstract class AbstractLazyResolveDescriptorRendererTest extends KotlinTestWithEnvironment {
 
     @Override
@@ -122,6 +119,9 @@ public abstract class AbstractLazyResolveDescriptorRendererTest extends KotlinTe
             public void visitDeclaration(JetDeclaration element) {
                 DeclarationDescriptor descriptor = resolveSession.resolveToDescriptor(element);
                 descriptors.add(descriptor);
+                if (descriptor instanceof ClassDescriptor) {
+                    descriptors.addAll(((ClassDescriptor) descriptor).getConstructors());
+                }
                 element.acceptChildren(this);
             }
 

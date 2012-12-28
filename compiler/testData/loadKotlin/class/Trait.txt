@@ -1,4 +1,4 @@
-namespace test
+package test
 
-internal abstract trait test.Trtrtr : jet.Any {
+internal trait Trtrtr {
 }

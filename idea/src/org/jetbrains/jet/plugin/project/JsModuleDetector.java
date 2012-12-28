@@ -39,9 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author Pavel Talanov
- *         <p/>
- *         This class has utility functions to determine whether the project (or module) is js project.
+ * This class has utility functions to determine whether the project (or module) is js project.
  */
 public final class JsModuleDetector {
     private static final AtomicInteger modificationCount = new AtomicInteger(1);

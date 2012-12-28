@@ -29,9 +29,6 @@ import org.jetbrains.jet.lang.psi.JetSafeQualifiedExpression;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
-/**
- * @author Pavel Talanov
- */
 public enum CallType {
     SAFE {
         @NotNull

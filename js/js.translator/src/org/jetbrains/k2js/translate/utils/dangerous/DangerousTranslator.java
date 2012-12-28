@@ -30,9 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author Pavel Talanov
- */
 public final class DangerousTranslator extends AbstractTranslator {
     @NotNull
     private final DangerousData data;

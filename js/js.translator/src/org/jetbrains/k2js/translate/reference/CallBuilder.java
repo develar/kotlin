@@ -33,9 +33,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public final class CallBuilder {
 
     public static CallBuilder build(@NotNull TranslationContext context) {

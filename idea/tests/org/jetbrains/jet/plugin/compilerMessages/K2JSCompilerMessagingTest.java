@@ -23,9 +23,6 @@ import org.jetbrains.jet.plugin.compiler.K2JSCompiler;
 
 import static org.jetbrains.jet.plugin.compilerMessages.Message.*;
 
-/**
- * @author Pavel Talanov
- */
 public final class K2JSCompilerMessagingTest extends IDECompilerMessagingTest {
 
     private static final String TEST_DATA_PATH = PluginTestCaseBase.getTestDataPathBase() + "/compilerMessages/k2js";

@@ -22,9 +22,6 @@ import org.jetbrains.k2js.test.SingleFileTranslationTest;
 
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public final class NativeInteropTest extends SingleFileTranslationTest {
 
     @NotNull

@@ -25,9 +25,6 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public final class PatternBuilder {
 
     @NotNull

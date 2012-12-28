@@ -29,9 +29,6 @@ import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 
 import java.util.*;
 
-/**
- * @author Pavel Talanov
- */
 public class LibrarySourcesConfig extends Config {
     @NotNull
     public static final Key<String> MODULE_NAME_KEY = Key.create("externalModule");

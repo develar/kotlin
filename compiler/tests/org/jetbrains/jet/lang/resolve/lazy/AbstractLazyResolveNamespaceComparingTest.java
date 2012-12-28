@@ -25,16 +25,15 @@ import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
+import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.test.util.NamespaceComparator;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * @author abreslav
- */
 public abstract class AbstractLazyResolveNamespaceComparingTest extends KotlinTestWithEnvironment {
 
     @Override
@@ -69,12 +68,13 @@ public abstract class AbstractLazyResolveNamespaceComparingTest extends KotlinTe
 
         File serializeResultsTo = new File(FileUtil.getNameWithoutExtension(testFileName) + ".txt");
 
-        NamespaceComparator.compareNamespaces(expected, actual,
-                                              NamespaceComparator.DONT_INCLUDE_METHODS_OF_OBJECT.filterOutput(new Predicate<NamespaceDescriptor>() {
-                                                  @Override
-                                                  public boolean apply(NamespaceDescriptor namespaceDescriptor) {
-                                                      return !namespaceDescriptor.getName().equals(Name.identifier("jet"));
-                                                  }
-                                              }).checkPrimaryConstructors(checkPrimaryConstructors), serializeResultsTo);
+        NamespaceComparator.compareNamespaces(
+                expected, actual, NamespaceComparator.DONT_INCLUDE_METHODS_OF_OBJECT.filterRecursion(
+                new Predicate<FqNameUnsafe>() {
+                    @Override
+                    public boolean apply(FqNameUnsafe fqName) {
+                        return !KotlinBuiltIns.BUILT_INS_PACKAGE_FQ_NAME.toUnsafe().equals(fqName);
+                    }
+                }).checkPrimaryConstructors(checkPrimaryConstructors), serializeResultsTo);
     }
 }

@@ -1,4 +1,4 @@
-namespace test
+package test
 
-internal final val fromImported: jet.Int
-internal final val normal: jet.Int
+internal val fromImported : jet.Int
+internal val normal : jet.Int

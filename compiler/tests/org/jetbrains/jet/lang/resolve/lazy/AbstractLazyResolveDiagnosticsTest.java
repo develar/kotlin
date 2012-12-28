@@ -25,15 +25,13 @@ import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.test.util.NamespaceComparator;
 
 import java.io.File;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @author abreslav
- */
+import static org.jetbrains.jet.test.util.NamespaceComparator.*;
+
 public abstract class AbstractLazyResolveDiagnosticsTest extends AbstractJetDiagnosticsTest {
 
     public static final File TEST_DATA_DIR = new File("compiler/testData/diagnostics/tests");
@@ -54,9 +52,9 @@ public abstract class AbstractLazyResolveDiagnosticsTest extends AbstractJetDiag
         // Only recurse into those namespaces mentioned in the files
         // Otherwise we'll be examining the whole JDK
         final Set<Name> names = LazyResolveTestUtil.getTopLevelPackagesFromFileList(jetFiles);
-        NamespaceComparator.compareNamespaces(
+        compareNamespaces(
                 expected, actual,
-                NamespaceComparator.RECURSIVE.filterRecusion(new Predicate<FqNameUnsafe>() {
+                RECURSIVE.filterRecursion(new Predicate<FqNameUnsafe>() {
                     @Override
                     public boolean apply(FqNameUnsafe fqName) {
                         if (fqName.isRoot()) return true;

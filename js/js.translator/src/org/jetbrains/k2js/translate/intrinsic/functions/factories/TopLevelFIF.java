@@ -51,9 +51,6 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.generateInvocationArguments;
 
-/**
- * @author Pavel Talanov
- */
 public final class TopLevelFIF extends CompositeFIF {
     @NotNull
     public static final FunctionIntrinsic EQUALS = kotlinFunction("equals");

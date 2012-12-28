@@ -30,9 +30,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author Pavel Talanov
- */
 public class JsUnitTestReporter {
     @NotNull
     private final Map<String, Boolean> finishedTests = new THashMap<String, Boolean>();

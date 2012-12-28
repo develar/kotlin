@@ -41,9 +41,7 @@ import java.util.List;
 import static org.jetbrains.k2js.facade.FacadeUtils.parseString;
 
 /**
- * @author Pavel Talanov
- *         <p/>
- *         An entry point of translator.
+ * An entry point of translator.
  */
 public final class K2JSTranslator {
     public static final String FLUSH_SYSTEM_OUT = "Kotlin.System.flush();\n";

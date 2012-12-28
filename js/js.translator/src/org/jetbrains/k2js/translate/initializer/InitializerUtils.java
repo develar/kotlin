@@ -30,9 +30,6 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBackingField;
 
-/**
- * @author Pavel Talanov
- */
 public final class InitializerUtils {
     private InitializerUtils() {
     }

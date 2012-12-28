@@ -16,62 +16,75 @@
 
 package org.jetbrains.jet.parsing;
 
-import junit.framework.Test;
+import com.google.common.collect.Lists;
+import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @author abreslav
- */
-public class JetCodeConformanceTest extends TestCase {
 
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        TestSuite ats = new TestSuite("Side-effect-free at()'s in assertions");
-        suite.addTest(ats);
-        File parsingSourceDir = new File("./compiler/frontend/src/org/jetbrains/jet/lang/parsing");
-        for (File sourceFile : parsingSourceDir.listFiles()) {
-            if (sourceFile.getName().endsWith(".java")) {
-                ats.addTest(new JetCodeConformanceTest(sourceFile.getName(), sourceFile));
+public class JetCodeConformanceTest extends TestCase {
+    private static final Pattern JAVA_FILE_PATTERN = Pattern.compile(".+\\.java");
+    private static final Pattern SOURCES_FILE_PATTERN = Pattern.compile("(.+\\.java|.+\\.kt|.+\\.jet|.+\\.js)");
+    private static final List<File> EXCLUDED_FILES_AND_DIRS = Arrays.asList(
+            new File("dependencies"),
+            new File("examples"),
+            new File("js/js.translator/qunit/qunit.js"),
+            new File("libraries/tools/kotlin-js-tests/src/test/web/qunit.js"),
+            new File("out"),
+            new File("dist"),
+            new File("docs"),
+            new File("ideaSDK"),
+            new File("compiler/tests/org/jetbrains/jet/parsing/JetCodeConformanceTest.java"));
+    public static final Pattern JAVADOC_PATTERN = Pattern.compile("/\\*.+@author.+\\*/", Pattern.DOTALL);
+
+    public void testParserCode() throws Exception {
+        for (File sourceFile : FileUtil.findFilesByMask(JAVA_FILE_PATTERN, new File("compiler/frontend/src/org/jetbrains/jet/lang/parsing"))) {
+            String source = FileUtil.loadFile(sourceFile);
+
+            Pattern atPattern = Pattern.compile("assert.*?[^_]at.*?$", Pattern.MULTILINE);
+            Matcher matcher = atPattern.matcher(source);
+
+            if (matcher.find()) {
+                fail("An at-method with side-effects is used inside assert: " + matcher.group() + "\nin file: " + sourceFile);
             }
         }
-        return suite;
     }
 
-    private final File sourceFile;
+    public void testForAuthorJavadoc() throws IOException {
+        List<File> filesWithAuthorJavadoc = Lists.newArrayList();
 
-    public JetCodeConformanceTest(String name, File sourceFile) {
-        super(name);
-        this.sourceFile = sourceFile;
-    }
+        for (File sourceFile : FileUtil.findFilesByMask(SOURCES_FILE_PATTERN, new File("."))) {
+            if (excludeFile(sourceFile)) {
+                continue;
+            }
 
-    @Override
-    protected void runTest() throws Throwable {
-        checkSourceFile(sourceFile);
-    }
+            String source = FileUtil.loadFile(sourceFile);
 
-    private void checkSourceFile(File sourceFile) throws IOException {
-        FileReader reader = new FileReader(sourceFile);
-        StringBuilder builder = new StringBuilder();
-        int c;
-        while ((c = reader.read()) >= 0) {
-            builder.append((char) c);
+            if (source.contains("@author") && JAVADOC_PATTERN.matcher(source).find()) { // .contains() is invoked for optimization
+                filesWithAuthorJavadoc.add(sourceFile);
+            }
         }
-        String source = builder.toString();
 
-        Pattern atPattern = Pattern.compile("assert.*?[^_]at.*?$", Pattern.MULTILINE);
-        Matcher matcher = atPattern.matcher(source);
-        boolean match = matcher.find();
-        if (match) {
-            fail("An at-method with side-ffects is used inside assert: " + matcher.group());
+        if (!filesWithAuthorJavadoc.isEmpty()) {
+            fail(String.format("%d source files contain @author javadoc tag. Please remove them:\n%s",
+                               filesWithAuthorJavadoc.size(), StringUtil.join(filesWithAuthorJavadoc, "\n")));
         }
     }
 
-
+    private static boolean excludeFile(@NotNull File file) {
+        for (File excludedFileOrDir : EXCLUDED_FILES_AND_DIRS) {
+            if (FileUtil.isAncestor(excludedFileOrDir, file, false)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

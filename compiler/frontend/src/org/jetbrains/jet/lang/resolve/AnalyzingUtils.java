@@ -28,9 +28,6 @@ import org.jetbrains.jet.lang.psi.JetTreeVisitorVoid;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author abreslav
- */
 public class AnalyzingUtils {
     private AnalyzingUtils() {
     }

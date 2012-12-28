@@ -36,9 +36,6 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToStatement;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.negated;
 
-/**
- * @author Pavel Talanov
- */
 public final class WhenTranslator extends AbstractTranslator {
     @NotNull
     private final JetWhenExpression whenExpression;

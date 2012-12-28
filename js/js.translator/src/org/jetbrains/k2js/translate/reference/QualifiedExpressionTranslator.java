@@ -32,9 +32,6 @@ import static org.jetbrains.k2js.translate.utils.PsiUtils.getNotNullSimpleNameSe
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getSelector;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getSelectorAsSimpleName;
 
-/**
- * @author Pavel Talanov
- */
 public final class QualifiedExpressionTranslator {
 
     private QualifiedExpressionTranslator() {

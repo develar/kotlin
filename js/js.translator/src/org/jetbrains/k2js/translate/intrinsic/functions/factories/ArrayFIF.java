@@ -40,9 +40,6 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.inequality;
 
-/**
- * @author Pavel Talanov
- */
 public final class ArrayFIF extends CompositeFIF {
     @NotNull
     public static final FunctionIntrinsic GET_INTRINSIC = new FunctionIntrinsic() {

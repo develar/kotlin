@@ -1,2 +1,2 @@
-namespace DeeplyInnerClass
+package DeeplyInnerClass
 

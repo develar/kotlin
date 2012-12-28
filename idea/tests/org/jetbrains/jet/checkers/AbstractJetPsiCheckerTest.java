@@ -24,9 +24,6 @@ import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.plugin.PluginTestCaseBase;
 
-/**
- * @author abreslav
- */
 public abstract class AbstractJetPsiCheckerTest extends LightDaemonAnalyzerTestCase {
     private final Key<Boolean> POST_STARTUP_ACTIVITIES_PASSED = Key.create("POST_STARTUP_ACTIVITIES_PASSED");
 

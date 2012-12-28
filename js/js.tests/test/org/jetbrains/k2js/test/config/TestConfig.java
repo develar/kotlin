@@ -26,9 +26,6 @@ import org.jetbrains.k2js.config.EcmaVersion;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public class TestConfig extends Config {
     @NotNull
     public static final String TEST_MODULE_NAME = "JS_TESTS";

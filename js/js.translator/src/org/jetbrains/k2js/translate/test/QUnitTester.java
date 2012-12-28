@@ -20,9 +20,6 @@ import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author Pavel Talanov
- */
 public final class QUnitTester extends CommonUnitTester {
     @NotNull
     private static final JsNameRef TEST_FUN_REF = new JsNameRef("test", "QUnit");

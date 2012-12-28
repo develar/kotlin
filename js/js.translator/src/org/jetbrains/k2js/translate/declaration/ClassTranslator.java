@@ -51,9 +51,7 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getContaining
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 
 /**
- * @author Pavel Talanov
- *         <p/>
- *         Generates a definition of a single class.
+ * Generates a definition of a single class.
  */
 public final class ClassTranslator extends AbstractTranslator {
     @NotNull

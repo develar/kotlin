@@ -34,9 +34,6 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 
-/**
- * @author Pavel Talanov
- */
 public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
     protected final List<JsPropertyInitializer> result;
 

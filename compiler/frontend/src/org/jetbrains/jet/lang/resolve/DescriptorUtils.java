@@ -39,9 +39,6 @@ import java.util.*;
 
 import static org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor.NO_RECEIVER_PARAMETER;
 
-/**
- * @author abreslav
- */
 public class DescriptorUtils {
 
     @NotNull
@@ -125,6 +122,12 @@ public class DescriptorUtils {
                 }
             }
             throw new IllegalStateException("descriptor is not module descriptor and has null containingDeclaration: " + containingDeclaration);
+        }
+
+        if (containingDeclaration instanceof ClassDescriptor && ((ClassDescriptor) containingDeclaration).getKind() == ClassKind.CLASS_OBJECT) {
+            DeclarationDescriptor classOfClassObject = containingDeclaration.getContainingDeclaration();
+            assert classOfClassObject != null;
+            return getFQName(classOfClassObject).child(descriptor.getName());
         }
 
         return getFQName(containingDeclaration).child(descriptor.getName());

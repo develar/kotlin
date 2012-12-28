@@ -25,9 +25,7 @@ import org.jetbrains.k2js.translate.reference.CallTranslator;
 import java.util.List;
 
 /**
- * @author Pavel Talanov
- *         <p/>
- *         Base for intrinsics that substitute standard function calls like Int#plus, Float#minus ... etc
+ * Base for intrinsics that substitute standard function calls like Int#plus, Float#minus ... etc
  */
 public abstract class FunctionIntrinsic {
 
