@@ -55,7 +55,7 @@
 
       <projectService serviceInterface="org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider"
                       serviceImplementation="org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider"/>
-    
+
       <projectService serviceInterface="org.jetbrains.jet.plugin.caches.JetCacheManager"
                       serviceImplementation="org.jetbrains.jet.plugin.caches.JetCacheManager"/>
 
@@ -231,5 +231,7 @@
       <postStartupActivity implementation="org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerUpdater"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.JetStandardLibraryInitializer"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.highlighter.DeclarationHintSupport"/>
+
+      <packaging.elementType implementation="org.jetbrains.jet.plugin.packaging.JsCompilerOutputElementType"/>
   </extensions>
 </idea-plugin>

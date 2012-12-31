@@ -1,7 +1,6 @@
 package org.jetbrains.jet.jps.model;
 
 import org.jdom.Element;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.jps.model.module.JpsModuleReference;
 import org.jetbrains.jps.model.serialization.JpsModelSerializerExtension;
 import org.jetbrains.jps.model.serialization.artifact.JpsPackagingElementSerializer;
@@ -11,11 +10,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class JpsJsModelSerializerExtension extends JpsModelSerializerExtension {
-    @NonNls public static final String JS_COMPILER_OUTPUT_ELEMENT_ID = "k2js-compiler-output";
-
     @Override
     public List<? extends JpsPackagingElementSerializer<?>> getPackagingElementSerializers() {
-        return Collections.singletonList(new JpsJsCompilerOutputElementSerializer(JS_COMPILER_OUTPUT_ELEMENT_ID));
+        return Collections.singletonList(new JpsJsCompilerOutputElementSerializer(JsExternalizationConstants.COMPILER_OUTPUT_ELEMENT_ID));
     }
 
     private static class JpsJsCompilerOutputElementSerializer extends JpsPackagingElementSerializer<JsCompilerOutputPackagingElement> {
