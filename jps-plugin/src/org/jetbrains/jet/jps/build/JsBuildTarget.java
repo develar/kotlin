@@ -76,4 +76,22 @@ public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
     public Collection<File> getOutputRoots(CompileContext context) {
         return Collections.singleton(JpsJsCompilerPaths.getCompilerOutputRoot(this, context.getProjectDescriptor().dataManager.getDataPaths()));
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        JsBuildTarget target = (JsBuildTarget) o;
+        return extension.equals(target.extension);
+    }
+
+    @Override
+    public int hashCode() {
+      return extension.hashCode();
+    }
 }

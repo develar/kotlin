@@ -2,25 +2,35 @@ package org.jetbrains.jet.jps.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.JpsElementChildRole;
-import org.jetbrains.jps.model.ex.JpsCompositeElementBase;
+import org.jetbrains.jps.model.ex.JpsElementBase;
 import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
 import org.jetbrains.jps.model.module.JpsModule;
+import org.jetbrains.jps.model.module.JpsModuleReference;
 
-public class JpsJsModuleExtension extends JpsCompositeElementBase<JpsJsModuleExtension> {
-  public static final JpsElementChildRole<JpsJsModuleExtension> ROLE = JpsElementChildRoleBase.create("KtToJs");
+public class JpsJsModuleExtension extends JpsElementBase<JpsJsModuleExtension> {
+    public static final JpsElementChildRole<JpsJsModuleExtension> ROLE = JpsElementChildRoleBase.create("K2Js");
+    private final JpsModuleReference moduleReference;
 
-  private JpsJsModuleExtension(JpsJsModuleExtension original) {
-    super(original);
-  }
+    public JpsJsModuleExtension(JpsModuleReference moduleReference) {
+        this.moduleReference = moduleReference;
+    }
 
-  @NotNull
-  public JpsModule getModule() {
-    return (JpsModule)myParent;
-  }
+    private JpsJsModuleExtension(JpsJsModuleExtension original) {
+        moduleReference = original.moduleReference;
+    }
 
-  @NotNull
-  @Override
-  public JpsJsModuleExtension createCopy() {
-    return new JpsJsModuleExtension(this);
-  }
+    @NotNull
+    public JpsModule getModule() {
+        return moduleReference.resolve();
+    }
+
+    @NotNull
+    @Override
+    public JpsJsModuleExtension createCopy() {
+        return new JpsJsModuleExtension(this);
+    }
+
+    @Override
+    public void applyChanges(@NotNull JpsJsModuleExtension modified) {
+    }
 }

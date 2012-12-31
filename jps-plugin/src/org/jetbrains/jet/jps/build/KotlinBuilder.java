@@ -22,6 +22,7 @@ import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.compiler.runner.*;
+import org.jetbrains.jet.jps.model.JpsJsExtensionService;
 import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.ModuleChunk;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
@@ -29,6 +30,7 @@ import org.jetbrains.jps.builders.java.JavaSourceRootDescriptor;
 import org.jetbrains.jps.incremental.*;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
+import org.jetbrains.jps.model.module.JpsModule;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,7 +63,14 @@ public class KotlinBuilder extends ModuleLevelBuilder {
     ) throws ProjectBuildException, IOException {
         String skipCompilation = System.getProperty("kotlin.compiler.skip");
         if (skipCompilation != null && (skipCompilation.isEmpty() || Boolean.valueOf(skipCompilation))) {
-            return ExitCode.OK;
+            return ExitCode.NOTHING_DONE;
+        }
+
+        JpsJsExtensionService jsExtensionService = JpsJsExtensionService.getInstance();
+        for (JpsModule module : chunk.getModules()) {
+            if (jsExtensionService.getExtension(module) != null) {
+                return ExitCode.NOTHING_DONE;
+            }
         }
 
         MessageCollector messageCollector = new MessageCollectorAdapter(context);
