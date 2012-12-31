@@ -15,19 +15,19 @@ public class JpsJsModelSerializerExtension extends JpsModelSerializerExtension {
         return Collections.singletonList(new JpsJsCompilerOutputElementSerializer(JsExternalizationConstants.COMPILER_OUTPUT_ELEMENT_ID));
     }
 
-    private static class JpsJsCompilerOutputElementSerializer extends JpsPackagingElementSerializer<JsCompilerOutputPackagingElement> {
+    private static class JpsJsCompilerOutputElementSerializer extends JpsPackagingElementSerializer<JpsJsCompilerOutputPackagingElement> {
         public JpsJsCompilerOutputElementSerializer(String typeId) {
-            super(typeId, JsCompilerOutputPackagingElement.class);
+            super(typeId, JpsJsCompilerOutputPackagingElement.class);
         }
 
         @Override
-        public JsCompilerOutputPackagingElement load(Element element) {
+        public JpsJsCompilerOutputPackagingElement load(Element element) {
             JpsModuleReference moduleReference = JpsFacetSerializer.createModuleReference("TODO resolve module");
-            return new JsCompilerOutputPackagingElement(moduleReference);
+            return new JpsJsCompilerOutputPackagingElement(moduleReference);
         }
 
         @Override
-        public void save(JsCompilerOutputPackagingElement element, Element tag) {
+        public void save(JpsJsCompilerOutputPackagingElement element, Element tag) {
             //String id = JpsFacetSerializer.getFacetId(element.getModuleReference(), GWT_FACET_ID, GWT_FACET_NAME);
             //tag.setAttribute(PACKAGING_FACET_ATTRIBUTE, id);
         }

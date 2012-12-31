@@ -1,9 +1,9 @@
 package org.jetbrains.jet.jps.build;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.jps.model.JpsJsCompilerOutputPackagingElement;
 import org.jetbrains.jet.jps.model.JpsJsExtensionService;
 import org.jetbrains.jet.jps.model.JpsJsModuleExtension;
-import org.jetbrains.jet.jps.model.JsCompilerOutputPackagingElement;
 import org.jetbrains.jps.builders.BuildTarget;
 import org.jetbrains.jps.builders.TargetOutputIndex;
 import org.jetbrains.jps.incremental.artifacts.builders.LayoutElementBuilderService;
@@ -16,14 +16,14 @@ import org.jetbrains.jps.util.JpsPathUtil;
 import java.util.Collection;
 import java.util.Collections;
 
-public class JsCompilerOutputLayoutElementBuilder extends LayoutElementBuilderService<JsCompilerOutputPackagingElement> {
+public class JsCompilerOutputLayoutElementBuilder extends LayoutElementBuilderService<JpsJsCompilerOutputPackagingElement> {
     public JsCompilerOutputLayoutElementBuilder() {
-        super(JsCompilerOutputPackagingElement.class);
+        super(JpsJsCompilerOutputPackagingElement.class);
     }
 
     @Override
     public void generateInstructions(
-            JsCompilerOutputPackagingElement element,
+            JpsJsCompilerOutputPackagingElement element,
             ArtifactCompilerInstructionCreator instructionCreator,
             ArtifactInstructionsBuilderContext builderContext
     ) {
@@ -39,7 +39,7 @@ public class JsCompilerOutputLayoutElementBuilder extends LayoutElementBuilderSe
 
     @Override
     public Collection<? extends BuildTarget<?>> getDependencies(
-            @NotNull JsCompilerOutputPackagingElement element,
+            @NotNull JpsJsCompilerOutputPackagingElement element,
             TargetOutputIndex outputIndex
     ) {
         JpsModule module = element.getModuleReference().resolve();
