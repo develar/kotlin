@@ -31,7 +31,7 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
             @NotNull BuildOutputConsumer outputConsumer,
             @NotNull CompileContext context
     ) throws ProjectBuildException, IOException {
-        throw  new IOException("adas");
+        //throw  new IOException("adas");
         // todo
     }
 }

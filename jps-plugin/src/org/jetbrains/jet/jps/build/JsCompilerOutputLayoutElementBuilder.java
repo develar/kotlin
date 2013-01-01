@@ -42,12 +42,11 @@ public class JsCompilerOutputLayoutElementBuilder extends LayoutElementBuilderSe
             @NotNull JpsJsCompilerOutputPackagingElement element,
             TargetOutputIndex outputIndex
     ) {
-        return Collections.singletonList(new JsBuildTarget(element.getModuleExtension()));
-        //JpsModule module = element.getModuleReference().resolve();
-        //JpsJsModuleExtension extension = JpsJsExtensionService.getInstance().getExtension(module);
-        //if (extension != null) {
-        //    return Collections.singletonList(new JsBuildTarget(extension));
-        //}
-        //return Collections.emptyList();
+        JpsModule module = element.getModuleReference().resolve();
+        JpsJsModuleExtension extension = JpsJsExtensionService.getInstance().getExtension(module);
+        if (extension != null) {
+            return Collections.singletonList(new JsBuildTarget(extension));
+        }
+        return Collections.emptyList();
     }
 }

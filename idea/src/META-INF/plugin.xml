@@ -233,5 +233,6 @@
       <postStartupActivity implementation="org.jetbrains.jet.plugin.highlighter.DeclarationHintSupport"/>
 
       <packaging.elementType implementation="org.jetbrains.jet.plugin.packaging.JsCompilerOutputElementType"/>
+      <compiler.buildTargetScopeProvider implementation="org.jetbrains.jet.plugin.build.JsBuildTargetScopeProvider"/>
   </extensions>
 </idea-plugin>

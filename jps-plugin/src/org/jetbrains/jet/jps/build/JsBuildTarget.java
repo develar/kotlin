@@ -51,7 +51,7 @@ public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
                 .getSourceRoots(JavaSourceRootType.SOURCE)) {
             roots.add(new BuildRootDescriptorImpl(this, JpsPathUtil.urlToFile(sourceRoot.getUrl()), true));
         }
-        return roots;
+         return roots;
     }
 
     @Nullable
