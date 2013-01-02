@@ -16,6 +16,7 @@
       <w>preanalyzed</w>
       <w>prefilled</w>
       <w>recurse</w>
+      <w>sourcemap</w>
       <w>unmangled</w>
       <w>unnormalized</w>
       <w>unobfuscatable</w>
