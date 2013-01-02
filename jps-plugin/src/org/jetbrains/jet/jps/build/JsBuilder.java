@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget> {
-    public static final String NAME = "K2Js Compiler";
+    public static final String NAME = JsBuildTargetType.TYPE_ID + " Builder";
 
     public JsBuilder() {
         super(Collections.singletonList(JsBuildTargetType.INSTANCE));
