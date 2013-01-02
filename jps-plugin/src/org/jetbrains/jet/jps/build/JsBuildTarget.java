@@ -35,6 +35,10 @@ public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
         return extension.getModule().getName();
     }
 
+    public JpsJsModuleExtension getExtension() {
+        return extension;
+    }
+
     @Override
     public Collection<BuildTarget<?>> computeDependencies(BuildTargetRegistry targetRegistry, TargetOutputIndex outputIndex) {
         return Collections.<BuildTarget<?>>unmodifiableCollection(

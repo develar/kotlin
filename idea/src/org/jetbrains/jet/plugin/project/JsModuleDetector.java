@@ -32,6 +32,7 @@ import com.intellij.ui.EditorNotifications;
 import com.intellij.util.Alarm;
 import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.plugin.quickfix.ConfigureKotlinLibraryNotificationProvider;
 
@@ -68,7 +69,7 @@ public final class JsModuleDetector {
             ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
                 @Override
                 public boolean process(Library library) {
-                    if (ConfigureKotlinLibraryNotificationProvider.JS_LIBRARY_NAME.equals(library.getName()) &&
+                    if (JsExternalizationConstants.JS_LIBRARY_NAME.equals(library.getName()) &&
                         ConfigureKotlinLibraryNotificationProvider.findLibraryFile(library, false) != null) {
                         module.putUserData(IS_JS_MODULE, modificationCount.get());
                         result.set(true);

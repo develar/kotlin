@@ -56,6 +56,7 @@ import com.intellij.ui.EditorNotifications;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 import org.jetbrains.jet.plugin.JetFileType;
 import org.jetbrains.jet.utils.KotlinPathsFromHomeDir;
@@ -70,7 +71,6 @@ import static org.jetbrains.jet.plugin.project.JsModuleDetector.isJsModule;
 public class ConfigureKotlinLibraryNotificationProvider extends EditorNotifications.Provider<EditorNotificationPanel> {
     private static final Key<EditorNotificationPanel> KEY = Key.create("configure.kotlin.library");
     private static final String LIBRARY_NAME = "KotlinRuntime";
-    public static final String JS_LIBRARY_NAME = "KotlinJsRuntime";
 
     private final Project myProject;
 
@@ -110,7 +110,7 @@ public class ConfigureKotlinLibraryNotificationProvider extends EditorNotificati
 
     @Nullable
     public static Library findLibrary(Project project, boolean isJvm) {
-        return ProjectLibraryTable.getInstance(project).getLibraryByName(isJvm ? LIBRARY_NAME : JS_LIBRARY_NAME);
+        return ProjectLibraryTable.getInstance(project).getLibraryByName(isJvm ? LIBRARY_NAME : JsExternalizationConstants.JS_LIBRARY_NAME);
     }
 
     @Nullable
@@ -206,7 +206,7 @@ public class ConfigureKotlinLibraryNotificationProvider extends EditorNotificati
                 library = findOrCreateRuntimeLibrary(LIBRARY_NAME, asJvm);
             }
             else {
-                library = findOrCreateRuntimeLibrary(JS_LIBRARY_NAME, asJvm);
+                library = findOrCreateRuntimeLibrary(JsExternalizationConstants.JS_LIBRARY_NAME, asJvm);
             }
 
             ApplicationManager.getApplication().runWriteAction(new Runnable() {

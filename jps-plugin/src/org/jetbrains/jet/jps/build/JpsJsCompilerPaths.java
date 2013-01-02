@@ -10,6 +10,6 @@ public class JpsJsCompilerPaths {
     }
 
     public static File getCompilerOutputRoot(@NotNull JsBuildTarget target, final BuildDataPaths dataPaths) {
-    return new File(dataPaths.getTargetDataRoot(target), "k2js-output");
-  }
+        return new File(dataPaths.getTargetDataRoot(target), "k2js-output");
+    }
 }

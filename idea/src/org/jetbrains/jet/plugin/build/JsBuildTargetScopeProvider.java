@@ -13,13 +13,13 @@ import com.intellij.packaging.elements.PackagingElementResolvingContext;
 import com.intellij.packaging.impl.artifacts.ArtifactUtil;
 import com.intellij.packaging.impl.compiler.ArtifactCompileScope;
 import com.intellij.util.Processor;
-import com.intellij.util.containers.ContainerUtilRt;
 import gnu.trove.THashSet;
 import gnu.trove.TObjectProcedure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.jps.build.JsBuildTargetType;
 import org.jetbrains.jet.plugin.packaging.JsCompilerOutputElementType;
 import org.jetbrains.jet.plugin.packaging.JsModuleOutputPackagingElement;
+import org.jetbrains.jet.plugin.project.JsModuleDetector;
 import org.jetbrains.jps.api.CmdlineRemoteProto;
 
 import java.util.Collections;
@@ -43,7 +43,11 @@ class JsBuildTargetScopeProvider extends BuildTargetScopeProvider {
                                                           new Processor<JsModuleOutputPackagingElement>() {
                                                               @Override
                                                               public boolean process(JsModuleOutputPackagingElement element) {
-                                                                  ContainerUtilRt.addIfNotNull(element.findModule(context), modules);
+                                                                  Module module = element.findModule(context);
+                                                                  // todo error report about unsuitable module
+                                                                  if (module != null && JsModuleDetector.isJsModule(module)) {
+                                                                      modules.add(module);
+                                                                  }
                                                                   return true;
                                                               }
                                                           }, context, true);
