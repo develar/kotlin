@@ -17,9 +17,15 @@
 package org.jetbrains.jet.compiler.runner;
 
 import com.intellij.util.Function;
+import com.intellij.util.lang.UrlClassLoader;
+import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.cli.common.messages.*;
+import org.jetbrains.jet.cli.common.messages.MessageCollector;
+import org.jetbrains.jet.config.CompilerConfiguration;
+import org.jetbrains.jet.config.CompilerConfigurationKey;
 import org.jetbrains.jet.utils.KotlinPaths;
+import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
+import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
 
 import java.io.*;
 import java.lang.ref.SoftReference;
@@ -27,15 +33,18 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageLocation.NO_LOCATION;
-import static org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity.*;
+import static org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity.ERROR;
 
 public class CompilerRunnerUtil {
+    private static SoftReference<ClassLoader> ourClassLoaderRef = new SoftReference<ClassLoader>(null);
 
-    private static SoftReference<URLClassLoader> ourClassLoaderRef = new SoftReference<URLClassLoader>(null);
+    private CompilerRunnerUtil() {
+    }
 
     public static List<File> kompilerClasspath(KotlinPaths paths, MessageCollector messageCollector) {
         File libs = paths.getLibPath();
@@ -46,20 +55,22 @@ public class CompilerRunnerUtil {
         }
 
         ArrayList<File> answer = new ArrayList<File>();
+        //answer.add(new File("/Users/develar/Documents/kotlin/out/production/cli-common"));
+        //answer.add(new File("/Users/develar/Documents/kotlin/out/production/cli"));
         answer.add(new File(libs, "kotlin-compiler.jar"));
         return answer;
     }
 
-    public static URLClassLoader getOrCreateClassLoader(KotlinPaths paths, MessageCollector messageCollector) {
-        URLClassLoader answer = ourClassLoaderRef.get();
+    public static ClassLoader getOrCreateClassLoader(KotlinPaths paths, MessageCollector messageCollector) {
+        ClassLoader answer = ourClassLoaderRef.get();
         if (answer == null) {
-            answer = createClassloader(paths, messageCollector);
-            ourClassLoaderRef = new SoftReference<URLClassLoader>(answer);
+            answer = createClassLoader(paths, messageCollector);
+            ourClassLoaderRef = new SoftReference<ClassLoader>(answer);
         }
         return answer;
     }
 
-    private static URLClassLoader createClassloader(KotlinPaths paths, MessageCollector messageCollector) {
+    private static UrlClassLoader createClassLoader(KotlinPaths paths, MessageCollector messageCollector) {
         List<File> jars = kompilerClasspath(paths, messageCollector);
         URL[] urls = new URL[jars.size()];
         for (int i = 0; i < urls.length; i++) {
@@ -70,7 +81,7 @@ public class CompilerRunnerUtil {
                 throw new RuntimeException(e); // Checked exceptions are great! I love them, and I love brilliant library designers too!
             }
         }
-        return new URLClassLoader(urls, null);
+        return new MyUrlClassLoader(urls);
     }
 
     static void handleProcessTermination(int exitCode, MessageCollector messageCollector) {
@@ -91,7 +102,7 @@ public class CompilerRunnerUtil {
     public static Object invokeExecMethod(CompilerEnvironment environment,
             PrintStream out,
             MessageCollector messageCollector, String[] arguments, String name) throws Exception {
-        URLClassLoader loader = getOrCreateClassLoader(environment.getKotlinPaths(), messageCollector);
+        ClassLoader loader = getOrCreateClassLoader(environment.getKotlinPaths(), messageCollector);
         Class<?> kompiler = Class.forName(name, true, loader);
         Method exec = kompiler.getMethod("exec", PrintStream.class, String[].class);
         return exec.invoke(kompiler.newInstance(), out, arguments);
@@ -108,5 +119,26 @@ public class CompilerRunnerUtil {
         BufferedReader reader = new BufferedReader(new StringReader(outputStream.toString()));
         CompilerOutputParser.parseCompilerMessagesFromReader(messageCollector, reader, outputItemsCollector);
         handleProcessTermination(exitCode, messageCollector);
+    }
+
+    private static final class MyUrlClassLoader extends UrlClassLoader {
+        private final THashMap<String, Class> sharedClassesMap;
+
+        public MyUrlClassLoader(URL[] urls) {
+            super(urls, null);
+
+            Class<?>[] sharedClasses = {CompilerConfiguration.class, CompilerConfigurationKey.class, CompilerConfigurationKeys.class,
+                    ModuleInfoProvider.class};
+            sharedClassesMap = new THashMap<String, Class>(sharedClasses.length);
+            for (Class sharedClass : sharedClasses) {
+                sharedClassesMap.put(sharedClass.getName(), sharedClass);
+            }
+        }
+
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+            Class sharedClass = sharedClassesMap.get(name);
+            return sharedClass != null ? sharedClass : super.findClass(name);
+        }
     }
 }

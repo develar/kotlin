@@ -26,17 +26,17 @@ import java.util.Collection;
 import java.util.List;
 
 public class CliJetFilesProvider extends JetFilesProvider {
-    private final JetCoreEnvironment environment;
-    private Function<JetFile,Collection<JetFile>> all_files = new Function<JetFile, Collection<JetFile>>() {
+    private final List<JetFile> sourceFiles;
+    private final Function<JetFile,Collection<JetFile>> all_files = new Function<JetFile, Collection<JetFile>>() {
         @Override
         public Collection<JetFile> fun(JetFile file) {
-            return environment.getSourceFiles();
+            return sourceFiles;
         }
 
     };
 
-    public CliJetFilesProvider(JetCoreEnvironment environment) {
-        this.environment = environment;
+    public CliJetFilesProvider(List<JetFile> sourceFiles) {
+        this.sourceFiles = sourceFiles;
     }
 
     @Override
@@ -47,7 +47,7 @@ public class CliJetFilesProvider extends JetFilesProvider {
     @Override
     public List<JetFile> allInScope(GlobalSearchScope scope) {
         List<JetFile> answer = new ArrayList<JetFile>();
-        for (JetFile file : environment.getSourceFiles()) {
+        for (JetFile file : sourceFiles) {
             if (scope.contains(file.getVirtualFile())) {
                 answer.add(file);
             }

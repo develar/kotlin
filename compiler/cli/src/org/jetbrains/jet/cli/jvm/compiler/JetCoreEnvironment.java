@@ -16,26 +16,13 @@
 
 package org.jetbrains.jet.cli.jvm.compiler;
 
-import com.intellij.codeInsight.ExternalAnnotationsManager;
-import com.intellij.core.CoreApplicationEnvironment;
-import com.intellij.core.CoreJavaFileManager;
-import com.intellij.core.JavaCoreApplicationEnvironment;
-import com.intellij.core.JavaCoreProjectEnvironment;
-import com.intellij.lang.java.JavaParserDefinition;
 import com.intellij.mock.MockApplication;
-import com.intellij.mock.MockProject;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiElementFinder;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
-import com.intellij.psi.impl.compiled.ClsCustomNavigationPolicy;
-import com.intellij.psi.impl.file.impl.JavaFileManager;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.asJava.JavaElementFinder;
 import org.jetbrains.jet.cli.common.CLIConfigurationKeys;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
@@ -43,11 +30,8 @@ import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.config.CommonConfigurationKeys;
 import org.jetbrains.jet.config.CompilerConfiguration;
-import org.jetbrains.jet.lang.parsing.JetParserDefinition;
 import org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
-import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.plugin.JetFileType;
 import org.jetbrains.jet.utils.PathUtil;
 
@@ -56,46 +40,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JetCoreEnvironment {
-
-    private final JavaCoreApplicationEnvironment applicationEnvironment;
-    private final JavaCoreProjectEnvironment projectEnvironment;
+    private final JavaCompileContext context;
     private final List<JetFile> sourceFiles = new ArrayList<JetFile>();
-
-    private final CoreExternalAnnotationsManager annotationsManager;
 
     private final CompilerConfiguration configuration;
 
     private boolean initialized = false;
 
-    public JetCoreEnvironment(Disposable parentDisposable, @NotNull CompilerConfiguration configuration) {
+    public JetCoreEnvironment(@NotNull Disposable parentDisposable, @NotNull CompilerConfiguration configuration) {
         this.configuration = configuration.copy();
         this.configuration.setReadOnly(true);
 
-        this.applicationEnvironment = new JavaCoreApplicationEnvironment(parentDisposable);
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "kt");
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "kts");
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "ktm");
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, JetParserDefinition.KTSCRIPT_FILE_SUFFIX); // should be renamed to kts
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "jet");
-        applicationEnvironment.registerParserDefinition(new JavaParserDefinition());
-        applicationEnvironment.registerParserDefinition(new JetParserDefinition());
-
-        projectEnvironment = new JavaCoreProjectEnvironment(parentDisposable, applicationEnvironment);
-
-        MockProject project = projectEnvironment.getProject();
-        project.registerService(JetScriptDefinitionProvider.class, new JetScriptDefinitionProvider());
-        project.registerService(JetFilesProvider.class, new CliJetFilesProvider(this));
-        project.registerService(CoreJavaFileManager.class, (CoreJavaFileManager) ServiceManager.getService(project, JavaFileManager.class));
-        Extensions.getArea(project)
-                .getExtensionPoint(PsiElementFinder.EP_NAME)
-                .registerExtension(new JavaElementFinder(project));
-
-        // This extension point should be registered in JavaCoreApplicationEnvironment
-        CoreApplicationEnvironment.registerExtensionPoint(Extensions.getRootArea(), ClsCustomNavigationPolicy.EP_NAME,
-                                                          ClsCustomNavigationPolicy.class);
-
-        annotationsManager = new CoreExternalAnnotationsManager(project.getComponent(PsiManager.class));
-        project.registerService(ExternalAnnotationsManager.class, annotationsManager);
+        context = new JavaCompileContext(parentDisposable, sourceFiles);
 
         for (File path : configuration.getList(JVMConfigurationKeys.CLASSPATH_KEY)) {
             addToClasspath(path);
@@ -107,9 +63,9 @@ public class JetCoreEnvironment {
             addSources(path);
         }
 
+        Project project = context.getProject();
         JetScriptDefinitionProvider.getInstance(project).addScriptDefinitions(configuration.getList(CommonConfigurationKeys.SCRIPT_DEFINITIONS_KEY));
-
-        KotlinBuiltIns.initialize(project);
+        context.doInitializeKotlinBuiltIns();
         initialized = true;
     }
 
@@ -119,16 +75,16 @@ public class JetCoreEnvironment {
 
     @NotNull
     public MockApplication getApplication() {
-        return applicationEnvironment.getApplication();
+        return context.getApplication();
     }
 
     @NotNull
     public Project getProject() {
-        return projectEnvironment.getProject();
+        return context.getProject();
     }
 
     private void addExternalAnnotationsRoot(VirtualFile root) {
-        annotationsManager.addExternalAnnotationsRoot(root);
+        context.getAnnotationsManager().addExternalAnnotationsRoot(root);
     }
 
     private void addSources(File file) {
@@ -141,7 +97,7 @@ public class JetCoreEnvironment {
             }
         }
         else {
-            VirtualFile fileByPath = applicationEnvironment.getLocalFileSystem().findFileByPath(file.getAbsolutePath());
+            VirtualFile fileByPath = context.getLocalFileSystem().findFileByPath(file.getAbsolutePath());
             if (fileByPath != null) {
                 PsiFile psiFile = PsiManager.getInstance(getProject()).findFile(fileByPath);
                 if (psiFile instanceof JetFile) {
@@ -156,7 +112,7 @@ public class JetCoreEnvironment {
             return;
         }
 
-        VirtualFile vFile = applicationEnvironment.getLocalFileSystem().findFileByPath(path);
+        VirtualFile vFile = context.getLocalFileSystem().findFileByPath(path);
         if (vFile == null) {
             reportError("Source file or directory not found: " + path);
             return;
@@ -174,20 +130,20 @@ public class JetCoreEnvironment {
             throw new IllegalStateException("Cannot add class path when JetCoreEnvironment is already initialized");
         }
         if (path.isFile()) {
-            VirtualFile jarFile = applicationEnvironment.getJarFileSystem().findFileByPath(path + "!/");
+            VirtualFile jarFile = context.getApplicationEnvironment().getJarFileSystem().findFileByPath(path + "!/");
             if (jarFile == null) {
                 reportError("Classpath entry points to a file that is not a JAR archive: " + path);
                 return;
             }
-            projectEnvironment.addJarToClassPath(path);
+            context.getProjectEnvironment().addJarToClassPath(path);
         }
         else {
-            final VirtualFile root = applicationEnvironment.getLocalFileSystem().findFileByPath(path.getAbsolutePath());
+            final VirtualFile root = context.getLocalFileSystem().findFileByPath(path.getAbsolutePath());
             if (root == null) {
                 reportError("Classpath entry points to a non-existent location: " + path);
                 return;
             }
-            projectEnvironment.addSourcesToClasspath(root);
+            context.getProjectEnvironment().addSourcesToClasspath(root);
         }
     }
 

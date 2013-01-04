@@ -1,12 +1,35 @@
+/*
+ * Copyright 2010-2013 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.jetbrains.jet.jps.build;
 
+import com.intellij.openapi.util.Key;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.StringBuilderSpinAllocator;
 import com.intellij.util.containers.ContainerUtilRt;
 import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.cli.common.messages.MessageCollector;
+import org.jetbrains.jet.compiler.runner.CompilerEnvironment;
+import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
+import org.jetbrains.jet.config.CompilerConfiguration;
+import org.jetbrains.jet.jps.build.js.JpsModuleInfoProvider;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.utils.KotlinPathsFromHomeDir;
+import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.builders.BuildOutputConsumer;
 import org.jetbrains.jps.builders.BuildRootDescriptor;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
@@ -22,15 +45,21 @@ import org.jetbrains.jps.model.module.JpsDependencyElement;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.module.JpsModuleDependency;
 import org.jetbrains.jps.model.module.JpsTypedModuleSourceRoot;
+import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
+import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
 
 public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget> {
     public static final String NAME = JsBuildTargetType.TYPE_ID + " Builder";
+
+    private static final Key<Object> COMPILER = Key.create("kcParentDisposable");
 
     public JsBuilder() {
         super(Collections.singletonList(JsBuildTargetType.INSTANCE));
@@ -40,6 +69,22 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
     @Override
     public String getPresentableName() {
         return NAME;
+    }
+
+    @Override
+    public void buildFinished(CompileContext context) {
+        Object compiler = context.getUserData(COMPILER);
+        if (compiler != null) {
+            try {
+                compiler.getClass().getMethod("dispose").invoke(compiler);
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            context.putUserData(COMPILER, null);
+        }
+
+        super.buildFinished(context);
     }
 
     @Override
@@ -54,8 +99,39 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
         }
 
         JpsModule module = target.getExtension().getModule();
+        CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
+        compilerConfiguration.put(CompilerConfigurationKeys.MODULE_NAME, module.getName());
 
-        constructArguments(target, context, module);
+        File outputRoot = JpsJsCompilerPaths.getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
+        compilerConfiguration.put(CompilerConfigurationKeys.OUTPUT_ROOT, outputRoot);
+
+        MessageCollector messageCollector = new KotlinBuilder.MessageCollectorAdapter(context);
+        CompilerEnvironment environment =
+                CompilerEnvironment.getEnvironmentFor(PathUtil.getKotlinPathsForJpsPluginOrJpsTests(), outputRoot);
+        if (!environment.success()) {
+            environment.reportErrorsTo(messageCollector);
+            //context.processMessage(new CompilerMessage(getPresentableName(), ""));
+            return;
+        }
+
+        JpsModuleInfoProvider moduleInfoProvider = new JpsModuleInfoProvider();
+
+        ClassLoader loader = CompilerRunnerUtil.getOrCreateClassLoader(environment.getKotlinPaths(), messageCollector);
+        try {
+            Class<?> compilerClass = Class.forName("org.jetbrains.kotlin.compiler.KotlinCompiler", true, loader);
+            Constructor<?> constructor = compilerClass.getConstructor(ModuleInfoProvider.class);
+            constructor.setAccessible(true);
+            Object compiler = constructor.newInstance(moduleInfoProvider);
+
+            context.putUserData(COMPILER, compiler);
+
+            Method compile = compilerClass.getMethod("compile", CompilerConfiguration.class);
+            compile.setAccessible(true);
+            compile.invoke(compiler, compilerConfiguration);
+        }
+        catch (Exception e) {
+            throw new ProjectBuildException(e);
+        }
     }
 
     private static String[] constructArguments(JsBuildTarget target, CompileContext context, JpsModule module) {
@@ -124,7 +200,7 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
     private static File findLibrary(JpsModule module) {
         JpsTypedLibrary<JpsDummyElement> library =
                 module.getLibraryCollection().findLibrary(JsExternalizationConstants.JS_LIBRARY_NAME, JpsJavaLibraryType.INSTANCE);
-        if (library!= null) {
+        if (library != null) {
             for (File file : library.getFiles(JpsOrderRootType.SOURCES)) {
                 if (file.getName().equals(KotlinPathsFromHomeDir.getRuntimeName(false))) {
                     return file;
