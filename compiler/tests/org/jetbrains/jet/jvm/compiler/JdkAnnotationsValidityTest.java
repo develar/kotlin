@@ -32,7 +32,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.TestJdkKind;
-import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentUtil;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.di.InjectorForJavaSemanticServices;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -66,7 +65,7 @@ public class JdkAnnotationsValidityTest extends UsefulTestCase {
         final Map<String, List<String>> errors = Maps.newHashMap();
 
         for (int chunkIndex = 0; chunkIndex < affectedClasses.size() / CLASSES_IN_CHUNK + 1; chunkIndex++) {
-            Disposable parentDisposable = CompileEnvironmentUtil.createMockDisposable();
+            Disposable parentDisposable = Disposer.newDisposable();
 
             try {
                 JetCoreEnvironment commonEnvironment = createEnvironment(parentDisposable);
@@ -109,7 +108,7 @@ public class JdkAnnotationsValidityTest extends UsefulTestCase {
     }
 
     static List<FqName> getAffectedClasses(final String rootUrl) {
-        Disposable myDisposable = CompileEnvironmentUtil.createMockDisposable();
+        Disposable myDisposable = Disposer.newDisposable();
 
         try {
             createEnvironment(myDisposable);

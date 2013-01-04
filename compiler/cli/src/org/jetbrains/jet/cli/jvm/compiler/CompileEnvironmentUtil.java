@@ -51,13 +51,6 @@ import java.util.List;
 import java.util.jar.*;
 
 public class CompileEnvironmentUtil {
-    public static Disposable createMockDisposable() {
-        return new Disposable() {
-            @Override
-            public void dispose() {
-            }
-        };
-    }
 
     @Nullable
     public static File getUnpackedRuntimePath() {

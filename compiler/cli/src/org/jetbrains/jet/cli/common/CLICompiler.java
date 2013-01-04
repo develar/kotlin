@@ -25,7 +25,6 @@ import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
 import org.jetbrains.jet.cli.common.messages.MessageRenderer;
 import org.jetbrains.jet.cli.common.messages.PrintingMessageCollector;
 import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentException;
-import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentUtil;
 import org.jetbrains.jet.config.CompilerConfiguration;
 
 import java.io.PrintStream;
@@ -109,7 +108,7 @@ public abstract class CLICompiler<A extends CompilerArguments> {
         errStream.print(messageRenderer.renderPreamble());
         printVersionIfNeeded(errStream, arguments, messageRenderer);
         PrintingMessageCollector messageCollector = new PrintingMessageCollector(errStream, messageRenderer, arguments.isVerbose());
-        Disposable rootDisposable = CompileEnvironmentUtil.createMockDisposable();
+        Disposable rootDisposable = Disposer.newDisposable();
         try {
             return doExecute(arguments, messageCollector, rootDisposable);
         }

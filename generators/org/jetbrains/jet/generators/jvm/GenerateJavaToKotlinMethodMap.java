@@ -19,6 +19,7 @@ package org.jetbrains.jet.generators.jvm;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.psi.PsiClass;
@@ -27,7 +28,6 @@ import com.intellij.psi.impl.file.impl.JavaFileManager;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentUtil;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
@@ -59,7 +59,7 @@ public class GenerateJavaToKotlinMethodMap {
         CompilerConfiguration configuration = new CompilerConfiguration();
         configuration.add(CLASSPATH_KEY, PathUtil.findRtJar());
 
-        JetCoreEnvironment coreEnvironment = new JetCoreEnvironment(CompileEnvironmentUtil.createMockDisposable(), configuration);
+        JetCoreEnvironment coreEnvironment = new JetCoreEnvironment(Disposer.newDisposable(), configuration);
 
         StringBuilder buf = new StringBuilder();
         Printer printer = new Printer(buf);
