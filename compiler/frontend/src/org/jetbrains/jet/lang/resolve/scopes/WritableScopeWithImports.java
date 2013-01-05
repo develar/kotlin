@@ -252,7 +252,9 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     @Override
     public void clearImports() {
         currentIndividualImportScope = null;
-        getImports().clear();
+        if (imports != null) {
+            imports.clear();
+        }
     }
 
     @Override
