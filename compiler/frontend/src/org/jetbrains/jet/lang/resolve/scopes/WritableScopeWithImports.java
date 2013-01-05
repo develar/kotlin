@@ -17,9 +17,9 @@
 package org.jetbrains.jet.lang.resolve.scopes;
 
 import com.google.common.collect.Lists;
+import com.intellij.util.SmartList;
 import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
@@ -30,8 +30,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     @NotNull
     private final String debugName;
 
-    @Nullable
-    private List<JetScope> imports;
+    private List<JetScope> imports = Collections.emptyList();
     private WritableScope currentIndividualImportScope;
     protected final RedeclarationHandler redeclarationHandler;
     private List<ReceiverParameterDescriptor> implicitReceiverHierarchy;
@@ -73,14 +72,8 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
         }
     }
 
-
-
-
     @NotNull
     protected final List<JetScope> getImports() {
-        if (imports == null) {
-            imports = new ArrayList<JetScope>();
-        }
         return imports;
     }
 
@@ -92,7 +85,12 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
 
         checkMayWrite();
 
-        getImports().add(0, imported);
+        if (imports == Collections.<JetScope>emptyList()) {
+            imports = new SmartList<JetScope>(imported);
+        }
+        else {
+            imports.add(0, imported);
+        }
         currentIndividualImportScope = null;
     }
 
@@ -112,7 +110,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
         // Imported scopes come with their receivers
         // Example: class member resolution scope imports a scope of it's class object
         //          members of the class object must be able to find it as an implicit receiver
-        for (JetScope scope : getImports()) {
+        for (JetScope scope : imports) {
             implicitReceiverHierarchy.addAll(scope.getImplicitReceiversHierarchy());
         }
         implicitReceiverHierarchy.addAll(super.getImplicitReceiversHierarchy());
@@ -124,7 +122,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     public Set<VariableDescriptor> getProperties(@NotNull Name name) {
         checkMayRead();
 
-        if (getImports().isEmpty()) {
+        if (imports.isEmpty()) {
             return Collections.emptySet();
         }
         Set<VariableDescriptor> properties = new OrderedSet<VariableDescriptor>();
@@ -133,7 +131,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     }
 
     protected void collectPropertiesFromImports(Name name, Set<VariableDescriptor> properties) {
-        for (JetScope imported : getImports()) {
+        for (JetScope imported : imports) {
             properties.addAll(imported.getProperties(name));
         }
     }
@@ -143,7 +141,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
         checkMayRead();
 
         // Meaningful lookup goes here
-        for (JetScope imported : getImports()) {
+        for (JetScope imported : imports) {
             VariableDescriptor importedDescriptor = imported.getLocalVariable(name);
             if (importedDescriptor != null) {
                 return importedDescriptor;
@@ -157,7 +155,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     public Collection<FunctionDescriptor> getFunctions(@NotNull Name name) {
         checkMayRead();
 
-        if (getImports().isEmpty()) {
+        if (imports.isEmpty()) {
             return Collections.emptySet();
         }
         Set<FunctionDescriptor> result = new OrderedSet<FunctionDescriptor>();
@@ -166,7 +164,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     }
 
     protected void collectFunctionsFromImports(Name name, Set<FunctionDescriptor> result) {
-        for (JetScope imported : getImports()) {
+        for (JetScope imported : imports) {
             result.addAll(imported.getFunctions(name));
         }
     }
@@ -175,7 +173,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     public ClassifierDescriptor getClassifier(@NotNull Name name) {
         checkMayRead();
 
-        for (JetScope imported : getImports()) {
+        for (JetScope imported : imports) {
             ClassifierDescriptor importedClassifier = imported.getClassifier(name);
             if (importedClassifier != null) {
                 return importedClassifier;
@@ -188,7 +186,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     public ClassDescriptor getObjectDescriptor(@NotNull Name name) {
         checkMayRead();
 
-        for (JetScope imported : getImports()) {
+        for (JetScope imported : imports) {
             ClassDescriptor objectDescriptor = imported.getObjectDescriptor(name);
             if (objectDescriptor != null) {
                 return objectDescriptor;
@@ -201,7 +199,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     public NamespaceDescriptor getNamespace(@NotNull Name name) {
         checkMayRead();
 
-        for (JetScope imported : getImports()) {
+        for (JetScope imported : imports) {
             NamespaceDescriptor importedDescriptor = imported.getNamespace(name);
             if (importedDescriptor != null) {
                 return importedDescriptor;
@@ -252,7 +250,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     @Override
     public void clearImports() {
         currentIndividualImportScope = null;
-        if (imports != null) {
+        if (!imports.isEmpty()) {
             imports.clear();
         }
     }
