@@ -17,7 +17,6 @@
 package org.jetbrains.jet.lang.resolve.scopes;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -125,6 +124,9 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     public Set<VariableDescriptor> getProperties(@NotNull Name name) {
         checkMayRead();
 
+        if (getImports().isEmpty()) {
+            return Collections.emptySet();
+        }
         Set<VariableDescriptor> properties = new OrderedSet<VariableDescriptor>();
         collectPropertiesFromImports(name, properties);
         return properties;
@@ -158,11 +160,15 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
         if (getImports().isEmpty()) {
             return Collections.emptySet();
         }
-        Set<FunctionDescriptor> result = Sets.newLinkedHashSet();
+        Set<FunctionDescriptor> result = new OrderedSet<FunctionDescriptor>();
+        collectFunctionsFromImports(name, result);
+        return result;
+    }
+
+    protected void collectFunctionsFromImports(Name name, Set<FunctionDescriptor> result) {
         for (JetScope imported : getImports()) {
             result.addAll(imported.getFunctions(name));
         }
-        return result;
     }
 
     @Override

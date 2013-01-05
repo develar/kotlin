@@ -287,12 +287,10 @@ public class WritableScopeImpl extends WritableScopeWithImports {
     public Collection<FunctionDescriptor> getFunctions(@NotNull Name name) {
         checkMayRead();
 
-        Set<FunctionDescriptor> result = Sets.newLinkedHashSet(getFunctionGroups().get(name));
-
+        Set<FunctionDescriptor> result = new OrderedSet<FunctionDescriptor>();
+        result.addAll(getFunctionGroups().get(name));
         result.addAll(getWorkerScope().getFunctions(name));
-
-        result.addAll(super.getFunctions(name));
-
+        collectFunctionsFromImports(name, result);
         return result;
     }
 
