@@ -18,6 +18,7 @@ package org.jetbrains.jet.lang.resolve.scopes;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -124,11 +125,15 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     public Set<VariableDescriptor> getProperties(@NotNull Name name) {
         checkMayRead();
 
-        Set<VariableDescriptor> properties = Sets.newLinkedHashSet();
+        Set<VariableDescriptor> properties = new OrderedSet<VariableDescriptor>();
+        collectPropertiesFromImports(name, properties);
+        return properties;
+    }
+
+    protected void collectPropertiesFromImports(Name name, Set<VariableDescriptor> properties) {
         for (JetScope imported : getImports()) {
             properties.addAll(imported.getProperties(name));
         }
-        return properties;
     }
 
     @Override

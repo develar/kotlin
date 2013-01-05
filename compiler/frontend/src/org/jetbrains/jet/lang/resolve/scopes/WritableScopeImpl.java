@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.resolve.scopes;
 
 import com.google.common.collect.*;
+import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -233,12 +234,10 @@ public class WritableScopeImpl extends WritableScopeWithImports {
     public Set<VariableDescriptor> getProperties(@NotNull Name name) {
         checkMayRead();
 
-        Set<VariableDescriptor> result = Sets.newLinkedHashSet(getPropertyGroups().get(name));
-
+        Set<VariableDescriptor> result = new OrderedSet<VariableDescriptor>();
+        result.addAll(getPropertyGroups().get(name));
         result.addAll(getWorkerScope().getProperties(name));
-
-        result.addAll(super.getProperties(name));
-        
+        collectPropertiesFromImports(name, result);
         return result;
     }
 
@@ -246,7 +245,7 @@ public class WritableScopeImpl extends WritableScopeWithImports {
     public VariableDescriptor getLocalVariable(@NotNull Name name) {
         checkMayRead();
 
-        Map<Name, DeclarationDescriptor> variableClassOrNamespaceDescriptors = getVariableClassOrNamespaceDescriptors();
+        Map<Name, DeclarationDescriptor>   variableClassOrNamespaceDescriptors = getVariableClassOrNamespaceDescriptors();
         DeclarationDescriptor descriptor = variableClassOrNamespaceDescriptors.get(name);
         if (descriptor instanceof VariableDescriptor && !getPropertyGroups().get(name).contains(descriptor)) {
             return (VariableDescriptor) descriptor;
