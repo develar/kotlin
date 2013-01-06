@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,35 @@
 package org.jetbrains.jet.config;
 
 import com.intellij.openapi.util.Key;
+import gnu.trove.THashMap;
+import gnu.trove.TObjectFunction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+@SuppressWarnings("unchecked")
 public class CompilerConfiguration {
-    private final Map<Key, Object> map = new HashMap<Key, Object>();
+    private final THashMap<Key, Object> map;
     private boolean readOnly = false;
+
+    public CompilerConfiguration() {
+        map = new THashMap<Key, Object>();
+    }
+
+    private CompilerConfiguration(THashMap<Key, Object> map) {
+        this.map = map;
+    }
 
     @Nullable
     public <T> T get(@NotNull CompilerConfigurationKey<T> key) {
-        T data = (T) map.get(key.ideaKey);
-        return data == null ? null : unmodifiable(data);
+        return (T) map.get(key.ideaKey);
     }
 
     @NotNull
     public <T> T get(@NotNull CompilerConfigurationKey<T> key, @NotNull T defaultValue) {
         T data = (T) map.get(key.ideaKey);
-        return data == null ? defaultValue : unmodifiable(data);
+        return data == null ? defaultValue : data;
     }
 
     @NotNull
@@ -45,7 +55,7 @@ public class CompilerConfiguration {
             return Collections.emptyList();
         }
         else {
-            return Collections.unmodifiableList(data);
+            return data;
         }
     }
 
@@ -57,10 +67,11 @@ public class CompilerConfiguration {
     public <T> void add(@NotNull CompilerConfigurationKey<List<T>> key, @NotNull T value) {
         checkReadOnly();
         Key<List<T>> ideaKey = key.ideaKey;
-        if (map.get(ideaKey) == null) {
-            map.put(ideaKey, new ArrayList<T>());
-        }
         List<T> list = (List<T>) map.get(ideaKey);
+        if (list == null) {
+            list = new ArrayList<T>();
+            map.put(ideaKey, list);
+        }
         list.add(value);
     }
 
@@ -68,17 +79,17 @@ public class CompilerConfiguration {
         checkReadOnly();
         checkForNullElements(values);
         Key<List<T>> ideaKey = key.ideaKey;
-        if (map.get(ideaKey) == null) {
-            map.put(ideaKey, new ArrayList<T>());
-        }
         List<T> list = (List<T>) map.get(ideaKey);
-        list.addAll(values);
+        if (list == null) {
+            map.put(ideaKey, new ArrayList<T>(values));
+        }
+        else {
+            list.addAll(values);
+        }
     }
 
     public CompilerConfiguration copy() {
-        CompilerConfiguration copy = new CompilerConfiguration();
-        copy.map.putAll(map);
-        return copy;
+        return new CompilerConfiguration(new THashMap<Key, Object>((Map<Key,Object>) map));
     }
 
     private void checkReadOnly() {
@@ -91,6 +102,14 @@ public class CompilerConfiguration {
         if (readOnly != this.readOnly) {
             checkReadOnly();
             this.readOnly = readOnly;
+
+            map.transformValues(new TObjectFunction<Object, Object>() {
+                @Override
+                public Object execute(Object o) {
+                    return unmodifiable(o);
+                }
+            });
+            map.compact();
         }
     }
 

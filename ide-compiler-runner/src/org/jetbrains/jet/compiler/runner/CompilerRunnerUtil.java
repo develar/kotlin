@@ -20,6 +20,8 @@ import com.intellij.util.Function;
 import com.intellij.util.lang.UrlClassLoader;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
+import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.config.CompilerConfigurationKey;
@@ -128,7 +130,7 @@ public class CompilerRunnerUtil {
             super(urls, null);
 
             Class<?>[] sharedClasses = {CompilerConfiguration.class, CompilerConfigurationKey.class, CompilerConfigurationKeys.class,
-                    ModuleInfoProvider.class};
+                    ModuleInfoProvider.class, MessageCollector.class, CompilerMessageSeverity.class, CompilerMessageLocation.class};
             sharedClassesMap = new THashMap<String, Class>(sharedClasses.length);
             for (Class sharedClass : sharedClasses) {
                 sharedClassesMap.put(sharedClass.getName(), sharedClass);

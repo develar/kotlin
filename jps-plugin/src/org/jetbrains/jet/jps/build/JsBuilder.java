@@ -26,7 +26,6 @@ import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.compiler.runner.CompilerEnvironment;
 import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
 import org.jetbrains.jet.config.CompilerConfiguration;
-import org.jetbrains.jet.jps.build.js.JpsModuleInfoProvider;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.utils.KotlinPathsFromHomeDir;
 import org.jetbrains.jet.utils.PathUtil;
@@ -59,10 +58,25 @@ import java.util.Set;
 public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget> {
     public static final String NAME = JsBuildTargetType.TYPE_ID + " Builder";
 
-    private static final Key<Object> COMPILER = Key.create("kcParentDisposable");
+    private static final Key<KotlinBuildContext> CONTEXT = Key.create("kbContext");
 
     public JsBuilder() {
         super(Collections.singletonList(JsBuildTargetType.INSTANCE));
+    }
+    
+    private static class KotlinBuildContext {
+        private final Object compiler;
+        private final MessageCollector messageCollector;
+        private final ModuleInfoProvider moduleInfoProvider;
+
+        private final Method compile;
+
+        public KotlinBuildContext(JpsModuleInfoProvider moduleInfoProvider, MessageCollector messageCollector, Object compiler, Method compile) {
+            this.moduleInfoProvider = moduleInfoProvider;
+            this.messageCollector = messageCollector;
+            this.compiler = compiler;
+            this.compile = compile;
+        }
     }
 
     @NotNull
@@ -73,15 +87,15 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
 
     @Override
     public void buildFinished(CompileContext context) {
-        Object compiler = context.getUserData(COMPILER);
-        if (compiler != null) {
+        KotlinBuildContext kotlinContext = context.getUserData(CONTEXT);
+        if (kotlinContext != null) {
             try {
-                compiler.getClass().getMethod("dispose").invoke(compiler);
+                kotlinContext.compiler.getClass().getMethod("dispose").invoke(kotlinContext.compiler);
             }
             catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            context.putUserData(COMPILER, null);
+            context.putUserData(CONTEXT, null);
         }
 
         super.buildFinished(context);
@@ -104,34 +118,55 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
 
         File outputRoot = JpsJsCompilerPaths.getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
         compilerConfiguration.put(CompilerConfigurationKeys.OUTPUT_ROOT, outputRoot);
+        
+        KotlinBuildContext kotlinContext = context.getUserData(CONTEXT);
+        if (kotlinContext == null) {
+            kotlinContext = createKotlinBuildContext(context, outputRoot);
+            if (kotlinContext == null) {
+                return;
+            }
+            else {
+                context.putUserData(CONTEXT, kotlinContext);
+            }
+        }
 
+        try {
+            kotlinContext.compile.invoke(kotlinContext.compiler, compilerConfiguration);
+        }
+        catch (Exception e) {
+            throw new ProjectBuildException(e);
+        }
+    }
+
+    private static KotlinBuildContext createKotlinBuildContext(CompileContext context, File outputRoot) throws ProjectBuildException {
         MessageCollector messageCollector = new KotlinBuilder.MessageCollectorAdapter(context);
         CompilerEnvironment environment =
                 CompilerEnvironment.getEnvironmentFor(PathUtil.getKotlinPathsForJpsPluginOrJpsTests(), outputRoot);
         if (!environment.success()) {
             environment.reportErrorsTo(messageCollector);
             //context.processMessage(new CompilerMessage(getPresentableName(), ""));
-            return;
+            return null;
         }
 
-        JpsModuleInfoProvider moduleInfoProvider = new JpsModuleInfoProvider();
+        JpsModuleInfoProvider moduleInfoProvider = new JpsModuleInfoProvider(context.getProjectDescriptor().getProject());
 
         ClassLoader loader = CompilerRunnerUtil.getOrCreateClassLoader(environment.getKotlinPaths(), messageCollector);
+        Object compiler;
+        Method compile;
         try {
             Class<?> compilerClass = Class.forName("org.jetbrains.kotlin.compiler.KotlinCompiler", true, loader);
-            Constructor<?> constructor = compilerClass.getConstructor(ModuleInfoProvider.class);
+            Constructor<?> constructor = compilerClass.getConstructor(ModuleInfoProvider.class, MessageCollector.class);
             constructor.setAccessible(true);
-            Object compiler = constructor.newInstance(moduleInfoProvider);
+            compiler = constructor.newInstance(moduleInfoProvider, messageCollector);
 
-            context.putUserData(COMPILER, compiler);
-
-            Method compile = compilerClass.getMethod("compile", CompilerConfiguration.class);
+            compile = compilerClass.getMethod("compile", CompilerConfiguration.class);
             compile.setAccessible(true);
-            compile.invoke(compiler, compilerConfiguration);
         }
         catch (Exception e) {
             throw new ProjectBuildException(e);
         }
+
+        return new KotlinBuildContext(moduleInfoProvider, messageCollector, compiler, compile);
     }
 
     private static String[] constructArguments(JsBuildTarget target, CompileContext context, JpsModule module) {

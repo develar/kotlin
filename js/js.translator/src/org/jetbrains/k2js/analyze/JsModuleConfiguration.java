@@ -19,15 +19,13 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class JsModuleConfiguration implements ModuleConfiguration {
     public static final Name STUBS_MODULE_NAME = Name.special("<stubs>");
 
     private final Project project;
-    final BindingContext parentBindingContext;
+    final List<BindingContext> bindingContextDependencies;
     @Nullable
     private final ModuleConfiguration delegateConfiguration;
 
@@ -43,22 +41,29 @@ public class JsModuleConfiguration implements ModuleConfiguration {
     BindingContext bindingContext;
 
     public JsModuleConfiguration(Project project) {
-        this(new ModuleDescriptor(Name.special("<module>")), project, null);
+        this(new ModuleDescriptor(Name.special("<module>")), project, (List<JsModuleConfiguration>) null);
     }
 
     public JsModuleConfiguration(ModuleDescriptor moduleDescriptor, Project project) {
-        this(moduleDescriptor, project, null);
+        this(moduleDescriptor, project, (List<JsModuleConfiguration>) null);
     }
 
-    public JsModuleConfiguration(ModuleDescriptor moduleDescriptor, Project project, @Nullable JsModuleConfiguration parentJsModuleConfiguration) {
+    public JsModuleConfiguration(ModuleDescriptor moduleDescriptor, Project project, @Nullable JsModuleConfiguration dependency) {
+        this(moduleDescriptor, project, Collections.singletonList(dependency));
+    }
+
+    public JsModuleConfiguration(ModuleDescriptor moduleDescriptor, Project project, @Nullable List<JsModuleConfiguration> dependencies) {
         this.moduleDescriptor = moduleDescriptor;
         this.project = project;
-        if (parentJsModuleConfiguration == null) {
-            parentBindingContext = null;
+        if (dependencies == null || dependencies.isEmpty()) {
+            bindingContextDependencies = null;
             delegateConfiguration = DefaultModuleConfiguration.createStandardConfiguration(project);
         }
         else {
-            parentBindingContext = parentJsModuleConfiguration.bindingContext;
+            bindingContextDependencies = new ArrayList<BindingContext>();
+            for (JsModuleConfiguration dependency : dependencies) {
+                bindingContextDependencies.add(dependency.bindingContext);
+            }
             delegateConfiguration = null;
         }
     }
@@ -89,12 +94,14 @@ public class JsModuleConfiguration implements ModuleConfiguration {
     public void extendNamespaceScope(
             @NotNull BindingTrace trace, @NotNull NamespaceDescriptor namespaceDescriptor, @NotNull WritableScope namespaceMemberScope
     ) {
-        if (parentBindingContext != null) {
+        if (bindingContextDependencies != null) {
             FqName qualifiedName = namespaceDescriptor.getQualifiedName();
-            NamespaceDescriptor alreadyAnalyzedNamespace =
-                    parentBindingContext.get(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR, qualifiedName);
-            if (alreadyAnalyzedNamespace != null) {
-                namespaceMemberScope.importScope(alreadyAnalyzedNamespace.getMemberScope());
+            for (BindingContext bindingContextDependency : bindingContextDependencies) {
+                NamespaceDescriptor namespaceDependency = bindingContextDependency.get(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR,
+                                                                                       qualifiedName);
+                if (namespaceDependency != null) {
+                    namespaceMemberScope.importScope(namespaceDependency.getMemberScope());
+                }
             }
         }
         else if (DescriptorUtils.isRootNamespace(namespaceDescriptor)) {

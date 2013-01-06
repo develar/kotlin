@@ -16,14 +16,16 @@
 
 package org.jetbrains.jet.buildtools.core;
 
-import com.intellij.openapi.util.Disposer;
 import jet.modules.Module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.cli.common.CLIConfigurationKeys;
 import org.jetbrains.jet.cli.common.CompilerPlugin;
 import org.jetbrains.jet.cli.common.messages.MessageCollectorPlainTextToStream;
-import org.jetbrains.jet.cli.jvm.compiler.*;
+import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentException;
+import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentUtil;
+import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
+import org.jetbrains.jet.cli.jvm.compiler.KotlinToJVMBytecodeCompiler;
 import org.jetbrains.jet.config.CommonConfigurationKeys;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.utils.KotlinPaths;
@@ -61,7 +63,7 @@ public class BytecodeCompiler {
     private JetCoreEnvironment env(String stdlib, String[] classpath, String[] sourceRoots) {
         CompilerConfiguration configuration = createConfiguration(stdlib, classpath, sourceRoots);
 
-        return new JetCoreEnvironment(Disposer.newDisposable(), configuration);
+        return new JetCoreEnvironment(CompileEnvironmentUtil.newDisposable(), configuration);
     }
 
     private CompilerConfiguration createConfiguration(String stdlib, String[] classpath, String[] sourceRoots) {

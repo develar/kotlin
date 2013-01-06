@@ -44,10 +44,7 @@ import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageLocation.NO_LOCATION;
 
@@ -109,14 +106,14 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             }
 
             if (!otherModulesFiles.isEmpty()) {
-                parentLibraryConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("<externalModules>")), project, libraryModuleConfiguration);
+                parentLibraryConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("<externalModules>")), project, Collections.singletonList(libraryModuleConfiguration));
                 if (!analyze(messageCollector, parentLibraryConfiguration, otherModulesFiles, false)) {
                     return ExitCode.COMPILATION_ERROR;
                 }
             }
         }
 
-        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("<module>")), project, parentLibraryConfiguration);
+        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("<module>")), project, Collections.singletonList(parentLibraryConfiguration));
         if (!analyze(messageCollector, moduleConfiguration, environmentForJS.getSourceFiles(), true)) {
             return ExitCode.COMPILATION_ERROR;
         }
