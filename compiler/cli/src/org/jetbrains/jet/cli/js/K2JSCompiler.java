@@ -19,10 +19,15 @@ package org.jetbrains.jet.cli.js;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.openapi.vfs.VirtualFileSystem;
+import com.intellij.psi.PsiManager;
 import jet.Function0;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,6 +42,7 @@ import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.k2js.Traverser;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.*;
@@ -48,6 +54,9 @@ import java.util.*;
 
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageLocation.NO_LOCATION;
 
+/**
+ * @deprecated use KotlinCompiler with ToJsSubCompiler
+ */
 public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
 
     public static void main(String... args) {
@@ -86,20 +95,21 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             reportCompiledSourcesList(messageCollector, environmentForJS);
         }
 
-        final Config config = getConfig(arguments, project);
+        final Map<String, List<JetFile>> modules = getConfig(arguments, project);
 
-        List<JetFile> libraryFiles = config.getModules().get(JsModuleConfiguration.STUBS_MODULE_NAME.getName());
-        JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
+        List<JetFile> libraryFiles = modules.get(JsModuleConfiguration.STUBS_MODULE_NAME.getName());
+        JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(
+                new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
         if (!analyze(messageCollector, libraryModuleConfiguration, libraryFiles, false)) {
             return ExitCode.COMPILATION_ERROR;
         }
 
         List<JetFile> otherModulesFiles;
         JsModuleConfiguration parentLibraryConfiguration = libraryModuleConfiguration;
-        if (!config.getModules().isEmpty()) {
+        if (!modules.isEmpty()) {
             otherModulesFiles = new ArrayList<JetFile>();
             // todo normal module dependency resolution (exhaust per module)
-            for (Map.Entry<String, List<JetFile>> entry : config.getModules().entrySet()) {
+            for (Map.Entry<String, List<JetFile>> entry : modules.entrySet()) {
                 if (entry.getKey() != JsModuleConfiguration.STUBS_MODULE_NAME.getName()) {
                     otherModulesFiles.addAll(entry.getValue());
                 }
@@ -113,7 +123,8 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             }
         }
 
-        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("<module>")), project, Collections.singletonList(parentLibraryConfiguration));
+        String moduleId = FileUtil.getNameWithoutExtension(new File(arguments.outputFile));
+        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special('<' + moduleId + '>')), project, Collections.singletonList(parentLibraryConfiguration));
         if (!analyze(messageCollector, moduleConfiguration, environmentForJS.getSourceFiles(), true)) {
             return ExitCode.COMPILATION_ERROR;
         }
@@ -121,7 +132,10 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         MainCallParameters mainCallParameters = arguments.createMainCallParameters();
         try {
             K2JSTranslator.translateWithMainCallParametersAndSaveToFile(mainCallParameters, environmentForJS.getSourceFiles(), outputFile,
-                                                                        config, moduleConfiguration.getBindingContext());
+                                                                        new Config(moduleConfiguration,
+                                                                                   EcmaVersion.fromString(arguments.target),
+                                                                                   arguments.sourcemap),
+                                                                        moduleConfiguration.getBindingContext());
         }
         catch (Throwable e) {
             messageCollector.report(CompilerMessageSeverity.EXCEPTION, MessageRenderer.PLAIN.renderException(e),
@@ -170,15 +184,59 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
     }
 
     @NotNull
-    private static Config getConfig(@NotNull K2JSCompilerArguments arguments, @NotNull Project project) {
-        EcmaVersion ecmaVersion = EcmaVersion.fromString(arguments.target);
-        String moduleId = FileUtil.getNameWithoutExtension(new File(arguments.outputFile));
+    private static Map<String, List<JetFile>> getConfig(@NotNull K2JSCompilerArguments arguments, @NotNull Project project) {
         if (arguments.libraryFiles != null) {
-            return new LibrarySourcesConfig(project, moduleId, Arrays.asList(arguments.libraryFiles), ecmaVersion, arguments.sourcemap);
+            return collectModules(project, arguments.libraryFiles);
         }
         else {
-            // lets discover the JS library definitions on the classpath
-            return new ClassPathLibraryDefintionsConfig(project, moduleId, ecmaVersion);
+            return Collections.singletonMap(JsModuleConfiguration.STUBS_MODULE_NAME.getName(), MetaInfServices
+                    .loadServicesFiles("META-INF/services/org.jetbrains.kotlin.js.libraryDefinitions", project));
         }
+    }
+
+    @NotNull
+    private static Map<String, List<JetFile>> collectModules(Project project, String[] files) {
+        if (files.length == 0) {
+            return Collections.emptyMap();
+        }
+
+        final Map<String, List<JetFile>> modules = Maps.newLinkedHashMap();
+        List<JetFile> psiFiles = null;
+        String moduleName = JsModuleConfiguration.STUBS_MODULE_NAME.getName();
+        VirtualFileSystem fileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.FILE_PROTOCOL);
+        final PsiManager psiManager = PsiManager.getInstance(project);
+        for (String path : files) {
+            if (path.charAt(0) == '@') {
+                moduleName = path.substring(1);
+                psiFiles = null;
+            }
+            else {
+                if (psiFiles == null) {
+                    psiFiles = modules.get(moduleName);
+                    if (psiFiles == null) {
+                        psiFiles = new ArrayList<JetFile>();
+                        modules.put(moduleName, psiFiles);
+                    }
+                }
+
+                VirtualFile file = fileSystem.findFileByPath(path);
+                assert file != null;
+                VirtualFile jarFile = StandardFileSystems.getJarRootForLocalFile(file);
+                if (jarFile != null) {
+                    psiFiles = new ArrayList<JetFile>();
+                    moduleName = null;
+                    modules.put(JsModuleConfiguration.STUBS_MODULE_NAME.getName(), psiFiles);
+                    Traverser.traverseFile(project, jarFile, psiFiles, null);
+                }
+                else if (file.isDirectory()) {
+                    Traverser.traverseFile(project, file, psiFiles, moduleName);
+                }
+                else {
+                    Traverser.addPsiFile(psiFiles, moduleName, psiManager, file);
+                }
+            }
+        }
+
+        return modules;
     }
 }

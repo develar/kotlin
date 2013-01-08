@@ -22,14 +22,20 @@ import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import java.util.*;
 
 public class JsModuleConfiguration implements ModuleConfiguration {
-    public static final Name STUBS_MODULE_NAME = Name.special("<stubs>");
+    public static final String STUBS_MODULE_NORMAL_NAME = "stubs";
+    public static final Name STUBS_MODULE_NAME = Name.special('<' + STUBS_MODULE_NORMAL_NAME + '>');
 
     private final Project project;
-    final List<BindingContext> bindingContextDependencies;
+
+    final List<JsModuleConfiguration> dependencies;
     @Nullable
     private final ModuleConfiguration delegateConfiguration;
 
     private final ModuleDescriptor moduleDescriptor;
+
+    BindingContext bindingContext;
+
+    private String normalName;
 
     @NotNull
     public static final List<ImportPath> DEFAULT_IMPORT_PATHS = Arrays.asList(
@@ -37,8 +43,6 @@ public class JsModuleConfiguration implements ModuleConfiguration {
             new ImportPath("java.lang.*"),
             new ImportPath(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), true),
             new ImportPath("kotlin.*"));
-
-    BindingContext bindingContext;
 
     public JsModuleConfiguration(Project project) {
         this(new ModuleDescriptor(Name.special("<module>")), project, (List<JsModuleConfiguration>) null);
@@ -56,16 +60,25 @@ public class JsModuleConfiguration implements ModuleConfiguration {
         this.moduleDescriptor = moduleDescriptor;
         this.project = project;
         if (dependencies == null || dependencies.isEmpty()) {
-            bindingContextDependencies = null;
+            this.dependencies = null;
             delegateConfiguration = DefaultModuleConfiguration.createStandardConfiguration(project);
         }
         else {
-            bindingContextDependencies = new ArrayList<BindingContext>();
-            for (JsModuleConfiguration dependency : dependencies) {
-                bindingContextDependencies.add(dependency.bindingContext);
-            }
+            this.dependencies = dependencies;
             delegateConfiguration = null;
         }
+    }
+
+    public List<JsModuleConfiguration> getDependencies() {
+        return dependencies;
+    }
+
+    public String getName() {
+        if (normalName == null) {
+            String specialName = moduleDescriptor.getName().getName();
+            normalName = specialName.substring(1, specialName.length() - 1);
+        }
+        return normalName;
     }
 
     public BindingContext getBindingContext() {
@@ -94,10 +107,10 @@ public class JsModuleConfiguration implements ModuleConfiguration {
     public void extendNamespaceScope(
             @NotNull BindingTrace trace, @NotNull NamespaceDescriptor namespaceDescriptor, @NotNull WritableScope namespaceMemberScope
     ) {
-        if (bindingContextDependencies != null) {
+        if (dependencies != null) {
             FqName qualifiedName = namespaceDescriptor.getQualifiedName();
-            for (BindingContext bindingContextDependency : bindingContextDependencies) {
-                NamespaceDescriptor namespaceDependency = bindingContextDependency.get(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR,
+            for (JsModuleConfiguration dependency : dependencies) {
+                NamespaceDescriptor namespaceDependency = dependency.bindingContext.get(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR,
                                                                                        qualifiedName);
                 if (namespaceDependency != null) {
                     namespaceMemberScope.importScope(namespaceDependency.getMemberScope());

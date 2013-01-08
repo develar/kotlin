@@ -91,7 +91,7 @@ public final class MetaInfServices {
      * Tries to load the given resource name on the classpath
      */
     public static InputStream loadClasspathResource(String resourceName) {
-        InputStream answer = ClassPathLibraryDefintionsConfig.class.getClassLoader().getResourceAsStream(resourceName);
+        InputStream answer = Config.class.getClassLoader().getResourceAsStream(resourceName);
         if (answer == null) {
             answer = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
         }

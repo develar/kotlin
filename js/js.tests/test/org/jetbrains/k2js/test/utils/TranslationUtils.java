@@ -34,7 +34,6 @@ import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 import org.jetbrains.k2js.analyze.JsModuleConfiguration;
-import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
@@ -97,36 +96,25 @@ public final class TranslationUtils {
         return false;
     }
 
-    @NotNull
-    public static Config getConfig(@NotNull Project project, @NotNull EcmaVersion version, @NotNull TestConfigFactory configFactory) {
-        return configFactory.create(project, version, getLibFilesWithCode(getAllLibFiles(project)));
-    }
-
-    public static void translateFiles(@NotNull Project project, @NotNull List<String> inputFiles,
+    public static void translateFiles(
+            @NotNull Project project, @NotNull List<String> inputFiles,
             @NotNull String outputFile,
             @NotNull MainCallParameters mainCallParameters,
-            @NotNull EcmaVersion version, TestConfigFactory configFactory) throws Exception {
+            @NotNull EcmaVersion version, TestConfigFactory configFactory
+    ) throws Exception {
         List<JetFile> psiFiles = createPsiFileList(project, inputFiles, null);
-        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special("<tests>")), project, getLibraryContext(project));
+        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special('<' + TestConfig.TEST_MODULE_NAME + '>')), project,
+                                                                              getLibraryContext(project));
         AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, psiFiles, true);
         exhaust.throwIfError();
-        K2JSTranslator.translateWithMainCallParametersAndSaveToFile(mainCallParameters, psiFiles, outputFile, getConfig(project, version, configFactory), moduleConfiguration.getBindingContext());
+        TestConfig config = configFactory.create(moduleConfiguration, version);
+        K2JSTranslator.translateWithMainCallParametersAndSaveToFile(mainCallParameters, psiFiles, outputFile, config,
+                                                                    moduleConfiguration.getBindingContext());
     }
 
     @NotNull
     private static List<JetFile> initLibFiles(@NotNull Project project) {
         return createPsiFileList(project, TestConfig.LIB_FILE_NAMES, TestConfig.LIBRARIES_LOCATION);
-    }
-
-    @NotNull
-    private static List<JetFile> getLibFilesWithCode(@NotNull List<JetFile> allFiles) {
-        List<JetFile> result = Lists.newArrayList();
-        for (JetFile file : allFiles) {
-            if (isFileWithCode(file)) {
-                result.add(file);
-            }
-        }
-        return result;
     }
 
     @NotNull

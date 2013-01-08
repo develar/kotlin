@@ -29,9 +29,9 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
+import org.jetbrains.k2js.Traverser;
 import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.EcmaVersion;
-import org.jetbrains.k2js.config.LibrarySourcesConfig;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
@@ -283,7 +283,7 @@ public final class StaticContext {
 
         if (element != null) {
             PsiFile file = element.getContainingFile();
-            String moduleName = file.getUserData(LibrarySourcesConfig.MODULE_NAME_KEY);
+            String moduleName = file.getUserData(Traverser.MODULE_NAME_KEY);
             if (moduleName != null) {
                 qualifier.setQualifier(new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(moduleName)));
             }

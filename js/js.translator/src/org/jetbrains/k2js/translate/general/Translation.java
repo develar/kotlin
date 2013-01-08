@@ -128,14 +128,14 @@ public final class Translation {
 
     private static JsInvocation generateDefineModuleInvocation(Config config, JsFunction definitionFunction, JsProgram program) {
         List<JsExpression> moduleDependencies = new SmartList<JsExpression>();
-        for (String moduleName : config.getModules().keySet()) {
-            if (moduleName != JsModuleConfiguration.STUBS_MODULE_NAME.getName()) {
-                moduleDependencies.add(program.getStringLiteral(moduleName));
+        for (JsModuleConfiguration module : config.getModule().getDependencies()) {
+            if (!module.getName().equalsIgnoreCase(JsModuleConfiguration.STUBS_MODULE_NORMAL_NAME)) {
+                moduleDependencies.add(program.getStringLiteral(module.getName()));
             }
         }
 
         return new JsInvocation(new JsNameRef("defineModule", Namer.KOTLIN_OBJECT_NAME_REF),
-                                program.getStringLiteral(config.getModuleId()),
+                                program.getStringLiteral(config.getModule().getName()),
                                 moduleDependencies.isEmpty() ? JsLiteral.NULL : new JsArrayLiteral(moduleDependencies),
                                 definitionFunction);
     }

@@ -41,7 +41,8 @@ public final class AnalyzerFacadeForJS {
             @NotNull Config config
     ) {
         final JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(config.getProject());
-        AnalyzeExhaust libraryExhaust = analyzeFiles(libraryModuleConfiguration, config.getModules().values().iterator().next(), false);
+        // todo fix web demo
+        AnalyzeExhaust libraryExhaust = analyzeFiles(libraryModuleConfiguration, Collections.<JetFile>emptyList(), false);
         libraryExhaust.throwIfError();
 
         checkForErrors(files);
@@ -85,9 +86,9 @@ public final class AnalyzerFacadeForJS {
             boolean storeContextForBodiesResolve
 
     ) {
-        BindingTrace trace = moduleConfiguration.bindingContextDependencies == null ?
+        BindingTrace trace = moduleConfiguration.dependencies == null ?
                              new ObservableBindingTrace(new BindingTraceContext()) :
-                             new DelegatingBindingTrace(moduleConfiguration.bindingContextDependencies.get(0), "trace for analyzing library in js");
+                             new DelegatingBindingTrace(moduleConfiguration.dependencies.get(0).bindingContext, "trace for analyzing library in js");
         InjectorForTopDownAnalyzerForJs injector = new InjectorForTopDownAnalyzerForJs(moduleConfiguration.getProject(), topDownAnalysisParameters, trace, moduleConfiguration.getModuleDescriptor(),
                                                                                        moduleConfiguration);
         try {

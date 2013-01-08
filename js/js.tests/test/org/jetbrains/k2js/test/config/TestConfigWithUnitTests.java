@@ -16,24 +16,19 @@
 
 package org.jetbrains.k2js.test.config;
 
-import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.test.JSRhinoUnitTester;
 import org.jetbrains.k2js.translate.test.JSTester;
-
-import java.util.List;
 
 public class TestConfigWithUnitTests extends TestConfig {
 
     @NotNull
     public static TestConfigFactory FACTORY = new TestConfigFactory() {
         @Override
-        public TestConfig create(@NotNull Project project,
-                @NotNull EcmaVersion version,
-                @NotNull List<JetFile> files) {
-            return new TestConfigWithUnitTests(project, version, files);
+        public TestConfig create(@NotNull JsModuleConfiguration module, @NotNull EcmaVersion version) {
+            return new TestConfigWithUnitTests(module, version);
         }
     };
 
@@ -42,9 +37,7 @@ public class TestConfigWithUnitTests extends TestConfig {
         return new JSRhinoUnitTester();
     }
 
-    public TestConfigWithUnitTests(@NotNull Project project,
-            @NotNull EcmaVersion version,
-            @NotNull List<JetFile> files) {
-        super(project, version, files);
+    public TestConfigWithUnitTests(@NotNull JsModuleConfiguration module, @NotNull EcmaVersion version) {
+        super(module, version);
     }
 }

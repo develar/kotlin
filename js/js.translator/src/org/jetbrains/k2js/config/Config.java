@@ -19,46 +19,38 @@ package org.jetbrains.k2js.config;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 import org.jetbrains.k2js.translate.test.JSTester;
 import org.jetbrains.k2js.translate.test.QUnitTester;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Base class representing a configuration of translator.
  */
 public class Config {
+    protected final JsModuleConfiguration module;
+
+    private final EcmaVersion target;
+    private final boolean sourcemap;
+
+    public Config(@NotNull JsModuleConfiguration module, @NotNull EcmaVersion ecmaVersion) {
+        this(module, ecmaVersion, false);
+    }
+
+    public Config(@NotNull JsModuleConfiguration module) {
+        this(module, EcmaVersion.defaultVersion(), false);
+    }
+
+    public Config(@NotNull JsModuleConfiguration module, @NotNull EcmaVersion ecmaVersion, boolean sourcemap) {
+        this.module = module;
+        this.target = ecmaVersion;
+        this.sourcemap = sourcemap;
+    }
+
     //NOTE: used by mvn build
     @SuppressWarnings("UnusedDeclaration")
     @NotNull
     public static Config getEmptyConfig(@NotNull Project project) {
-        return new Config(project, "main", EcmaVersion.defaultVersion());
-    }
-
-    @NotNull
-    protected final Project project;
-    @Nullable
-    protected Map<String, List<JetFile>> modules;
-    @NotNull
-    private final EcmaVersion target;
-
-    @NotNull
-    private final String moduleId;
-
-    private final boolean sourcemap;
-
-    public Config(@NotNull Project project, @NotNull String moduleId, @NotNull EcmaVersion ecmaVersion) {
-        this(project, moduleId, ecmaVersion, false);
-    }
-
-    public Config(@NotNull Project project, @NotNull String moduleId, @NotNull EcmaVersion ecmaVersion, boolean sourcemap) {
-        this.project = project;
-        this.target = ecmaVersion;
-        this.moduleId = moduleId;
-        this.sourcemap = sourcemap;
+        return new Config(new JsModuleConfiguration(project));
     }
 
     public boolean isSourcemap() {
@@ -67,7 +59,7 @@ public class Config {
 
     @NotNull
     public Project getProject() {
-        return project;
+        return module.getProject();
     }
 
     @NotNull
@@ -76,21 +68,8 @@ public class Config {
     }
 
     @NotNull
-    public String getModuleId() {
-        return moduleId;
-    }
-
-    @NotNull
-    protected Map<String, List<JetFile>> collectModules() {
-        return Collections.emptyMap();
-    }
-
-    @NotNull
-    public final Map<String, List<JetFile>> getModules() {
-        if (modules == null) {
-            modules = collectModules();
-        }
-        return modules;
+    public JsModuleConfiguration getModule() {
+        return module;
     }
 
     //TODO: should be null by default I suppose but we can't communicate it to K2JSCompiler atm
