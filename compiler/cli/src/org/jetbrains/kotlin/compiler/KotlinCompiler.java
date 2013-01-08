@@ -33,16 +33,14 @@ import jet.Function0;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
-import org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport;
-import org.jetbrains.jet.cli.common.messages.MessageCollector;
+import org.jetbrains.jet.cli.common.messages.*;
 import org.jetbrains.jet.config.CompilerConfiguration;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
-import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -82,7 +80,17 @@ public class KotlinCompiler {
 
     public void compile(CompilerConfiguration configuration) {
         ModuleInfo moduleConfiguration = compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
-        subCompiler.compile(moduleConfiguration);
+        if (moduleConfiguration == null) {
+            return;
+        }
+
+        try {
+            subCompiler.compile(configuration, moduleConfiguration, moduleConfiguration.sourceFiles);
+        }
+        catch (IOException e) {
+            messageCollector.report(CompilerMessageSeverity.EXCEPTION, MessageRenderer.PLAIN.renderException(e), CompilerMessageLocation.NO_LOCATION);
+        }
+        moduleConfiguration.sourceFiles = null;
     }
 
     protected List<JetFile> collectSourceFiles(List<File> sourceRoots) {
@@ -148,9 +156,7 @@ public class KotlinCompiler {
     ) {
         final List<JetFile> sources = collectSourceFiles(moduleInfoProvider.getSourceFiles(moduleName, moduleObject));
 
-        final ModuleInfo moduleConfiguration =
-                new ModuleInfo(new ModuleDescriptor(Name.special('<' + moduleName + '>')), compileContext.getProject(),
-                                          dependencies);
+        final ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies);
         AnalyzeExhaust exhaust = new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Function0<AnalyzeExhaust>() {
             @Override
             public AnalyzeExhaust invoke() {
@@ -163,6 +169,7 @@ public class KotlinCompiler {
         }
         exhaust.throwIfError();
 
+        moduleConfiguration.sourceFiles = sources;
         compiledModules.put(moduleName, moduleConfiguration);
         return moduleConfiguration;
     }

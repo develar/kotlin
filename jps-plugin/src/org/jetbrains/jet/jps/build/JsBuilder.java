@@ -17,12 +17,8 @@
 package org.jetbrains.jet.jps.build;
 
 import com.intellij.openapi.util.Key;
-import com.intellij.util.ArrayUtil;
-import com.intellij.util.StringBuilderSpinAllocator;
-import com.intellij.util.containers.ContainerUtilRt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
-import org.jetbrains.jet.compiler.runner.CompilerEnvironment;
 import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.utils.PathUtil;
@@ -32,19 +28,17 @@ import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
-import org.jetbrains.jps.model.JpsSimpleElement;
-import org.jetbrains.jps.model.java.JavaSourceRootProperties;
-import org.jetbrains.jps.model.java.JavaSourceRootType;
+import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.module.JpsModule;
-import org.jetbrains.jps.model.module.JpsTypedModuleSourceRoot;
+import org.jetbrains.jps.util.JpsPathUtil;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
+import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collections;
 
 public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget> {
@@ -96,20 +90,13 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
             @NotNull BuildOutputConsumer outputConsumer,
             @NotNull CompileContext context
     ) throws ProjectBuildException, IOException {
-        if (!holder.hasDirtyFiles()) {
-            return;
-        }
-
-        JpsModule module = target.getExtension().getModule();
-        CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
-        compilerConfiguration.put(CompilerConfigurationKeys.MODULE_NAME, module.getName());
-
-        File outputRoot = JpsJsCompilerPaths.getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
-        compilerConfiguration.put(CompilerConfigurationKeys.OUTPUT_ROOT, outputRoot);
+        //if (!holder.hasDirtyFiles()) {
+        //    return;
+        //}
         
         KotlinBuildContext kotlinContext = context.getUserData(CONTEXT);
         if (kotlinContext == null) {
-            kotlinContext = createKotlinBuildContext(context, outputRoot);
+            kotlinContext = createKotlinBuildContext(context);
             if (kotlinContext == null) {
                 return;
             }
@@ -117,6 +104,16 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
                 context.putUserData(CONTEXT, kotlinContext);
             }
         }
+
+        JpsModule module = target.getExtension().getModule();
+
+        CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
+        compilerConfiguration.put(CompilerConfigurationKeys.MODULE_NAME, module.getName());
+        File outputRoot = JpsPathUtil.urlToFile(JpsJavaExtensionService.getInstance().getOutputUrl(module, false));
+        compilerConfiguration.put(CompilerConfigurationKeys.OUTPUT_ROOT, outputRoot);
+        // todo configurable
+        compilerConfiguration.put(JsCompilerConfigurationKeys.TARGET, "5");
+        compilerConfiguration.put(JsCompilerConfigurationKeys.SOURCEMAP, true);
 
         try {
             kotlinContext.compile.invoke(kotlinContext.compiler, compilerConfiguration);
@@ -126,18 +123,10 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
         }
     }
 
-    private static KotlinBuildContext createKotlinBuildContext(CompileContext context, File outputRoot) throws ProjectBuildException {
-        MessageCollector messageCollector = new KotlinBuilder.MessageCollectorAdapter(context);
-        CompilerEnvironment environment = CompilerEnvironment.getEnvironmentFor(PathUtil.getKotlinPathsForJpsPluginOrJpsTests(),
-                                                                                outputRoot);
-        if (!environment.success()) {
-            environment.reportErrorsTo(messageCollector);
-            return null;
-        }
-
+    private static KotlinBuildContext createKotlinBuildContext(CompileContext context) throws ProjectBuildException {
         JpsModuleInfoProvider moduleInfoProvider = new JpsModuleInfoProvider(context.getProjectDescriptor().getProject());
-
-        ClassLoader loader = CompilerRunnerUtil.getOrCreateClassLoader(environment.getKotlinPaths(), messageCollector);
+        MessageCollector messageCollector = new KotlinBuilder.MessageCollectorAdapter(context);
+        ClassLoader loader = CompilerRunnerUtil.getOrCreateClassLoader(PathUtil.getKotlinPathsForJpsPluginOrJpsTests(), messageCollector);
         Object compiler;
         Method compile;
         try {
@@ -154,39 +143,5 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
         }
 
         return new KotlinBuildContext(compiler, compile);
-    }
-
-    private static String[] constructArguments(JsBuildTarget target, CompileContext context, JpsModule module) {
-        ArrayList<String> args = ContainerUtilRt.newArrayList("-tags", "-verbose", "-version");
-        addSourceFiles(args, module);
-
-        args.add("-output");
-        args.add(JpsJsCompilerPaths.getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths()).getPath());
-
-        args.add("-target");
-        // todo configurable
-        args.add("v5");
-
-        args.add("-sourcemap");
-
-        return ArrayUtil.toStringArray(args);
-    }
-
-    private static void addSourceFiles(ArrayList<String> args, JpsModule module) {
-        args.add("-sourceFiles");
-        StringBuilder sb = StringBuilderSpinAllocator.alloc();
-        try {
-            appendModuleSourceRoots(module, sb);
-            args.add(sb.substring(0, sb.length() - 1));
-        }
-        finally {
-            StringBuilderSpinAllocator.dispose(sb);
-        }
-    }
-
-    private static void appendModuleSourceRoots(JpsModule module, StringBuilder sb) {
-        for (JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>> root : module.getSourceRoots(JavaSourceRootType.SOURCE)) {
-            sb.append(root.getFile().getPath()).append(',');
-        }
     }
 }

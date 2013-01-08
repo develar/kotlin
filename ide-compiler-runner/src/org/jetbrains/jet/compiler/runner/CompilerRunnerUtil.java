@@ -27,6 +27,7 @@ import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.config.CompilerConfigurationKey;
 import org.jetbrains.jet.utils.KotlinPaths;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
+import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
 
 import java.io.*;
@@ -57,8 +58,6 @@ public class CompilerRunnerUtil {
         }
 
         ArrayList<File> answer = new ArrayList<File>();
-        //answer.add(new File("/Users/develar/Documents/kotlin/out/production/cli-common"));
-        //answer.add(new File("/Users/develar/Documents/kotlin/out/production/cli"));
         answer.add(new File(libs, "kotlin-compiler.jar"));
         return answer;
     }
@@ -130,13 +129,14 @@ public class CompilerRunnerUtil {
             super(urls, null);
 
             Class<?>[] sharedClasses = {CompilerConfiguration.class, CompilerConfigurationKey.class, CompilerConfigurationKeys.class,
-                    ModuleInfoProvider.class, MessageCollector.class, CompilerMessageSeverity.class, CompilerMessageLocation.class};
+                    ModuleInfoProvider.class, MessageCollector.class, CompilerMessageSeverity.class, CompilerMessageLocation.class, JsCompilerConfigurationKeys.class};
             sharedClassesMap = new THashMap<String, Class>(sharedClasses.length);
             for (Class sharedClass : sharedClasses) {
                 sharedClassesMap.put(sharedClass.getName(), sharedClass);
             }
         }
 
+        @NotNull
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
             Class sharedClass = sharedClassesMap.get(name);

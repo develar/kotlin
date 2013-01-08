@@ -8,6 +8,7 @@ import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
+import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetImportDirective;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
 import org.jetbrains.jet.lang.resolve.BindingContext;
@@ -19,7 +20,10 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class ModuleInfo implements ModuleConfiguration {
     public static final String STUBS_MODULE_NORMAL_NAME = "stubs";
@@ -36,6 +40,9 @@ public class ModuleInfo implements ModuleConfiguration {
     public BindingContext bindingContext;
 
     private String normalName;
+
+    // todo use dirty files holder and remove this field
+    List<JetFile> sourceFiles;
 
     @NotNull
     public static final List<ImportPath> DEFAULT_IMPORT_PATHS = Arrays.asList(
@@ -56,7 +63,12 @@ public class ModuleInfo implements ModuleConfiguration {
         this(moduleDescriptor, project, Collections.singletonList(dependency));
     }
 
-    public ModuleInfo(ModuleDescriptor moduleDescriptor, Project project, @Nullable List<ModuleInfo> dependencies) {
+    public ModuleInfo(String name, Project project, @Nullable List<ModuleInfo> dependencies) {
+        this(new ModuleDescriptor(Name.special('<' + name + '>')), project, dependencies);
+        normalName = name;
+    }
+
+    private ModuleInfo(ModuleDescriptor moduleDescriptor, Project project, @Nullable List<ModuleInfo> dependencies) {
         this.moduleDescriptor = moduleDescriptor;
         this.project = project;
         if (dependencies == null || dependencies.isEmpty()) {

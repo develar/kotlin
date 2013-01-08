@@ -33,8 +33,8 @@ public class JsCompilerOutputLayoutElementBuilder extends LayoutElementBuilderSe
             return;
         }
 
-        instructionCreator.addDirectoryCopyInstructions(JpsPathUtil.urlToFile(
-                JpsJavaExtensionService.getInstance().getOutputUrl(element.getModuleReference().resolve(), false)));
+        instructionCreator.addDirectoryCopyInstructions(
+                JpsPathUtil.urlToFile(JpsJavaExtensionService.getInstance().getOutputUrl(element.getModuleReference().resolve(), false)));
     }
 
     @Override

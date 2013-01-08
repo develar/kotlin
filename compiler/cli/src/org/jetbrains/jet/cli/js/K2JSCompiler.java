@@ -41,13 +41,15 @@ import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
-import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.Traverser;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
-import org.jetbrains.kotlin.compiler.ModuleInfo;
-import org.jetbrains.k2js.config.*;
+import org.jetbrains.k2js.config.ClassPathLibrarySourcesLoader;
+import org.jetbrains.k2js.config.Config;
+import org.jetbrains.k2js.config.EcmaVersion;
+import org.jetbrains.k2js.config.MetaInfServices;
 import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import java.io.File;
 import java.util.*;
@@ -116,7 +118,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             }
 
             if (!otherModulesFiles.isEmpty()) {
-                parentLibraryConfiguration = new ModuleInfo(new ModuleDescriptor(Name.special("<externalModules>")), project, Collections.singletonList(libraryModuleConfiguration));
+                parentLibraryConfiguration = new ModuleInfo("externalModules", project, Collections.singletonList(libraryModuleConfiguration));
                 if (!analyze(messageCollector, parentLibraryConfiguration, otherModulesFiles, false)) {
                     return ExitCode.COMPILATION_ERROR;
                 }
@@ -124,18 +126,18 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         }
 
         String moduleId = FileUtil.getNameWithoutExtension(new File(arguments.outputFile));
-        ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(Name.special('<' + moduleId + '>')), project, Collections.singletonList(parentLibraryConfiguration));
+        ModuleInfo moduleConfiguration = new ModuleInfo(moduleId, project, Collections.singletonList(parentLibraryConfiguration));
         if (!analyze(messageCollector, moduleConfiguration, environmentForJS.getSourceFiles(), true)) {
             return ExitCode.COMPILATION_ERROR;
         }
 
         MainCallParameters mainCallParameters = arguments.createMainCallParameters();
         try {
-            K2JSTranslator.translateWithMainCallParametersAndSaveToFile(mainCallParameters, environmentForJS.getSourceFiles(), outputFile,
-                                                                        new Config(moduleConfiguration,
-                                                                                   EcmaVersion.fromString(arguments.target),
-                                                                                   arguments.sourcemap),
-                                                                        moduleConfiguration.getBindingContext());
+            K2JSTranslator.translateAndSaveToFile(mainCallParameters, environmentForJS.getSourceFiles(), outputFile,
+                                                  new Config(moduleConfiguration,
+                                                             EcmaVersion.fromString(arguments.target),
+                                                             arguments.sourcemap),
+                                                  moduleConfiguration.getBindingContext());
         }
         catch (Throwable e) {
             messageCollector.report(CompilerMessageSeverity.EXCEPTION, MessageRenderer.PLAIN.renderException(e),

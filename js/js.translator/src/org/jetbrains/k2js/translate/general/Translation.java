@@ -25,13 +25,8 @@ import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetNamedFunction;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.facade.MainCallParameters;
-import org.jetbrains.k2js.facade.exceptions.MainFunctionNotFoundException;
-import org.jetbrains.k2js.facade.exceptions.TranslationException;
-import org.jetbrains.k2js.facade.exceptions.TranslationInternalException;
-import org.jetbrains.k2js.facade.exceptions.UnsupportedFeatureException;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.StaticContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -43,6 +38,7 @@ import org.jetbrains.k2js.translate.test.JSTestGenerator;
 import org.jetbrains.k2js.translate.test.JSTester;
 import org.jetbrains.k2js.translate.utils.dangerous.DangerousData;
 import org.jetbrains.k2js.translate.utils.dangerous.DangerousTranslator;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import java.util.Collection;
 import java.util.List;
@@ -101,16 +97,8 @@ public final class Translation {
     public static JsProgram generateAst(@NotNull BindingContext bindingContext,
             @NotNull Collection<JetFile> files, @NotNull MainCallParameters mainCallParameters,
             @NotNull Config config)
-            throws TranslationException {
-        try {
+            {
             return doGenerateAst(bindingContext, files, mainCallParameters, config);
-        }
-        catch (UnsupportedOperationException e) {
-            throw new UnsupportedFeatureException("Unsupported feature used.", e);
-        }
-        catch (Throwable e) {
-            throw new TranslationInternalException(e);
-        }
     }
 
     @NotNull
@@ -118,7 +106,7 @@ public final class Translation {
             @NotNull BindingContext bindingContext, @NotNull Collection<JetFile> files,
             @NotNull MainCallParameters mainCallParameters,
             @NotNull Config config
-    ) throws MainFunctionNotFoundException {
+    ) {
         StaticContext staticContext = StaticContext.generateStaticContext(bindingContext, config.getTarget());
         JsFunction definitionFunction = generateDefinitionFunction(staticContext, files, config, mainCallParameters);
         JsProgram program = staticContext.getProgram();
@@ -145,7 +133,7 @@ public final class Translation {
             Collection<JetFile> files,
             Config config,
             MainCallParameters mainCallParameters
-    ) throws MainFunctionNotFoundException {
+    ) {
         JsFunction definitionFunction = new JsFunction(staticContext.getProgram().getScope(), new JsBlock());
         List<JsStatement> statements = definitionFunction.getBody().getStatements();
         statements.add(staticContext.getProgram().getStringLiteral("use strict").makeStmt());
@@ -175,10 +163,9 @@ public final class Translation {
         }
     }
 
-    //TODO: determine whether should throw exception
     @Nullable
     private static JsStatement generateCallToMain(@NotNull TranslationContext context, @NotNull Collection<JetFile> files,
-            @NotNull List<String> arguments) throws MainFunctionNotFoundException {
+            @NotNull List<String> arguments) {
         JetNamedFunction mainFunction = getMainFunction(files);
         if (mainFunction == null) {
             return null;

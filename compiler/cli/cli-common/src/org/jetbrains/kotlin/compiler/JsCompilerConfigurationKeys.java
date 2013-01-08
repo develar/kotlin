@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.facade.exceptions;
+package org.jetbrains.kotlin.compiler;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.config.CompilerConfigurationKey;
 
-public class UnsupportedFeatureException extends TranslationException {
+public final class JsCompilerConfigurationKeys {
+    public static final CompilerConfigurationKey<Boolean> SOURCEMAP = CompilerConfigurationKey.create("sourcemap");
+    public static final CompilerConfigurationKey<String> TARGET = CompilerConfigurationKey.create("target");
 
-    public UnsupportedFeatureException(@NotNull String message, @NotNull Exception cause) {
-        super(message, cause);
+    private JsCompilerConfigurationKeys() {
     }
 }

@@ -43,6 +43,11 @@ public class CompilerConfiguration {
     }
 
     @NotNull
+    public <T> T getNotNull(@NotNull CompilerConfigurationKey<T> key) {
+        return (T) map.get(key.ideaKey);
+    }
+
+    @NotNull
     public <T> T get(@NotNull CompilerConfigurationKey<T> key, @NotNull T defaultValue) {
         T data = (T) map.get(key.ideaKey);
         return data == null ? defaultValue : data;

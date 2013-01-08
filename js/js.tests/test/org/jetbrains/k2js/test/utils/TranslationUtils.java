@@ -108,8 +108,8 @@ public final class TranslationUtils {
         AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, psiFiles, true);
         exhaust.throwIfError();
         TestConfig config = configFactory.create(moduleConfiguration, version);
-        K2JSTranslator.translateWithMainCallParametersAndSaveToFile(mainCallParameters, psiFiles, outputFile, config,
-                                                                    moduleConfiguration.getBindingContext());
+        K2JSTranslator.translateAndSaveToFile(mainCallParameters, psiFiles, outputFile, config,
+                                              moduleConfiguration.getBindingContext());
     }
 
     @NotNull

@@ -20,7 +20,6 @@ import com.google.dart.compiler.backend.js.ast.JsProgram;
 import com.google.dart.compiler.util.TextOutputImpl;
 import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
@@ -29,7 +28,6 @@ import org.jetbrains.js.compiler.SourceMapBuilder;
 import org.jetbrains.js.compiler.sourcemap.SourceMap3Builder;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 import org.jetbrains.k2js.config.Config;
-import org.jetbrains.k2js.facade.exceptions.TranslationException;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.utils.JetFileUtils;
 
@@ -50,18 +48,18 @@ public final class K2JSTranslator {
     @NotNull
     private final Config config;
 
-    public static void translateWithMainCallParametersAndSaveToFile(
-            @NotNull MainCallParameters mainCall,
+    public static void translateAndSaveToFile(
+            @NotNull MainCallParameters mainCallParameters,
             @NotNull List<JetFile> files,
             @NotNull String outputPath,
             @NotNull Config config,
             @NotNull BindingContext bindingContext
-    ) throws TranslationException, IOException {
-        K2JSTranslator translator = new K2JSTranslator(config);
+    ) throws IOException {
         File outFile = new File(outputPath);
         TextOutputImpl output = new TextOutputImpl();
         SourceMapBuilder sourceMapBuilder = config.isSourcemap() ? new SourceMap3Builder(outFile, output, new SourceMapBuilderConsumer()) : null;
-        String programCode = translator.generateProgramCode(files, mainCall, output, sourceMapBuilder, bindingContext);
+
+        String programCode = toSource(output, sourceMapBuilder, Translation.generateAst(bindingContext, files, mainCallParameters, config));
         FileUtil.writeToFile(outFile, programCode);
         if (sourceMapBuilder != null) {
             FileUtil.writeToFile(sourceMapBuilder.getOutFile(), sourceMapBuilder.build());
@@ -75,23 +73,17 @@ public final class K2JSTranslator {
     //NOTE: web demo related method
     @SuppressWarnings("UnusedDeclaration")
     @NotNull
-    public String translateStringWithCallToMain(@NotNull String programText, @NotNull String argumentsString) throws TranslationException {
+    public String translateStringWithCallToMain(@NotNull String programText, @NotNull String argumentsString) {
         JetFile file = JetFileUtils.createPsiFile("test", programText, config.getProject());
         KotlinBuiltIns.initialize(config.getProject());
         List<JetFile> files = Collections.singletonList(file);
-        String programCode = generateProgramCode(files, MainCallParameters.mainWithArguments(parseString(argumentsString)), new TextOutputImpl(), null, AnalyzerFacadeForJS.analyzeFilesAndCheckErrors(files, config));
+        String programCode = toSource(new TextOutputImpl(), null, Translation
+                .generateAst(AnalyzerFacadeForJS.analyzeFilesAndCheckErrors(files, config), files,
+                             MainCallParameters.mainWithArguments(parseString(argumentsString)), config));
         return FLUSH_SYSTEM_OUT + programCode + "\n" + GET_SYSTEM_OUT;
     }
 
-    @NotNull
-    private String generateProgramCode(
-            @NotNull List<JetFile> files,
-            @NotNull MainCallParameters mainCallParameters,
-            @NotNull TextOutputImpl output,
-            @Nullable SourceMapBuilder sourceMapBuilder,
-            @NotNull BindingContext bindingContext
-    ) throws TranslationException {
-        JsProgram program = Translation.generateAst(bindingContext, files, mainCallParameters, config);
+    private static String toSource(TextOutputImpl output, SourceMapBuilder sourceMapBuilder, JsProgram program) {
         JsSourceGenerationVisitor sourceGenerator = new JsSourceGenerationVisitor(output, sourceMapBuilder);
         program.accept(sourceGenerator);
         return output.toString();
