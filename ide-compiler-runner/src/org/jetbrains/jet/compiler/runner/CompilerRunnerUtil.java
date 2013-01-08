@@ -129,7 +129,7 @@ public class CompilerRunnerUtil {
             super(urls, null);
 
             Class<?>[] sharedClasses = {CompilerConfiguration.class, CompilerConfigurationKey.class, CompilerConfigurationKeys.class,
-                    ModuleInfoProvider.class, MessageCollector.class, CompilerMessageSeverity.class, CompilerMessageLocation.class, JsCompilerConfigurationKeys.class};
+                    ModuleInfoProvider.class, ModuleInfoProvider.DependenciesProcessor.class, MessageCollector.class, CompilerMessageSeverity.class, CompilerMessageLocation.class, JsCompilerConfigurationKeys.class};
             sharedClassesMap = new THashMap<String, Class>(sharedClasses.length);
             for (Class sharedClass : sharedClasses) {
                 sharedClassesMap.put(sharedClass.getName(), sharedClass);

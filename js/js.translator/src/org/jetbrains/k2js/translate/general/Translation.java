@@ -117,7 +117,8 @@ public final class Translation {
     private static JsInvocation generateDefineModuleInvocation(Config config, JsFunction definitionFunction, JsProgram program) {
         List<JsExpression> moduleDependencies = new SmartList<JsExpression>();
         for (ModuleInfo module : config.getModule().getDependencies()) {
-            if (!module.getName().equalsIgnoreCase(ModuleInfo.STUBS_MODULE_NORMAL_NAME)) {
+            // todo get rid of this check
+            if (!module.getName().equalsIgnoreCase(ModuleInfo.STUBS_MODULE_NORMAL_NAME) && !module.getName().equalsIgnoreCase("KotlinJsRuntime")) {
                 moduleDependencies.add(program.getStringLiteral(module.getName()));
             }
         }

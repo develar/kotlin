@@ -7,9 +7,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="cli" />
-    <orderEntry type="module" module-name="js.translator" />
+    <orderEntry type="module" module-name="cli-common" />
     <orderEntry type="module" module-name="frontend" />
+    <orderEntry type="module" module-name="js.translator" />
+    <orderEntry type="module" module-name="cli" />
     <orderEntry type="library" name="intellij-core" level="project" />
   </component>
 </module>
