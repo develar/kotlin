@@ -24,6 +24,7 @@ import com.intellij.mock.MockProject;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFileSystem;
 import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
 import com.intellij.psi.impl.compiled.ClsCustomNavigationPolicy;
 import org.jetbrains.annotations.NotNull;
@@ -71,5 +72,9 @@ public class CompileContext {
 
     public CoreLocalFileSystem getLocalFileSystem() {
         return applicationEnvironment.getLocalFileSystem();
+    }
+
+    public VirtualFileSystem getJarFileSystem() {
+        return applicationEnvironment.getJarFileSystem();
     }
 }

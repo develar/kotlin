@@ -144,7 +144,6 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
                 CompilerEnvironment.getEnvironmentFor(PathUtil.getKotlinPathsForJpsPluginOrJpsTests(), outputRoot);
         if (!environment.success()) {
             environment.reportErrorsTo(messageCollector);
-            //context.processMessage(new CompilerMessage(getPresentableName(), ""));
             return null;
         }
 

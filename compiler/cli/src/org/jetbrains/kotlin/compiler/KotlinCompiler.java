@@ -19,12 +19,19 @@ package org.jetbrains.kotlin.compiler;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vfs.StandardFileSystems;
+import com.intellij.openapi.vfs.VfsUtilCore;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
 import com.intellij.openapi.vfs.local.CoreLocalVirtualFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.Processor;
+import com.intellij.util.SmartList;
 import gnu.trove.THashMap;
 import jet.Function0;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
@@ -38,6 +45,7 @@ import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -64,7 +72,7 @@ public class KotlinCompiler {
     }
 
     public void compile(CompilerConfiguration configuration) {
-        compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME));
+        compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
     }
 
     protected List<JetFile> collectSourceFiles(List<File> sourceRoots) {
@@ -72,6 +80,22 @@ public class KotlinCompiler {
         final PsiManager psiManager = PsiManager.getInstance(compileContext.getProject());
         final CoreLocalFileSystem localFileSystem = compileContext.getLocalFileSystem();
         for (File sourceRoot : sourceRoots) {
+            // root from library
+            VirtualFile jarFile = StandardFileSystems.getJarRootForLocalFile(new CoreLocalVirtualFile(localFileSystem, sourceRoot));
+            if (jarFile != null) {
+                VfsUtilCore.visitChildrenRecursively(jarFile, new VirtualFileVisitor() {
+                    @Override
+                    public boolean visitFile(@NotNull VirtualFile file) {
+                        if (file.getName().endsWith(".kt")) {
+                            result.add((JetFile) psiManager.findFile(file));
+                            return false;
+                        }
+                        return true;
+                    }
+                });
+                continue;
+            }
+
             FileUtil.processFilesRecursively(sourceRoot, new Processor<File>() {
                 @Override
                 public boolean process(File file) {
@@ -90,10 +114,29 @@ public class KotlinCompiler {
         return result;
     }
 
-    protected JsModuleConfiguration compileModule(String moduleName) {
-        final boolean analyzeCompletely = true;
+    @Nullable
+    protected JsModuleConfiguration compileModule(String moduleName, final boolean analyzeCompletely) {
         List<JsModuleConfiguration> dependencies = collectDependencies(moduleName);
-        final List<JetFile> sources = collectSourceFiles(moduleInfoProvider.getSourceFiles(moduleName));
+        if (dependencies == null) {
+            return null;
+        }
+
+        JsModuleConfiguration moduleConfiguration = analyzeModule(moduleName, null, analyzeCompletely, dependencies);
+        if (moduleConfiguration == null) {
+            return null;
+        }
+
+        return moduleConfiguration;
+    }
+
+    @Nullable
+    private JsModuleConfiguration analyzeModule(
+            String moduleName,
+            @Nullable Object moduleObject,
+            final boolean analyzeCompletely,
+            List<JsModuleConfiguration> dependencies
+    ) {
+        final List<JetFile> sources = collectSourceFiles(moduleInfoProvider.getSourceFiles(moduleName, moduleObject));
 
         final JsModuleConfiguration moduleConfiguration =
                 new JsModuleConfiguration(new ModuleDescriptor(Name.special('<' + moduleName + '>')), compileContext.getProject(),
@@ -114,24 +157,29 @@ public class KotlinCompiler {
         return moduleConfiguration;
     }
 
+    @Nullable
     private List<JsModuleConfiguration> collectDependencies(String moduleName) {
-        List<String> dependentModuleNames = moduleInfoProvider.getDependentModuleNames(moduleName);
-        List<JsModuleConfiguration> dependencies = new ArrayList<JsModuleConfiguration>(dependentModuleNames.size());
-        for (String dependentModuleName : dependentModuleNames) {
-            JsModuleConfiguration dependentModuleConfiguration = compiledModules.get(dependentModuleName);
-            if (dependentModuleConfiguration == null) {
-                dependentModuleConfiguration = compileModule(dependentModuleName);
-                if (dependentModuleConfiguration == null) {
-                    // todo report error
-                    return null;
+        final List<JsModuleConfiguration> dependencies = new SmartList<JsModuleConfiguration>();
+        boolean completed = moduleInfoProvider.consumeDependencies(moduleName, new ModuleInfoProvider.DependenciesProcessor() {
+            @Override
+            public boolean process(String name, Object dependency, boolean isLibrary) {
+                // todo now we assume that idea module name and library name are unique
+                JsModuleConfiguration moduleConfiguration = compiledModules.get(name);
+                if (moduleConfiguration == null) {
+                    // todo dependencies for library?
+                    moduleConfiguration = isLibrary
+                                          ? analyzeModule(name, dependency, false, Collections.<JsModuleConfiguration>emptyList())
+                                          : compileModule(name, false);
+                    if (moduleConfiguration == null) {
+                        return false;
+                    }
                 }
+                dependencies.add(moduleConfiguration);
+                return true;
             }
-            dependencies.add(dependentModuleConfiguration);
-            //if (!isCompiled(dependentModuleName)) {
-            //    compileModule(dependentModuleName);
-            //}
-        }
-        return dependencies;
+        });
+
+        return completed ? dependencies : null;
     }
 
     public void dispose() {

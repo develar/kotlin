@@ -1,18 +1,17 @@
 package org.jetbrains.jet.jps.build;
 
+import gnu.trove.THashSet;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.JpsProject;
 import org.jetbrains.jps.model.JpsSimpleElement;
-import org.jetbrains.jps.model.java.JavaSourceRootProperties;
-import org.jetbrains.jps.model.java.JavaSourceRootType;
-import org.jetbrains.jps.model.java.JpsJavaClasspathKind;
-import org.jetbrains.jps.model.java.JpsJavaExtensionService;
-import org.jetbrains.jps.model.module.JpsModule;
-import org.jetbrains.jps.model.module.JpsTypedModuleSourceRoot;
+import org.jetbrains.jps.model.java.*;
+import org.jetbrains.jps.model.library.JpsLibrary;
+import org.jetbrains.jps.model.library.JpsOrderRootType;
+import org.jetbrains.jps.model.module.*;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -24,25 +23,60 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
     }
 
     @Override
-    public List<String> getDependentModuleNames(String moduleName) {
+    public boolean consumeDependencies(String moduleName, DependenciesProcessor consumer) {
         JpsModule module = getModule(moduleName);
-        Set<JpsModule> dependentModules =
-                JpsJavaExtensionService.dependencies(module).includedIn(JpsJavaClasspathKind.compile(false)).withoutModuleSourceEntries()
-                        .recursively().exportedOnly().getModules();
-        if (dependentModules.isEmpty()) {
-            return Collections.emptyList();
+        return processModuleDependencies(consumer, module, new THashSet<JpsDependencyElement>(), true);
+    }
+
+    private static boolean processModuleDependencies(
+            DependenciesProcessor consumer,
+            JpsModule dependentModule,
+            Set<JpsDependencyElement> processed,
+            boolean isDirectDependency
+    ) {
+        for (JpsDependencyElement dependency : dependentModule.getDependenciesList().getDependencies()) {
+            boolean isModule = dependency instanceof JpsModuleDependency;
+            if ((!isModule && !(dependency instanceof JpsLibraryDependency)) || !processed.add(dependency)) {
+                continue;
+            }
+
+            JpsJavaDependencyExtension extension = JpsJavaExtensionService.getInstance().getDependencyExtension(dependency);
+            if (extension == null ||
+                !extension.getScope().isIncludedIn(JpsJavaClasspathKind.PRODUCTION_COMPILE) ||
+                !(isDirectDependency || extension.isExported())) {
+                continue;
+            }
+
+            if (isModule) {
+                JpsModule module = ((JpsModuleDependency) dependency).getModule();
+                if (module != null &&
+                    (!consumer.process(module.getName(), module, false) || !processModuleDependencies(consumer, module, processed, false))) {
+                    return false;
+                }
+            }
+            else {
+                JpsLibrary library = ((JpsLibraryDependency) dependency).getLibrary();
+                if (library != null && isKotlinLibrary(library) && !consumer.process(library.getName(), library, true)) {
+                    return false;
+                }
+            }
         }
 
-        List<String> result = new ArrayList<String>(dependentModules.size());
-        for (JpsModule dependentModule : dependentModules) {
-            result.add(dependentModule.getName());
-        }
-        return result;
+        return true;
+    }
+
+    private static boolean isKotlinLibrary(JpsLibrary library) {
+        return library.getType() instanceof JpsJavaLibraryType &&
+               !library.getRoots(JpsOrderRootType.SOURCES).isEmpty();
     }
 
     @Override
-    public List<File> getSourceFiles(String moduleName) {
-        JpsModule module = getModule(moduleName);
+    public List<File> getSourceFiles(String name, @Nullable Object object) {
+        if (object instanceof JpsLibrary) {
+            return ((JpsLibrary) object).getFiles(JpsOrderRootType.SOURCES);
+        }
+
+        JpsModule module = object == null ? getModule(name) : ((JpsModule) object);
         Iterable<JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>>> roots =
                 module.getSourceRoots(JavaSourceRootType.SOURCE);
         List<File> result = new ArrayList<File>();
