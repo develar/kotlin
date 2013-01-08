@@ -37,7 +37,7 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.Traverser;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,9 +59,9 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             @NotNull List<AnalyzerScriptParameter> scriptParameters,
             @NotNull Predicate<PsiFile> filesToAnalyzeCompletely
     ) {
-        JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
+        ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
         AnalyzerFacadeForJS.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
-        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(MODULE_NAME), project, libraryModuleConfiguration);
+        ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(MODULE_NAME), project, libraryModuleConfiguration);
         return AnalyzerFacadeForJS.analyzeFilesAndStoreBodyContext(moduleConfiguration, files, false);
     }
 
@@ -92,9 +92,9 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
 
         FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(allFiles, Predicates.<FqName>alwaysFalse());
         ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
-        JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
+        ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
         AnalyzerFacadeForJS.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
-        return new ResolveSession(project, lazyModule, new JsModuleConfiguration(new ModuleDescriptor(MODULE_NAME), project, libraryModuleConfiguration), declarationProviderFactory);
+        return new ResolveSession(project, lazyModule, new ModuleInfo(new ModuleDescriptor(MODULE_NAME), project, libraryModuleConfiguration), declarationProviderFactory);
     }
 
     private static List<JetFile> getLibraryFiles(Project project) {

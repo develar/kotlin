@@ -18,7 +18,7 @@ package org.jetbrains.k2js.test.config;
 
 import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
 
@@ -100,12 +100,12 @@ public class TestConfig extends Config {
     @NotNull
     public static TestConfigFactory FACTORY = new TestConfigFactory() {
         @Override
-        public TestConfig create(@NotNull JsModuleConfiguration moduleConfiguration, @NotNull EcmaVersion version) {
+        public TestConfig create(@NotNull ModuleInfo moduleConfiguration, @NotNull EcmaVersion version) {
             return new TestConfig(moduleConfiguration, version);
         }
     };
 
-    public TestConfig(@NotNull JsModuleConfiguration module, @NotNull EcmaVersion version) {
+    public TestConfig(@NotNull ModuleInfo module, @NotNull EcmaVersion version) {
         super(module, version);
     }
 

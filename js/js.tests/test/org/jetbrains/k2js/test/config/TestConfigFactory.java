@@ -17,9 +17,9 @@
 package org.jetbrains.k2js.test.config;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.k2js.config.EcmaVersion;
 
 public interface TestConfigFactory {
-    TestConfig create(@NotNull JsModuleConfiguration moduleConfiguration, @NotNull EcmaVersion version);
+    TestConfig create(@NotNull ModuleInfo moduleConfiguration, @NotNull EcmaVersion version);
 }

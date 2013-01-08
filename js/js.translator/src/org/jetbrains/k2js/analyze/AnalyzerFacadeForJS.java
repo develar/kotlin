@@ -25,6 +25,7 @@ import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.config.Config;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,18 +41,18 @@ public final class AnalyzerFacadeForJS {
             @NotNull List<JetFile> files,
             @NotNull Config config
     ) {
-        final JsModuleConfiguration libraryModuleConfiguration = new JsModuleConfiguration(config.getProject());
+        final ModuleInfo libraryModuleConfiguration = new ModuleInfo(config.getProject());
         // todo fix web demo
         AnalyzeExhaust libraryExhaust = analyzeFiles(libraryModuleConfiguration, Collections.<JetFile>emptyList(), false);
         libraryExhaust.throwIfError();
 
         checkForErrors(files);
-        return analyzeFiles(new JsModuleConfiguration(new ModuleDescriptor(Name.special("<web-demo>")), config.getProject(), libraryModuleConfiguration), files, true).getBindingContext();
+        return analyzeFiles(new ModuleInfo(new ModuleDescriptor(Name.special("<web-demo>")), config.getProject(), libraryModuleConfiguration), files, true).getBindingContext();
     }
 
     @NotNull
     public static AnalyzeExhaust analyzeFiles(
-            JsModuleConfiguration moduleConfiguration,
+            ModuleInfo moduleConfiguration,
             @NotNull Collection<JetFile> files,
             boolean analyzeCompletely
     ) {
@@ -60,7 +61,7 @@ public final class AnalyzerFacadeForJS {
 
     @NotNull
     public static AnalyzeExhaust analyzeFilesAndStoreBodyContext(
-            JsModuleConfiguration moduleConfiguration,
+            ModuleInfo moduleConfiguration,
             @NotNull Collection<JetFile> files,
             boolean analyzeCompletely
     ) {
@@ -69,7 +70,7 @@ public final class AnalyzerFacadeForJS {
 
     @NotNull
     public static AnalyzeExhaust analyzeFiles(
-            JsModuleConfiguration moduleConfiguration,
+            ModuleInfo moduleConfiguration,
             @NotNull Collection<JetFile> files,
             @NotNull TopDownAnalysisParameters topDownAnalysisParameters,
             boolean storeContextForBodiesResolve
@@ -79,7 +80,7 @@ public final class AnalyzerFacadeForJS {
 
     @NotNull
     public static AnalyzeExhaust analyzeFiles(
-            JsModuleConfiguration moduleConfiguration,
+            ModuleInfo moduleConfiguration,
             @NotNull Collection<JetFile> files,
             @NotNull TopDownAnalysisParameters topDownAnalysisParameters,
             @Nullable BodiesResolveContext bodiesResolveContext,

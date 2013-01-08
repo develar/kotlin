@@ -16,12 +16,12 @@
 
 package org.jetbrains.k2js;
 
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.kotlin.compiler.SubCompiler;
 
 public class ToJsSubCompiler extends SubCompiler {
     @Override
-    public void compile(JsModuleConfiguration configuration) {
+    public void compile(ModuleInfo configuration) {
 
     }
 }

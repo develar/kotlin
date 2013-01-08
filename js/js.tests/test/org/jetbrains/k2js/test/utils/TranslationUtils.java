@@ -33,7 +33,7 @@ import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
@@ -53,7 +53,7 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    private static SoftReference<JsModuleConfiguration> cachedLibraryContext = new SoftReference<JsModuleConfiguration>(null);
+    private static SoftReference<ModuleInfo> cachedLibraryContext = new SoftReference<ModuleInfo>(null);
 
     @Nullable
     private static List<JetFile> libFiles = null;
@@ -67,8 +67,8 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    public static JsModuleConfiguration getLibraryContext(@NotNull Project project) {
-        JsModuleConfiguration context = cachedLibraryContext.get();
+    public static ModuleInfo getLibraryContext(@NotNull Project project) {
+        ModuleInfo context = cachedLibraryContext.get();
         if (context == null) {
             List<JetFile> allLibFiles = getAllLibFiles(project);
             Predicate<PsiFile> filesWithCode = new Predicate<PsiFile>() {
@@ -78,10 +78,10 @@ public final class TranslationUtils {
                 }
             };
             AnalyzerFacadeForJS.checkForErrors(allLibFiles);
-            JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(JsModuleConfiguration.STUBS_MODULE_NAME), project);
+            ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
             AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, allLibFiles, new TopDownAnalysisParameters(filesWithCode), false);
             exhaust.throwIfError();
-            cachedLibraryContext = new SoftReference<JsModuleConfiguration>(moduleConfiguration);
+            cachedLibraryContext = new SoftReference<ModuleInfo>(moduleConfiguration);
             context = moduleConfiguration;
         }
         return context;
@@ -103,7 +103,7 @@ public final class TranslationUtils {
             @NotNull EcmaVersion version, TestConfigFactory configFactory
     ) throws Exception {
         List<JetFile> psiFiles = createPsiFileList(project, inputFiles, null);
-        JsModuleConfiguration moduleConfiguration = new JsModuleConfiguration(new ModuleDescriptor(Name.special('<' + TestConfig.TEST_MODULE_NAME + '>')), project,
+        ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(Name.special('<' + TestConfig.TEST_MODULE_NAME + '>')), project,
                                                                               getLibraryContext(project));
         AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, psiFiles, true);
         exhaust.throwIfError();

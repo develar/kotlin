@@ -17,7 +17,7 @@
 package org.jetbrains.k2js.test.config;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.test.JSRhinoUnitTester;
 import org.jetbrains.k2js.translate.test.JSTester;
@@ -27,7 +27,7 @@ public class TestConfigWithUnitTests extends TestConfig {
     @NotNull
     public static TestConfigFactory FACTORY = new TestConfigFactory() {
         @Override
-        public TestConfig create(@NotNull JsModuleConfiguration module, @NotNull EcmaVersion version) {
+        public TestConfig create(@NotNull ModuleInfo module, @NotNull EcmaVersion version) {
             return new TestConfigWithUnitTests(module, version);
         }
     };
@@ -37,7 +37,7 @@ public class TestConfigWithUnitTests extends TestConfig {
         return new JSRhinoUnitTester();
     }
 
-    public TestConfigWithUnitTests(@NotNull JsModuleConfiguration module, @NotNull EcmaVersion version) {
+    public TestConfigWithUnitTests(@NotNull ModuleInfo module, @NotNull EcmaVersion version) {
         super(module, version);
     }
 }

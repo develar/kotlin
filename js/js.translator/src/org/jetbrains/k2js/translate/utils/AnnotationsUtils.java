@@ -25,7 +25,7 @@ import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getContainingClass;
 
@@ -77,7 +77,7 @@ public final class AnnotationsUtils {
 
     public static boolean isNativeObjectByModule(@NotNull DeclarationDescriptor descriptor) {
         ModuleDescriptor moduleDescriptor = DescriptorUtils.getParentOfType(descriptor, ModuleDescriptor.class);
-        return moduleDescriptor != null && moduleDescriptor.getName().equals(JsModuleConfiguration.STUBS_MODULE_NAME);
+        return moduleDescriptor != null && moduleDescriptor.getName().equals(ModuleInfo.STUBS_MODULE_NAME);
     }
 
     public static boolean isEnumerable(@NotNull DeclarationDescriptor descriptor) {

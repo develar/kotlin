@@ -30,7 +30,7 @@ import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.k2js.Traverser;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
@@ -247,7 +247,7 @@ public final class StaticContext {
 
         ModuleDescriptor module = DescriptorUtils.getParentOfType(namespace, ModuleDescriptor.class);
         assert module != null;
-        if (module.getName().equals(JsModuleConfiguration.STUBS_MODULE_NAME) || AnnotationsUtils.isNativeObject(descriptor)) {
+        if (module.getName().equals(ModuleInfo.STUBS_MODULE_NAME) || AnnotationsUtils.isNativeObject(descriptor)) {
             return null;
         }
 

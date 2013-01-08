@@ -41,7 +41,6 @@ import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -64,7 +63,7 @@ public class KotlinCompiler {
 
     private final Disposable compileContextParentDisposable = Disposer.newDisposable();
 
-    private final Map<String, JsModuleConfiguration> compiledModules = new THashMap<String, JsModuleConfiguration>();
+    private final Map<String, ModuleInfo> compiledModules = new THashMap<String, ModuleInfo>();
 
     private final SubCompiler subCompiler;
 
@@ -82,7 +81,7 @@ public class KotlinCompiler {
     }
 
     public void compile(CompilerConfiguration configuration) {
-        JsModuleConfiguration moduleConfiguration = compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
+        ModuleInfo moduleConfiguration = compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
         subCompiler.compile(moduleConfiguration);
     }
 
@@ -126,13 +125,13 @@ public class KotlinCompiler {
     }
 
     @Nullable
-    protected JsModuleConfiguration compileModule(String moduleName, final boolean analyzeCompletely) {
-        List<JsModuleConfiguration> dependencies = collectDependencies(moduleName);
+    protected ModuleInfo compileModule(String moduleName, final boolean analyzeCompletely) {
+        List<ModuleInfo> dependencies = collectDependencies(moduleName);
         if (dependencies == null) {
             return null;
         }
 
-        JsModuleConfiguration moduleConfiguration = analyzeModule(moduleName, null, analyzeCompletely, dependencies);
+        ModuleInfo moduleConfiguration = analyzeModule(moduleName, null, analyzeCompletely, dependencies);
         if (moduleConfiguration == null) {
             return null;
         }
@@ -141,16 +140,16 @@ public class KotlinCompiler {
     }
 
     @Nullable
-    private JsModuleConfiguration analyzeModule(
+    private ModuleInfo analyzeModule(
             String moduleName,
             @Nullable Object moduleObject,
             final boolean analyzeCompletely,
-            List<JsModuleConfiguration> dependencies
+            List<ModuleInfo> dependencies
     ) {
         final List<JetFile> sources = collectSourceFiles(moduleInfoProvider.getSourceFiles(moduleName, moduleObject));
 
-        final JsModuleConfiguration moduleConfiguration =
-                new JsModuleConfiguration(new ModuleDescriptor(Name.special('<' + moduleName + '>')), compileContext.getProject(),
+        final ModuleInfo moduleConfiguration =
+                new ModuleInfo(new ModuleDescriptor(Name.special('<' + moduleName + '>')), compileContext.getProject(),
                                           dependencies);
         AnalyzeExhaust exhaust = new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Function0<AnalyzeExhaust>() {
             @Override
@@ -169,17 +168,17 @@ public class KotlinCompiler {
     }
 
     @Nullable
-    private List<JsModuleConfiguration> collectDependencies(String moduleName) {
-        final List<JsModuleConfiguration> dependencies = new SmartList<JsModuleConfiguration>();
+    private List<ModuleInfo> collectDependencies(String moduleName) {
+        final List<ModuleInfo> dependencies = new SmartList<ModuleInfo>();
         boolean completed = moduleInfoProvider.consumeDependencies(moduleName, new ModuleInfoProvider.DependenciesProcessor() {
             @Override
             public boolean process(String name, Object dependency, boolean isLibrary) {
                 // todo now we assume that idea module name and library name are unique
-                JsModuleConfiguration moduleConfiguration = compiledModules.get(name);
+                ModuleInfo moduleConfiguration = compiledModules.get(name);
                 if (moduleConfiguration == null) {
                     // todo dependencies for library?
                     moduleConfiguration = isLibrary
-                                          ? analyzeModule(name, dependency, false, Collections.<JsModuleConfiguration>emptyList())
+                                          ? analyzeModule(name, dependency, false, Collections.<ModuleInfo>emptyList())
                                           : compileModule(name, false);
                     if (moduleConfiguration == null) {
                         return false;

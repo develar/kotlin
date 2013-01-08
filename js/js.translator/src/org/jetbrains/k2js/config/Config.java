@@ -19,7 +19,7 @@ package org.jetbrains.k2js.config;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.k2js.translate.test.JSTester;
 import org.jetbrains.k2js.translate.test.QUnitTester;
 
@@ -27,20 +27,20 @@ import org.jetbrains.k2js.translate.test.QUnitTester;
  * Base class representing a configuration of translator.
  */
 public class Config {
-    protected final JsModuleConfiguration module;
+    protected final ModuleInfo module;
 
     private final EcmaVersion target;
     private final boolean sourcemap;
 
-    public Config(@NotNull JsModuleConfiguration module, @NotNull EcmaVersion ecmaVersion) {
+    public Config(@NotNull ModuleInfo module, @NotNull EcmaVersion ecmaVersion) {
         this(module, ecmaVersion, false);
     }
 
-    public Config(@NotNull JsModuleConfiguration module) {
+    public Config(@NotNull ModuleInfo module) {
         this(module, EcmaVersion.defaultVersion(), false);
     }
 
-    public Config(@NotNull JsModuleConfiguration module, @NotNull EcmaVersion ecmaVersion, boolean sourcemap) {
+    public Config(@NotNull ModuleInfo module, @NotNull EcmaVersion ecmaVersion, boolean sourcemap) {
         this.module = module;
         this.target = ecmaVersion;
         this.sourcemap = sourcemap;
@@ -50,7 +50,7 @@ public class Config {
     @SuppressWarnings("UnusedDeclaration")
     @NotNull
     public static Config getEmptyConfig(@NotNull Project project) {
-        return new Config(new JsModuleConfiguration(project));
+        return new Config(new ModuleInfo(project));
     }
 
     public boolean isSourcemap() {
@@ -68,7 +68,7 @@ public class Config {
     }
 
     @NotNull
-    public JsModuleConfiguration getModule() {
+    public ModuleInfo getModule() {
         return module;
     }
 

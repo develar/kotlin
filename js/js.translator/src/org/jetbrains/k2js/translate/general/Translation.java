@@ -25,7 +25,7 @@ import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetNamedFunction;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.facade.exceptions.MainFunctionNotFoundException;
@@ -128,8 +128,8 @@ public final class Translation {
 
     private static JsInvocation generateDefineModuleInvocation(Config config, JsFunction definitionFunction, JsProgram program) {
         List<JsExpression> moduleDependencies = new SmartList<JsExpression>();
-        for (JsModuleConfiguration module : config.getModule().getDependencies()) {
-            if (!module.getName().equalsIgnoreCase(JsModuleConfiguration.STUBS_MODULE_NORMAL_NAME)) {
+        for (ModuleInfo module : config.getModule().getDependencies()) {
+            if (!module.getName().equalsIgnoreCase(ModuleInfo.STUBS_MODULE_NORMAL_NAME)) {
                 moduleDependencies.add(program.getStringLiteral(module.getName()));
             }
         }
