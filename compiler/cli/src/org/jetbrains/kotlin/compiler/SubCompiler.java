@@ -16,5 +16,8 @@
 
 package org.jetbrains.kotlin.compiler;
 
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+
 public abstract class SubCompiler {
+    public abstract void compile(JsModuleConfiguration configuration);
 }

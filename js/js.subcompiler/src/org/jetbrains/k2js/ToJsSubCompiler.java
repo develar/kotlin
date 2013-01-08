@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-
 package org.jetbrains.k2js;
 
-public class ToJsSubCompiler {
+import org.jetbrains.k2js.analyze.JsModuleConfiguration;
+import org.jetbrains.kotlin.compiler.SubCompiler;
+
+public class ToJsSubCompiler extends SubCompiler {
+    @Override
+    public void compile(JsModuleConfiguration configuration) {
+
+    }
 }

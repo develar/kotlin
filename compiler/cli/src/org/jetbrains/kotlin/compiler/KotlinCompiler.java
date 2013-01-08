@@ -82,9 +82,8 @@ public class KotlinCompiler {
     }
 
     public void compile(CompilerConfiguration configuration) {
-        compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
-
-        //subCompiler.compile();
+        JsModuleConfiguration moduleConfiguration = compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
+        subCompiler.compile(moduleConfiguration);
     }
 
     protected List<JetFile> collectSourceFiles(List<File> sourceRoots) {
