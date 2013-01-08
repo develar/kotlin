@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 
-package org.jetbrains.kotlin.compiler;
 
-import org.jetbrains.jet.config.CompilerConfigurationKey;
+package org.jetbrains.k2js;
 
-import java.io.File;
-
-public final class CompilerConfigurationKeys {
-    public static final CompilerConfigurationKey<File> OUTPUT_ROOT = CompilerConfigurationKey.create("outputRoot");
-    public static final CompilerConfigurationKey<String> MODULE_NAME = CompilerConfigurationKey.create("moduleName");
-
-    private CompilerConfigurationKeys() {
-    }
+public class ToJsSubCompiler {
 }

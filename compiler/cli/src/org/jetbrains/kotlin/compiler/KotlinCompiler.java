@@ -50,11 +50,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Per project.
- *
  * Kotlin compiler to any target (source-based, JavaScript as example).
- *
+ * Per project.
  * You must call dispose() if it is not need anymore.
+ *
+ * It is your responsibility to build all module dependencies before and
+ * you must care about synchronization and multithread issues (as IntelliJ IDEA JPS does)
  */
 public class KotlinCompiler {
     private final ModuleInfoProvider moduleInfoProvider;
@@ -65,14 +66,25 @@ public class KotlinCompiler {
 
     private final Map<String, JsModuleConfiguration> compiledModules = new THashMap<String, JsModuleConfiguration>();
 
-    public KotlinCompiler(ModuleInfoProvider moduleInfoProvider, MessageCollector messageCollector) {
+    private final SubCompiler subCompiler;
+
+    public KotlinCompiler(Class<SubCompiler> subCompilerClass, ModuleInfoProvider moduleInfoProvider, MessageCollector messageCollector) {
         this.moduleInfoProvider = moduleInfoProvider;
         this.messageCollector = messageCollector;
         compileContext = new CompileContext(compileContextParentDisposable);
+
+        try {
+            subCompiler = subCompilerClass.newInstance();
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void compile(CompilerConfiguration configuration) {
         compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
+
+        //subCompiler.compile();
     }
 
     protected List<JetFile> collectSourceFiles(List<File> sourceRoots) {

@@ -20,7 +20,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.k2js.config.Config;
+import org.jetbrains.k2js.test.config.TestConfig;
 
 import java.util.List;
 
@@ -30,10 +30,10 @@ public final class LibraryFilePathsUtil {
 
     @NotNull
     public static List<String> getBasicLibraryFiles() {
-        return Lists.transform(Config.LIB_FILE_NAMES, new Function<String, String>() {
+        return Lists.transform(TestConfig.LIB_FILE_NAMES, new Function<String, String>() {
             @Override
             public String apply(@Nullable String s) {
-                return Config.LIBRARIES_LOCATION + '/' + s;
+                return TestConfig.LIBRARIES_LOCATION + '/' + s;
             }
         });
     }
@@ -42,16 +42,16 @@ public final class LibraryFilePathsUtil {
     public static List<String> getAdditionalLibraryFiles() {
         List<String> additionalKotlinFiles = Lists.newArrayList();
         // lets add the standard JS library files
-        Iterable<String> names = Config.LIB_FILE_NAMES_DEPENDENT_ON_STDLIB;
+        Iterable<String> names = TestConfig.LIB_FILE_NAMES_DEPENDENT_ON_STDLIB;
         for (String libFileName : names) {
             System.out.println("Compiling " + libFileName);
-            additionalKotlinFiles.add(Config.LIBRARIES_LOCATION + '/' + libFileName);
+            additionalKotlinFiles.add(TestConfig.LIBRARIES_LOCATION + '/' + libFileName);
         }
 
         // lets add the standard Kotlin library files
-        for (String libFileName : Config.STDLIB_FILE_NAMES) {
+        for (String libFileName : TestConfig.STDLIB_FILE_NAMES) {
             System.out.println("Compiling " + libFileName);
-            additionalKotlinFiles.add(Config.STDLIB_LOCATION + '/' + libFileName);
+            additionalKotlinFiles.add(TestConfig.STDLIB_LOCATION + '/' + libFileName);
         }
         return additionalKotlinFiles;
     }

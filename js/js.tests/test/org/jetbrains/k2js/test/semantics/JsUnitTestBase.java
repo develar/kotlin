@@ -19,11 +19,11 @@ package org.jetbrains.k2js.test.semantics;
 import com.google.common.collect.Lists;
 import junit.framework.Test;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.test.MultipleFilesTranslationTest;
 import org.jetbrains.k2js.test.config.JsUnitTestReporter;
+import org.jetbrains.k2js.test.config.TestConfig;
 import org.jetbrains.k2js.test.config.TestConfigWithUnitTests;
 import org.jetbrains.k2js.test.rhino.RhinoSystemOutputChecker;
 
@@ -65,7 +65,7 @@ public abstract class JsUnitTestBase extends MultipleFilesTranslationTest {
         List<String> result = Lists.newArrayList();
         List<String> additionalLibraryFiles = getAdditionalLibraryFiles();
         additionalLibraryFiles.add(JS_TESTS_KT);
-        boolean removed = additionalLibraryFiles.remove(Config.LIBRARIES_LOCATION + "/stdlib/testCode.kt");
+        boolean removed = additionalLibraryFiles.remove(TestConfig.LIBRARIES_LOCATION + "/stdlib/testCode.kt");
         assert removed;
         result.addAll(additionalLibraryFiles);
         return result;
