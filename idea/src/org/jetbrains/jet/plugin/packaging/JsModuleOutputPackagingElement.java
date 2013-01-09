@@ -1,5 +1,6 @@
 package org.jetbrains.jet.plugin.packaging;
 
+import com.intellij.ide.projectView.PresentationData;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModulePointer;
 import com.intellij.openapi.project.Project;
@@ -13,8 +14,12 @@ import com.intellij.packaging.impl.ui.DelegatedPackagingElementPresentation;
 import com.intellij.packaging.impl.ui.ModuleElementPresentation;
 import com.intellij.packaging.ui.ArtifactEditorContext;
 import com.intellij.packaging.ui.PackagingElementPresentation;
+import com.intellij.packaging.ui.PackagingElementWeights;
+import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.plugin.JetIcons;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -59,6 +64,29 @@ public class JsModuleOutputPackagingElement extends ModuleOutputPackagingElement
 
     @Override
     public PackagingElementPresentation createPresentation(@NotNull ArtifactEditorContext context) {
-        return new DelegatedPackagingElementPresentation(new ModuleElementPresentation(myModulePointer, context, false));
+        return new DelegatedPackagingElementPresentation(new KotlinPackagingElementPresentation(myModulePointer, context, false));
+    }
+
+    private static final class KotlinPackagingElementPresentation extends ModuleElementPresentation {
+        public KotlinPackagingElementPresentation(
+                @Nullable ModulePointer modulePointer,
+                @NotNull ArtifactEditorContext context,
+                boolean testOutput
+        ) {
+            super(modulePointer, context, testOutput);
+        }
+
+        @Override
+        public void render(
+                @NotNull PresentationData presentationData, SimpleTextAttributes mainAttributes, SimpleTextAttributes commentAttributes
+        ) {
+            presentationData.setIcon(JetIcons.SMALL_LOGO);
+            presentationData.addText("'" + getPresentableName() + "' k2js compiler output", canNavigateToSource() ? mainAttributes : SimpleTextAttributes.ERROR_ATTRIBUTES);
+        }
+
+        @Override
+        public int getWeight() {
+            return PackagingElementWeights.FACET;
+        }
     }
 }

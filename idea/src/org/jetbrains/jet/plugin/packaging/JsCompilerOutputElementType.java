@@ -16,7 +16,7 @@ import javax.swing.*;
 
 public class JsCompilerOutputElementType extends ModuleOutputElementTypeBase<JsModuleOutputPackagingElement> {
     public JsCompilerOutputElementType() {
-        super(JsExternalizationConstants.COMPILER_OUTPUT_ELEMENT_ID, "K2Js Compiler Output");
+        super(JsExternalizationConstants.COMPILER_OUTPUT_ELEMENT_ID, "k2js Compiler Output");
     }
 
     @Override
