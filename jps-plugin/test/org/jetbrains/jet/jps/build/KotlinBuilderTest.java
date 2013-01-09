@@ -22,12 +22,11 @@ import org.jetbrains.jet.jps.model.JpsJsExtensionService;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.incremental.artifacts.ArtifactBuilderTestCase;
+import org.jetbrains.jps.model.JpsModuleRootModificationUtil;
 import org.jetbrains.jps.model.artifact.JpsArtifact;
-import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.java.JpsJavaLibraryType;
 import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
-import org.jetbrains.jps.model.module.JpsLibraryDependency;
 import org.jetbrains.jps.model.module.JpsModule;
 
 import java.io.File;
@@ -82,11 +81,6 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     private static void addCompilerLibrary(JpsModule module) {
         JpsLibrary library = module.addModuleLibrary(JsExternalizationConstants.JS_LIBRARY_NAME, JpsJavaLibraryType.INSTANCE);
         library.addRoot(PathUtil.getKotlinPathsForDistDirectory().getRuntimePath(false), JpsOrderRootType.SOURCES);
-        addModuleLibrary(module, library);
-    }
-
-    private static void addModuleLibrary(JpsModule module, JpsLibrary library) {
-        JpsLibraryDependency libraryDependency = module.getDependenciesList().addLibraryDependency(library);
-        JpsJavaExtensionService.getInstance().getOrCreateDependencyExtension(libraryDependency);
+        JpsModuleRootModificationUtil.addDependency(module, library);
     }
 }
