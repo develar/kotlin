@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ArtifactManager">
+    <artifact build-on-make="true" name="app">
+      <output-path>$PROJECT_DIR$/out/artifacts/app</output-path>
+      <root id="root">
+        <element id="k2js-compiler-output" name="kotlinProject" />
+      </root>
+    </artifact>
+  </component>
+  <component name="CompilerConfiguration">
+    <option name="DEFAULT_COMPILER" value="Javac" />
+    <resourceExtensions />
+  </component>
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/kotlinProject.iml" filepath="$PROJECT_DIR$/kotlinProject.iml" />
+    </modules>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA_JDK" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+  <component name="libraryTable">
+    <library name="KotlinJsRuntime">
+      <CLASSES />
+      <JAVADOC />
+      <SOURCES>
+        <root url="jar://$PROJECT_DIR$/../../../dist/kotlinc/lib/kotlin-js-lib.zip!/" />
+      </SOURCES>
+    </library>
+  </component>
+</project>
+

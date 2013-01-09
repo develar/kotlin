@@ -2,6 +2,7 @@ package org.jetbrains.jet.jps.model;
 
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.module.JpsModuleReference;
 import org.jetbrains.jps.service.JpsServiceManager;
@@ -27,5 +28,10 @@ public class JpsJsExtensionService {
 
     public void setExtension(JpsModuleReference moduleReference) {
         nameToModule.put(moduleReference.getModuleName(), new JpsJsModuleExtension(moduleReference));
+    }
+
+    @TestOnly
+    public void setExtension(JpsModule module) {
+        nameToModule.put(module.getName(), new JpsJsModuleExtension(module));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,14 @@
 package org.jetbrains.jet.jps.build;
 
 import com.intellij.openapi.util.io.FileUtil;
-import org.jetbrains.jps.model.java.*;
+import org.jetbrains.jet.jps.model.JsExternalizationConstants;
+import org.jetbrains.jet.utils.PathUtil;
+import org.jetbrains.jps.model.JpsDummyElement;
+import org.jetbrains.jps.model.java.JpsJavaDependencyScope;
+import org.jetbrains.jps.model.java.JpsJavaLibraryType;
+import org.jetbrains.jps.model.library.JpsLibraryRoot;
+import org.jetbrains.jps.model.library.JpsOrderRootType;
+import org.jetbrains.jps.model.library.JpsTypedLibrary;
 
 import java.io.File;
 
@@ -90,4 +97,17 @@ public class KotlinJpsBuildTestCase extends AbstractKotlinJpsBuildTestCase {
         makeAll().assertFailed();
     }
 
+    public void testIdeaToJpsModel() {
+        initProject();
+
+        JpsTypedLibrary<JpsDummyElement> library =
+                myProject.getLibraryCollection().findLibrary(JsExternalizationConstants.JS_LIBRARY_NAME, JpsJavaLibraryType.INSTANCE);
+        assert library != null;
+        for (JpsLibraryRoot root : library.getRoots(JpsOrderRootType.SOURCES)) {
+            library.removeUrl(root.getUrl(), JpsOrderRootType.SOURCES);
+        }
+        library.addRoot(PathUtil.getKotlinPathsForDistDirectory().getRuntimePath(false), JpsOrderRootType.SOURCES);
+
+        makeAll().assertSuccessful();
+    }
 }

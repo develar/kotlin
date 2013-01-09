@@ -52,7 +52,6 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
     
     private static class KotlinBuildContext {
         private final Object compiler;
-
         private final Method compile;
 
         public KotlinBuildContext(Object compiler, Method compile) {
@@ -113,7 +112,9 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
         compilerConfiguration.put(CompilerConfigurationKeys.OUTPUT_ROOT, outputRoot);
         // todo configurable
         compilerConfiguration.put(JsCompilerConfigurationKeys.TARGET, "5");
+        if (!"true".equalsIgnoreCase(System.getProperty("kotlin.jps.tests"))) {
         compilerConfiguration.put(JsCompilerConfigurationKeys.SOURCEMAP, true);
+        }
 
         try {
             kotlinContext.compile.invoke(kotlinContext.compiler, compilerConfiguration);

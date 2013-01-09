@@ -81,8 +81,9 @@ public class ModuleInfo implements ModuleConfiguration {
         }
     }
 
+    @NotNull
     public List<ModuleInfo> getDependencies() {
-        return dependencies;
+        return dependencies == null ? Collections.<ModuleInfo>emptyList() : dependencies;
     }
 
     public String getName() {

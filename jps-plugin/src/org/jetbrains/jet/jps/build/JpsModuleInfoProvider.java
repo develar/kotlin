@@ -36,7 +36,7 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
     ) {
         for (JpsDependencyElement dependency : dependentModule.getDependenciesList().getDependencies()) {
             boolean isModule = dependency instanceof JpsModuleDependency;
-            if ((!isModule && !(dependency instanceof JpsLibraryDependency)) || !processed.add(dependency)) {
+            if (!(isModule || dependency instanceof JpsLibraryDependency) || !processed.add(dependency)) {
                 continue;
             }
 
