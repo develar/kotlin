@@ -62,7 +62,7 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
     @NotNull
     private JsExpression translate() {
         return CallBuilder.build(context())
-                .receiver(getReceiver())
+                .receiver(receiver)
                 .callee(getCalleeExpression())
                 .args(translateArguments())
                 .resolvedCall(getResolvedCall())
@@ -76,11 +76,6 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
             return ((VariableAsFunctionResolvedCall) resolvedCall).getFunctionCall();
         }
         return resolvedCall;
-    }
-
-    @Nullable
-    private JsExpression getReceiver() {
-        return receiver;
     }
 
     @Nullable
