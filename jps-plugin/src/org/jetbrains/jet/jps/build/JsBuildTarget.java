@@ -41,8 +41,7 @@ public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
 
     @Override
     public Collection<BuildTarget<?>> computeDependencies(BuildTargetRegistry targetRegistry, TargetOutputIndex outputIndex) {
-        return Collections.<BuildTarget<?>>unmodifiableCollection(
-                targetRegistry.getModuleBasedTargets(extension.getModule(), BuildTargetRegistry.ModuleTargetSelector.PRODUCTION));
+        return Collections.emptyList();
     }
 
     @NotNull
@@ -55,7 +54,7 @@ public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
                 .getSourceRoots(JavaSourceRootType.SOURCE)) {
             roots.add(new BuildRootDescriptorImpl(this, JpsPathUtil.urlToFile(sourceRoot.getUrl()), true));
         }
-         return roots;
+        return roots;
     }
 
     @Nullable
