@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.cli.common.CompilerArguments;
 import org.jetbrains.k2js.facade.MainCallParameters;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * @author Pavel Talanov
- */
-
-/**
- * NOTE: for now K2JSCompiler supports only minimal amount of parameters required to launch it from the plugin.
- */
 public class K2JSCompilerArguments extends CompilerArguments {
     @Argument(value = "output", description = "Output file path")
     public String outputFile;
