@@ -118,8 +118,8 @@ public class CompilerConfiguration {
         }
     }
 
-    @NotNull
-    private static <T> T unmodifiable(@NotNull T object) {
+    @Nullable
+    private static <T> T unmodifiable(@Nullable T object) {
         if (object instanceof List) {
             return (T) Collections.unmodifiableList((List) object);
         }
