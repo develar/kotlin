@@ -2,6 +2,7 @@ package org.jetbrains.jet.jps.build;
 
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jps.model.JpsProject;
 import org.jetbrains.jps.model.JpsSimpleElement;
 import org.jetbrains.jps.model.java.*;
@@ -23,7 +24,7 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
     }
 
     @Override
-    public boolean consumeDependencies(String moduleName, DependenciesProcessor consumer) {
+    public boolean processDependencies(String moduleName, DependenciesProcessor consumer) {
         JpsModule module = getModule(moduleName);
         return processModuleDependencies(consumer, module, new THashSet<JpsDependencyElement>(), true);
     }
@@ -50,13 +51,18 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
             if (isModule) {
                 JpsModule module = ((JpsModuleDependency) dependency).getModule();
                 if (module != null &&
-                    (!consumer.process(module.getName(), module, false) || !processModuleDependencies(consumer, module, processed, false))) {
+                    (!consumer.process(module.getName(), module, false, extension.getScope().equals(JpsJavaDependencyScope.PROVIDED)) ||
+                     !processModuleDependencies(consumer, module, processed, false))) {
                     return false;
                 }
             }
             else {
                 JpsLibrary library = ((JpsLibraryDependency) dependency).getLibrary();
-                if (library != null && isKotlinLibrary(library) && !consumer.process(library.getName(), library, true)) {
+                if (library != null &&
+                    isKotlinLibrary(library) &&
+                    !consumer.process(library.getName(), library, true,
+                                      library.getName().equals(JsExternalizationConstants.JS_LIBRARY_NAME) ||
+                                      extension.getScope().equals(JpsJavaDependencyScope.PROVIDED))) {
                     return false;
                 }
             }

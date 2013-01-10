@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.compiler;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VfsUtilCore;
@@ -28,6 +29,7 @@ import com.intellij.psi.PsiManager;
 import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
 import gnu.trove.THashMap;
+import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
@@ -145,7 +147,7 @@ public class KotlinCompiler {
 
     @Nullable
     protected ModuleInfo compileModule(String moduleName, final boolean analyzeCompletely) {
-        List<ModuleInfo> dependencies = collectDependencies(moduleName);
+        Pair<List<ModuleInfo>, Set<ModuleInfo>> dependencies = collectDependencies(moduleName);
         if (dependencies == null) {
             return null;
         }
@@ -158,7 +160,7 @@ public class KotlinCompiler {
             String moduleName,
             @Nullable Object moduleObject,
             final boolean analyzeCompletely,
-            List<ModuleInfo> dependencies,
+            Pair<List<ModuleInfo>, Set<ModuleInfo>> dependencies,
             boolean checkSyntax
     ) {
         List<JetFile> sources = collectSourceFiles(moduleInfoProvider.getSourceFiles(moduleName, moduleObject));
@@ -174,7 +176,7 @@ public class KotlinCompiler {
             }
         }
 
-        ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies);
+        ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies.first, dependencies.second);
         AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
         exhaust.throwIfError();
         // todo disable some Diagnostics for library code
@@ -190,18 +192,27 @@ public class KotlinCompiler {
     }
 
     @Nullable
-    private List<ModuleInfo> collectDependencies(String moduleName) {
+    private Pair<List<ModuleInfo>, Set<ModuleInfo>> collectDependencies(String moduleName) {
         final List<ModuleInfo> dependencies = new SmartList<ModuleInfo>();
-        boolean completed = moduleInfoProvider.consumeDependencies(moduleName, new ModuleInfoProvider.DependenciesProcessor() {
+        final Set<ModuleInfo> providedDependencies = new THashSet<ModuleInfo>();
+        boolean completed = moduleInfoProvider.processDependencies(moduleName, new ModuleInfoProvider.DependenciesProcessor() {
             @Override
-            public boolean process(String name, Object dependency, boolean isLibrary) {
+            public boolean process(String name, Object dependency, boolean isLibrary, boolean provided) {
                 // todo now we assume that idea module name and library name are unique
                 ModuleInfo moduleConfiguration = compiledModules.get(name);
                 if (moduleConfiguration == null) {
                     // todo dependencies for library?
-                    moduleConfiguration = isLibrary
-                                          ? analyzeModule(name, dependency, false, Collections.<ModuleInfo>emptyList(), isLibrary)
-                                          : compileModule(name, false);
+                    if (isLibrary) {
+                        moduleConfiguration = analyzeModule(name, dependency, false, Pair.create(Collections.<ModuleInfo>emptyList(),
+                                                                                                 Collections.<ModuleInfo>emptySet()),
+                                                            isLibrary);
+                        if (provided) {
+                            providedDependencies.add(moduleConfiguration);
+                        }
+                    }
+                    else {
+                        moduleConfiguration = compileModule(name, false);
+                    }
                     if (moduleConfiguration == null) {
                         return false;
                     }
@@ -211,7 +222,13 @@ public class KotlinCompiler {
             }
         });
 
-        return completed ? dependencies : null;
+        if (completed) {
+            return Pair.create(dependencies.isEmpty() ? Collections.<ModuleInfo>emptyList() : dependencies,
+                               providedDependencies.isEmpty() ? Collections.<ModuleInfo>emptySet() : providedDependencies);
+        }
+        else {
+            return null;
+        }
     }
 
     public void dispose() {

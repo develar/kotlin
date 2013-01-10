@@ -107,7 +107,7 @@ public final class Translation {
             @NotNull MainCallParameters mainCallParameters,
             @NotNull Config config
     ) {
-        StaticContext staticContext = StaticContext.generateStaticContext(bindingContext, config.getTarget());
+        StaticContext staticContext = new StaticContext(bindingContext, config);
         JsFunction definitionFunction = generateDefinitionFunction(staticContext, files, config, mainCallParameters);
         JsProgram program = staticContext.getProgram();
         program.getGlobalBlock().getStatements().add(generateDefineModuleInvocation(config, definitionFunction, program).makeStmt());
@@ -117,8 +117,7 @@ public final class Translation {
     private static JsInvocation generateDefineModuleInvocation(Config config, JsFunction definitionFunction, JsProgram program) {
         List<JsExpression> moduleDependencies = new SmartList<JsExpression>();
         for (ModuleInfo module : config.getModule().getDependencies()) {
-            // todo get rid of this check
-            if (!module.getName().equalsIgnoreCase(ModuleInfo.STUBS_MODULE_NORMAL_NAME) && !module.getName().equalsIgnoreCase("KotlinJsRuntime")) {
+            if (!config.getModule().isDependencyProvided(module)) {
                 moduleDependencies.add(program.getStringLiteral(module.getName()));
             }
         }

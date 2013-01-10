@@ -19,18 +19,14 @@ package org.jetbrains.k2js.translate.context;
 import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.google.dart.compiler.backend.js.ast.JsProgram;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.k2js.Traverser;
-import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
@@ -38,6 +34,7 @@ import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.PredefinedAnnotation;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import java.util.Map;
 
@@ -48,13 +45,6 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaratio
  * Aggregates all the static parts of the context.
  */
 public final class StaticContext {
-
-    public static StaticContext generateStaticContext(@NotNull BindingContext bindingContext, @NotNull EcmaVersion ecmaVersion) {
-        JsProgram program = new JsProgram("main");
-        return new StaticContext(program, bindingContext, Namer.newInstance(program.getRootScope()), new Intrinsics(),
-                                 StandardClasses.bindImplementations(), ecmaVersion);
-    }
-
     @NotNull
     private final JsProgram program;
 
@@ -70,9 +60,6 @@ public final class StaticContext {
     private final StandardClasses standardClasses;
 
     @NotNull
-    private final EcmaVersion ecmaVersion;
-
-    @NotNull
     private LiteralFunctionTranslator literalFunctionTranslator;
     @NotNull
     private ClassDeclarationTranslator classDeclarationTranslator;
@@ -81,18 +68,15 @@ public final class StaticContext {
     private final Map<VariableDescriptor, String> nameMap = new THashMap<VariableDescriptor, String>();
     private final Map<DeclarationDescriptor, JsNameRef> qualifierMap = new THashMap<DeclarationDescriptor, JsNameRef>();
 
-    //TODO: too many parameters in constructor
-    private StaticContext(
-            @NotNull JsProgram program, @NotNull BindingContext bindingContext,
-            @NotNull Namer namer, @NotNull Intrinsics intrinsics,
-            @NotNull StandardClasses standardClasses, @NotNull EcmaVersion ecmaVersion
-    ) {
-        this.program = program;
+    private final Config configuration;
+
+    public StaticContext(@NotNull BindingContext bindingContext, @NotNull Config configuration) {
+        this.program = new JsProgram("main");
         this.bindingContext = bindingContext;
-        this.namer = namer;
-        this.intrinsics = intrinsics;
-        this.standardClasses = standardClasses;
-        this.ecmaVersion = ecmaVersion;
+        this.namer = Namer.newInstance(program.getRootScope());
+        this.intrinsics = new Intrinsics();
+        this.standardClasses = StandardClasses.bindImplementations();
+        this.configuration = configuration;
     }
 
     public void initTranslators(TranslationContext programContext) {
@@ -111,7 +95,7 @@ public final class StaticContext {
     }
 
     public boolean isEcma5() {
-        return ecmaVersion == EcmaVersion.v5;
+        return configuration.getTarget() == EcmaVersion.v5;
     }
 
     @NotNull
@@ -253,14 +237,14 @@ public final class StaticContext {
 
         JsNameRef qualifier = qualifierMap.get(namespace);
         if (qualifier == null) {
-            qualifier = resolveQualifier((NamespaceDescriptor) namespace, descriptor);
+            qualifier = resolveQualifier((NamespaceDescriptor) namespace);
             qualifierMap.put(namespace, qualifier);
         }
         return qualifier;
     }
 
     @NotNull
-    private JsNameRef resolveQualifier(NamespaceDescriptor namespace, DeclarationDescriptor requestor) {
+    private JsNameRef resolveQualifier(NamespaceDescriptor namespace) {
         JsNameRef result = new JsNameRef(Namer.generateNamespaceName(namespace));
         if (DescriptorUtils.isRootNamespace(namespace)) {
             return result;
@@ -275,22 +259,17 @@ public final class StaticContext {
             qualifier = ref;
         }
 
-        PsiElement element = BindingContextUtils.descriptorToDeclaration(bindingContext, requestor);
-        if (element == null && requestor instanceof PropertyAccessorDescriptor) {
-            element = BindingContextUtils.descriptorToDeclaration(bindingContext,
-                                                                  ((PropertyAccessorDescriptor) requestor).getCorrespondingProperty());
-        }
-
-        if (element != null) {
-            PsiFile file = element.getContainingFile();
-            String moduleName = file.getUserData(Traverser.MODULE_NAME_KEY);
-            if (moduleName != null) {
-                qualifier.setQualifier(new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(moduleName)));
-            }
-        }
-
-        if (qualifier.getQualifier() == null) {
+        ModuleDescriptor moduleDescriptor = DescriptorUtils.getParentOfType(parent, ModuleDescriptor.class);
+        assert moduleDescriptor != null;
+        if (moduleDescriptor == configuration.getModule().getModuleDescriptor()) {
             qualifier.setQualifier(new JsNameRef(Namer.getRootNamespaceName()));
+        }
+        else {
+            ModuleInfo dependency = configuration.getModule().findDependency(moduleDescriptor);
+            assert dependency != null;
+            if (!configuration.getModule().isDependencyProvided(dependency)) {
+                qualifier.setQualifier(new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(dependency.getName())));
+            }
         }
         return result;
     }

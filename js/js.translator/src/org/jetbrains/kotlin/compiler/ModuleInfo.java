@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class ModuleInfo implements ModuleConfiguration {
     public static final String STUBS_MODULE_NORMAL_NAME = "stubs";
@@ -44,6 +45,8 @@ public class ModuleInfo implements ModuleConfiguration {
     // todo use dirty files holder and remove this field
     List<JetFile> sourceFiles;
 
+    private final Set<ModuleInfo> providedDependencies;
+
     @NotNull
     public static final List<ImportPath> DEFAULT_IMPORT_PATHS = Arrays.asList(
             new ImportPath("js.*"),
@@ -52,25 +55,30 @@ public class ModuleInfo implements ModuleConfiguration {
             new ImportPath("kotlin.*"));
 
     public ModuleInfo(Project project) {
-        this(new ModuleDescriptor(Name.special("<module>")), project, (List<ModuleInfo>) null);
+        this(new ModuleDescriptor(Name.special("<module>")), project, null, null);
     }
 
     public ModuleInfo(ModuleDescriptor moduleDescriptor, Project project) {
-        this(moduleDescriptor, project, (List<ModuleInfo>) null);
+        this(moduleDescriptor, project, null, null);
     }
 
     public ModuleInfo(ModuleDescriptor moduleDescriptor, Project project, @Nullable ModuleInfo dependency) {
-        this(moduleDescriptor, project, Collections.singletonList(dependency));
+        this(moduleDescriptor, project, Collections.singletonList(dependency), null);
     }
 
     public ModuleInfo(String name, Project project, @Nullable List<ModuleInfo> dependencies) {
-        this(new ModuleDescriptor(Name.special('<' + name + '>')), project, dependencies);
+        this(name, project, dependencies, null);
+    }
+
+    public ModuleInfo(String name, Project project, @Nullable List<ModuleInfo> dependencies, @Nullable Set<ModuleInfo> providedDependencies) {
+        this(new ModuleDescriptor(Name.special('<' + name + '>')), project, dependencies, providedDependencies);
         normalName = name;
     }
 
-    private ModuleInfo(ModuleDescriptor moduleDescriptor, Project project, @Nullable List<ModuleInfo> dependencies) {
+    private ModuleInfo(ModuleDescriptor moduleDescriptor, Project project, @Nullable List<ModuleInfo> dependencies, @Nullable Set<ModuleInfo> providedDependencies) {
         this.moduleDescriptor = moduleDescriptor;
         this.project = project;
+        this.providedDependencies = providedDependencies == null ? Collections.<ModuleInfo>emptySet() : providedDependencies;
         if (dependencies == null || dependencies.isEmpty()) {
             this.dependencies = null;
             delegateConfiguration = DefaultModuleConfiguration.createStandardConfiguration(project);
@@ -79,6 +87,10 @@ public class ModuleInfo implements ModuleConfiguration {
             this.dependencies = dependencies;
             delegateConfiguration = null;
         }
+    }
+
+    public boolean isDependencyProvided(ModuleInfo dependency) {
+        return providedDependencies.contains(dependency);
     }
 
     @NotNull
@@ -142,5 +154,15 @@ public class ModuleInfo implements ModuleConfiguration {
     @Override
     public PlatformToKotlinClassMap getPlatformToKotlinClassMap() {
         return PlatformToKotlinClassMap.EMPTY;
+    }
+
+    @Nullable
+    public ModuleInfo findDependency(ModuleDescriptor descriptor) {
+        for (ModuleInfo dependency : dependencies) {
+            if (dependency.moduleDescriptor == descriptor) {
+                return dependency;
+            }
+        }
+        return null;
     }
 }
