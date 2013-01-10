@@ -50,7 +50,7 @@ public class GenerateInjectors {
         generateInjectorForTopDownAnalyzerBasic();
         generateInjectorForTopDownAnalyzerForJvm();
         generateInjectorForJavaDescriptorResolver();
-        generateInjectorForTopDownAnalyzerForJs();
+        generateInjectorForTopDownXAnalyzer();
         generateMacroInjector();
         generateTestInjector();
         generateInjectorForJavaSemanticServices();
@@ -83,13 +83,13 @@ public class GenerateInjectors {
         generator.generate("compiler/frontend/src", "org.jetbrains.jet.di", "InjectorForTopDownAnalyzerBasic", GenerateInjectors.class);
     }
 
-    private static void generateInjectorForTopDownAnalyzerForJs() throws IOException {
+    private static void generateInjectorForTopDownXAnalyzer() throws IOException {
         DependencyInjectorGenerator generator = new DependencyInjectorGenerator(false);
         generateInjectorForTopDownAnalyzerCommon(generator);
         generator.addPublicParameter(ModuleConfiguration.class);
         generator.addField(DependencyClassByQualifiedNameResolverDummyImpl.class);
         generator.addField(NamespaceFactoryImpl.class);
-        generator.generate("js/js.translator/src", "org.jetbrains.jet.di", "InjectorForTopDownAnalyzerForJs", GenerateInjectors.class);
+        generator.generate("compiler/x-frontend/src", "org.jetbrains.kotlin.di", "InjectorForTopDownXAnalyzer", GenerateInjectors.class);
     }
 
     private static void generateInjectorForTopDownAnalyzerForJvm() throws IOException {

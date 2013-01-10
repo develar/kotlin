@@ -22,7 +22,7 @@ import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
-import org.jetbrains.kotlin.di.InjectorForTopDownAnalyzerForJs;
+import org.jetbrains.kotlin.di.InjectorForTopDownXAnalyzer;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -71,7 +71,8 @@ public final class XAnalyzerFacade {
         BindingTrace trace = moduleConfiguration.dependencies == null ?
                              new ObservableBindingTrace(new BindingTraceContext()) :
                              new DelegatingBindingTrace(moduleConfiguration.dependencies.get(0).bindingContext, "trace for analyzing library in js");
-        InjectorForTopDownAnalyzerForJs injector = new InjectorForTopDownAnalyzerForJs(moduleConfiguration.getProject(), topDownAnalysisParameters, trace, moduleConfiguration.getModuleDescriptor(),
+        InjectorForTopDownXAnalyzer
+                injector = new InjectorForTopDownXAnalyzer(moduleConfiguration.getProject(), topDownAnalysisParameters, trace, moduleConfiguration.getModuleDescriptor(),
                                                                                        moduleConfiguration);
         try {
             injector.getTopDownAnalyzer().analyzeFiles(files, Collections.<AnalyzerScriptParameter>emptyList());
