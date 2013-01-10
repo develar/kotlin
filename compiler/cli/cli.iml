@@ -16,7 +16,7 @@
     <orderEntry type="library" name="asm-addons" level="project" />
     <orderEntry type="library" name="jline" level="project" />
     <orderEntry type="module" module-name="cli-common" exported="" />
-    <orderEntry type="module" module-name="js.translator" />
+    <orderEntry type="module" module-name="x-frontend" />
   </component>
 </module>
 

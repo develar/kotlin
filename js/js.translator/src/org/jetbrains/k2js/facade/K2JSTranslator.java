@@ -20,16 +20,20 @@ import com.google.dart.compiler.backend.js.ast.JsProgram;
 import com.google.dart.compiler.util.TextOutputImpl;
 import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.analyzer.AnalyzeExhaust;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.js.compiler.JsSourceGenerationVisitor;
 import org.jetbrains.js.compiler.SourceMapBuilder;
 import org.jetbrains.js.compiler.sourcemap.SourceMap3Builder;
-import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.utils.JetFileUtils;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.kotlin.lang.resolve.AnalyzerFacadeForJS;
 
 import java.io.File;
 import java.io.IOException;
@@ -78,9 +82,25 @@ public final class K2JSTranslator {
         KotlinBuiltIns.initialize(config.getProject());
         List<JetFile> files = Collections.singletonList(file);
         String programCode = toSource(new TextOutputImpl(), null, Translation
-                .generateAst(AnalyzerFacadeForJS.analyzeFilesAndCheckErrors(files, config), files,
+                .generateAst(analyzeFilesAndCheckErrors(files, config), files,
                              MainCallParameters.mainWithArguments(parseString(argumentsString)), config));
         return FLUSH_SYSTEM_OUT + programCode + "\n" + GET_SYSTEM_OUT;
+    }
+
+    @NotNull
+    private static BindingContext analyzeFilesAndCheckErrors(
+            @NotNull List<JetFile> files,
+            @NotNull Config config
+    ) {
+        final ModuleInfo libraryModuleConfiguration = new ModuleInfo(config.getProject());
+        // todo fix web demo
+        AnalyzeExhaust libraryExhaust = AnalyzerFacadeForJS.analyzeFiles(libraryModuleConfiguration, Collections.<JetFile>emptyList(), false);
+        libraryExhaust.throwIfError();
+
+        AnalyzerFacadeForJS.checkForErrors(files);
+        return AnalyzerFacadeForJS.analyzeFiles(
+                new ModuleInfo(new ModuleDescriptor(Name.special("<web-demo>")), config.getProject(), libraryModuleConfiguration), files,
+                true).getBindingContext();
     }
 
     private static String toSource(TextOutputImpl output, SourceMapBuilder sourceMapBuilder, JsProgram program) {

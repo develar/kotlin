@@ -32,6 +32,7 @@
     <orderEntry type="module" module-name="ide-compiler-runner" />
     <orderEntry type="module" module-name="cli-common" />
     <orderEntry type="module" module-name="jps-plugin" />
+    <orderEntry type="module" module-name="x-frontend" />
   </component>
 </module>
 

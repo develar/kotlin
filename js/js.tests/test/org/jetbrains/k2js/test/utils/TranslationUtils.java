@@ -32,13 +32,13 @@ import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
-import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.test.config.TestConfig;
 import org.jetbrains.k2js.test.config.TestConfigFactory;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.kotlin.lang.resolve.AnalyzerFacadeForJS;
 
 import java.lang.ref.SoftReference;
 import java.util.List;

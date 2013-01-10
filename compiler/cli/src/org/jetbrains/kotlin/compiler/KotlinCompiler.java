@@ -37,7 +37,7 @@ import org.jetbrains.jet.cli.common.messages.*;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
-import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
+import org.jetbrains.kotlin.lang.resolve.AnalyzerFacadeForJS;
 
 import java.io.File;
 import java.io.IOException;
@@ -177,7 +177,8 @@ public class KotlinCompiler {
         }
 
         ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies.first, dependencies.second);
-        AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
+        AnalyzeExhaust exhaust = AnalyzerFacadeForJS
+                .analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
         exhaust.throwIfError();
         // todo disable some Diagnostics for library code
         boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector);

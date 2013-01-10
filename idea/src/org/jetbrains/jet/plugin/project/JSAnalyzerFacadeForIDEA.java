@@ -36,8 +36,8 @@ import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.Traverser;
-import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.kotlin.lang.resolve.AnalyzerFacadeForJS;
 
 import java.util.ArrayList;
 import java.util.Collection;

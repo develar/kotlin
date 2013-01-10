@@ -42,7 +42,6 @@ import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.k2js.Traverser;
-import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 import org.jetbrains.k2js.config.ClassPathLibrarySourcesLoader;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
@@ -50,6 +49,7 @@ import org.jetbrains.k2js.config.MetaInfServices;
 import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.kotlin.lang.resolve.AnalyzerFacadeForJS;
 
 import java.io.File;
 import java.util.*;

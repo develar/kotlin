@@ -15,7 +15,7 @@
  */
 
 
-package org.jetbrains.jet.di;
+package org.jetbrains.kotlin.di;
 
 import org.jetbrains.jet.lang.resolve.TopDownAnalyzer;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisContext;

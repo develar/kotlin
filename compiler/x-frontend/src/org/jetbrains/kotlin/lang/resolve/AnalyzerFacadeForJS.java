@@ -14,40 +14,21 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.analyze;
+package org.jetbrains.kotlin.lang.resolve;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
-import org.jetbrains.jet.di.InjectorForTopDownAnalyzerForJs;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.*;
-import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.k2js.config.Config;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.kotlin.di.InjectorForTopDownAnalyzerForJs;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 public final class AnalyzerFacadeForJS {
-
     private AnalyzerFacadeForJS() {
-    }
-
-    @NotNull
-    public static BindingContext analyzeFilesAndCheckErrors(
-            @NotNull List<JetFile> files,
-            @NotNull Config config
-    ) {
-        final ModuleInfo libraryModuleConfiguration = new ModuleInfo(config.getProject());
-        // todo fix web demo
-        AnalyzeExhaust libraryExhaust = analyzeFiles(libraryModuleConfiguration, Collections.<JetFile>emptyList(), false);
-        libraryExhaust.throwIfError();
-
-        checkForErrors(files);
-        return analyzeFiles(new ModuleInfo(new ModuleDescriptor(Name.special("<web-demo>")), config.getProject(), libraryModuleConfiguration), files, true).getBindingContext();
     }
 
     @NotNull
