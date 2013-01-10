@@ -33,6 +33,7 @@
 
     <dirset id="compilerSources.dirset" dir="${basedir}/">
         <include name="compiler/frontend/src"/>
+        <include name="compiler/x-frontend/src"/>
         <include name="compiler/frontend.java/src"/>
         <include name="compiler/backend/src"/>
         <include name="compiler/cli/src"/>
@@ -45,6 +46,7 @@
 
         <include name="js/js.translator/src"/>
         <include name="js/subCompiler/src"/>
+        <include name="js/cli/src"/>
     </dirset>
 
     <path id="compilerSources.path">
@@ -119,6 +121,7 @@
                 <jar jarfile="${output}/kotlin-compiler-sources.jar">
                     <!-- TODO How to convert it from pathset or dirset ? -->
                     <fileset dir="compiler/frontend/src"/>
+                    <fileset dir="compiler/x-frontend/src"/>
                     <fileset dir="compiler/frontend.java/src"/>
                     <fileset dir="compiler/backend/src"/>
                     <fileset dir="compiler/cli/src"/>
@@ -127,6 +130,8 @@
                     <fileset dir="compiler/jet.as.java.psi/src"/>
                     <fileset dir="runtime/src"/>
                     <fileset dir="js/js.translator/src"/>
+                    <fileset dir="js/cli/src"/>
+                    <fileset dir="js/subCompiler/src"/>
                     <zipfileset file="${kotlin-home}/build.txt" prefix="META-INF"/>
 
                     <manifest>
