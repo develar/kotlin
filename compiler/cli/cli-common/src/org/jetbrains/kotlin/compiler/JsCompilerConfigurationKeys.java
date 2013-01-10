@@ -21,6 +21,8 @@ import org.jetbrains.jet.config.CompilerConfigurationKey;
 public final class JsCompilerConfigurationKeys {
     public static final CompilerConfigurationKey<Boolean> SOURCEMAP = CompilerConfigurationKey.create("sourcemap");
     public static final CompilerConfigurationKey<String> TARGET = CompilerConfigurationKey.create("target");
+    public static final CompilerConfigurationKey<String> OUTPUT_FILE = CompilerConfigurationKey.create("outputFile");
+    public static final CompilerConfigurationKey<String> MAIN = CompilerConfigurationKey.create("mainCall");
 
     private JsCompilerConfigurationKeys() {
     }

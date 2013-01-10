@@ -23,6 +23,6 @@ import java.io.IOException;
 import java.util.List;
 
 public abstract class SubCompiler {
-    public abstract void compile(CompilerConfiguration compilerConfiguration, ModuleInfo moduleInfo, List<JetFile> files)
+    public abstract void compile(CompilerConfiguration configuration, ModuleInfo moduleInfo, List<JetFile> files)
             throws IOException;
 }

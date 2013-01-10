@@ -12,6 +12,7 @@
     <orderEntry type="library" name="intellij-core" level="project" />
     <orderEntry type="module" module-name="js.translator" />
     <orderEntry type="module" module-name="x-frontend" />
+    <orderEntry type="module" module-name="js-subCompiler" />
   </component>
 </module>
 

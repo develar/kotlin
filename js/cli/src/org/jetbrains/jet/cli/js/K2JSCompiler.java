@@ -41,13 +41,11 @@ import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
+import org.jetbrains.k2js.ToJsSubCompiler;
 import org.jetbrains.k2js.Traverser;
 import org.jetbrains.k2js.config.ClassPathLibrarySourcesLoader;
-import org.jetbrains.k2js.config.Config;
-import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.config.MetaInfServices;
-import org.jetbrains.k2js.facade.K2JSTranslator;
-import org.jetbrains.k2js.facade.MainCallParameters;
+import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
 
@@ -56,11 +54,8 @@ import java.util.*;
 
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageLocation.NO_LOCATION;
 
-/**
- * @deprecated use KotlinCompiler with ToJsSubCompiler
- */
 public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
-
+    @SuppressWarnings("UnusedDeclaration")
     public static void main(String... args) {
         doMain(new K2JSCompiler(), args);
     }
@@ -126,18 +121,17 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         }
 
         String moduleId = FileUtil.getNameWithoutExtension(new File(arguments.outputFile));
-        ModuleInfo moduleConfiguration = new ModuleInfo(moduleId, project, Collections.singletonList(parentLibraryConfiguration));
-        if (!analyze(messageCollector, moduleConfiguration, environmentForJS.getSourceFiles(), true)) {
+        ModuleInfo moduleInfo = new ModuleInfo(moduleId, project, Collections.singletonList(parentLibraryConfiguration));
+        if (!analyze(messageCollector, moduleInfo, environmentForJS.getSourceFiles(), true)) {
             return ExitCode.COMPILATION_ERROR;
         }
 
-        MainCallParameters mainCallParameters = arguments.createMainCallParameters();
+        configuration.put(JsCompilerConfigurationKeys.SOURCEMAP, arguments.sourcemap);
+        configuration.put(JsCompilerConfigurationKeys.TARGET, arguments.target.charAt(0) == 'v' ? arguments.target.substring(1) : arguments.target);
+        configuration.put(JsCompilerConfigurationKeys.OUTPUT_FILE, outputFile);
+        configuration.put(JsCompilerConfigurationKeys.MAIN, arguments.main);
         try {
-            K2JSTranslator.translateAndSaveToFile(mainCallParameters, environmentForJS.getSourceFiles(), outputFile,
-                                                  new Config(moduleConfiguration,
-                                                             EcmaVersion.fromString(arguments.target),
-                                                             arguments.sourcemap),
-                                                  moduleConfiguration.getBindingContext());
+            new ToJsSubCompiler().compile(configuration, moduleInfo, environmentForJS.getSourceFiles());
         }
         catch (Throwable e) {
             messageCollector.report(CompilerMessageSeverity.EXCEPTION, MessageRenderer.PLAIN.renderException(e),

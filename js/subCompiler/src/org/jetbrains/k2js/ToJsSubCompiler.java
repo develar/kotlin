@@ -33,16 +33,24 @@ import java.util.List;
 
 public class ToJsSubCompiler extends SubCompiler {
     @Override
-    public void compile(CompilerConfiguration compilerConfiguration, ModuleInfo moduleInfo, List<JetFile> files) throws IOException {
-        // todo configurable
-        MainCallParameters mainCallParameters = MainCallParameters.mainWithoutArguments();
+    public void compile(CompilerConfiguration configuration, ModuleInfo moduleInfo, List<JetFile> files) throws IOException {
+        MainCallParameters mainCallParameters = createMainCallParameters(configuration.get(JsCompilerConfigurationKeys.MAIN));
 
-        String target = compilerConfiguration.get(JsCompilerConfigurationKeys.TARGET);
+        String target = configuration.get(JsCompilerConfigurationKeys.TARGET);
         EcmaVersion ecmaVersion = target == null ? EcmaVersion.defaultVersion() : EcmaVersion.valueOf('v' + target);
-        String outputFile = compilerConfiguration.getNotNull(CompilerConfigurationKeys.OUTPUT_ROOT).getPath() + File.separatorChar + moduleInfo.getName() + ".js";
+
+        String outputFile = configuration.get(JsCompilerConfigurationKeys.OUTPUT_FILE);
+        if (outputFile == null) {
+            outputFile = configuration.getNotNull(CompilerConfigurationKeys.OUTPUT_ROOT).getPath() + File.separatorChar + moduleInfo.getName() + ".js";
+        }
         K2JSTranslator.translateAndSaveToFile(mainCallParameters, files, outputFile,
                                               new Config(moduleInfo, ecmaVersion,
-                                                         compilerConfiguration.get(JsCompilerConfigurationKeys.SOURCEMAP, false)),
+                                                         configuration.get(JsCompilerConfigurationKeys.SOURCEMAP, false)),
                                               moduleInfo.getBindingContext());
+    }
+
+
+    private static MainCallParameters createMainCallParameters(String main) {
+        return "noCall".equals(main) ? MainCallParameters.noCall() : MainCallParameters.mainWithoutArguments();
     }
 }
