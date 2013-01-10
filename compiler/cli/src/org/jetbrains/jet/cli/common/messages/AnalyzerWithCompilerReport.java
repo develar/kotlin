@@ -16,13 +16,13 @@
 
 package org.jetbrains.jet.cli.common.messages;
 
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiErrorElement;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.util.PsiFormatUtil;
-import jet.Function0;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
@@ -220,9 +220,9 @@ public final class AnalyzerWithCompilerReport {
     }
 
     @Nullable
-    public AnalyzeExhaust analyzeAndReport(@NotNull Function0<AnalyzeExhaust> analyzer, @NotNull Collection<JetFile> files) {
+    public AnalyzeExhaust analyzeAndReport(@NotNull Computable<AnalyzeExhaust> analyzer, @NotNull Collection<JetFile> files) {
         reportSyntaxErrors(files);
-        analyzeExhaust = analyzer.invoke();
+        analyzeExhaust = analyzer.compute();
         reportDiagnostics(analyzeExhaust.getBindingContext(), messageCollectorWrapper);
         reportIncompleteHierarchies(analyzeExhaust, messageCollectorWrapper);
         reportAlternativeSignatureErrors();

@@ -22,13 +22,13 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.VirtualFileSystem;
 import com.intellij.psi.PsiManager;
-import jet.Function0;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
@@ -153,9 +153,9 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             @NotNull final List<JetFile> sources,
             final boolean analyzeCompletely
     ) {
-        AnalyzeExhaust exhaust = new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Function0<AnalyzeExhaust>() {
+        AnalyzeExhaust exhaust = new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Computable<AnalyzeExhaust>() {
             @Override
-            public AnalyzeExhaust invoke() {
+            public AnalyzeExhaust compute() {
                 return AnalyzerFacadeForJS
                         .analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
             }

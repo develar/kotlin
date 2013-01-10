@@ -20,9 +20,9 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.psi.PsiFile;
-import jet.Function0;
 import jet.modules.AllModules;
 import jet.modules.Module;
 import org.jetbrains.annotations.NotNull;
@@ -307,10 +307,10 @@ public class KotlinToJVMBytecodeCompiler {
         final Predicate<PsiFile> filesToAnalyzeCompletely =
                 stubs ? Predicates.<PsiFile>alwaysFalse() : Predicates.<PsiFile>alwaysTrue();
         return analyzerWithCompilerReport.analyzeAndReport(
-                new Function0<AnalyzeExhaust>() {
+                new Computable<AnalyzeExhaust>() {
                     @NotNull
                     @Override
-                    public AnalyzeExhaust invoke() {
+                    public AnalyzeExhaust compute() {
                         return AnalyzerFacadeForJVM.analyzeFilesWithJavaIntegration(
                                 environment.getProject(),
                                 environment.getSourceFiles(),
