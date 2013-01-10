@@ -49,7 +49,7 @@ import org.jetbrains.k2js.config.MetaInfServices;
 import org.jetbrains.k2js.facade.K2JSTranslator;
 import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
-import org.jetbrains.kotlin.lang.resolve.AnalyzerFacadeForJS;
+import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
 
 import java.io.File;
 import java.util.*;
@@ -156,7 +156,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         AnalyzeExhaust exhaust = new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Computable<AnalyzeExhaust>() {
             @Override
             public AnalyzeExhaust compute() {
-                return AnalyzerFacadeForJS
+                return XAnalyzerFacade
                         .analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
             }
         }, sources);

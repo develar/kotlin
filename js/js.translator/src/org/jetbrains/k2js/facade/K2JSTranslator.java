@@ -33,7 +33,7 @@ import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.utils.JetFileUtils;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
-import org.jetbrains.kotlin.lang.resolve.AnalyzerFacadeForJS;
+import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
 
 import java.io.File;
 import java.io.IOException;
@@ -94,11 +94,11 @@ public final class K2JSTranslator {
     ) {
         final ModuleInfo libraryModuleConfiguration = new ModuleInfo(config.getProject());
         // todo fix web demo
-        AnalyzeExhaust libraryExhaust = AnalyzerFacadeForJS.analyzeFiles(libraryModuleConfiguration, Collections.<JetFile>emptyList(), false);
+        AnalyzeExhaust libraryExhaust = XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, Collections.<JetFile>emptyList(), false);
         libraryExhaust.throwIfError();
 
-        AnalyzerFacadeForJS.checkForErrors(files);
-        return AnalyzerFacadeForJS.analyzeFiles(
+        XAnalyzerFacade.checkForErrors(files);
+        return XAnalyzerFacade.analyzeFiles(
                 new ModuleInfo(new ModuleDescriptor(Name.special("<web-demo>")), config.getProject(), libraryModuleConfiguration), files,
                 true).getBindingContext();
     }

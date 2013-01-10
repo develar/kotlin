@@ -38,7 +38,7 @@ import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.test.config.TestConfig;
 import org.jetbrains.k2js.test.config.TestConfigFactory;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
-import org.jetbrains.kotlin.lang.resolve.AnalyzerFacadeForJS;
+import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
 
 import java.lang.ref.SoftReference;
 import java.util.List;
@@ -77,9 +77,10 @@ public final class TranslationUtils {
                     return isFileWithCode((JetFile) file);
                 }
             };
-            AnalyzerFacadeForJS.checkForErrors(allLibFiles);
+            XAnalyzerFacade.checkForErrors(allLibFiles);
             ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
-            AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, allLibFiles, new TopDownAnalysisParameters(filesWithCode), false);
+            AnalyzeExhaust exhaust = XAnalyzerFacade
+                    .analyzeFiles(moduleConfiguration, allLibFiles, new TopDownAnalysisParameters(filesWithCode), false);
             exhaust.throwIfError();
             cachedLibraryContext = new SoftReference<ModuleInfo>(moduleConfiguration);
             context = moduleConfiguration;
@@ -105,7 +106,7 @@ public final class TranslationUtils {
         List<JetFile> psiFiles = createPsiFileList(project, inputFiles, null);
         ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(Name.special('<' + TestConfig.TEST_MODULE_NAME + '>')), project,
                                                                               getLibraryContext(project));
-        AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, psiFiles, true);
+        AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleConfiguration, psiFiles, true);
         exhaust.throwIfError();
         TestConfig config = configFactory.create(moduleConfiguration, version);
         K2JSTranslator.translateAndSaveToFile(mainCallParameters, psiFiles, outputFile, config,
