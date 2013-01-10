@@ -77,6 +77,30 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         assertEquals(aOutFileLastModified, aOutFile.lastModified());
     }
 
+    // a
+    // b -> a
+    // c -> a[exported]
+    // d -> c
+    public void testDependentModule() throws IOException {
+        ModuleBuilder a = createModuleBuilder().copy("a.kt").artifact();
+        ModuleBuilder b = createModuleBuilder().dependsOn(a).copy("b.kt").artifact();
+
+        rebuildAll();
+
+        ModuleBuilder c = createModuleBuilder().dependsOnAndExports(a).copy("c.kt").artifact();
+        makeAll().assertSuccessful();
+        c.assertCompiled("c.kt");
+
+        assertOutput(a.getArtifact(), fs().file(a.getName() + ".js"));
+        assertOutput(b.getArtifact(), fs().file(b.getName() + ".js"));
+        assertOutput(c.getArtifact(), fs().file(c.getName() + ".js"));
+
+        ModuleBuilder d = createModuleBuilder().dependsOn(c).copy("d.kt").artifact();
+        makeAll().assertSuccessful();
+        d.assertCompiled("d.kt");
+        // todo we must test that we cannot use symbols from transitive unexported module dependency
+    }
+
     private void assertNoKotlinModulesRecompiled() {
         assertCompiled(JsBuilder.NAME);
     }

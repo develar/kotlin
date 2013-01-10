@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,71 @@
 
 package org.jetbrains.jet.jps.build;
 
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.Processor;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.builders.BuildRootDescriptor;
+import org.jetbrains.jps.builders.BuildTarget;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.builders.FileProcessor;
-import org.jetbrains.jps.builders.java.JavaSourceRootDescriptor;
+import org.jetbrains.jps.builders.logging.ProjectBuilderLogger;
+import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ModuleBuildTarget;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.module.JpsModuleSourceRoot;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.List;
+import java.util.Collection;
 
 public class KotlinSourceFileCollector {
-    // For incremental compilation
-    public static List<File> getDirtySourceFiles(DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder)
-            throws IOException
-    {
-        final List<File> sourceFiles = ContainerUtil.newArrayList();
+    private static final String KOTLIN_EXTENSION = ".kt";
 
-        dirtyFilesHolder.processDirtyFiles(new FileProcessor<JavaSourceRootDescriptor, ModuleBuildTarget>() {
+    private static final FileFilter KOTLIN_SOURCES_FILTER =
+            SystemInfo.isFileSystemCaseSensitive ?
+            new FileFilter() {
+                @Override
+                public boolean accept(@NotNull File file) {
+                    return file.getPath().endsWith(KOTLIN_EXTENSION);
+                }
+            } :
+            new FileFilter() {
+                @Override
+                public boolean accept(@NotNull File file) {
+                    return StringUtil.endsWithIgnoreCase(file.getPath(), KOTLIN_EXTENSION);
+                }
+            };
+
+    // For incremental compilation
+    public static <R extends BuildRootDescriptor, T extends BuildTarget<R>> List<File> getDirtySourceFiles(
+            final T currentTarget,
+            DirtyFilesHolder<R, T> dirtyFilesHolder
+    ) throws IOException {
+        final List<File> files = ContainerUtil.newArrayList();
+        dirtyFilesHolder.processDirtyFiles(new FileProcessor<R, T>() {
             @Override
-            public boolean apply(ModuleBuildTarget target, File file, JavaSourceRootDescriptor root) throws IOException {
-                if (isKotlinSourceFile(file)) {
-                    sourceFiles.add(file);
+            public boolean apply(T target, File file, R descriptor) throws IOException {
+                if (currentTarget == target && KOTLIN_SOURCES_FILTER.accept(file)) {
+                    files.add(file);
                 }
                 return true;
             }
         });
-        return sourceFiles;
+        return files;
+    }
+
+    public static void logCompiledFiles(Collection<File> filesToCompile, CompileContext context, String builderName) throws IOException {
+        if (context.isMake()) {
+            ProjectBuilderLogger logger = context.getLoggingManager().getProjectBuilderLogger();
+            if (logger.isEnabled()) {
+                logger.logCompiledFiles(filesToCompile, builderName, "Compiling kotlin files:");
+            }
+        }
     }
 
     @NotNull
@@ -57,7 +90,7 @@ public class KotlinSourceFileCollector {
             FileUtil.processFilesRecursively(sourceRoot.getFile(), new Processor<File>() {
                 @Override
                 public boolean process(File file) {
-                    if (file.isFile() && isKotlinSourceFile(file)) {
+                    if (file.isFile() && KOTLIN_SOURCES_FILTER.accept(file)) {
                         result.add(file);
                     }
                     return true;
@@ -72,10 +105,6 @@ public class KotlinSourceFileCollector {
 
         //noinspection unchecked
         return (Iterable) target.getModule().getSourceRoots(sourceRootType);
-    }
-
-    private static boolean isKotlinSourceFile(File file) {
-        return file.getPath().endsWith(".kt");
     }
 
     private KotlinSourceFileCollector() {}

@@ -100,17 +100,19 @@ public final class AnalyzerWithCompilerReport {
         return diagnostic.getSeverity() == Severity.ERROR;
     }
 
-    private void reportIncompleteHierarchies() {
-        assert analyzeExhaust != null;
+    public static boolean reportIncompleteHierarchies(@NotNull AnalyzeExhaust analyzeExhaust, @NotNull MessageCollector messageCollector) {
         Collection<ClassDescriptor> incompletes = analyzeExhaust.getBindingContext().getKeys(BindingContext.INCOMPLETE_HIERARCHY);
-        if (!incompletes.isEmpty()) {
-            StringBuilder message = new StringBuilder("The following classes have incomplete hierarchies:\n");
-            for (ClassDescriptor incomplete : incompletes) {
-                String fqName = DescriptorUtils.getFQName(incomplete).getFqName();
-                message.append("    ").append(fqName).append("\n");
-            }
-            messageCollectorWrapper.report(CompilerMessageSeverity.ERROR, message.toString(), CompilerMessageLocation.NO_LOCATION);
+        if (incompletes.isEmpty()) {
+            return false;
         }
+
+        StringBuilder message = new StringBuilder("The following classes have incomplete hierarchies:\n");
+        for (ClassDescriptor incomplete : incompletes) {
+            String fqName = DescriptorUtils.getFQName(incomplete).getFqName();
+            message.append("    ").append(fqName).append("\n");
+        }
+        messageCollector.report(CompilerMessageSeverity.ERROR, message.toString(), CompilerMessageLocation.NO_LOCATION);
+        return true;
     }
 
     private void reportAlternativeSignatureErrors() {
@@ -152,6 +154,43 @@ public final class AnalyzerWithCompilerReport {
         }
     }
 
+    public static final class ErrorReportingVisitor extends AnalyzingUtils.PsiErrorElementVisitor {
+        private final MessageCollector collector;
+
+        private boolean hasErrors = false;
+        private boolean onlyErrorAtEof = false;
+
+        public ErrorReportingVisitor(MessageCollector collector) {
+            this.collector = collector;
+        }
+
+        public boolean hasErrors() {
+            return hasErrors;
+        }
+
+        private <E extends PsiElement> void reportDiagnostic(E element, SimpleDiagnosticFactory<E> factory, String message) {
+            MyDiagnostic<?> diagnostic = new MyDiagnostic<E>(element, factory, message);
+            AnalyzerWithCompilerReport.reportDiagnostic(diagnostic, collector);
+            if (element.getTextRange().getStartOffset() == element.getContainingFile().getTextRange().getEndOffset()) {
+                onlyErrorAtEof = !hasErrors;
+            }
+            hasErrors = true;
+        }
+
+        @Override
+        public void visitIdeTemplate(JetIdeTemplate expression) {
+            String placeholderText = expression.getPlaceholderText();
+            reportDiagnostic(expression, UNRESOLVED_IDE_TEMPLATE_ERROR_FACTORY,
+                             "Unresolved IDE template" + (StringUtil.isEmpty(placeholderText) ? "" : ": " + placeholderText));
+        }
+
+        @Override
+        public void visitErrorElement(PsiErrorElement element) {
+            String description = element.getErrorDescription();
+            reportDiagnostic(element, SYNTAX_ERROR_FACTORY, StringUtil.isEmpty(description) ? "Syntax error" : description);
+        }
+    }
+
     public static class SyntaxErrorReport {
         private final boolean hasErrors;
         private final boolean onlyErrorAtEof;
@@ -171,36 +210,8 @@ public final class AnalyzerWithCompilerReport {
     }
 
     public static SyntaxErrorReport reportSyntaxErrors(@NotNull final PsiElement file, @NotNull final MessageCollector messageCollector) {
-        class ErrorReportingVisitor extends AnalyzingUtils.PsiErrorElementVisitor {
-            boolean hasErrors = false;
-            boolean onlyErrorAtEof = false;
-
-            private <E extends PsiElement> void reportDiagnostic(E element, SimpleDiagnosticFactory<E> factory, String message) {
-                MyDiagnostic<?> diagnostic = new MyDiagnostic<E>(element, factory, message);
-                AnalyzerWithCompilerReport.reportDiagnostic(diagnostic, messageCollector);
-                if (element.getTextRange().getStartOffset() == file.getTextRange().getEndOffset()) {
-                    onlyErrorAtEof = !hasErrors;
-                }
-                hasErrors = true;
-            }
-
-            @Override
-            public void visitIdeTemplate(JetIdeTemplate expression) {
-                String placeholderText = expression.getPlaceholderText();
-                reportDiagnostic(expression, UNRESOLVED_IDE_TEMPLATE_ERROR_FACTORY,
-                                 "Unresolved IDE template" + (StringUtil.isEmpty(placeholderText) ? "" : ": " + placeholderText));
-            }
-
-            @Override
-            public void visitErrorElement(PsiErrorElement element) {
-                String description = element.getErrorDescription();
-                reportDiagnostic(element, SYNTAX_ERROR_FACTORY, StringUtil.isEmpty(description) ? "Syntax error" : description);
-            }
-        }
-        ErrorReportingVisitor visitor = new ErrorReportingVisitor();
-
+        ErrorReportingVisitor visitor = new ErrorReportingVisitor(messageCollector);
         file.accept(visitor);
-
         return new SyntaxErrorReport(visitor.hasErrors, visitor.onlyErrorAtEof);
     }
 
@@ -213,7 +224,7 @@ public final class AnalyzerWithCompilerReport {
         reportSyntaxErrors(files);
         analyzeExhaust = analyzer.invoke();
         reportDiagnostics(analyzeExhaust.getBindingContext(), messageCollectorWrapper);
-        reportIncompleteHierarchies();
+        reportIncompleteHierarchies(analyzeExhaust, messageCollectorWrapper);
         reportAlternativeSignatureErrors();
         return hasErrors() ? null : analyzeExhaust;
     }

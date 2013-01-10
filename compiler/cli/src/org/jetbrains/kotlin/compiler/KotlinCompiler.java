@@ -28,7 +28,6 @@ import com.intellij.psi.PsiManager;
 import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
 import gnu.trove.THashMap;
-import jet.Function0;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
@@ -40,10 +39,10 @@ import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport.reportDiagnostics;
+import static org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport.reportIncompleteHierarchies;
 
 /**
  * Kotlin compiler to any target (source-based, JavaScript as example).
@@ -77,7 +76,7 @@ public class KotlinCompiler {
         }
     }
 
-    public void compile(CompilerConfiguration configuration) {
+    public void compile(@NotNull CompilerConfiguration configuration, @Nullable OutputConsumer outputConsumer) {
         ModuleInfo moduleConfiguration = compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
         if (moduleConfiguration == null) {
             return;
@@ -85,11 +84,21 @@ public class KotlinCompiler {
 
         try {
             subCompiler.compile(configuration, moduleConfiguration, moduleConfiguration.sourceFiles);
+            if (outputConsumer != null) {
+                String[] filenames = new String[moduleConfiguration.sourceFiles.size()];
+                List<JetFile> files = moduleConfiguration.sourceFiles;
+                for (int i = 0; i < files.size(); i++) {
+                    filenames[i] = files.get(i).getViewProvider().getVirtualFile().getPath();
+                }
+                outputConsumer.registerSources(Arrays.asList(filenames));
+            }
         }
         catch (IOException e) {
             messageCollector.report(CompilerMessageSeverity.EXCEPTION, MessageRenderer.PLAIN.renderException(e), CompilerMessageLocation.NO_LOCATION);
         }
-        moduleConfiguration.sourceFiles = null;
+        finally {
+            moduleConfiguration.sourceFiles = null;
+        }
     }
 
     protected List<JetFile> collectSourceFiles(List<File> sourceRoots) {
@@ -141,12 +150,7 @@ public class KotlinCompiler {
             return null;
         }
 
-        ModuleInfo moduleConfiguration = analyzeModule(moduleName, null, analyzeCompletely, dependencies);
-        if (moduleConfiguration == null) {
-            return null;
-        }
-
-        return moduleConfiguration;
+        return analyzeModule(moduleName, null, analyzeCompletely, dependencies, true);
     }
 
     @Nullable
@@ -154,22 +158,31 @@ public class KotlinCompiler {
             String moduleName,
             @Nullable Object moduleObject,
             final boolean analyzeCompletely,
-            List<ModuleInfo> dependencies
+            List<ModuleInfo> dependencies,
+            boolean checkSyntax
     ) {
-        final List<JetFile> sources = collectSourceFiles(moduleInfoProvider.getSourceFiles(moduleName, moduleObject));
+        List<JetFile> sources = collectSourceFiles(moduleInfoProvider.getSourceFiles(moduleName, moduleObject));
 
-        final ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies);
-        AnalyzeExhaust exhaust = new AnalyzerWithCompilerReport(messageCollector).analyzeAndReport(new Function0<AnalyzeExhaust>() {
-            @Override
-            public AnalyzeExhaust invoke() {
-                return AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely),
-                                                        false);
+        if (checkSyntax) {
+            AnalyzerWithCompilerReport.ErrorReportingVisitor visitor = new AnalyzerWithCompilerReport.ErrorReportingVisitor(messageCollector);
+            for (JetFile file : sources) {
+                file.accept(visitor);
+                // don't stop if hasErrors, report about errors in all files
             }
-        }, sources);
-        if (exhaust == null) {
+            if (visitor.hasErrors()) {
+                return null;
+            }
+        }
+
+        ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies);
+        AnalyzeExhaust exhaust = AnalyzerFacadeForJS.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
+        exhaust.throwIfError();
+        // todo disable some Diagnostics for library code
+        boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector);
+        hasErrors |= reportIncompleteHierarchies(exhaust, messageCollector);
+        if (hasErrors) {
             return null;
         }
-        exhaust.throwIfError();
 
         moduleConfiguration.sourceFiles = sources;
         compiledModules.put(moduleName, moduleConfiguration);
@@ -187,7 +200,7 @@ public class KotlinCompiler {
                 if (moduleConfiguration == null) {
                     // todo dependencies for library?
                     moduleConfiguration = isLibrary
-                                          ? analyzeModule(name, dependency, false, Collections.<ModuleInfo>emptyList())
+                                          ? analyzeModule(name, dependency, false, Collections.<ModuleInfo>emptyList(), isLibrary)
                                           : compileModule(name, false);
                     if (moduleConfiguration == null) {
                         return false;

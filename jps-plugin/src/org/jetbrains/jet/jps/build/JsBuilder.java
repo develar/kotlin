@@ -17,6 +17,8 @@
 package org.jetbrains.jet.jps.build;
 
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
@@ -32,12 +34,15 @@ import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
+import org.jetbrains.kotlin.compiler.OutputConsumer;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget> {
     public static final String NAME = JsBuildTargetType.TYPE_ID + " Builder";
@@ -82,14 +87,17 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
 
     @Override
     public void build(
-            @NotNull JsBuildTarget target,
+            @NotNull final JsBuildTarget target,
             @NotNull DirtyFilesHolder<BuildRootDescriptor, JsBuildTarget> holder,
-            @NotNull BuildOutputConsumer outputConsumer,
+            @NotNull final BuildOutputConsumer outputConsumer,
             @NotNull CompileContext context
     ) throws ProjectBuildException, IOException {
-        if (!holder.hasDirtyFiles()) {
+        List<File> filesToCompile = KotlinSourceFileCollector.getDirtySourceFiles(target, holder);
+        if (filesToCompile.isEmpty()) {
             return;
         }
+
+        KotlinSourceFileCollector.logCompiledFiles(filesToCompile, context, NAME);
         
         KotlinBuildContext kotlinContext = context.getUserData(CONTEXT);
         if (kotlinContext == null) {
@@ -106,7 +114,7 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
 
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
         compilerConfiguration.put(CompilerConfigurationKeys.MODULE_NAME, module.getName());
-        File outputRoot = JpsJsCompilerPaths.getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
+        final File outputRoot = JpsJsCompilerPaths.getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
         compilerConfiguration.put(CompilerConfigurationKeys.OUTPUT_ROOT, outputRoot);
         // todo configurable
         compilerConfiguration.put(JsCompilerConfigurationKeys.TARGET, "5");
@@ -115,7 +123,26 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
         }
 
         try {
-            kotlinContext.compile.invoke(kotlinContext.compiler, compilerConfiguration);
+            // todo nik why we should registerOutputFile?
+            kotlinContext.compile.invoke(kotlinContext.compiler, compilerConfiguration, new OutputConsumer() {
+                @Override
+                public void registerSources(final Collection<String> sourcePaths) {
+                    FileUtil.processFilesRecursively(outputRoot, new Processor<File>() {
+                        @Override
+                        public boolean process(File file) {
+                            if (file.isFile()) {
+                                try {
+                                    outputConsumer.registerOutputFile(file, sourcePaths);
+                                }
+                                catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                            return true;
+                        }
+                    });
+                }
+            });
         }
         catch (Exception e) {
             throw new ProjectBuildException(e);
@@ -132,9 +159,9 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
             Class<?> compilerClass = Class.forName("org.jetbrains.kotlin.compiler.KotlinCompiler", true, loader);
             Constructor<?> constructor = compilerClass.getConstructor(Class.class, ModuleInfoProvider.class, MessageCollector.class);
             constructor.setAccessible(true);
-            compiler = constructor.newInstance(Class.forName("org.jetbrains.k2js.ToJsSubCompiler", true, loader), moduleInfoProvider, messageCollector);
+            compiler = constructor.newInstance(Class.forName("org.jetbrains.k2js.ToJsSubCompiler", false, loader), moduleInfoProvider, messageCollector);
 
-            compile = compilerClass.getMethod("compile", CompilerConfiguration.class);
+            compile = compilerClass.getMethod("compile", CompilerConfiguration.class, OutputConsumer.class);
             compile.setAccessible(true);
         }
         catch (Exception e) {
