@@ -24,7 +24,6 @@ import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
-import com.intellij.openapi.vfs.local.CoreLocalVirtualFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
@@ -99,7 +98,9 @@ public class KotlinCompiler {
         final CoreLocalFileSystem localFileSystem = compileContext.getLocalFileSystem();
         for (File sourceRoot : sourceRoots) {
             // root from library
-            VirtualFile jarFile = StandardFileSystems.getJarRootForLocalFile(new CoreLocalVirtualFile(localFileSystem, sourceRoot));
+            VirtualFile virtualFile = localFileSystem.findFileByIoFile(sourceRoot);
+            assert virtualFile != null;
+            VirtualFile jarFile = StandardFileSystems.getJarRootForLocalFile(virtualFile);
             if (jarFile != null) {
                 VfsUtilCore.visitChildrenRecursively(jarFile, new VirtualFileVisitor() {
                     @Override
