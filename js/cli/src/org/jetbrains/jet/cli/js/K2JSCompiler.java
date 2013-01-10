@@ -222,13 +222,13 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
                     psiFiles = new ArrayList<JetFile>();
                     moduleName = null;
                     modules.put(ModuleInfo.STUBS_MODULE_NAME.getName(), psiFiles);
-                    Traverser.traverseFile(project, jarFile, psiFiles, null);
+                    Traverser.traverseFile(project, jarFile, psiFiles);
                 }
                 else if (file.isDirectory()) {
-                    Traverser.traverseFile(project, file, psiFiles, moduleName);
+                    Traverser.traverseFile(project, file, psiFiles);
                 }
                 else {
-                    Traverser.addPsiFile(psiFiles, moduleName, psiManager, file);
+                    Traverser.addPsiFile(psiFiles, psiManager, file);
                 }
             }
         }

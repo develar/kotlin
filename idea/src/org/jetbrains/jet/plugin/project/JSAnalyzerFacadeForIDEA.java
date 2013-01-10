@@ -100,7 +100,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     private static List<JetFile> getLibraryFiles(Project project) {
         VirtualFile libraryFile = KotlinJsBuildConfigurationManager.getLibLocation(project);
         List<JetFile> allFiles = new ArrayList<JetFile>();
-        Traverser.traverseFile(project, libraryFile, allFiles, null);
+        Traverser.traverseFile(project, libraryFile, allFiles);
         return allFiles;
     }
 }
