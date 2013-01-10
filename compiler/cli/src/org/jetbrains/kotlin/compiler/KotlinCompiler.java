@@ -119,8 +119,9 @@ public class KotlinCompiler {
                 public boolean process(File file) {
                     if (file.isFile()) {
                         if (file.getName().endsWith(".kt")) {
-                            // todo add findFileByIoFile to CoreLocalFileSystem (the same as in LocalFileSystem)
-                            result.add((JetFile) psiManager.findFile(new CoreLocalVirtualFile(localFileSystem, file)));
+                            VirtualFile virtualFile = localFileSystem.findFileByIoFile(file);
+                            assert virtualFile != null;
+                            result.add((JetFile) psiManager.findFile(virtualFile));
                         }
                         return false;
                     }
