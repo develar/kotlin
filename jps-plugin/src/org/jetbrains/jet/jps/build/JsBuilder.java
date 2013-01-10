@@ -28,9 +28,7 @@ import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
-import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.module.JpsModule;
-import org.jetbrains.jps.util.JpsPathUtil;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
@@ -89,9 +87,9 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
             @NotNull BuildOutputConsumer outputConsumer,
             @NotNull CompileContext context
     ) throws ProjectBuildException, IOException {
-        //if (!holder.hasDirtyFiles()) {
-        //    return;
-        //}
+        if (!holder.hasDirtyFiles()) {
+            return;
+        }
         
         KotlinBuildContext kotlinContext = context.getUserData(CONTEXT);
         if (kotlinContext == null) {
@@ -108,7 +106,7 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
 
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
         compilerConfiguration.put(CompilerConfigurationKeys.MODULE_NAME, module.getName());
-        File outputRoot = JpsPathUtil.urlToFile(JpsJavaExtensionService.getInstance().getOutputUrl(module, false));
+        File outputRoot = JpsJsCompilerPaths.getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
         compilerConfiguration.put(CompilerConfigurationKeys.OUTPUT_ROOT, outputRoot);
         // todo configurable
         compilerConfiguration.put(JsCompilerConfigurationKeys.TARGET, "5");

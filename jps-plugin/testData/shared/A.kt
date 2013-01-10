@@ -1,6 +1,6 @@
 package test
 
-class Foo() {
+public class A() {
     // scope must contains kotlin std lib symbols
-    fun foo() = array("ff")
+    public fun a(): Array<String> = array("ff")
 }

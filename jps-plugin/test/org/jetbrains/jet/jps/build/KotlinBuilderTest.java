@@ -30,6 +30,7 @@ import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
 import org.jetbrains.jps.model.module.JpsModule;
 
+import java.io.File;
 import java.io.IOException;
 
 import static com.intellij.util.io.TestFileSystemBuilder.fs;
@@ -52,6 +53,32 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         JpsArtifact artifact = main.copy("a.kt").createArtifact();
         rebuildAll();
         assertOutput(artifact, fs().file(main.getName() + ".js"));
+    }
+
+    public void testSeveralIndependentModules() throws IOException {
+        ModuleBuilder a = createModuleBuilder().copy("a.kt").artifact();
+        ModuleBuilder b = createModuleBuilder().copy("a.kt").artifact();
+
+        rebuildAll();
+
+        final String aOutFilename = a.getName() + ".js";
+        assertOutput(a.getArtifact(), fs().file(aOutFilename));
+        assertOutput(b.getArtifact(), fs().file(b.getName() + ".js"));
+
+        makeAll().assertUpToDate();
+
+        File aOutFile = new File(a.getArtifact().getOutputPath(), aOutFilename);
+        long aOutFileLastModified = aOutFile.lastModified();
+        JpsArtifact aSecondArtifact = a.createArtifact();
+
+        makeAll().assertSuccessful();
+        assertNoKotlinModulesRecompiled();
+        assertOutput(aSecondArtifact, fs().file(aOutFilename));
+        assertEquals(aOutFileLastModified, aOutFile.lastModified());
+    }
+
+    private void assertNoKotlinModulesRecompiled() {
+        assertCompiled(JsBuilder.NAME);
     }
 
     private ModuleBuilder createModuleBuilder() {
@@ -77,13 +104,4 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
             return new JpsJsCompilerOutputPackagingElement(module.createReference());
         }
     }
-
-    //public void testMultiModule() throws IOException {
-    //    String sourceRoot = getAbsolutePath("src");
-    //    copyToSource("a.kt", sourceRoot);
-    //    String moduleName = "m";
-    //    JpsArtifact artifact = createModuleAndArtifact(moduleName, sourceRoot);
-    //    rebuildAll();
-    //    assertOutput(artifact, fs().file(moduleName + ".js"));
-    //}
 }

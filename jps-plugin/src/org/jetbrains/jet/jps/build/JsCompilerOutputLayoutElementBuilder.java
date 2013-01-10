@@ -9,9 +9,7 @@ import org.jetbrains.jps.builders.TargetOutputIndex;
 import org.jetbrains.jps.incremental.artifacts.builders.LayoutElementBuilderService;
 import org.jetbrains.jps.incremental.artifacts.instructions.ArtifactCompilerInstructionCreator;
 import org.jetbrains.jps.incremental.artifacts.instructions.ArtifactInstructionsBuilderContext;
-import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.module.JpsModule;
-import org.jetbrains.jps.util.JpsPathUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,8 +31,7 @@ public class JsCompilerOutputLayoutElementBuilder extends LayoutElementBuilderSe
             return;
         }
 
-        instructionCreator.addDirectoryCopyInstructions(
-                JpsPathUtil.urlToFile(JpsJavaExtensionService.getInstance().getOutputUrl(element.getModuleReference().resolve(), false)));
+        instructionCreator.addDirectoryCopyInstructions(JpsJsCompilerPaths.getCompilerOutputRoot(new JsBuildTarget(extension), builderContext.getDataPaths()));
     }
 
     @Override
