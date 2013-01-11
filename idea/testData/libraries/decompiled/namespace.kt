@@ -13,7 +13,13 @@ package testData.libraries
 
 [public val <T> testData.libraries.Pair<T, T>.exProp : jet.String] /* compiled code */
 
+[public fun <T : jet.CharSequence> funWithTypeParam(t : T) : Unit { /* compiled code */ }]
+
+[public fun <T : jet.Number> funWithTypeParam(t : T) : Unit { /* compiled code */ }]
+
 [public fun func() : Unit { /* compiled code */ }]
+
+[public fun func(cs : jet.CharSequence) : Unit { /* compiled code */ }]
 
 [public fun func(a : jet.Int, b : jet.Int) : Unit { /* compiled code */ }]
 
@@ -22,5 +28,9 @@ package testData.libraries
 [public fun func(str : jet.String) : Unit { /* compiled code */ }]
 
 [public fun main(args : jet.Array<jet.String>) : Unit { /* compiled code */ }]
+
+[public fun processDouble(d : jet.Double) : Unit { /* compiled code */ }]
+
+[public fun processDouble(d : testData.libraries.Double) : Unit { /* compiled code */ }]
 
 [public fun <T> T.filter(predicate : (T) -> jet.Boolean) : T? { /* compiled code */ }]

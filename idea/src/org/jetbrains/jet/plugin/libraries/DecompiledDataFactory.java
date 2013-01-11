@@ -89,7 +89,8 @@ public class DecompiledDataFactory {
 
             if (nd != null) {
                 for (DeclarationDescriptor member : sortDeclarations(nd.getMemberScope().getAllDescriptors())) {
-                    if (member instanceof ClassDescriptor || member instanceof NamespaceDescriptor) {
+                    if (member instanceof ClassDescriptor || member instanceof NamespaceDescriptor
+                        || isNamedObjectProperty(member, bindingContext)) {
                         continue;
                     }
                     appendDescriptor(member, "");
@@ -127,6 +128,7 @@ public class DecompiledDataFactory {
     }
 
     private void appendDescriptor(@NotNull DeclarationDescriptor descriptor, String indent) {
+        // Don't render property for object declaration
         int startOffset = builder.length();
         String renderedDescriptor = DESCRIPTOR_RENDERER.render(descriptor);
         renderedDescriptor = renderedDescriptor.replace("= ...", "= " + DECOMPILED_COMMENT);
@@ -163,6 +165,9 @@ public class DecompiledDataFactory {
                 if (member instanceof CallableMemberDescriptor && ((CallableMemberDescriptor) member).getKind() != CallableMemberDescriptor.Kind.DECLARATION) {
                     continue;
                 }
+                if (isNamedObjectProperty(member, bindingContext)) {
+                    continue;
+                }
 
                 if (firstPassed) {
                     builder.append("\n");
@@ -192,6 +197,13 @@ public class DecompiledDataFactory {
         PsiElement clsMember = BindingContextUtils.descriptorToDeclaration(bindingContext, descriptor);
         if (clsMember != null) {
             clsMembersToRanges.put(clsMember, new TextRange(startOffset, endOffset));
+
+            if (descriptor instanceof ClassDescriptor && ((ClassDescriptor) descriptor).getKind() == ClassKind.OBJECT) {
+                assert clsMember instanceof PsiClass;
+                PsiField instanceField = ((PsiClass) clsMember).findFieldByName(JvmAbi.INSTANCE_FIELD, false);
+                assert instanceField != null;
+                clsMembersToRanges.put(instanceField, new TextRange(startOffset, endOffset));
+            }
         }
     }
 
@@ -204,6 +216,16 @@ public class DecompiledDataFactory {
                         return true;
                     }
                 }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isNamedObjectProperty(@NotNull DeclarationDescriptor descriptor, BindingContext bindingContext) {
+        if (descriptor instanceof PropertyDescriptor) {
+            ClassDescriptor objectDeclaration = bindingContext.get(BindingContext.OBJECT_DECLARATION_CLASS, (PropertyDescriptor) descriptor);
+            if (objectDeclaration != null && objectDeclaration.getKind() == ClassKind.OBJECT) {
+                return true;
             }
         }
         return false;

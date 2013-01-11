@@ -29,6 +29,10 @@ public class WithTraitClassObject {
 public abstract class AbstractClass {
 }
 
+public object NamedObject {
+    public val objectMember: Int = 1
+}
+
 public enum class Color(val rgb : Int) {
     RED : Color(0xFF0000)
     GREEN : Color(0x00FF00)
@@ -95,4 +99,21 @@ public fun func(a : Int, b : Int) {
 public fun func() {
 }
 
+public fun func(cs : CharSequence) {
+}
+
 public inline fun <T> T.filter(predicate: (T)-> Boolean) : T? = this
+
+
+public class Double
+
+public fun processDouble(d: Double) {}
+
+public fun processDouble(d: jet.Double) {}
+
+
+public fun <T: CharSequence> funWithTypeParam(t: T) {
+}
+
+public fun <T: Number> funWithTypeParam(t: T) {
+}
