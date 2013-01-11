@@ -164,7 +164,7 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
     }
 
     private static KotlinBuildContext createKotlinBuildContext(CompileContext context) throws ProjectBuildException {
-        JpsModuleInfoProvider moduleInfoProvider = new JpsModuleInfoProvider(context.getProjectDescriptor().getProject());
+        JpsModuleInfoProvider moduleInfoProvider = new JpsModuleInfoProvider(context);
         MessageCollector messageCollector = new KotlinBuilder.MessageCollectorAdapter(context);
         ClassLoader loader = CompilerRunnerUtil.getOrCreateClassLoader(PathUtil.getKotlinPathsForJpsPluginOrJpsTests(), messageCollector);
         Object compiler;

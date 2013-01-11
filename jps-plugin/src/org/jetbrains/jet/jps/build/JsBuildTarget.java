@@ -34,7 +34,7 @@ public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
 
     @Override
     public String getId() {
-        return extension.getModule().getName();
+        return extension.getModuleName();
     }
 
     public JpsJsModuleExtension getExtension() {

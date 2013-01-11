@@ -3,12 +3,16 @@ package org.jetbrains.jet.jps.build;
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
-import org.jetbrains.jps.model.JpsProject;
-import org.jetbrains.jps.model.JpsSimpleElement;
+import org.jetbrains.jps.builders.BuildRootDescriptor;
+import org.jetbrains.jps.builders.BuildRootIndex;
+import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.model.java.*;
 import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
-import org.jetbrains.jps.model.module.*;
+import org.jetbrains.jps.model.module.JpsDependencyElement;
+import org.jetbrains.jps.model.module.JpsLibraryDependency;
+import org.jetbrains.jps.model.module.JpsModule;
+import org.jetbrains.jps.model.module.JpsModuleDependency;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
 
 import java.io.File;
@@ -17,10 +21,10 @@ import java.util.List;
 import java.util.Set;
 
 public class JpsModuleInfoProvider extends ModuleInfoProvider {
-    private final JpsProject project;
+    private final CompileContext context;
 
-    public JpsModuleInfoProvider(JpsProject project) {
-        this.project = project;
+    public JpsModuleInfoProvider(CompileContext context) {
+        this.context = context;
     }
 
     @Override
@@ -82,22 +86,27 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
             return ((JpsLibrary) object).getFiles(JpsOrderRootType.SOURCES);
         }
 
-        JpsModule module = object == null ? getModule(name) : ((JpsModule) object);
-        Iterable<JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>>> roots =
-                module.getSourceRoots(JavaSourceRootType.SOURCE);
-        List<File> result = new ArrayList<File>();
-        for (JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>> root : roots) {
-            result.add(root.getFile());
+        BuildRootIndex buildRootIndex = context.getProjectDescriptor().getBuildRootIndex();
+        for (JsBuildTarget buildTarget : context.getProjectDescriptor().getBuildTargetIndex().getAllTargets(JsBuildTargetType.INSTANCE)) {
+            if (buildTarget.getId().equals(name)) {
+                List<BuildRootDescriptor> roots = buildRootIndex.getTargetRoots(buildTarget, context);
+                List<File> result = new ArrayList<File>(roots.size());
+                for (BuildRootDescriptor root : roots) {
+                    result.add(root.getRootFile());
+                }
+                return result;
+            }
         }
-        return result;
+
+        throw new IllegalStateException("Cannot find kotlin build target for module " + name);
     }
 
     private JpsModule getModule(String moduleName) {
-        for (JpsModule module : project.getModules()) {
+        for (JpsModule module : context.getProjectDescriptor().getProject().getModules()) {
             if (module.getName().equals(moduleName)) {
                 return module;
             }
         }
-        throw new IllegalArgumentException("Cannot find module " + moduleName + " in project " + project);
+        throw new IllegalArgumentException("Cannot find module " + moduleName + " in project " + context.getProjectDescriptor().getProject());
     }
 }

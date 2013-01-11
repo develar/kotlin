@@ -29,6 +29,11 @@ public class JpsJsModuleExtension extends JpsElementBase<JpsJsModuleExtension> {
     }
 
     @NotNull
+    public String getModuleName() {
+        return moduleReference != null ? moduleReference.getModuleName() : module.getName();
+    }
+
+    @NotNull
     public JpsModule getModule() {
         if (module == null) {
             module = moduleReference.resolve();
