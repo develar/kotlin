@@ -139,7 +139,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     //}
 
     private void assertNoKotlinModulesRecompiled() {
-        assertCompiled(KotlinTargetBuilder.NAME);
+        assertCompiled(JsBuildTargetType.BUILDER_NAME);
     }
 
     private ModuleBuilder createModuleBuilder() {
@@ -148,7 +148,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
 
     private static class MyModuleBuilder extends ModuleBuilder {
         public MyModuleBuilder(KotlinBuilderTest testCase) {
-            super(KotlinTargetBuilder.NAME, testCase, AbstractKotlinJpsBuildTestCase.TEST_DATA_PATH + "shared");
+            super(JsBuildTargetType.BUILDER_NAME, testCase, AbstractKotlinJpsBuildTestCase.TEST_DATA_PATH + "shared");
         }
 
         @Override

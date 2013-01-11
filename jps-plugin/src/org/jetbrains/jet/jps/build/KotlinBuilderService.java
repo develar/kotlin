@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,6 @@ public class KotlinBuilderService extends BuilderService {
     @NotNull
     @Override
     public List<? extends TargetBuilder<?, ?>> createBuilders() {
-        return Collections.singletonList(new KotlinTargetBuilder());
+        return Collections.singletonList(new KotlinTargetBuilder(JsBuildTargetType.INSTANCE));
     }
 }

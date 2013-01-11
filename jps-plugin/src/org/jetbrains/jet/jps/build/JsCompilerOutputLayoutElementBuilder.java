@@ -31,7 +31,8 @@ public class JsCompilerOutputLayoutElementBuilder extends LayoutElementBuilderSe
             return;
         }
 
-        instructionCreator.addDirectoryCopyInstructions(JpsJsCompilerPaths.getCompilerOutputRoot(new JsBuildTarget(extension), builderContext.getDataPaths()));
+        instructionCreator.addDirectoryCopyInstructions(
+                JpsKotlinCompilerPaths.getCompilerOutputRoot(JsBuildTargetType.createTarget(extension), builderContext.getDataPaths()));
     }
 
     @Override
@@ -42,7 +43,7 @@ public class JsCompilerOutputLayoutElementBuilder extends LayoutElementBuilderSe
         JpsModule module = element.getModuleReference().resolve();
         JpsJsModuleExtension extension = JpsJsExtensionService.getInstance().getExtension(module);
         if (extension != null) {
-            return Collections.singletonList(new JsBuildTarget(extension));
+            return Collections.singletonList(JsBuildTargetType.createTarget(extension));
         }
         return Collections.emptyList();
     }

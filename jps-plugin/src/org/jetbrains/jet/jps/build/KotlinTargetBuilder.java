@@ -24,10 +24,7 @@ import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.utils.PathUtil;
-import org.jetbrains.jps.builders.BuildOutputConsumer;
-import org.jetbrains.jps.builders.BuildRootDescriptor;
-import org.jetbrains.jps.builders.DirtyFilesHolder;
-import org.jetbrains.jps.builders.FileProcessor;
+import org.jetbrains.jps.builders.*;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
@@ -48,13 +45,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget> {
-    public static final String NAME = JsBuildTargetType.TYPE_ID + " Builder";
-
+public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, KotlinBuildTarget> {
     private static final Key<KotlinBuildContext> CONTEXT = Key.create("kbContext");
 
-    public KotlinTargetBuilder() {
-        super(Collections.singletonList(JsBuildTargetType.INSTANCE));
+    private final String outputLanguageName;
+
+    public KotlinTargetBuilder(KotlinBuildTargetType targetType) {
+        super(Collections.singletonList(targetType));
+        outputLanguageName = targetType.getLanguageName();
     }
     
     private static class KotlinBuildContext {
@@ -70,7 +68,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, JsBu
     @NotNull
     @Override
     public String getPresentableName() {
-        return NAME;
+        return "Kotlin to " + outputLanguageName + " Builder";
     }
 
     @Override
@@ -91,15 +89,15 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, JsBu
 
     @Override
     public void build(
-            @NotNull final JsBuildTarget target,
-            @NotNull DirtyFilesHolder<BuildRootDescriptor, JsBuildTarget> holder,
+            @NotNull final KotlinBuildTarget target,
+            @NotNull DirtyFilesHolder<BuildRootDescriptor, KotlinBuildTarget> holder,
             @NotNull final BuildOutputConsumer outputConsumer,
             @NotNull final CompileContext context
     ) throws ProjectBuildException, IOException {
         final List<File> filesToCompile = new ArrayList<File>();
-        holder.processDirtyFiles(new FileProcessor<BuildRootDescriptor, JsBuildTarget>() {
+        holder.processDirtyFiles(new FileProcessor<BuildRootDescriptor, KotlinBuildTarget>() {
             @Override
-            public boolean apply(JsBuildTarget target, File file, BuildRootDescriptor root) throws IOException {
+            public boolean apply(KotlinBuildTarget target, File file, BuildRootDescriptor root) throws IOException {
                 filesToCompile.add(file);
                 return true;
             }
@@ -110,8 +108,8 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, JsBu
 
         JpsModule module = target.getExtension().getModule();
 
-        context.processMessage(new ProgressMessage("Compiling Kotlin module '" + module.getName() + "' to JavaScript"));
-        KotlinSourceFileCollector.logCompiledFiles(filesToCompile, context, NAME);
+        context.processMessage(new ProgressMessage("Compiling Kotlin module '" + module.getName() + "' to " + outputLanguageName));
+        KotlinSourceFileCollector.logCompiledFiles(filesToCompile, context, JsBuildTargetType.BUILDER_NAME);
         
         KotlinBuildContext kotlinContext = context.getUserData(CONTEXT);
         if (kotlinContext == null) {
@@ -126,7 +124,8 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, JsBu
 
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
         compilerConfiguration.put(CompilerConfigurationKeys.MODULE_NAME, module.getName());
-        final File outputRoot = JpsJsCompilerPaths.getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
+        final File outputRoot = JpsKotlinCompilerPaths
+                .getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
         compilerConfiguration.put(CompilerConfigurationKeys.OUTPUT_ROOT, outputRoot);
         // todo configurable
         compilerConfiguration.put(JsCompilerConfigurationKeys.TARGET, "5");

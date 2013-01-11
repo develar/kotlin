@@ -91,7 +91,7 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
         }
 
         BuildRootIndex buildRootIndex = context.getProjectDescriptor().getBuildRootIndex();
-        for (JsBuildTarget buildTarget : context.getProjectDescriptor().getBuildTargetIndex().getAllTargets(JsBuildTargetType.INSTANCE)) {
+        for (KotlinBuildTarget buildTarget : context.getProjectDescriptor().getBuildTargetIndex().getAllTargets(JsBuildTargetType.INSTANCE)) {
             if (buildTarget.getId().equals(name)) {
                 List<BuildRootDescriptor> roots = buildRootIndex.getTargetRoots(buildTarget, context);
                 for (BuildRootDescriptor root : roots) {

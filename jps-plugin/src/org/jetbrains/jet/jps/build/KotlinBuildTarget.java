@@ -24,11 +24,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
+public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
     private final JpsJsModuleExtension extension;
 
-    public JsBuildTarget(JpsJsModuleExtension extension) {
-        super(JsBuildTargetType.INSTANCE);
+    public KotlinBuildTarget(JpsJsModuleExtension extension, BuildTargetType<?> targetType) {
+        super(targetType);
         this.extension = extension;
     }
 
@@ -72,13 +72,14 @@ public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
     @NotNull
     @Override
     public String getPresentableName() {
-        return "Kotlin JS in module '" + extension.getModule().getName() + "'";
+        return "Kotlin " + ((KotlinBuildTargetType) getTargetType()).getLanguageName() + " in module '" + extension.getModuleName() + "'";
     }
 
     @NotNull
     @Override
     public Collection<File> getOutputRoots(CompileContext context) {
-        return Collections.singleton(JpsJsCompilerPaths.getCompilerOutputRoot(this, context.getProjectDescriptor().dataManager.getDataPaths()));
+        return Collections.singleton(
+                JpsKotlinCompilerPaths.getCompilerOutputRoot(this, context.getProjectDescriptor().dataManager.getDataPaths()));
     }
 
     @Override
@@ -90,8 +91,7 @@ public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
             return false;
         }
 
-        JsBuildTarget target = (JsBuildTarget) o;
-        return extension.equals(target.extension);
+        return extension.equals(((KotlinBuildTarget) o).extension);
     }
 
     @Override
@@ -100,7 +100,7 @@ public class JsBuildTarget extends BuildTarget<BuildRootDescriptor> {
     }
 
     private static class MyBuildRootDescriptor extends BuildRootDescriptorImpl {
-        public MyBuildRootDescriptor(JsBuildTarget target, JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>> sourceRoot) {
+        public MyBuildRootDescriptor(KotlinBuildTarget target, JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>> sourceRoot) {
             super(target, JpsPathUtil.urlToFile(sourceRoot.getUrl()), true);
         }
 
