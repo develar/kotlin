@@ -90,7 +90,7 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
             @NotNull final JsBuildTarget target,
             @NotNull DirtyFilesHolder<BuildRootDescriptor, JsBuildTarget> holder,
             @NotNull final BuildOutputConsumer outputConsumer,
-            @NotNull CompileContext context
+            @NotNull final CompileContext context
     ) throws ProjectBuildException, IOException {
         List<File> filesToCompile = KotlinSourceFileCollector.getDirtySourceFiles(target, holder);
         if (filesToCompile.isEmpty()) {
@@ -127,6 +127,10 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
             kotlinContext.compile.invoke(kotlinContext.compiler, compilerConfiguration, new OutputConsumer() {
                 @Override
                 public void registerSources(final Collection<String> sourcePaths) {
+                    if (context.getCancelStatus().isCanceled()) {
+                        return;
+                    }
+
                     FileUtil.processFilesRecursively(outputRoot, new Processor<File>() {
                         @Override
                         public boolean process(File file) {
@@ -143,6 +147,8 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
                     });
                 }
             });
+
+            context.checkCanceled();
         }
         catch (Exception e) {
             throw new ProjectBuildException(e);
