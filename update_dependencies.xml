@@ -8,7 +8,7 @@
     </target>
     <target name="jb_update" depends="fetch-third-party">
         <execute_update
-            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt662/1695243:id"
+            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt662/1697089:id"
             build.zip="ideaIC-124.SNAPSHOT.win.zip"
         />
     </target>
