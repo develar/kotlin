@@ -1,5 +1,6 @@
 package org.jetbrains.jet.jps.build;
 
+import com.intellij.openapi.util.io.FileUtil;
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
@@ -16,7 +17,7 @@ import org.jetbrains.jps.model.module.JpsModuleDependency;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.io.FileFilter;
 import java.util.List;
 import java.util.Set;
 
@@ -28,9 +29,9 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
     }
 
     @Override
-    public boolean processDependencies(String moduleName, DependenciesProcessor consumer) {
+    public boolean processDependencies(String moduleName, DependenciesProcessor processor) {
         JpsModule module = getModule(moduleName);
-        return processModuleDependencies(consumer, module, new THashSet<JpsDependencyElement>(), true);
+        return processModuleDependencies(processor, module, new THashSet<JpsDependencyElement>(), true);
     }
 
     private static boolean processModuleDependencies(
@@ -81,20 +82,35 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
     }
 
     @Override
-    public List<File> getSourceFiles(String name, @Nullable Object object) {
+    public void processSourceFiles(String name, @Nullable Object object, final ModuleInfoProvider.Processor<File> processor) {
         if (object instanceof JpsLibrary) {
-            return ((JpsLibrary) object).getFiles(JpsOrderRootType.SOURCES);
+            for (File file : ((JpsLibrary) object).getFiles(JpsOrderRootType.SOURCES)) {
+                processor.process(file);
+            }
+            return;
         }
 
         BuildRootIndex buildRootIndex = context.getProjectDescriptor().getBuildRootIndex();
         for (JsBuildTarget buildTarget : context.getProjectDescriptor().getBuildTargetIndex().getAllTargets(JsBuildTargetType.INSTANCE)) {
             if (buildTarget.getId().equals(name)) {
                 List<BuildRootDescriptor> roots = buildRootIndex.getTargetRoots(buildTarget, context);
-                List<File> result = new ArrayList<File>(roots.size());
                 for (BuildRootDescriptor root : roots) {
-                    result.add(root.getRootFile());
+                    final FileFilter fileFilter = root.createFileFilter(context.getProjectDescriptor());
+                    //noinspection UnnecessaryFullyQualifiedName
+                    FileUtil.processFilesRecursively(root.getRootFile(), new com.intellij.util.Processor<File>() {
+                        @Override
+                        public boolean process(File file) {
+                            if (file.isFile()) {
+                                if (fileFilter.accept(file)) {
+                                    processor.process(file);
+                                }
+                                return false;
+                            }
+                            return true;
+                        }
+                    });
                 }
-                return result;
+                return;
             }
         }
 

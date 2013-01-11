@@ -19,21 +19,20 @@ package org.jetbrains.kotlin.compiler;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
 import com.intellij.psi.PsiManager;
-import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
 import gnu.trove.THashMap;
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
-import org.jetbrains.jet.cli.common.messages.*;
+import org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport;
+import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
@@ -100,45 +99,38 @@ public class KotlinCompiler {
         }
     }
 
-    protected List<JetFile> collectSourceFiles(List<File> sourceRoots) {
+    protected List<JetFile> collectSourceFiles(String name, @Nullable Object object) {
         final List<JetFile> result = new ArrayList<JetFile>();
         final PsiManager psiManager = PsiManager.getInstance(compileContext.getProject());
         final CoreLocalFileSystem localFileSystem = compileContext.getLocalFileSystem();
-        for (File sourceRoot : sourceRoots) {
-            // root from library
-            VirtualFile virtualFile = localFileSystem.findFileByIoFile(sourceRoot);
-            assert virtualFile != null;
-            VirtualFile jarFile = StandardFileSystems.getJarRootForLocalFile(virtualFile);
-            if (jarFile != null) {
-                VfsUtilCore.visitChildrenRecursively(jarFile, new VirtualFileVisitor() {
-                    @Override
-                    public boolean visitFile(@NotNull VirtualFile file) {
-                        if (file.getName().endsWith(".kt")) {
-                            result.add((JetFile) psiManager.findFile(file));
-                            return false;
-                        }
-                        return true;
-                    }
-                });
-                continue;
-            }
-
-            FileUtil.processFilesRecursively(sourceRoot, new Processor<File>() {
-                @Override
-                public boolean process(File file) {
-                    if (file.isFile()) {
-                        if (file.getName().endsWith(".kt")) {
-                            VirtualFile virtualFile = localFileSystem.findFileByIoFile(file);
-                            assert virtualFile != null;
-                            result.add((JetFile) psiManager.findFile(virtualFile));
-                        }
-                        return false;
-                    }
-                    return true;
+        moduleInfoProvider.processSourceFiles(name, object, new ModuleInfoProvider.Processor<File>() {
+            @Override
+            public boolean process(File file) {
+                VirtualFile virtualFile = localFileSystem.findFileByIoFile(file);
+                if (virtualFile == null) {
+                    throw new IllegalArgumentException("Cannot find " + file.getPath());
                 }
-            });
-        }
 
+                // root from library
+                VirtualFile jarFile = StandardFileSystems.getJarRootForLocalFile(virtualFile);
+                if (jarFile == null) {
+                    result.add((JetFile) psiManager.findFile(virtualFile));
+                }
+                else {
+                    VfsUtilCore.visitChildrenRecursively(jarFile, new VirtualFileVisitor() {
+                        @Override
+                        public boolean visitFile(@NotNull VirtualFile file) {
+                            if (file.getName().endsWith(".kt")) {
+                                result.add((JetFile) psiManager.findFile(file));
+                                return false;
+                            }
+                            return true;
+                        }
+                    });
+                }
+                return true;
+            }
+        });
         return result;
     }
 
@@ -160,7 +152,7 @@ public class KotlinCompiler {
             Pair<List<ModuleInfo>, Set<ModuleInfo>> dependencies,
             boolean checkSyntax
     ) {
-        List<JetFile> sources = collectSourceFiles(moduleInfoProvider.getSourceFiles(moduleName, moduleObject));
+        List<JetFile> sources = collectSourceFiles(moduleName, moduleObject);
 
         if (checkSyntax) {
             AnalyzerWithCompilerReport.ErrorReportingVisitor visitor = new AnalyzerWithCompilerReport.ErrorReportingVisitor(messageCollector);
