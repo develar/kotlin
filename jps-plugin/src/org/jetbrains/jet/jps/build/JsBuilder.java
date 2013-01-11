@@ -119,7 +119,7 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
         // todo configurable
         compilerConfiguration.put(JsCompilerConfigurationKeys.TARGET, "5");
         if (!"true".equalsIgnoreCase(System.getProperty("kotlin.jps.tests"))) {
-        compilerConfiguration.put(JsCompilerConfigurationKeys.SOURCEMAP, true);
+            compilerConfiguration.put(JsCompilerConfigurationKeys.SOURCEMAP, true);
         }
 
         try {
@@ -147,7 +147,6 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
                     });
                 }
             });
-
             context.checkCanceled();
         }
         catch (Exception e) {

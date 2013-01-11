@@ -40,6 +40,7 @@ import java.util.List;
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity.ERROR;
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity.EXCEPTION;
 
+// todo please rename me to KotlinJavaBuilder
 public class KotlinBuilder extends ModuleLevelBuilder {
 
     private static final String KOTLIN_BUILDER_NAME = "Kotlin Builder";
@@ -137,6 +138,7 @@ public class KotlinBuilder extends ModuleLevelBuilder {
         return result;
     }
 
+    // todo please move me to top-level
     public static class MessageCollectorAdapter implements MessageCollector {
 
         private final CompileContext context;

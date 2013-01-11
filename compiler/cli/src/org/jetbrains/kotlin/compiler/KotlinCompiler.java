@@ -78,7 +78,7 @@ public class KotlinCompiler {
         }
     }
 
-    public void compile(@NotNull CompilerConfiguration configuration, @Nullable OutputConsumer outputConsumer) {
+    public void compile(@NotNull CompilerConfiguration configuration, @Nullable OutputConsumer outputConsumer) throws IOException {
         ModuleInfo moduleConfiguration = compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
         if (moduleConfiguration == null) {
             return;
@@ -94,9 +94,6 @@ public class KotlinCompiler {
                 }
                 outputConsumer.registerSources(Arrays.asList(filenames));
             }
-        }
-        catch (IOException e) {
-            messageCollector.report(CompilerMessageSeverity.EXCEPTION, MessageRenderer.PLAIN.renderException(e), CompilerMessageLocation.NO_LOCATION);
         }
         finally {
             moduleConfiguration.sourceFiles = null;
