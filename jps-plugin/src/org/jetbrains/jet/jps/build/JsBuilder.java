@@ -27,6 +27,7 @@ import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.builders.BuildOutputConsumer;
 import org.jetbrains.jps.builders.BuildRootDescriptor;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
+import org.jetbrains.jps.builders.FileProcessor;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
@@ -40,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -92,7 +94,14 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
             @NotNull final BuildOutputConsumer outputConsumer,
             @NotNull final CompileContext context
     ) throws ProjectBuildException, IOException {
-        List<File> filesToCompile = KotlinSourceFileCollector.getDirtySourceFiles(target, holder);
+        final List<File> filesToCompile = new ArrayList<File>();
+        holder.processDirtyFiles(new FileProcessor<BuildRootDescriptor, JsBuildTarget>() {
+            @Override
+            public boolean apply(JsBuildTarget target, File file, BuildRootDescriptor root) throws IOException {
+                filesToCompile.add(file);
+                return true;
+            }
+        });
         if (filesToCompile.isEmpty()) {
             return;
         }

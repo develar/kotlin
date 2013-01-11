@@ -86,8 +86,7 @@ public class KotlinBuilder extends ModuleLevelBuilder {
         ModuleBuildTarget representativeTarget = chunk.representativeTarget();
 
         // For non-incremental build: take all sources
-        // todo it is correct now because we don't support circular dependencies, but in future we must pass all targets instead of representativeTarget
-        List<File> filesToCompile = KotlinSourceFileCollector.getDirtySourceFiles(representativeTarget, dirtyFilesHolder);
+        List<File> filesToCompile = KotlinSourceFileCollector.getDirtySourceFiles(dirtyFilesHolder);
         if (filesToCompile.isEmpty()) {
             return ExitCode.NOTHING_DONE;
         }

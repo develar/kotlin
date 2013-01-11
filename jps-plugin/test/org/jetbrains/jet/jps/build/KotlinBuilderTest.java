@@ -72,6 +72,9 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         JpsArtifact aSecondArtifact = a.createArtifact();
 
         makeAll().assertSuccessful();
+
+        a.file("ignoreNotKotlinFile.txt", "dd");
+
         assertNoKotlinModulesRecompiled();
         assertOutput(aSecondArtifact, fs().file(aOutFilename));
         assertEquals(aOutFileLastModified, aOutFile.lastModified());
@@ -99,7 +102,20 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         makeAll().assertSuccessful();
         d.assertCompiled("d.kt");
         // todo we must test that we cannot use symbols from transitive unexported module dependency
+        //final File dir = new File("/Users/develar/test");
+        //FileUtil.delete(dir);
+        //FileUtil.copyDir(new File(getAbsolutePath(".")), dir);
     }
+
+    //public void testA() {
+    //    loadProject("/Users/develar/Documents/idea");
+    //    for (JpsArtifact artifact : JpsArtifactService.getInstance().getArtifacts(myProject)) {
+    //        if (artifact.getName().equals("Chrome extension")) {
+    //            doBuild(CompileScopeTestBuilder.make().artifact(artifact)).assertSuccessful();
+    //            break;
+    //        }
+    //    }
+    //}
 
     private void assertNoKotlinModulesRecompiled() {
         assertCompiled(JsBuilder.NAME);

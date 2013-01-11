@@ -41,7 +41,7 @@ import java.util.Collection;
 public class KotlinSourceFileCollector {
     private static final String KOTLIN_EXTENSION = ".kt";
 
-    private static final FileFilter KOTLIN_SOURCES_FILTER =
+    public static final FileFilter KOTLIN_SOURCES_FILTER =
             SystemInfo.isFileSystemCaseSensitive ?
             new FileFilter() {
                 @Override
@@ -57,15 +57,13 @@ public class KotlinSourceFileCollector {
             };
 
     // For incremental compilation
-    public static <R extends BuildRootDescriptor, T extends BuildTarget<R>> List<File> getDirtySourceFiles(
-            final T currentTarget,
-            DirtyFilesHolder<R, T> dirtyFilesHolder
-    ) throws IOException {
+    public static <R extends BuildRootDescriptor, T extends BuildTarget<R>> List<File> getDirtySourceFiles(DirtyFilesHolder<R, T> dirtyFilesHolder)
+            throws IOException {
         final List<File> files = ContainerUtil.newArrayList();
         dirtyFilesHolder.processDirtyFiles(new FileProcessor<R, T>() {
             @Override
             public boolean apply(T target, File file, R descriptor) throws IOException {
-                if (currentTarget == target && KOTLIN_SOURCES_FILTER.accept(file)) {
+                if (KOTLIN_SOURCES_FILTER.accept(file)) {
                     files.add(file);
                 }
                 return true;
