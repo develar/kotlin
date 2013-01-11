@@ -16,6 +16,8 @@
 
 package org.jetbrains.jet.jps.build;
 
+import com.intellij.openapi.util.text.StringUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.jps.model.JpsJsCompilerOutputPackagingElement;
 import org.jetbrains.jet.jps.model.JpsJsExtensionService;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
@@ -36,6 +38,9 @@ import java.io.IOException;
 import static com.intellij.util.io.TestFileSystemBuilder.fs;
 
 public class KotlinBuilderTest extends ArtifactBuilderTestCase {
+    // todo fix AbstractKotlinJpsBuildTestCase.TEST_DATA_PATH
+    private static final String TEST_DATA_PATH = StringUtil.trimEnd(AbstractKotlinJpsBuildTestCase.TEST_DATA_PATH, "/");
+
     @Override
     public void setUp() throws Exception {
         super.setUp();
@@ -107,6 +112,22 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         //FileUtil.copyDir(new File(getAbsolutePath(".")), dir);
     }
 
+    @NotNull
+    @Override
+    protected String getTestDataRootPath() {
+        return TEST_DATA_PATH;
+    }
+
+    //public void testDependentModule2() throws IOException {
+    //    ModuleBuilder independent = createModuleBuilder().artifact();
+    //    independent.get().addSourceRoot("file://" + getTestDataRootPath() + "/indep", JavaSourceRootType.SOURCE);
+    //
+    //    ModuleBuilder dependent = createModuleBuilder().artifact().dependsOn(independent);
+    //    dependent.get().addSourceRoot("file://" + getTestDataRootPath() + "/dep", JavaSourceRootType.SOURCE);
+    //
+    //    makeAll().assertSuccessful();
+    //}
+
     //public void testA() {
     //    loadProject("/Users/develar/Documents/idea");
     //    for (JpsArtifact artifact : JpsArtifactService.getInstance().getArtifacts(myProject)) {
@@ -118,7 +139,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     //}
 
     private void assertNoKotlinModulesRecompiled() {
-        assertCompiled(JsBuilder.NAME);
+        assertCompiled(KotlinTargetBuilder.NAME);
     }
 
     private ModuleBuilder createModuleBuilder() {
@@ -127,7 +148,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
 
     private static class MyModuleBuilder extends ModuleBuilder {
         public MyModuleBuilder(KotlinBuilderTest testCase) {
-            super(JsBuilder.NAME, testCase, AbstractKotlinJpsBuildTestCase.TEST_DATA_PATH + "shared");
+            super(KotlinTargetBuilder.NAME, testCase, AbstractKotlinJpsBuildTestCase.TEST_DATA_PATH + "shared");
         }
 
         @Override

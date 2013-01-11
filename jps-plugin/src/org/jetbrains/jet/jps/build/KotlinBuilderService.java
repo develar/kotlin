@@ -40,6 +40,6 @@ public class KotlinBuilderService extends BuilderService {
     @NotNull
     @Override
     public List<? extends TargetBuilder<?, ?>> createBuilders() {
-        return Collections.singletonList(new JsBuilder());
+        return Collections.singletonList(new KotlinTargetBuilder());
     }
 }

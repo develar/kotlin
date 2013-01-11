@@ -31,6 +31,7 @@ import org.jetbrains.jps.builders.FileProcessor;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
+import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
@@ -47,12 +48,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget> {
+public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget> {
     public static final String NAME = JsBuildTargetType.TYPE_ID + " Builder";
 
     private static final Key<KotlinBuildContext> CONTEXT = Key.create("kbContext");
 
-    public JsBuilder() {
+    public KotlinTargetBuilder() {
         super(Collections.singletonList(JsBuildTargetType.INSTANCE));
     }
     
@@ -107,6 +108,9 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
             return;
         }
 
+        JpsModule module = target.getExtension().getModule();
+
+        context.processMessage(new ProgressMessage("Compiling Kotlin module '" + module.getName() + "' to JavaScript"));
         KotlinSourceFileCollector.logCompiledFiles(filesToCompile, context, NAME);
         
         KotlinBuildContext kotlinContext = context.getUserData(CONTEXT);
@@ -119,8 +123,6 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
                 context.putUserData(CONTEXT, kotlinContext);
             }
         }
-
-        JpsModule module = target.getExtension().getModule();
 
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
         compilerConfiguration.put(CompilerConfigurationKeys.MODULE_NAME, module.getName());
