@@ -85,7 +85,9 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
     public void processSourceFiles(String name, @Nullable Object object, final ModuleInfoProvider.Processor<File> processor) {
         if (object instanceof JpsLibrary) {
             for (File file : ((JpsLibrary) object).getFiles(JpsOrderRootType.SOURCES)) {
-                processor.process(file);
+                if (!processor.process(file)) {
+                    return;
+                }
             }
             return;
         }
@@ -100,11 +102,8 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
                     FileUtil.processFilesRecursively(root.getRootFile(), new com.intellij.util.Processor<File>() {
                         @Override
                         public boolean process(File file) {
-                            if (file.isFile()) {
-                                if (fileFilter.accept(file)) {
-                                    processor.process(file);
-                                }
-                                return false;
+                            if (fileFilter.accept(file)) {
+                                processor.process(file);
                             }
                             return true;
                         }
