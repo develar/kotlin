@@ -1,4 +1,4 @@
-package test
+package test.a
 
 public class A() {
     // scope must contains kotlin std lib symbols

@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.jps.build;
 
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.jps.model.JpsJsCompilerOutputPackagingElement;
@@ -26,7 +27,9 @@ import org.jetbrains.jps.incremental.artifacts.ArtifactBuilderTestCase;
 import org.jetbrains.jps.incremental.artifacts.ModuleBuilder;
 import org.jetbrains.jps.model.JpsModuleRootModificationUtil;
 import org.jetbrains.jps.model.artifact.JpsArtifact;
+import org.jetbrains.jps.model.artifact.JpsArtifactService;
 import org.jetbrains.jps.model.artifact.elements.JpsPackagingElement;
+import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.java.JpsJavaLibraryType;
 import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
@@ -118,23 +121,22 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         return TEST_DATA_PATH;
     }
 
-    //public void testDependentModule2() throws IOException {
-    //    ModuleBuilder independent = createModuleBuilder().artifact();
-    //    independent.get().addSourceRoot("file://" + getTestDataRootPath() + "/indep", JavaSourceRootType.SOURCE);
-    //
-    //    ModuleBuilder dependent = createModuleBuilder().artifact().dependsOn(independent);
-    //    dependent.get().addSourceRoot("file://" + getTestDataRootPath() + "/dep", JavaSourceRootType.SOURCE);
-    //
-    //    makeAll().assertSuccessful();
-    //}
+    @Override
+    protected void loadProject(String projectPath) {
+        super.loadProject(projectPath.charAt(0) == '/' ? FileUtil.getRelativePath(new File(getAbsolutePath(".")), new File(projectPath)) : projectPath);
+    }
 
-    //public void testA() {
-    //    loadProject("/Users/develar/Documents/idea");
+    //public void etestA() {
+    //    loadProject("/Users/develar/Documents/test-idea-kotlin-project");
+    //    //for (JpsArtifact artifact : JpsArtifactService.getInstance().getArtifacts(myProject)) {
+    //    //    if (artifact.getName().equals("Chrome extension")) {
+    //    //        doBuild(CompileScopeTestBuilder.make().artifact(artifact)).assertSuccessful();
+    //    //        break;
+    //    //    }
+    //    //}
+    //    makeAll().assertSuccessful();
     //    for (JpsArtifact artifact : JpsArtifactService.getInstance().getArtifacts(myProject)) {
-    //        if (artifact.getName().equals("Chrome extension")) {
-    //            doBuild(CompileScopeTestBuilder.make().artifact(artifact)).assertSuccessful();
-    //            break;
-    //        }
+    //        artifact.setOutputPath(null);
     //    }
     //}
 
