@@ -40,6 +40,7 @@ import org.jetbrains.kotlin.compiler.OutputConsumer;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -157,6 +158,10 @@ public class JsBuilder extends TargetBuilder<BuildRootDescriptor, JsBuildTarget>
                 }
             });
             context.checkCanceled();
+        }
+        catch (InvocationTargetException e) {
+            // hide InvocationTargetException
+            throw new ProjectBuildException(e.getMessage(), e.getCause());
         }
         catch (Exception e) {
             throw new ProjectBuildException(e);
