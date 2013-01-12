@@ -50,8 +50,8 @@
       <projectService serviceInterface="org.jetbrains.jet.lang.resolve.java.JetFilesProvider"
                       serviceImplementation="org.jetbrains.jet.plugin.project.PluginJetFilesProvider"/>
 
-      <projectService serviceInterface="org.jetbrains.jet.plugin.references.StandardLibraryReferenceResolver"
-                      serviceImplementation="org.jetbrains.jet.plugin.references.StandardLibraryReferenceResolver"/>
+      <projectService serviceInterface="org.jetbrains.jet.plugin.references.BuiltInsReferenceResolver"
+                      serviceImplementation="org.jetbrains.jet.plugin.references.BuiltInsReferenceResolver"/>
 
       <projectService serviceInterface="org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider"
                       serviceImplementation="org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider"/>
