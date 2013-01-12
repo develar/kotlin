@@ -5,7 +5,7 @@ import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
-import org.jetbrains.jet.plugin.references.StandardLibraryReferenceResolver;
+import org.jetbrains.jet.plugin.references.BuiltInsReferenceResolver;
 
 import java.util.Collection;
 
@@ -17,7 +17,9 @@ public final class DescriptorToDeclarationUtil {
         Collection<PsiElement> elements = BindingContextUtils.descriptorToDeclarations(bindingContext, descriptor);
 
         if (elements.isEmpty()) {
-            elements = StandardLibraryReferenceResolver.getInstance(file.getProject()).resolveStandardLibrarySymbol(descriptor);
+            BuiltInsReferenceResolver libraryReferenceResolver =
+                    BuiltInsReferenceResolver.getInstance(file.getProject());
+            elements = libraryReferenceResolver.resolveStandardLibrarySymbol(descriptor);
         }
 
         if (!elements.isEmpty()) {

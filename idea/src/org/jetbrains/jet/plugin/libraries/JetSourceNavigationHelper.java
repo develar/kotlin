@@ -17,7 +17,8 @@
 package org.jetbrains.jet.plugin.libraries;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.*;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
@@ -30,31 +31,30 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.GlobalSearchScopes;
 import com.intellij.psi.stubs.StringStubIndexExtension;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.util.Function;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.jet.lang.DefaultModuleConfiguration;
-import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.lazy.FileBasedDeclarationProviderFactory;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.jet.plugin.stubindex.JetFullClassNameIndex;
 import org.jetbrains.jet.plugin.stubindex.JetTopLevelFunctionsFqnNameIndex;
 import org.jetbrains.jet.plugin.stubindex.JetTopLevelPropertiesFqnNameIndex;
-import org.jetbrains.jet.renderer.DescriptorRenderer;
-import org.jetbrains.jet.util.CommonSuppliers;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import static org.jetbrains.jet.plugin.libraries.MemberMatching.*;
 
 public class JetSourceNavigationHelper {
     private static boolean forceResolve = false;
@@ -106,7 +106,7 @@ public class JetSourceNavigationHelper {
         return resultScope;
     }
 
-    private static List<JetFile> getContainingFiles(@NotNull Iterable<? extends JetNamedDeclaration> declarations) {
+    private static List<JetFile> getContainingFiles(@NotNull Iterable<JetNamedDeclaration> declarations) {
         Set<JetFile> result = Sets.newHashSet();
         for (JetNamedDeclaration declaration : declarations) {
             PsiFile containingFile = declaration.getContainingFile();
@@ -126,46 +126,6 @@ public class JetSourceNavigationHelper {
             }
         }
         return false;
-    }
-
-    private static String getTypeShortName(@NotNull JetTypeReference typeReference) {
-        JetTypeElement typeElement = typeReference.getTypeElement();
-        assert typeElement != null;
-        return typeElement.accept(new JetVisitor<String, Void>() {
-            @Override
-            public String visitDeclaration(JetDeclaration declaration, Void data) {
-                throw new IllegalStateException("This visitor shouldn't be invoked for " + declaration.getClass());
-            }
-
-            @Override
-            public String visitUserType(JetUserType type, Void data) {
-                JetSimpleNameExpression referenceExpression = type.getReferenceExpression();
-                assert referenceExpression != null;
-                return referenceExpression.getReferencedName();
-            }
-
-            @Override
-            public String visitFunctionType(JetFunctionType type, Void data) {
-                KotlinBuiltIns builtIns = KotlinBuiltIns.getInstance();
-                int parameterCount = type.getParameters().size();
-
-                if (type.getReceiverTypeRef() == null) {
-                    return builtIns.getFunction(parameterCount).getName().getName();
-                }
-                else {
-                    return builtIns.getExtensionFunction(parameterCount).getName().getName();
-                }
-            }
-
-            @Override
-            public String visitNullableType(JetNullableType nullableType, Void data) {
-                return nullableType.getInnerType().accept(this, null);
-            }
-        }, null);
-    }
-
-    private static boolean typesHaveSameShortName(@NotNull JetTypeReference a, @NotNull JetTypeReference b) {
-        return getTypeShortName(a).equals(getTypeShortName(b));
     }
 
     @Nullable
@@ -190,29 +150,25 @@ public class JetSourceNavigationHelper {
     }
 
     @Nullable
-    private static <Decl extends JetNamedDeclaration, Descr extends CallableDescriptor> JetNamedDeclaration
-            getSourcePropertyOrFunction(
-            @NotNull final Decl decompiledDeclaration,
-            @NotNull final NavigationStrategy<Decl, Descr> navigationStrategy
-    ) {
+    private static JetNamedDeclaration getSourcePropertyOrFunction(@NotNull JetNamedDeclaration decompiledDeclaration) {
         String memberNameAsString = decompiledDeclaration.getName();
         assert memberNameAsString != null;
         Name memberName = Name.identifier(memberNameAsString);
 
         PsiElement decompiledContainer = decompiledDeclaration.getParent();
 
-        Collection<Decl> candidates;
+        Collection<JetNamedDeclaration> candidates;
         if (decompiledContainer instanceof JetFile) {
-            candidates = getInitialTopLevelCandidates(decompiledDeclaration, navigationStrategy);
+            candidates = getInitialTopLevelCandidates(decompiledDeclaration);
         }
         else if (decompiledContainer instanceof JetClassBody) {
             JetClassOrObject decompiledClassOrObject = (JetClassOrObject) decompiledContainer.getParent();
             JetClassOrObject sourceClassOrObject = getSourceClassOrObject(decompiledClassOrObject);
 
+            //noinspection unchecked
             candidates = sourceClassOrObject == null
-                         ? Collections.<Decl>emptyList()
-                         : getInitialMemberCandidates(sourceClassOrObject, memberName,
-                                                      navigationStrategy.getDeclarationClass());
+                         ? Collections.<JetNamedDeclaration>emptyList()
+                         : getInitialMemberCandidates(sourceClassOrObject, memberName, (Class<JetNamedDeclaration>) decompiledDeclaration.getClass());
 
             if (candidates.isEmpty()) {
                 if (decompiledDeclaration instanceof JetProperty && sourceClassOrObject instanceof JetClass) {
@@ -226,14 +182,14 @@ public class JetSourceNavigationHelper {
         }
 
         if (!forceResolve) {
-            candidates = filterByReceiverPresenceAndParametersCount(decompiledDeclaration, navigationStrategy, candidates);
+            candidates = filterByReceiverPresenceAndParametersCount(decompiledDeclaration, candidates);
 
             if (candidates.size() <= 1) {
                 return candidates.isEmpty() ? null : candidates.iterator().next();
             }
 
             if (!haveRenamesInImports(getContainingFiles(candidates))) {
-                candidates = filterByReceiverAndParameterTypes(decompiledDeclaration, navigationStrategy, candidates);
+                candidates = filterByReceiverAndParameterTypes(decompiledDeclaration, candidates);
 
                 if (candidates.size() <= 1) {
                     return candidates.isEmpty() ? null : candidates.iterator().next();
@@ -255,12 +211,11 @@ public class JetSourceNavigationHelper {
                 DefaultModuleConfiguration.createStandardConfiguration(project),
                 providerFactory);
 
-        JetTypeReference receiverType = navigationStrategy.getReceiverType(decompiledDeclaration);
-        for (Decl candidate : candidates) {
+        for (JetNamedDeclaration candidate : candidates) {
             //noinspection unchecked
-            Descr candidateDescriptor = (Descr) resolveSession.resolveToDescriptor(candidate);
-            if (receiversMatch(receiverType, candidateDescriptor.getReceiverParameter())
-                    && navigationStrategy.declarationAndDescriptorMatchByParameterTypes(decompiledDeclaration, candidateDescriptor)
+            CallableDescriptor candidateDescriptor = (CallableDescriptor) resolveSession.resolveToDescriptor(candidate);
+            if (receiversMatch(decompiledDeclaration, candidateDescriptor)
+                    && valueParametersTypesMatch(decompiledDeclaration, candidateDescriptor)
                     && typeParametersMatch((JetTypeParameterListOwner) decompiledDeclaration, candidateDescriptor.getTypeParameters())) {
                 return candidate;
             }
@@ -287,10 +242,7 @@ public class JetSourceNavigationHelper {
     }
 
     @NotNull
-    private static <Decl extends JetNamedDeclaration, Descr extends CallableDescriptor> Collection<Decl> getInitialTopLevelCandidates(
-            @NotNull Decl decompiledDeclaration,
-            @NotNull NavigationStrategy<Decl, Descr> navigationStrategy
-    ) {
+    private static Collection<JetNamedDeclaration> getInitialTopLevelCandidates(@NotNull JetNamedDeclaration decompiledDeclaration) {
         FqName memberFqName = JetPsiUtil.getFQName(decompiledDeclaration);
         assert memberFqName != null;
 
@@ -298,285 +250,77 @@ public class JetSourceNavigationHelper {
         if (librarySourcesScope == GlobalSearchScope.EMPTY_SCOPE) { // .getProject() == null for EMPTY_SCOPE, and this breaks code
             return Collections.emptyList();
         }
-        StringStubIndexExtension<Decl> index = navigationStrategy.getIndexForTopLevelMembers();
+        //noinspection unchecked
+        StringStubIndexExtension<JetNamedDeclaration> index =
+                (StringStubIndexExtension<JetNamedDeclaration>) getIndexForTopLevelPropertyOrFunction(decompiledDeclaration);
         return index.get(memberFqName.getFqName(), decompiledDeclaration.getProject(), librarySourcesScope);
     }
 
+    private static StringStubIndexExtension<? extends JetNamedDeclaration> getIndexForTopLevelPropertyOrFunction(
+            @NotNull JetNamedDeclaration decompiledDeclaration
+    ) {
+        if (decompiledDeclaration instanceof JetNamedFunction) {
+            return JetTopLevelFunctionsFqnNameIndex.getInstance();
+        }
+        if (decompiledDeclaration instanceof JetProperty) {
+            return JetTopLevelPropertiesFqnNameIndex.getInstance();
+        }
+        throw new IllegalArgumentException("Neither function nor declaration: " + decompiledDeclaration.getClass().getName());
+    }
+
     @NotNull
-    private static <Decl extends JetNamedDeclaration> List<Decl> getInitialMemberCandidates(
+    private static List<JetNamedDeclaration> getInitialMemberCandidates(
             @NotNull JetClassOrObject sourceClassOrObject,
             @NotNull final Name name,
-            @NotNull Class<Decl> declarationClass
+            @NotNull Class<JetNamedDeclaration> declarationClass
     ) {
-        List<Decl> allByClass = ContainerUtil.findAll(sourceClassOrObject.getDeclarations(), declarationClass);
-        return ContainerUtil.filter(allByClass, new Condition<Decl>() {
+        List<JetNamedDeclaration> allByClass = ContainerUtil.findAll(sourceClassOrObject.getDeclarations(), declarationClass);
+        return ContainerUtil.filter(allByClass, new Condition<JetNamedDeclaration>() {
             @Override
-            public boolean value(Decl declaration) {
+            public boolean value(JetNamedDeclaration declaration) {
                 return name.equals(declaration.getNameAsSafeName());
             }
         });
     }
 
     @NotNull
-    private static <Decl extends JetNamedDeclaration, Descr extends CallableDescriptor> List<Decl> filterByReceiverPresenceAndParametersCount(
-            final @NotNull Decl decompiledDeclaration,
-            final @NotNull NavigationStrategy<Decl, Descr> navigationStrategy,
-            @NotNull Collection<Decl> candidates
+    private static List<JetNamedDeclaration> filterByReceiverPresenceAndParametersCount(
+            final @NotNull JetNamedDeclaration decompiledDeclaration,
+            @NotNull Collection<JetNamedDeclaration> candidates
     ) {
-        final JetTypeReference decompiledReceiver = navigationStrategy.getReceiverType(decompiledDeclaration);
-
-        return ContainerUtil.filter(candidates, new Condition<Decl>() {
+        return ContainerUtil.filter(candidates, new Condition<JetNamedDeclaration>() {
             @Override
-            public boolean value(Decl candidate) {
-                boolean sameReceiverPresence = (navigationStrategy.getReceiverType(candidate) != null) ==
-                                               (decompiledReceiver != null);
-                boolean sameParameterCount = navigationStrategy.declarationsMatchByParameterCount(candidate, decompiledDeclaration);
-                return sameReceiverPresence && sameParameterCount;
+            public boolean value(JetNamedDeclaration candidate) {
+                return sameReceiverPresenceAndParametersCount(candidate, decompiledDeclaration);
             }
         });
     }
 
     @NotNull
-    private static <Decl extends JetNamedDeclaration, Descr extends CallableDescriptor> List<Decl> filterByReceiverAndParameterTypes(
-            final @NotNull Decl decompiledDeclaration,
-            final @NotNull NavigationStrategy<Decl, Descr> navigationStrategy,
-            @NotNull Collection<Decl> candidates
+    private static List<JetNamedDeclaration> filterByReceiverAndParameterTypes(
+            final @NotNull JetNamedDeclaration decompiledDeclaration,
+            @NotNull Collection<JetNamedDeclaration> candidates
     ) {
-        final JetTypeReference decompiledReceiver = navigationStrategy.getReceiverType(decompiledDeclaration);
-
-        return ContainerUtil.filter(candidates, new Condition<Decl>() {
+        return ContainerUtil.filter(candidates, new Condition<JetNamedDeclaration>() {
             @Override
-            public boolean value(Decl candidate) {
-                if (decompiledReceiver != null) {
-                    JetTypeReference candidateReceiver = navigationStrategy.getReceiverType(candidate);
-                    assert candidateReceiver != null;
-                    if (!typesHaveSameShortName(decompiledReceiver, candidateReceiver)) {
-                        return false;
-                    }
-                }
-
-                return navigationStrategy.declarationsMatchByParameterTypes(candidate, decompiledDeclaration);
+            public boolean value(JetNamedDeclaration candidate) {
+                return receiverAndParametersShortTypesMatch(candidate, decompiledDeclaration);
             }
         });
     }
 
-    private static boolean receiversMatch(
-            @Nullable JetTypeReference receiverTypeRef,
-            @Nullable ReceiverParameterDescriptor receiverParameter
-    ) {
-        if (receiverTypeRef == null && receiverParameter == null) {
-            return true;
-        }
-        if (receiverTypeRef != null && receiverParameter != null) {
-            return receiverTypeRef.getText().equals(DescriptorRenderer.TEXT.renderType(receiverParameter.getType()));
-        }
-        return false;
-    }
-
-    private static boolean typeParametersMatch(
-            @NotNull JetTypeParameterListOwner typeParameterListOwner,
-            @NotNull List<TypeParameterDescriptor> typeParameterDescriptors
-    ) {
-        List<JetTypeParameter> decompiledParameters = typeParameterListOwner.getTypeParameters();
-        if (decompiledParameters.size() != typeParameterDescriptors.size()) {
-            return false;
-        }
-
-        Multimap<Name, String> decompiledParameterToBounds = Multimaps.newSetMultimap(
-                Maps.<Name, Collection<String>>newHashMap(), CommonSuppliers.<String>getHashSetSupplier());
-        for (JetTypeParameter parameter : decompiledParameters) {
-            JetTypeReference extendsBound = parameter.getExtendsBound();
-            if (extendsBound != null) {
-                decompiledParameterToBounds.put(parameter.getNameAsName(), extendsBound.getText());
-            }
-        }
-
-        for (JetTypeConstraint typeConstraint : typeParameterListOwner.getTypeConstraints()) {
-            JetSimpleNameExpression typeParameterName = typeConstraint.getSubjectTypeParameterName();
-            assert typeParameterName != null;
-
-            JetTypeReference bound = typeConstraint.getBoundTypeReference();
-            assert bound != null;
-
-            decompiledParameterToBounds.put(typeParameterName.getReferencedNameAsName(), bound.getText());
-        }
-
-        for (int i = 0; i < decompiledParameters.size(); i++) {
-            JetTypeParameter decompiledParameter = decompiledParameters.get(i);
-            TypeParameterDescriptor descriptor = typeParameterDescriptors.get(i);
-
-            Name name = decompiledParameter.getNameAsName();
-            assert name != null;
-            if (!name.equals(descriptor.getName())) {
-                return false;
-            }
-
-            Set<String> descriptorUpperBounds = Sets.newHashSet(ContainerUtil.map(
-                    descriptor.getUpperBounds(), new Function<JetType, String>() {
-                                                    @Override
-                                                    public String fun(JetType type) {
-                                                        return DescriptorRenderer.TEXT.renderType(type);
-                                                    }
-                                                }));
-
-            Set<String> decompiledUpperBounds = decompiledParameterToBounds.get(descriptor.getName()).isEmpty()
-                    ? Sets.newHashSet(DescriptorRenderer.TEXT.renderType(KotlinBuiltIns.getInstance().getDefaultBound()))
-                    : Sets.newHashSet(decompiledParameterToBounds.get(descriptor.getName()));
-            if (!descriptorUpperBounds.equals(decompiledUpperBounds)) {
-                return false;
-            }
-        }
-        return true;
+    @Nullable
+    public static JetNamedDeclaration getSourceProperty(@NotNull JetProperty decompiledProperty) {
+        return getSourcePropertyOrFunction(decompiledProperty);
     }
 
     @Nullable
-    public static JetNamedDeclaration getSourceProperty(final @NotNull JetProperty decompiledProperty) {
-        return getSourcePropertyOrFunction(decompiledProperty, new PropertyNavigationStrategy());
-    }
-
-    @Nullable
-    public static JetNamedDeclaration getSourceFunction(final @NotNull JetNamedFunction decompiledFunction) {
-        return getSourcePropertyOrFunction(decompiledFunction, new FunctionNavigationStrategy());
+    public static JetNamedDeclaration getSourceFunction(@NotNull JetNamedFunction decompiledFunction) {
+        return getSourcePropertyOrFunction(decompiledFunction);
     }
 
     @TestOnly
     static void setForceResolve(boolean forceResolve) {
         JetSourceNavigationHelper.forceResolve = forceResolve;
-    }
-
-    private interface NavigationStrategy<Decl extends JetNamedDeclaration, Descr extends CallableDescriptor> {
-        @NotNull
-        Class<Decl> getDeclarationClass();
-
-        boolean declarationsMatchByParameterCount(@NotNull Decl a, @NotNull Decl b);
-
-        boolean declarationsMatchByParameterTypes(@NotNull Decl a, @NotNull Decl b);
-
-        boolean declarationAndDescriptorMatchByParameterTypes(@NotNull Decl declaration, @NotNull Descr descriptor);
-
-        @Nullable JetTypeReference getReceiverType(@NotNull Decl declaration);
-
-        @NotNull
-        StringStubIndexExtension<Decl> getIndexForTopLevelMembers();
-    }
-
-    private static class FunctionNavigationStrategy implements NavigationStrategy<JetNamedFunction, FunctionDescriptor> {
-        @NotNull
-        @Override
-        public Class<JetNamedFunction> getDeclarationClass() {
-            return JetNamedFunction.class;
-        }
-
-        @Override
-        public boolean declarationsMatchByParameterCount(@NotNull JetNamedFunction a, @NotNull JetNamedFunction b) {
-            return a.getValueParameters().size() == b.getValueParameters().size();
-        }
-
-        @Override
-        public boolean declarationsMatchByParameterTypes(@NotNull JetNamedFunction a, @NotNull JetNamedFunction b) {
-            List<JetParameter> aParameters = a.getValueParameters();
-            List<JetParameter> bParameters = b.getValueParameters();
-            if (aParameters.size() != bParameters.size()) {
-                return false;
-            }
-            for (int i = 0; i < aParameters.size(); i++) {
-                JetTypeReference aType = aParameters.get(i).getTypeReference();
-                JetTypeReference bType = bParameters.get(i).getTypeReference();
-
-                assert aType != null;
-                assert bType != null;
-
-                if (!typesHaveSameShortName(aType, bType)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public boolean declarationAndDescriptorMatchByParameterTypes(
-                @NotNull JetNamedFunction declaration,
-                @NotNull FunctionDescriptor descriptor
-        ) {
-            List<JetParameter> declarationParameters = declaration.getValueParameters();
-            List<ValueParameterDescriptor> descriptorParameters = descriptor.getValueParameters();
-            if (descriptorParameters.size() != declarationParameters.size()) {
-                return false;
-            }
-
-            for (int i = 0; i < descriptorParameters.size(); i++) {
-                ValueParameterDescriptor descriptorParameter = descriptorParameters.get(i);
-                JetParameter declarationParameter = declarationParameters.get(i);
-                JetTypeReference typeReference = declarationParameter.getTypeReference();
-                if (typeReference == null) {
-                    return false;
-                }
-                JetModifierList modifierList = declarationParameter.getModifierList();
-                boolean varargInDeclaration = modifierList != null && modifierList.hasModifier(JetTokens.VARARG_KEYWORD);
-                boolean varargInDescriptor = descriptorParameter.getVarargElementType() != null;
-                if (varargInDeclaration != varargInDescriptor) {
-                    return false;
-                }
-                String declarationTypeText = typeReference.getText();
-
-                JetType typeToRender = varargInDeclaration ? descriptorParameter.getVarargElementType() : descriptorParameter.getType();
-                assert typeToRender != null;
-                String descriptorParameterText = DescriptorRenderer.TEXT.renderType(typeToRender);
-                if (!declarationTypeText.equals(descriptorParameterText)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        @Nullable
-        @Override
-        public JetTypeReference getReceiverType(@NotNull JetNamedFunction declaration) {
-            return declaration.getReceiverTypeRef();
-        }
-
-        @NotNull
-        @Override
-        public StringStubIndexExtension<JetNamedFunction> getIndexForTopLevelMembers() {
-            return JetTopLevelFunctionsFqnNameIndex.getInstance();
-        }
-    }
-
-    private static class PropertyNavigationStrategy implements NavigationStrategy<JetProperty, VariableDescriptor> {
-        @NotNull
-        @Override
-        public Class<JetProperty> getDeclarationClass() {
-            return JetProperty.class;
-        }
-
-        @Override
-        public boolean declarationsMatchByParameterCount(@NotNull JetProperty a, @NotNull JetProperty b) {
-            return true;
-        }
-
-        @Override
-        public boolean declarationsMatchByParameterTypes(@NotNull JetProperty a, @NotNull JetProperty b) {
-            return true;
-        }
-
-        @Override
-        public boolean declarationAndDescriptorMatchByParameterTypes(
-                @NotNull JetProperty declaration,
-                @NotNull VariableDescriptor descriptor
-        ) {
-            return true;
-        }
-
-        @Nullable
-        @Override
-        public JetTypeReference getReceiverType(@NotNull JetProperty declaration) {
-            return declaration.getReceiverTypeRef();
-        }
-
-        @NotNull
-        @Override
-        public StringStubIndexExtension<JetProperty> getIndexForTopLevelMembers() {
-            return JetTopLevelPropertiesFqnNameIndex.getInstance();
-        }
     }
 }

@@ -227,7 +227,7 @@
       <postStartupActivity implementation="org.jetbrains.jet.plugin.compiler.JetCompilerManager"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.OutdatedKotlinRuntimeNotification"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerUpdater"/>
-      <postStartupActivity implementation="org.jetbrains.jet.plugin.JetStandardLibraryInitializer"/>
+      <postStartupActivity implementation="org.jetbrains.jet.plugin.BuiltInsInitializer"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.highlighter.DeclarationHintSupport"/>
 
       <packaging.elementType implementation="org.jetbrains.jet.plugin.packaging.JsCompilerOutputElementType"/>

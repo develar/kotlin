@@ -23,10 +23,10 @@ import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 /**
- * This project component initializes JetStandardLibrary so that throwing a ProcessCanceledException while
+ * This project component initializes KotlinBuiltIns so that throwing a ProcessCanceledException while
  * loading PSI from declaration files is prevented.
  */
-public class JetStandardLibraryInitializer implements StartupActivity, DumbAware {
+public class BuiltInsInitializer implements StartupActivity, DumbAware {
     @Override
     public void runActivity(final Project project) {
         ProgressManager.getInstance().executeNonCancelableSection(new Runnable() {
