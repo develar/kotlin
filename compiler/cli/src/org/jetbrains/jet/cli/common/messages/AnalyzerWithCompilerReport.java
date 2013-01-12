@@ -17,6 +17,7 @@
 package org.jetbrains.jet.cli.common.messages;
 
 import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
@@ -140,12 +141,22 @@ public final class AnalyzerWithCompilerReport {
         }
     }
 
-    public static boolean reportDiagnostics(@NotNull BindingContext bindingContext, @NotNull MessageCollector messageCollector) {
+    public static boolean reportDiagnostics(
+            @NotNull BindingContext bindingContext,
+            @NotNull MessageCollector messageCollector,
+            @Nullable Condition<Diagnostic> diagnosticFilter
+    ) {
         boolean hasErrors = false;
         for (Diagnostic diagnostic : sortedDiagnostics(bindingContext.getDiagnostics())) {
-            hasErrors |= reportDiagnostic(diagnostic, messageCollector);
+            if (diagnosticFilter == null || diagnosticFilter.value(diagnostic)) {
+                hasErrors |= reportDiagnostic(diagnostic, messageCollector);
+            }
         }
         return hasErrors;
+    }
+
+    public static boolean reportDiagnostics(@NotNull BindingContext bindingContext, @NotNull MessageCollector messageCollector) {
+        return reportDiagnostics(bindingContext, messageCollector, null);
     }
 
     private void reportSyntaxErrors(@NotNull Collection<JetFile> files) {

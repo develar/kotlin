@@ -16,7 +16,6 @@
 
 package org.jetbrains.jet.lang.diagnostics;
 
-import com.google.common.collect.Lists;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
@@ -31,10 +30,7 @@ import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class DiagnosticUtils {
     @NotNull
@@ -159,7 +155,11 @@ public class DiagnosticUtils {
     }
 
     @NotNull
-    public static List<Diagnostic> sortedDiagnostics(@NotNull Collection<Diagnostic> diagnostics) {
+    public static Diagnostic[] sortedDiagnostics(@NotNull Collection<Diagnostic> diagnostics) {
+        if (diagnostics.isEmpty()) {
+            return new Diagnostic[] {};
+        }
+
         Comparator<Diagnostic> diagnosticComparator = new Comparator<Diagnostic>() {
             @Override
             public int compare(Diagnostic d1, Diagnostic d2) {
@@ -177,8 +177,9 @@ public class DiagnosticUtils {
                 return d1.getFactory().getName().compareTo(d2.getFactory().getName());
             }
         };
-        List<Diagnostic> result = Lists.newArrayList(diagnostics);
-        Collections.sort(result, diagnosticComparator);
+
+        Diagnostic[] result = diagnostics.toArray(new Diagnostic[diagnostics.size()]);
+        Arrays.sort(result, diagnosticComparator);
         return result;
     }
 

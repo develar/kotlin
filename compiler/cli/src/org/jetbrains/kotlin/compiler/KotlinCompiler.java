@@ -17,6 +17,7 @@
 package org.jetbrains.kotlin.compiler;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.StandardFileSystems;
@@ -34,6 +35,8 @@ import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.config.CompilerConfiguration;
+import org.jetbrains.jet.lang.diagnostics.Diagnostic;
+import org.jetbrains.jet.lang.diagnostics.Severity;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
@@ -54,6 +57,13 @@ import static org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport.r
  * you must care about synchronization and multithread issues (as IntelliJ IDEA JPS does)
  */
 public class KotlinCompiler {
+    private static final Condition<Diagnostic> DIAGNOSTIC_LIBRARY_FILTER = new Condition<Diagnostic>() {
+        @Override
+        public boolean value(Diagnostic diagnostic) {
+            return diagnostic.getSeverity().equals(Severity.ERROR);
+        }
+    };
+
     private final ModuleInfoProvider moduleInfoProvider;
     private final MessageCollector messageCollector;
     private final CompileContext compileContext;
@@ -166,11 +176,9 @@ public class KotlinCompiler {
         }
 
         ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies.first, dependencies.second);
-        AnalyzeExhaust exhaust = XAnalyzerFacade
-                .analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
+        AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
         exhaust.throwIfError();
-        // todo disable some Diagnostics for library code
-        boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector);
+        boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector, checkSyntax ? null : DIAGNOSTIC_LIBRARY_FILTER);
         hasErrors |= reportIncompleteHierarchies(exhaust, messageCollector);
         if (hasErrors) {
             return null;
@@ -195,7 +203,7 @@ public class KotlinCompiler {
                     if (isLibrary) {
                         moduleConfiguration = analyzeModule(name, dependency, false, Pair.create(Collections.<ModuleInfo>emptyList(),
                                                                                                  Collections.<ModuleInfo>emptySet()),
-                                                            isLibrary);
+                                                            false);
                         if (provided) {
                             providedDependencies.add(moduleConfiguration);
                         }
