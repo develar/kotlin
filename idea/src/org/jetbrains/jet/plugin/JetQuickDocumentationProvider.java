@@ -92,8 +92,7 @@ public class JetQuickDocumentationProvider extends AbstractDocumentationProvider
     private static boolean isKotlinDeclaration(DeclarationDescriptor descriptor, BindingContext bindingContext, Project project) {
         PsiElement declaration = BindingContextUtils.descriptorToDeclaration(bindingContext, descriptor);
         if (declaration == null) {
-            BuiltInsReferenceResolver libraryReferenceResolver = project
-                    .getComponent(BuiltInsReferenceResolver.class);
+            BuiltInsReferenceResolver libraryReferenceResolver = BuiltInsReferenceResolver.getInstance(project);
             Collection<PsiElement> elements = libraryReferenceResolver.resolveStandardLibrarySymbol(descriptor);
             return !elements.isEmpty();
         }
