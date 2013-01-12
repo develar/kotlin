@@ -43,6 +43,7 @@ import org.jetbrains.jet.lang.resolve.scopes.RedeclarationHandler;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScopeImpl;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
+import org.jetbrains.jet.plugin.codeInsight.DescriptorToDeclarationUtil;
 import org.jetbrains.jet.renderer.DescriptorRenderer;
 
 import java.net.URL;
@@ -202,7 +203,7 @@ public class BuiltInsReferenceResolver {
         descriptor = descriptor.getOriginal();
         descriptor = findCurrentDescriptor(descriptor);
         if (descriptor != null) {
-            return BindingContextUtils.descriptorToDeclarations(bindingContext, descriptor);
+            return DescriptorToDeclarationUtil.descriptorToDeclarations(bindingContext, descriptor);
         }
         return Collections.emptyList();
     }

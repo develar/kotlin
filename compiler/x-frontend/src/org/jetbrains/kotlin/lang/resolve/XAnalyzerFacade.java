@@ -60,7 +60,7 @@ public final class XAnalyzerFacade {
     }
 
     @NotNull
-    public static AnalyzeExhaust analyzeFiles(
+    private static AnalyzeExhaust analyzeFiles(
             ModuleInfo moduleConfiguration,
             @NotNull Collection<JetFile> files,
             @NotNull TopDownAnalysisParameters topDownAnalysisParameters,
@@ -68,9 +68,7 @@ public final class XAnalyzerFacade {
             boolean storeContextForBodiesResolve
 
     ) {
-        BindingTrace trace = moduleConfiguration.dependencies == null ?
-                             new ObservableBindingTrace(new BindingTraceContext()) :
-                             new DelegatingBindingTrace(moduleConfiguration.dependencies.get(0).bindingContext, "trace for analyzing library in js");
+        BindingTrace trace = new BindingTraceContext();
         InjectorForTopDownXAnalyzer
                 injector = new InjectorForTopDownXAnalyzer(moduleConfiguration.getProject(), topDownAnalysisParameters, trace, moduleConfiguration.getModuleDescriptor(),
                                                                                        moduleConfiguration);
