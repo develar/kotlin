@@ -40,6 +40,8 @@ import java.util.*;
 import static org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor.NO_RECEIVER_PARAMETER;
 
 public class DescriptorUtils {
+    private DescriptorUtils() {
+    }
 
     @NotNull
     public static <D extends CallableDescriptor> D substituteBounds(@NotNull final D functionDescriptor) {
@@ -429,5 +431,12 @@ public class DescriptorUtils {
             parameterTypes.add(parameter.getType());
         }
         return parameterTypes;
+    }
+
+    @NotNull
+    public static ModuleDescriptor getModuleDescriptor(DeclarationDescriptor parent) {
+        ModuleDescriptor result = getParentOfType(parent, ModuleDescriptor.class);
+        assert result != null;
+        return result;
     }
 }

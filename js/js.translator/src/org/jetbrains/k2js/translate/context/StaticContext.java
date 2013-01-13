@@ -229,8 +229,7 @@ public final class StaticContext {
             return Namer.KOTLIN_OBJECT_NAME_REF;
         }
 
-        ModuleDescriptor module = DescriptorUtils.getParentOfType(namespace, ModuleDescriptor.class);
-        assert module != null;
+        ModuleDescriptor module = DescriptorUtils.getModuleDescriptor(namespace);
         if (module.getName().equals(ModuleInfo.STUBS_MODULE_NAME) || AnnotationsUtils.isNativeObject(descriptor)) {
             return null;
         }
@@ -259,8 +258,7 @@ public final class StaticContext {
             qualifier = ref;
         }
 
-        ModuleDescriptor moduleDescriptor = DescriptorUtils.getParentOfType(parent, ModuleDescriptor.class);
-        assert moduleDescriptor != null;
+        ModuleDescriptor moduleDescriptor = DescriptorUtils.getModuleDescriptor(parent);
         if (moduleDescriptor == configuration.getModule().getModuleDescriptor()) {
             qualifier.setQualifier(new JsNameRef(Namer.getRootNamespaceName()));
         }

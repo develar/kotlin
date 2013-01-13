@@ -44,17 +44,9 @@ public final class DescriptorToDeclarationUtil {
     @Nullable
     private static BindingContext getBindingContextByDeclaration(AnalyzeExhaust analyzeExhaust, DeclarationDescriptor declarationDescriptor) {
         if (analyzeExhaust.getModuleConfiguration() instanceof ModuleInfo) {
-            ModuleDescriptor moduleDescriptor = DescriptorUtils.getParentOfType(declarationDescriptor, ModuleDescriptor.class);
-            if (moduleDescriptor == null) {
-                return null;
-            }
-
-            for (ModuleInfo moduleInfo : ((ModuleInfo) analyzeExhaust.getModuleConfiguration()).getDependencies()) {
-                if (moduleInfo.getModuleDescriptor().equals(moduleDescriptor)) {
-                    return moduleInfo.bindingContext;
-                }
-            }
-            return null;
+            ModuleDescriptor moduleDescriptor = DescriptorUtils.getModuleDescriptor(declarationDescriptor);
+            ModuleInfo dependency = ((ModuleInfo) analyzeExhaust.getModuleConfiguration()).findDependency(moduleDescriptor);
+            return dependency == null ? null : dependency.getBindingContext();
         }
         else {
             return analyzeExhaust.getBindingContext();

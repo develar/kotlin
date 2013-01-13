@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
@@ -76,8 +75,7 @@ public final class AnnotationsUtils {
     }
 
     public static boolean isNativeObjectByModule(@NotNull DeclarationDescriptor descriptor) {
-        ModuleDescriptor moduleDescriptor = DescriptorUtils.getParentOfType(descriptor, ModuleDescriptor.class);
-        return moduleDescriptor != null && moduleDescriptor.getName().equals(ModuleInfo.STUBS_MODULE_NAME);
+        return DescriptorUtils.getModuleDescriptor(descriptor).getName().equals(ModuleInfo.STUBS_MODULE_NAME);
     }
 
     public static boolean isEnumerable(@NotNull DeclarationDescriptor descriptor) {
