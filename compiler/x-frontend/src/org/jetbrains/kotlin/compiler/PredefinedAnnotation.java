@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.translate.utils;
+package org.jetbrains.kotlin.compiler;
 
 import org.jetbrains.annotations.NotNull;
 

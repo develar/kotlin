@@ -253,7 +253,7 @@ public final class JsAstUtils {
             boolean writable,
             @NotNull JsExpression value
     ) {
-        return createDataDescriptor(value, writable, AnnotationsUtils.isEnumerable(descriptor));
+        return createDataDescriptor(value, writable, JsAnnotations.isEnumerable(descriptor));
     }
 
     @NotNull

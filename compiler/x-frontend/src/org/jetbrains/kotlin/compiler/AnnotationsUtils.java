@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package org.jetbrains.k2js.translate.utils;
+package org.jetbrains.kotlin.compiler;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
-import org.jetbrains.kotlin.compiler.ModuleInfo;
-
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getContainingClass;
 
 public final class AnnotationsUtils {
-
-    private static final String ENUMERABLE = "js.enumerable";
-
     private AnnotationsUtils() {
     }
 
@@ -52,7 +45,7 @@ public final class AnnotationsUtils {
     }
 
     @Nullable
-    private static AnnotationDescriptor getAnnotationByName(@NotNull DeclarationDescriptor descriptor, @NotNull String fqn) {
+    public static AnnotationDescriptor getAnnotationByName(@NotNull DeclarationDescriptor descriptor, @NotNull String fqn) {
         for (AnnotationDescriptor annotationDescriptor : descriptor.getAnnotations()) {
             if (getAnnotationClassFQName(annotationDescriptor).equals(fqn)) {
                 return annotationDescriptor;
@@ -81,16 +74,6 @@ public final class AnnotationsUtils {
         return DescriptorUtils.getModuleDescriptor(descriptor).getName().equals(ModuleInfo.STUBS_MODULE_NAME);
     }
 
-    public static boolean isEnumerable(@NotNull DeclarationDescriptor descriptor) {
-        if (getAnnotationByName(descriptor, ENUMERABLE) != null) {
-            return true;
-        }
-        ClassDescriptor containingClass = getContainingClass(descriptor);
-        return containingClass != null &&
-               ((containingClass.getKind().equals(ClassKind.OBJECT) && containingClass.getName().isSpecial()) ||
-                getAnnotationByName(containingClass, ENUMERABLE) != null);
-    }
-
     public static boolean isLibraryObject(@NotNull DeclarationDescriptor descriptor) {
         return hasAnnotationOrInsideAnnotatedClass(descriptor, PredefinedAnnotation.LIBRARY);
     }
@@ -115,7 +98,7 @@ public final class AnnotationsUtils {
         if (annotationDescriptor != null) {
             return annotationDescriptor;
         }
-        ClassDescriptor containingClass = getContainingClass(descriptor);
+        ClassDescriptor containingClass = DescriptorUtils.getContainingClass(descriptor);
         return containingClass == null ? null : getAnnotationByName(containingClass, fqn);
     }
 }

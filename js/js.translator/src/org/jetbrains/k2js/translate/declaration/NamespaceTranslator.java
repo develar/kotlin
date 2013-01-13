@@ -33,7 +33,7 @@ import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
-import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
+import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.List;

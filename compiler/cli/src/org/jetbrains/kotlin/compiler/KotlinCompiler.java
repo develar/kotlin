@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.SmartList;
 import gnu.trove.THashMap;
@@ -35,7 +36,10 @@ import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.config.CompilerConfiguration;
+import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.diagnostics.Diagnostic;
+import org.jetbrains.jet.lang.diagnostics.DiagnosticWithParameters1;
+import org.jetbrains.jet.lang.diagnostics.Errors;
 import org.jetbrains.jet.lang.diagnostics.Severity;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
@@ -61,6 +65,19 @@ public class KotlinCompiler {
         @Override
         public boolean value(Diagnostic diagnostic) {
             return diagnostic.getSeverity().equals(Severity.ERROR);
+        }
+    };
+
+    private static final Condition<Diagnostic> DIAGNOSTIC_CODE_FILTER = new Condition<Diagnostic>() {
+        @Override
+        public boolean value(Diagnostic diagnostic) {
+            if (diagnostic.getFactory() == Errors.UNUSED_PARAMETER) {
+                @SuppressWarnings("unchecked")
+                ValueParameterDescriptor parameterDescriptor =
+                        ((DiagnosticWithParameters1<PsiElement, ValueParameterDescriptor>) diagnostic).getA();
+                return !AnnotationsUtils.isNativeByAnnotation(parameterDescriptor.getContainingDeclaration());
+            }
+            return true;
         }
     };
 
@@ -178,7 +195,7 @@ public class KotlinCompiler {
         ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies.first, dependencies.second);
         AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
         exhaust.throwIfError();
-        boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector, checkSyntax ? null : DIAGNOSTIC_LIBRARY_FILTER);
+        boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector, checkSyntax ? DIAGNOSTIC_CODE_FILTER : DIAGNOSTIC_LIBRARY_FILTER);
         hasErrors |= reportIncompleteHierarchies(exhaust, messageCollector);
         if (hasErrors) {
             return null;

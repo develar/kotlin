@@ -439,4 +439,21 @@ public class DescriptorUtils {
         assert result != null;
         return result;
     }
+
+    @Nullable
+    public static ClassDescriptor getContainingClass(@NotNull DeclarationDescriptor descriptor) {
+        DeclarationDescriptor containing = descriptor;
+        while ((containing = containing.getContainingDeclaration()) != null) {
+            if (containing instanceof ClassDescriptor) {
+                ClassDescriptor containingClass = (ClassDescriptor) containing;
+                if (containingClass.getKind() != ClassKind.CLASS_OBJECT) {
+                    return containingClass;
+                }
+            }
+            else if (containing instanceof NamespaceDescriptor) {
+                return null;
+            }
+        }
+        return null;
+    }
 }

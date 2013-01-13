@@ -35,14 +35,14 @@ import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
-import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
+import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
-import org.jetbrains.k2js.translate.utils.PredefinedAnnotation;
+import org.jetbrains.kotlin.compiler.PredefinedAnnotation;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import java.util.Map;
 
-import static org.jetbrains.k2js.translate.utils.AnnotationsUtils.*;
+import static org.jetbrains.kotlin.compiler.AnnotationsUtils.*;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 
 /**

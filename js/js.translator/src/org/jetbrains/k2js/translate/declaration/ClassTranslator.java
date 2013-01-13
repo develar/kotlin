@@ -28,13 +28,14 @@ import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
 import org.jetbrains.jet.lang.psi.JetParameter;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.initializer.ClassInitializerTranslator;
-import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
+import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
@@ -47,7 +48,6 @@ import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isNotAny;
 import static org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator.createPlace;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForConstructorParameter;
-import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getContainingClass;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 
 /**
@@ -104,7 +104,7 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     private JsExpression translateObjectLiteralExpression() {
-        ClassDescriptor containingClass = getContainingClass(descriptor);
+        ClassDescriptor containingClass = DescriptorUtils.getContainingClass(descriptor);
         if (containingClass == null) {
             return translate(context());
         }

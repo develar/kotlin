@@ -41,7 +41,7 @@ import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPatte
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.NamePredicate;
 import org.jetbrains.k2js.translate.reference.CallTranslator;
-import org.jetbrains.k2js.translate.utils.AnnotationsUtils;
+import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;

@@ -35,8 +35,8 @@ import org.jetbrains.k2js.translate.utils.TranslationUtils;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.reference.CallParametersResolver.resolveCallParameters;
-import static org.jetbrains.k2js.translate.utils.AnnotationsUtils.isLibraryObject;
-import static org.jetbrains.k2js.translate.utils.AnnotationsUtils.isNativeObject;
+import static org.jetbrains.kotlin.compiler.AnnotationsUtils.isLibraryObject;
+import static org.jetbrains.kotlin.compiler.AnnotationsUtils.isNativeObject;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
