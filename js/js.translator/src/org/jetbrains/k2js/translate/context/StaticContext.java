@@ -26,6 +26,9 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
+import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
+import org.jetbrains.jet.lang.types.lang.PrimitiveType;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
@@ -57,9 +60,6 @@ public final class StaticContext {
     private final Intrinsics intrinsics;
 
     @NotNull
-    private final StandardClasses standardClasses;
-
-    @NotNull
     private LiteralFunctionTranslator literalFunctionTranslator;
     @NotNull
     private ClassDeclarationTranslator classDeclarationTranslator;
@@ -75,7 +75,6 @@ public final class StaticContext {
         this.bindingContext = bindingContext;
         this.namer = Namer.newInstance(program.getRootScope());
         this.intrinsics = new Intrinsics();
-        this.standardClasses = StandardClasses.bindImplementations();
         this.configuration = configuration;
     }
 
@@ -160,11 +159,6 @@ public final class StaticContext {
             return getNameRefForDescriptor(((ConstructorDescriptor) descriptor).getContainingDeclaration(), context);
         }
 
-        String standardObjectName = standardClasses.getStandardObjectName(descriptor);
-        if (standardObjectName != null) {
-            return new JsNameRef(standardObjectName);
-        }
-
         for (PredefinedAnnotation annotation : PredefinedAnnotation.values()) {
             AnnotationDescriptor annotationDescriptor = getAnnotationOrInsideAnnotatedClass(descriptor, annotation.getFQName());
             if (annotationDescriptor == null) {
@@ -204,7 +198,8 @@ public final class StaticContext {
             return new JsNameRef(JsAstUtils.createNameForProperty((PropertyDescriptor) descriptor, isEcma5()));
         }
         else if (descriptor instanceof ClassDescriptor) {
-            return new JsNameRef(descriptor.getName().getName());
+            String standardName = getStandardObjectName((ClassDescriptor) descriptor);
+            return new JsNameRef(standardName == null ? descriptor.getName().getName() : standardName);
         }
         else if (descriptor instanceof NamespaceDescriptor) {
             return new JsNameRef(Namer.generateNamespaceName(descriptor));
@@ -212,6 +207,22 @@ public final class StaticContext {
 
         assert context != null;
         return new JsNameRef(getNameForDescriptor((VariableDescriptor) descriptor, context));
+    }
+
+    @Nullable
+    public static String getStandardObjectName(@NotNull ClassDescriptor descriptor) {
+        DeclarationDescriptor containingDeclaration = descriptor.getContainingDeclaration();
+        if (containingDeclaration instanceof NamespaceDescriptor &&
+            DescriptorUtils.getModuleDescriptor(containingDeclaration) == KotlinBuiltIns.getInstance().getBuiltInsModule()) {
+            Name name = descriptor.getName();
+            for (PrimitiveType type : PrimitiveType.NUMBER_TYPES) {
+                if (type.getRangeTypeName().equals(name)) {
+                    return "NumberRange";
+                }
+            }
+            return name.getName();
+        }
+        return null;
     }
 
     @Nullable
@@ -225,25 +236,29 @@ public final class StaticContext {
             return null;
         }
 
-        if (isLibraryObject(descriptor) || standardClasses.isStandardObject(descriptor)) {
+        if (isLibraryObject(descriptor)) {
             return Namer.KOTLIN_OBJECT_NAME_REF;
         }
 
         ModuleDescriptor module = DescriptorUtils.getModuleDescriptor(namespace);
+        if (module == KotlinBuiltIns.getInstance().getBuiltInsModule()) {
+            return Namer.KOTLIN_OBJECT_NAME_REF;
+        }
+
         if (module.getName().equals(ModuleInfo.STUBS_MODULE_NAME) || AnnotationsUtils.isNativeObject(descriptor)) {
             return null;
         }
 
         JsNameRef qualifier = qualifierMap.get(namespace);
         if (qualifier == null) {
-            qualifier = resolveQualifier((NamespaceDescriptor) namespace);
+            qualifier = resolveQualifier((NamespaceDescriptor) namespace, module);
             qualifierMap.put(namespace, qualifier);
         }
         return qualifier;
     }
 
     @NotNull
-    private JsNameRef resolveQualifier(NamespaceDescriptor namespace) {
+    private JsNameRef resolveQualifier(NamespaceDescriptor namespace, ModuleDescriptor moduleDescriptor) {
         JsNameRef result = new JsNameRef(Namer.generateNamespaceName(namespace));
         if (DescriptorUtils.isRootNamespace(namespace)) {
             return result;
@@ -258,7 +273,6 @@ public final class StaticContext {
             qualifier = ref;
         }
 
-        ModuleDescriptor moduleDescriptor = DescriptorUtils.getModuleDescriptor(parent);
         if (moduleDescriptor == configuration.getModule().getModuleDescriptor()) {
             qualifier.setQualifier(new JsNameRef(Namer.getRootNamespaceName()));
         }

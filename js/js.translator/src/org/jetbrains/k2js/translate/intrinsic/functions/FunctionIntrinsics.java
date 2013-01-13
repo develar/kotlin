@@ -34,7 +34,7 @@ import java.util.Map;
 public final class FunctionIntrinsics {
     public static final String ANY_MEMBER = "";
 
-    // member name -> package name predicate : intrinsic
+    // member name -> descriptor name predicate : intrinsic
     private static final MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics = MultiMap.createSmartList();
     private static final Collection<Pair<DescriptorPredicate, FunctionIntrinsic>> anyIntrinsics;
 
