@@ -159,7 +159,7 @@ public class TranslationContext {
     }
 
     @Nullable
-    public JsNameRef getQualifierForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+    public JsExpression getQualifierForDescriptor(@NotNull DeclarationDescriptor descriptor) {
         return staticContext.getQualifierForDescriptor(descriptor);
     }
 

@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.google.dart.compiler.backend.js.ast.JsProgram;
 import gnu.trove.THashMap;
@@ -66,7 +67,7 @@ public final class StaticContext {
 
     private final OverloadedMemberNameGenerator overloadedMemberNameGenerator = new OverloadedMemberNameGenerator();
     private final Map<VariableDescriptor, String> nameMap = new THashMap<VariableDescriptor, String>();
-    private final Map<DeclarationDescriptor, JsNameRef> qualifierMap = new THashMap<DeclarationDescriptor, JsNameRef>();
+    private final Map<DeclarationDescriptor, JsExpression> qualifierMap = new THashMap<DeclarationDescriptor, JsExpression>();
 
     private final Config configuration;
 
@@ -156,7 +157,7 @@ public final class StaticContext {
     @NotNull
     public JsNameRef getNameRefForDescriptor(@NotNull DeclarationDescriptor descriptor, @Nullable TranslationContext context) {
         if (descriptor instanceof ConstructorDescriptor) {
-            return getNameRefForDescriptor(((ConstructorDescriptor) descriptor).getContainingDeclaration(), context);
+            descriptor = ((ConstructorDescriptor) descriptor).getContainingDeclaration();
         }
 
         for (PredefinedAnnotation annotation : PredefinedAnnotation.values()) {
@@ -226,7 +227,7 @@ public final class StaticContext {
     }
 
     @Nullable
-    public JsNameRef getQualifierForDescriptor(@NotNull DeclarationDescriptor descriptor) {
+    public JsExpression getQualifierForDescriptor(@NotNull DeclarationDescriptor descriptor) {
         if (descriptor instanceof ConstructorDescriptor) {
             descriptor = ((ConstructorDescriptor) descriptor).getContainingDeclaration();
         }
@@ -245,43 +246,34 @@ public final class StaticContext {
             return Namer.KOTLIN_OBJECT_NAME_REF;
         }
 
-        if (module.getName().equals(ModuleInfo.STUBS_MODULE_NAME) || AnnotationsUtils.isNativeObject(descriptor)) {
+        if (module.getName().equals(ModuleInfo.STUBS_MODULE_NAME) || AnnotationsUtils.isNativeByAnnotation(descriptor)) {
             return null;
         }
-
-        JsNameRef qualifier = qualifierMap.get(namespace);
-        if (qualifier == null) {
-            qualifier = resolveQualifier((NamespaceDescriptor) namespace, module);
-            qualifierMap.put(namespace, qualifier);
-        }
-        return qualifier;
+        return getPackageQualifier((NamespaceDescriptor) namespace, module);
     }
 
     @NotNull
-    private JsNameRef resolveQualifier(NamespaceDescriptor namespace, ModuleDescriptor moduleDescriptor) {
-        JsNameRef result = new JsNameRef(Namer.generateNamespaceName(namespace));
-        if (DescriptorUtils.isRootNamespace(namespace)) {
-            return result;
-        }
-
-        JsNameRef qualifier = result;
-        DeclarationDescriptor parent = namespace;
-        while ((parent = parent.getContainingDeclaration()) instanceof NamespaceDescriptor &&
-               !DescriptorUtils.isRootNamespace((NamespaceDescriptor) parent)) {
-            JsNameRef ref = new JsNameRef(parent.getName().getName());
-            qualifier.setQualifier(ref);
-            qualifier = ref;
-        }
-
-        if (moduleDescriptor == configuration.getModule().getModuleDescriptor()) {
-            qualifier.setQualifier(new JsNameRef(Namer.getRootNamespaceName()));
-        }
-        else {
-            ModuleInfo dependency = configuration.getModule().findDependency(moduleDescriptor);
-            assert dependency != null;
-            if (!configuration.getModule().isDependencyProvided(dependency)) {
-                qualifier.setQualifier(new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(dependency.getName())));
+    private JsExpression getPackageQualifier(NamespaceDescriptor namespace, ModuleDescriptor moduleDescriptor) {
+        JsExpression result = qualifierMap.get(namespace);
+        if (result == null) {
+            if (DescriptorUtils.isRootNamespace(namespace)) {
+                if (moduleDescriptor == configuration.getModule().getModuleDescriptor()) {
+                    result = Namer.ROOT_PACKAGE_NAME_REF;
+                }
+                else {
+                    ModuleInfo dependency = configuration.getModule().findDependency(moduleDescriptor);
+                    assert dependency != null;
+                    if (!configuration.getModule().isDependencyProvided(dependency)) {
+                        result = new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(dependency.getName()));
+                    }
+                }
             }
+            else {
+                result = new JsNameRef(namespace.getName().getName(), getPackageQualifier(
+                        (NamespaceDescriptor) namespace.getContainingDeclaration(), moduleDescriptor));
+            }
+            //noinspection ConstantConditions
+            qualifierMap.put(namespace, result);
         }
         return result;
     }

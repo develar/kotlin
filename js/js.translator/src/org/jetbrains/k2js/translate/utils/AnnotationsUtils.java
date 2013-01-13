@@ -70,8 +70,11 @@ public final class AnnotationsUtils {
     }
 
     public static boolean isNativeObject(@NotNull DeclarationDescriptor descriptor) {
-        return isNativeObjectByModule(descriptor) ||
-               hasAnnotationOrInsideAnnotatedClass(descriptor, PredefinedAnnotation.NATIVE);
+        return isNativeObjectByModule(descriptor) || isNativeByAnnotation(descriptor);
+    }
+
+    public static boolean isNativeByAnnotation(DeclarationDescriptor descriptor) {
+        return hasAnnotationOrInsideAnnotatedClass(descriptor, PredefinedAnnotation.NATIVE);
     }
 
     public static boolean isNativeObjectByModule(@NotNull DeclarationDescriptor descriptor) {

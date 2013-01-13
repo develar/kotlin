@@ -46,6 +46,7 @@ public final class Namer {
     private static final String CLASSES_OBJECT_NAME = "_c";
     public static final JsNameRef THROW_NPE_FUN_NAME_REF = new JsNameRef("throwNPE", KOTLIN_OBJECT_NAME_REF);
     public static final JsNameRef NEW_EXCEPTION_FUN_NAME_REF = new JsNameRef("newException", KOTLIN_OBJECT_NAME_REF);
+    public static final JsNameRef ROOT_PACKAGE_NAME_REF = new JsNameRef(ROOT_NAMESPACE);
 
     @NotNull
     public static String getReceiverParameterName() {
