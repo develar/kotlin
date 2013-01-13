@@ -25,11 +25,16 @@ public enum EcmaVersion {
 
     @NotNull
     public static EcmaVersion fromString(@Nullable String target) {
-        return StringUtil.compareVersionNumbers(target, "v5") >= 0 ? v5 : v3;
+        return StringUtil.compareVersionNumbers(target, "5") >= 0 ? v5 : v3;
     }
 
     @NotNull
     public static EcmaVersion defaultVersion() {
         return v3;
+    }
+
+    @Override
+    public String toString() {
+        return name().substring(1);
     }
 }

@@ -36,8 +36,7 @@ public class ToJsSubCompiler extends SubCompiler {
     public void compile(CompilerConfiguration configuration, ModuleInfo moduleInfo, List<JetFile> files) throws IOException {
         MainCallParameters mainCallParameters = createMainCallParameters(configuration.get(JsCompilerConfigurationKeys.MAIN));
 
-        String target = configuration.get(JsCompilerConfigurationKeys.TARGET);
-        EcmaVersion ecmaVersion = target == null ? EcmaVersion.defaultVersion() : EcmaVersion.valueOf('v' + target);
+        EcmaVersion ecmaVersion = EcmaVersion.fromString(configuration.get(JsCompilerConfigurationKeys.TARGET));
 
         String outputFile = configuration.get(JsCompilerConfigurationKeys.OUTPUT_FILE);
         if (outputFile == null) {

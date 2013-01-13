@@ -127,7 +127,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         }
 
         configuration.put(JsCompilerConfigurationKeys.SOURCEMAP, arguments.sourcemap);
-        configuration.put(JsCompilerConfigurationKeys.TARGET, arguments.target.charAt(0) == 'v' ? arguments.target.substring(1) : arguments.target);
+        configuration.put(JsCompilerConfigurationKeys.TARGET, arguments.target);
         configuration.put(JsCompilerConfigurationKeys.OUTPUT_FILE, outputFile);
         configuration.put(JsCompilerConfigurationKeys.MAIN, arguments.main);
         try {
