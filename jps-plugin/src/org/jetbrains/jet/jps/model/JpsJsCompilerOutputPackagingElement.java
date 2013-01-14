@@ -12,7 +12,6 @@ public class JpsJsCompilerOutputPackagingElement extends JpsCompositeElementBase
     private static final JpsElementChildRole<JpsModuleReference> MODULE_REFERENCE_CHILD_ROLE =
             JpsElementChildRoleBase.create("module reference");
 
-
     public JpsJsCompilerOutputPackagingElement(JpsModuleReference moduleReference) {
         myContainer.setChild(MODULE_REFERENCE_CHILD_ROLE, moduleReference);
         // todo we need Nik review

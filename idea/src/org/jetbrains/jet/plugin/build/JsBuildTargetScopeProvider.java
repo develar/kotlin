@@ -65,7 +65,7 @@ class JsBuildTargetScopeProvider extends BuildTargetScopeProvider {
             @Override
             public boolean execute(Module module) {
                 builder.addTargetId(module.getName());
-                return false;
+                return true;
             }
         });
         return Collections.singletonList(builder.build());
