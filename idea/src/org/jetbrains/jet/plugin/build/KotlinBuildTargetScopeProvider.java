@@ -27,7 +27,7 @@ import java.util.List;
 
 import static org.jetbrains.jps.api.CmdlineRemoteProto.Message.ControllerMessage.ParametersMessage.TargetTypeBuildScope;
 
-class JsBuildTargetScopeProvider extends BuildTargetScopeProvider {
+class KotlinBuildTargetScopeProvider extends BuildTargetScopeProvider {
     @NotNull
     @Override
     public List<CmdlineRemoteProto.Message.ControllerMessage.ParametersMessage.TargetTypeBuildScope> getBuildTargetScopes(
