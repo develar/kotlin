@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -31,48 +32,53 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
     @Override
     public boolean processDependencies(String moduleName, DependenciesProcessor processor) {
         JpsModule module = getModule(moduleName);
-        return processModuleDependencies(processor, module, new THashSet<JpsDependencyElement>(), true);
+        return processModuleDependencies(processor, module);
     }
 
-    private static boolean processModuleDependencies(
-            DependenciesProcessor consumer,
-            JpsModule dependentModule,
-            Set<JpsDependencyElement> processed,
-            boolean isDirectDependency
-    ) {
-        for (JpsDependencyElement dependency : dependentModule.getDependenciesList().getDependencies()) {
-            boolean isModule = dependency instanceof JpsModuleDependency;
-            if (!(isModule || dependency instanceof JpsLibraryDependency) || !processed.add(dependency)) {
-                continue;
-            }
+    private static boolean processModuleDependencies(DependenciesProcessor consumer, JpsModule dependentModule) {
+        Set<JpsDependencyElement> processed = new THashSet<JpsDependencyElement>();
+        LinkedList<JpsModule> queue = new LinkedList<JpsModule>();
+        boolean isDirectDependency = true;
+        queue.add(dependentModule);
+        do {
+            for (JpsDependencyElement dependency : queue.removeFirst().getDependenciesList().getDependencies()) {
+                boolean isModule = dependency instanceof JpsModuleDependency;
+                if (!(isModule || dependency instanceof JpsLibraryDependency) || !processed.add(dependency)) {
+                    continue;
+                }
 
-            JpsJavaDependencyExtension extension = JpsJavaExtensionService.getInstance().getDependencyExtension(dependency);
-            if (extension == null ||
-                !extension.getScope().isIncludedIn(JpsJavaClasspathKind.PRODUCTION_COMPILE) ||
-                !(isDirectDependency || extension.isExported())) {
-                continue;
-            }
+                JpsJavaDependencyExtension extension = JpsJavaExtensionService.getInstance().getDependencyExtension(dependency);
+                if (extension == null ||
+                    !extension.getScope().isIncludedIn(JpsJavaClasspathKind.PRODUCTION_COMPILE) ||
+                    !(isDirectDependency || extension.isExported())) {
+                    continue;
+                }
 
-            if (isModule) {
-                JpsModule module = ((JpsModuleDependency) dependency).getModule();
-                if (module != null &&
-                    (!consumer.process(module.getName(), module, false, extension.getScope().equals(JpsJavaDependencyScope.PROVIDED)) ||
-                     !processModuleDependencies(consumer, module, processed, false))) {
-                    return false;
+                if (isModule) {
+                    JpsModule module = ((JpsModuleDependency) dependency).getModule();
+                    if (module != null) {
+                        if (consumer.process(module.getName(), module, false, extension.getScope().equals(JpsJavaDependencyScope.PROVIDED))) {
+                            queue.add(module);
+                        }
+                        else {
+                            return false;
+                        }
+                    }
+                }
+                else {
+                    JpsLibrary library = ((JpsLibraryDependency) dependency).getLibrary();
+                    if (library != null &&
+                        isKotlinLibrary(library) &&
+                        !consumer.process(library.getName(), library, true,
+                                          library.getName().equals(JsExternalizationConstants.JS_LIBRARY_NAME) ||
+                                          extension.getScope().equals(JpsJavaDependencyScope.PROVIDED))) {
+                        return false;
+                    }
                 }
             }
-            else {
-                JpsLibrary library = ((JpsLibraryDependency) dependency).getLibrary();
-                if (library != null &&
-                    isKotlinLibrary(library) &&
-                    !consumer.process(library.getName(), library, true,
-                                      library.getName().equals(JsExternalizationConstants.JS_LIBRARY_NAME) ||
-                                      extension.getScope().equals(JpsJavaDependencyScope.PROVIDED))) {
-                    return false;
-                }
-            }
+            isDirectDependency = false;
         }
-
+        while (!queue.isEmpty());
         return true;
     }
 
