@@ -165,4 +165,13 @@ public class ModuleInfo implements ModuleConfiguration {
         }
         return null;
     }
+
+    @Nullable
+    public BindingContext findBindingContext(@NotNull ModuleDescriptor moduleDescriptor) {
+        if (this.moduleDescriptor == moduleDescriptor) {
+            return bindingContext;
+        }
+        ModuleInfo dependency = findDependency(moduleDescriptor);
+        return dependency == null ? null : dependency.getBindingContext();
+    }
 }

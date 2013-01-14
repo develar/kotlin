@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.psi.PsiElement;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +27,10 @@ import org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.psi.JetDeclarationWithBody;
 import org.jetbrains.jet.lang.psi.JetExpression;
+import org.jetbrains.jet.lang.psi.JetParameter;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.BindingContextUtils;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.k2js.translate.context.AliasingContext;
@@ -40,7 +45,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getParameterForDescriptor;
+import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.equality;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getDeclarationDescriptorForReceiver;
@@ -107,17 +112,28 @@ public final class FunctionTranslator {
 
         for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
             if (valueParameter.hasDefaultValue()) {
-                // todo check "inherits by overriding a parameter in an overridden function _in another module_"
                 ValueParameterDescriptor declarator = valueParameter;
+                boolean maybeAlien = false;
                 if (!valueParameter.declaresDefaultValue()) {
                     for (ValueParameterDescriptor parameterDescriptor : valueParameter.getOverriddenDescriptors()) {
                         if (parameterDescriptor.declaresDefaultValue()) {
                             declarator = parameterDescriptor;
+                            maybeAlien = true;
                             break;
                         }
                     }
                 }
-                JetExpression parameter = getParameterForDescriptor(context.bindingContext(), declarator).getDefaultValue();
+
+                BindingContext bindingContext;
+                if (maybeAlien) {
+                    bindingContext = context.getModule().findBindingContext(DescriptorUtils.getModuleDescriptor(declarator));
+                    assert bindingContext != null;
+                }
+                else {
+                    bindingContext = context.bindingContext();
+                }
+
+                JetExpression parameter = getParameterForDescriptor(bindingContext, declarator).getDefaultValue();
                 JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
                 assert parameter != null;
                 statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
@@ -131,6 +147,15 @@ public final class FunctionTranslator {
         else {
             statements.add(JsAstUtils.convertToStatement(node));
         }
+    }
+
+    @NotNull
+    private static JetParameter getParameterForDescriptor(@NotNull BindingContext context,
+            @NotNull ValueParameterDescriptor descriptor) {
+        PsiElement result = BindingContextUtils.descriptorToDeclaration(context, descriptor);
+        assert result instanceof JetParameter :
+                message(context, descriptor, "ValueParameterDescriptor should have corresponding JetParameter");
+        return (JetParameter) result;
     }
 
     @NotNull

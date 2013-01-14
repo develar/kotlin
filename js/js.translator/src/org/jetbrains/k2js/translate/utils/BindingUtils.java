@@ -80,15 +80,6 @@ public final class BindingUtils {
         return (JetFunction) result;
     }
 
-    @NotNull
-    public static JetParameter getParameterForDescriptor(@NotNull BindingContext context,
-            @NotNull ValueParameterDescriptor descriptor) {
-        PsiElement result = BindingContextUtils.descriptorToDeclaration(context, descriptor);
-        assert result instanceof JetParameter :
-                message(context, descriptor, "ValueParameterDescriptor should have corresponding JetParameter");
-        return (JetParameter) result;
-    }
-
     public static boolean isStatement(@NotNull BindingContext context, @NotNull JetExpression expression) {
         return BindingContextUtils.getNotNull(context, BindingContext.STATEMENT, expression);
     }
@@ -200,13 +191,6 @@ public final class BindingUtils {
                                                                     : INDEXED_LVALUE_SET, arrayAccessExpression);
         assert resolvedCall != null : message(arrayAccessExpression);
         return resolvedCall;
-    }
-
-    public static ConstructorDescriptor getConstructor(@NotNull BindingContext bindingContext,
-            @NotNull JetClassOrObject declaration) {
-        ConstructorDescriptor primaryConstructor = getClassDescriptor(bindingContext, declaration).getUnsubstitutedPrimaryConstructor();
-        assert primaryConstructor != null : message(declaration, "Traits do not have initialize methods");
-        return primaryConstructor;
     }
 
     @Nullable

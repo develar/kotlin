@@ -69,7 +69,7 @@ public final class StaticContext {
     private final Map<VariableDescriptor, String> nameMap = new THashMap<VariableDescriptor, String>();
     private final Map<DeclarationDescriptor, JsExpression> qualifierMap = new THashMap<DeclarationDescriptor, JsExpression>();
 
-    private final Config configuration;
+    final Config configuration;
 
     public StaticContext(@NotNull BindingContext bindingContext, @NotNull Config configuration) {
         this.program = new JsProgram("main");

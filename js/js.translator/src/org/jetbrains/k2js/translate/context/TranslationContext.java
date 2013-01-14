@@ -27,6 +27,7 @@ import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import java.util.Map;
 
@@ -233,5 +234,9 @@ public class TranslationContext {
 
         JsExpression alias = aliasingContext.getAliasForDescriptor(effectiveDescriptor, false);
         return alias == null ? JsLiteral.THIS : alias;
+    }
+
+    public ModuleInfo getModule() {
+        return staticContext.configuration.getModule();
     }
 }
