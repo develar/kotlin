@@ -195,17 +195,16 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
         return null;
     }
 
+    @NotNull
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
+    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
         checkMayRead();
 
+        List<NamespaceDescriptor> result = new SmartList<NamespaceDescriptor>();
         for (JetScope imported : imports) {
-            NamespaceDescriptor importedDescriptor = imported.getNamespace(name);
-            if (importedDescriptor != null) {
-                return importedDescriptor;
-            }
+            result.addAll(imported.getNamespaces(name));
         }
-        return null;
+        return result;
     }
 
     private WritableScope getCurrentIndividualImportScope() {

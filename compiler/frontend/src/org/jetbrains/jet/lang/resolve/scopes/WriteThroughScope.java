@@ -26,6 +26,7 @@ import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 public class WriteThroughScope extends WritableScopeWithImports {
@@ -104,18 +105,18 @@ public class WriteThroughScope extends WritableScopeWithImports {
         return super.getLocalVariable(name); // Imports
     }
 
+    @NotNull
     @Override
-    @Nullable
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
+    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
         checkMayRead();
 
-        NamespaceDescriptor namespace = writableWorker.getNamespace(name);
-        if (namespace != null) return namespace;
+        List<NamespaceDescriptor> namespace = writableWorker.getNamespaces(name);
+        if (!namespace.isEmpty()) return namespace;
 
-        namespace = getWorkerScope().getNamespace(name);
-        if (namespace != null) return namespace;
+        namespace = getWorkerScope().getNamespaces(name);
+        if (!namespace.isEmpty()) return namespace;
 
-        return super.getNamespace(name); // Imports
+        return super.getNamespaces(name); // Imports
     }
 
     @Override

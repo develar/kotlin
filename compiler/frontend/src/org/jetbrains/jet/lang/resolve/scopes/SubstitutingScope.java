@@ -110,9 +110,10 @@ public class SubstitutingScope implements JetScope {
         return substitute(workerScope.getFunctions(name));
     }
 
+    @NotNull
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
-        return workerScope.getNamespace(name); // TODO
+    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+        return workerScope.getNamespaces(name); // TODO
     }
 
     @NotNull

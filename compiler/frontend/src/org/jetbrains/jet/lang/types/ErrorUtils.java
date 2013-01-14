@@ -68,9 +68,10 @@ public class ErrorUtils {
             return ERROR_PROPERTY;
         }
 
+        @NotNull
         @Override
-        public NamespaceDescriptor getNamespace(@NotNull Name name) {
-            return null; // TODO : review
+        public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+            return Collections.emptyList(); // TODO : review
         }
 
         @NotNull

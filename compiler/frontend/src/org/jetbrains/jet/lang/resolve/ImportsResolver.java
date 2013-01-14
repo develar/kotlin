@@ -175,7 +175,8 @@ public class ImportsResolver {
             isResolved = namespaceScope.getLocalVariable(aliasName);
         }
         else if (wasResolved instanceof NamespaceDescriptor) {
-            isResolved = namespaceScope.getNamespace(aliasName);
+            List<NamespaceDescriptor> namespaces = namespaceScope.getNamespaces(aliasName);
+            isResolved = namespaces.isEmpty() ? null : namespaces.get(0);
         }
         if (isResolved != null && isResolved != wasResolved) {
             trace.report(USELESS_HIDDEN_IMPORT.on(importedReference));

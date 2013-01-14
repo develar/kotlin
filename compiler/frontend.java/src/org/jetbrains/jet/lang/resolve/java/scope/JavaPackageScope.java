@@ -29,6 +29,8 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import static org.jetbrains.jet.lang.resolve.java.scope.ScopeUtils.computeAllPackageDeclarations;
 
@@ -70,9 +72,17 @@ public abstract class JavaPackageScope extends JavaBaseScope {
         return null;
     }
 
+    @NotNull
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
-        return getResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
+    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+        final NamespaceDescriptor descriptor = getResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
+        if (descriptor == null) {
+            return Collections.emptyList();
+        }
+        else {
+            return Collections.singletonList(descriptor);
+        }
+
     }
 
     @NotNull

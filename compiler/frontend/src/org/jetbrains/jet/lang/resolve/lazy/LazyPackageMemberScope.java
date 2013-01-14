@@ -26,6 +26,8 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,13 +41,14 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
         super(resolveSession, declarationProvider, thisPackage);
     }
 
+    @NotNull
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
+    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
         NamespaceDescriptor known = packageDescriptors.get(name);
-        if (known != null) return known;
-        if (allDescriptorsComputed) return null;
+        if (known != null) return Collections.singletonList(known);
+        if (allDescriptorsComputed) return Collections.emptyList();
 
-        if (!declarationProvider.isPackageDeclared(name)) return null;
+        if (!declarationProvider.isPackageDeclared(name)) return Collections.emptyList();
 
         PackageMemberDeclarationProvider packageMemberDeclarationProvider = resolveSession.getDeclarationProviderFactory().getPackageMemberDeclarationProvider(
                 DescriptorUtils.getFQName(thisDescriptor).child(name).toSafe());
@@ -55,7 +58,7 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
         packageDescriptors.put(name, namespaceDescriptor);
         allDescriptors.add(namespaceDescriptor);
 
-        return namespaceDescriptor;
+        return Collections.singletonList(namespaceDescriptor);
     }
 
     @Override
@@ -90,7 +93,7 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
     @Override
     protected void addExtraDescriptors() {
         for (FqName packageFqName : declarationProvider.getAllDeclaredPackages()) {
-            getNamespace(packageFqName.shortName());
+            getNamespaces(packageFqName.shortName());
         }
     }
 

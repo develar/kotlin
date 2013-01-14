@@ -128,7 +128,8 @@ public class ResolveSession {
 
     @Nullable
     public NamespaceDescriptor getPackageDescriptor(@NotNull Name shortName) {
-        return rootPackage.getMemberScope().getNamespace(shortName);
+        final List<NamespaceDescriptor> namespaces = rootPackage.getMemberScope().getNamespaces(shortName);
+        return namespaces.isEmpty() ? null : namespaces.get(0);
     }
 
     @Nullable
@@ -140,7 +141,8 @@ public class ResolveSession {
         NamespaceDescriptor current = getPackageDescriptor(names.get(0));
         if (current == null) return null;
         for (Name name : names.subList(1, names.size())) {
-            current = current.getMemberScope().getNamespace(name);
+            final List<NamespaceDescriptor> namespaces = current.getMemberScope().getNamespaces(name);
+            current = namespaces.isEmpty() ? null : namespaces.get(0);
             if (current == null) return null;
         }
         return current;

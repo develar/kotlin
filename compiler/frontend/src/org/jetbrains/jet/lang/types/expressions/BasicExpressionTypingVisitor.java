@@ -19,7 +19,6 @@ package org.jetbrains.jet.lang.types.expressions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.intellij.lang.ASTNode;
-import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
@@ -128,12 +127,12 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
 
     @Nullable
     protected NamespaceType lookupNamespaceType(@NotNull JetSimpleNameExpression expression, @NotNull Name referencedName, ExpressionTypingContext context) {
-        NamespaceDescriptor namespace = context.scope.getNamespace(referencedName);
-        if (namespace == null) {
+        List<NamespaceDescriptor> namespaces = context.scope.getNamespaces(referencedName);
+        if (namespaces.isEmpty()) {
             return null;
         }
-        context.trace.record(REFERENCE_TARGET, expression, namespace);
-        return namespace.getNamespaceType();
+        context.trace.record(REFERENCE_TARGET, expression, namespaces.get(0));
+        return namespaces.get(0).getNamespaceType();
     }
 
     @Override

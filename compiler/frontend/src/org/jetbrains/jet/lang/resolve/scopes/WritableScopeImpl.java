@@ -430,19 +430,20 @@ public class WritableScopeImpl extends WritableScopeWithImports {
         return null;
     }
 
+    @NotNull
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
+    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
         checkMayRead();
 
         NamespaceDescriptor declaredNamespace = getDeclaredNamespace(name);
-        if (declaredNamespace != null) return declaredNamespace;
+        if (declaredNamespace != null) return Collections.singletonList(declaredNamespace);
 
         NamespaceDescriptor aliased = getNamespaceAliases().get(name);
-        if (aliased != null) return aliased;
+        if (aliased != null) return Collections.singletonList(aliased);
 
-        NamespaceDescriptor namespace = getWorkerScope().getNamespace(name);
-        if (namespace != null) return namespace;
-        return super.getNamespace(name);
+        List<NamespaceDescriptor> namespaces = getWorkerScope().getNamespaces(name);
+        if (!namespaces.isEmpty()) return namespaces;
+        return super.getNamespaces(name);
     }
 
     @Override

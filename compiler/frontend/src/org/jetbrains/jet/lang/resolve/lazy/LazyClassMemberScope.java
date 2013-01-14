@@ -312,9 +312,10 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
         getFunctions(Name.identifier("copy"));
     }
 
+    @NotNull
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
-        return null;
+    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+        return Collections.emptyList();
     }
 
     @NotNull

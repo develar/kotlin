@@ -63,8 +63,8 @@ public abstract class AbstractLazyResolveNamespaceComparingTest extends KotlinTe
         ModuleDescriptor lazyModule = LazyResolveTestUtil.resolveLazily(files, getEnvironment());
 
         Name test = Name.identifier("test");
-        NamespaceDescriptor actual = lazyModule.getRootNamespace().getMemberScope().getNamespace(test);
-        NamespaceDescriptor expected = eagerModule.getRootNamespace().getMemberScope().getNamespace(test);
+        NamespaceDescriptor actual = lazyModule.getRootNamespace().getMemberScope().getNamespaces(test).get(0);
+        NamespaceDescriptor expected = eagerModule.getRootNamespace().getMemberScope().getNamespaces(test).get(0);
 
         File serializeResultsTo = new File(FileUtil.getNameWithoutExtension(testFileName) + ".txt");
 

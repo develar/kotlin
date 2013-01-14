@@ -44,9 +44,10 @@ public abstract class AbstractScopeAdapter implements JetScope {
         return getWorkerScope().getFunctions(name);
     }
 
+    @NotNull
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
-        return getWorkerScope().getNamespace(name);
+    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+        return getWorkerScope().getNamespaces(name);
     }
 
     @Override

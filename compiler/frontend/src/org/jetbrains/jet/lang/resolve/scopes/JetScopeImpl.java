@@ -54,9 +54,10 @@ public abstract class JetScopeImpl implements JetScope {
         return null;
     }
 
+    @NotNull
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
-        return null;
+    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+        return Collections.emptyList();
     }
 
     @NotNull

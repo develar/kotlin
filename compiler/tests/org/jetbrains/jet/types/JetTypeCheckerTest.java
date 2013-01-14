@@ -621,7 +621,7 @@ public class JetTypeCheckerTest extends JetLiteFixture {
                 getEnvironment()
         );
 
-        NamespaceDescriptor testData = moduleDescriptor.getRootNamespace().getMemberScope().getNamespace(Name.identifier("testData"));
+        NamespaceDescriptor testData = moduleDescriptor.getRootNamespace().getMemberScope().getNamespaces(Name.identifier("testData")).get(0);
         return addImports(testData.getMemberScope());
     }
 

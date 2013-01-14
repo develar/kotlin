@@ -31,6 +31,7 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
@@ -235,9 +236,9 @@ public class QualifiedExpressionResolver {
         }
 
         Set<DeclarationDescriptor> descriptors = Sets.newHashSet();
-        NamespaceDescriptor namespaceDescriptor = outerScope.getNamespace(referencedName);
-        if (namespaceDescriptor != null) {
-            descriptors.add(namespaceDescriptor);
+        List<NamespaceDescriptor> namespaceDescriptors = outerScope.getNamespaces(referencedName);
+        if (!namespaceDescriptors.isEmpty()) {
+            descriptors.addAll(namespaceDescriptors);
         }
 
         ClassifierDescriptor classifierDescriptor = outerScope.getClassifier(referencedName);
