@@ -202,7 +202,8 @@ public class KotlinCompiler {
         }
 
         moduleConfiguration.sourceFiles = sources;
-        compiledModules.put(moduleName, moduleConfiguration);
+        ModuleInfo prevValue = compiledModules.put(moduleName, moduleConfiguration);
+        assert prevValue == null;
         return moduleConfiguration;
     }
 
@@ -226,6 +227,9 @@ public class KotlinCompiler {
                         }
                     }
                     else {
+                        //if (true) {
+                        //    throw new IllegalStateException("All project module dependencies must be compiled before dependent module compilation. Project module '" + name + "' is not compiled.");
+                        //}
                         moduleConfiguration = compileModule(name, false);
                     }
                     if (moduleConfiguration == null) {

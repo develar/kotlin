@@ -1,8 +1,10 @@
 package org.jetbrains.jet.jps.build;
 
+import com.intellij.util.Consumer;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.jps.model.JpsJsExtensionService;
 import org.jetbrains.jet.jps.model.JpsJsModuleExtension;
 import org.jetbrains.jps.builders.*;
 import org.jetbrains.jps.builders.impl.BuildRootDescriptorImpl;
@@ -15,11 +17,15 @@ import org.jetbrains.jps.model.JpsModel;
 import org.jetbrains.jps.model.JpsSimpleElement;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
+import org.jetbrains.jps.model.java.JpsJavaDependenciesEnumerator;
+import org.jetbrains.jps.model.java.JpsJavaExtensionService;
+import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.module.JpsTypedModuleSourceRoot;
 import org.jetbrains.jps.util.JpsPathUtil;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -43,7 +49,23 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
 
     @Override
     public Collection<BuildTarget<?>> computeDependencies(BuildTargetRegistry targetRegistry, TargetOutputIndex outputIndex) {
-        return Collections.emptyList();
+        JpsModule module = extension.getModule();
+        JpsJavaDependenciesEnumerator enumerator = JpsJavaExtensionService.dependencies(module).compileOnly();
+        enumerator.productionOnly();
+        final ArrayList<BuildTarget<?>> dependencies = new ArrayList<BuildTarget<?>>();
+        final JpsJsExtensionService service = JpsJsExtensionService.getInstance();
+        // todo refactor this shit - don't duplicate JsBuildTargetType.computeAllTargets code
+        enumerator.processModules(new Consumer<JpsModule>() {
+            @Override
+            public void consume(JpsModule module) {
+                JpsJsModuleExtension extension = service.getExtension(module);
+                if (extension != null) {
+                    dependencies.add(JsBuildTargetType.createTarget(extension));
+                }
+            }
+        });
+        dependencies.trimToSize();
+        return dependencies;
     }
 
     @NotNull

@@ -136,7 +136,7 @@ public class ModuleInfo implements ModuleConfiguration {
             FqName qualifiedName = namespaceDescriptor.getQualifiedName();
             for (ModuleInfo dependency : dependencies) {
                 NamespaceDescriptor namespaceDependency = dependency.bindingContext.get(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR,
-                                                                                       qualifiedName);
+                                                                                        qualifiedName);
                 if (namespaceDependency != null) {
                     namespaceMemberScope.importScope(namespaceDependency.getMemberScope());
                 }
