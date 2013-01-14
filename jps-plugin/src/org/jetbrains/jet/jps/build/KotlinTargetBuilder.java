@@ -90,19 +90,19 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
     @Override
     public void build(
             @NotNull final KotlinBuildTarget target,
-            @NotNull DirtyFilesHolder<BuildRootDescriptor, KotlinBuildTarget> holder,
+            @NotNull DirtyFilesHolder<BuildRootDescriptor, KotlinBuildTarget> dirtyFilesHolder,
             @NotNull final BuildOutputConsumer outputConsumer,
             @NotNull final CompileContext context
     ) throws ProjectBuildException, IOException {
         final List<File> filesToCompile = new ArrayList<File>();
-        holder.processDirtyFiles(new FileProcessor<BuildRootDescriptor, KotlinBuildTarget>() {
+        dirtyFilesHolder.processDirtyFiles(new FileProcessor<BuildRootDescriptor, KotlinBuildTarget>() {
             @Override
             public boolean apply(KotlinBuildTarget target, File file, BuildRootDescriptor root) throws IOException {
                 filesToCompile.add(file);
                 return true;
             }
         });
-        if (filesToCompile.isEmpty()) {
+        if (filesToCompile.isEmpty() && !dirtyFilesHolder.hasRemovedFiles()) {
             return;
         }
 
