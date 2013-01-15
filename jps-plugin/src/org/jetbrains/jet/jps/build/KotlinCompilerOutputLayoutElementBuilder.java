@@ -1,9 +1,7 @@
 package org.jetbrains.jet.jps.build;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.jps.model.JpsJsCompilerOutputPackagingElement;
-import org.jetbrains.jet.jps.model.JpsJsExtensionService;
-import org.jetbrains.jet.jps.model.JpsJsModuleExtension;
+import org.jetbrains.jet.jps.model.JpsKotlinCompilerOutputPackagingElement;
 import org.jetbrains.jps.builders.BuildTarget;
 import org.jetbrains.jps.builders.TargetOutputIndex;
 import org.jetbrains.jps.incremental.artifacts.builders.LayoutElementBuilderService;
@@ -14,36 +12,34 @@ import org.jetbrains.jps.model.module.JpsModule;
 import java.util.Collection;
 import java.util.Collections;
 
-public class JsCompilerOutputLayoutElementBuilder extends LayoutElementBuilderService<JpsJsCompilerOutputPackagingElement> {
-    public JsCompilerOutputLayoutElementBuilder() {
-        super(JpsJsCompilerOutputPackagingElement.class);
+public class KotlinCompilerOutputLayoutElementBuilder extends LayoutElementBuilderService<JpsKotlinCompilerOutputPackagingElement> {
+    public KotlinCompilerOutputLayoutElementBuilder() {
+        super(JpsKotlinCompilerOutputPackagingElement.class);
     }
 
     @Override
     public void generateInstructions(
-            JpsJsCompilerOutputPackagingElement element,
+            JpsKotlinCompilerOutputPackagingElement element,
             ArtifactCompilerInstructionCreator instructionCreator,
             ArtifactInstructionsBuilderContext builderContext
     ) {
         JpsModule module = element.getModuleReference().resolve();
-        JpsJsModuleExtension extension = JpsJsExtensionService.getInstance().getExtension(module);
-        if (extension == null) {
+        if (module == null) {
             return;
         }
 
         instructionCreator.addDirectoryCopyInstructions(
-                JpsKotlinCompilerPaths.getCompilerOutputRoot(JsBuildTargetType.createTarget(extension), builderContext.getDataPaths()));
+                JpsKotlinCompilerPaths.getCompilerOutputRoot(JsBuildTargetType.createTarget(module), builderContext.getDataPaths()));
     }
 
     @Override
     public Collection<? extends BuildTarget<?>> getDependencies(
-            @NotNull JpsJsCompilerOutputPackagingElement element,
+            @NotNull JpsKotlinCompilerOutputPackagingElement element,
             TargetOutputIndex outputIndex
     ) {
         JpsModule module = element.getModuleReference().resolve();
-        JpsJsModuleExtension extension = JpsJsExtensionService.getInstance().getExtension(module);
-        if (extension != null) {
-            return Collections.singletonList(JsBuildTargetType.createTarget(extension));
+        if (module != null) {
+            return Collections.singletonList(JsBuildTargetType.createTarget(module));
         }
         return Collections.emptyList();
     }

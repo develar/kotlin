@@ -1,11 +1,25 @@
+/*
+ * Copyright 2010-2013 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.jetbrains.jet.jps.build;
 
 import com.intellij.util.Consumer;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.jps.model.JpsJsExtensionService;
-import org.jetbrains.jet.jps.model.JpsJsModuleExtension;
 import org.jetbrains.jps.builders.*;
 import org.jetbrains.jps.builders.impl.BuildRootDescriptorImpl;
 import org.jetbrains.jps.builders.storage.BuildDataPaths;
@@ -13,8 +27,9 @@ import org.jetbrains.jps.cmdline.ProjectDescriptor;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.indices.IgnoredFileIndex;
 import org.jetbrains.jps.indices.ModuleExcludeIndex;
-import org.jetbrains.jps.model.JpsModel;
-import org.jetbrains.jps.model.JpsSimpleElement;
+import org.jetbrains.jps.model.*;
+import org.jetbrains.jps.model.ex.JpsElementBase;
+import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.java.JpsJavaDependenciesEnumerator;
@@ -25,46 +40,61 @@ import org.jetbrains.jps.util.JpsPathUtil;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
-    private final JpsJsModuleExtension extension;
+    private final JpsModule module;
 
-    public KotlinBuildTarget(JpsJsModuleExtension extension, BuildTargetType<?> targetType) {
+    // todo find normal solution
+    public static final JpsElementChildRole<FlagValue> X_COMPILER_FLAG = JpsElementChildRoleBase.create("kotlinXCompilerFlag");
+
+    private static class FlagValue extends JpsElementBase<FlagValue> {
+        @NotNull
+        @Override
+        public FlagValue createCopy() {
+            return new FlagValue();
+        }
+
+        @Override
+        public void applyChanges(@NotNull FlagValue modified) {
+        }
+
+        @Override
+        public void setParent(@Nullable JpsElementBase<?> parent) {
+        }
+    }
+
+    protected static final FlagValue X_COMPILER_FLAG_VALUE = new FlagValue();
+
+    KotlinBuildTarget(@NotNull JpsModule module, @NotNull BuildTargetType<?> targetType) {
         super(targetType);
-        this.extension = extension;
+        this.module = module;
+
+        module.getContainer().setChild(X_COMPILER_FLAG, X_COMPILER_FLAG_VALUE);
     }
 
     @Override
     public String getId() {
-        return extension.getModuleName();
+        return module.getName();
     }
 
-    public JpsJsModuleExtension getExtension() {
-        return extension;
+    public JpsModule getModule() {
+        return module;
     }
 
     @Override
     public Collection<BuildTarget<?>> computeDependencies(BuildTargetRegistry targetRegistry, TargetOutputIndex outputIndex) {
-        JpsModule module = extension.getModule();
-        JpsJavaDependenciesEnumerator enumerator = JpsJavaExtensionService.dependencies(module).compileOnly();
-        enumerator.productionOnly();
-        final ArrayList<BuildTarget<?>> dependencies = new ArrayList<BuildTarget<?>>();
-        final JpsJsExtensionService service = JpsJsExtensionService.getInstance();
-        // todo refactor this shit - don't duplicate JsBuildTargetType.computeAllTargets code
+        JpsJavaDependenciesEnumerator enumerator = JpsJavaExtensionService.dependencies(module).compileOnly().productionOnly();
+        final List<BuildTarget<?>> dependencies = new SmartList<BuildTarget<?>>();
         enumerator.processModules(new Consumer<JpsModule>() {
             @Override
             public void consume(JpsModule module) {
-                JpsJsModuleExtension extension = service.getExtension(module);
-                if (extension != null) {
-                    dependencies.add(JsBuildTargetType.createTarget(extension));
-                }
+                // we must compile module even if it is not included in any artifact — module will be compiled, but not copied to some artifact output directory
+                dependencies.add(JsBuildTargetType.createTarget(module));
             }
         });
-        dependencies.trimToSize();
         return dependencies;
     }
 
@@ -74,7 +104,7 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
             JpsModel model, ModuleExcludeIndex index, IgnoredFileIndex ignoredFileIndex, BuildDataPaths dataPaths
     ) {
         List<BuildRootDescriptor> roots = new SmartList<BuildRootDescriptor>();
-        for (JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>> sourceRoot : extension.getModule().getSourceRoots(JavaSourceRootType.SOURCE)) {
+        for (JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>> sourceRoot : module.getSourceRoots(JavaSourceRootType.SOURCE)) {
             roots.add(new MyBuildRootDescriptor(this, sourceRoot));
         }
         return roots;
@@ -94,7 +124,7 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
     @NotNull
     @Override
     public String getPresentableName() {
-        return "Kotlin " + ((KotlinBuildTargetType) getTargetType()).getLanguageName() + " in module '" + extension.getModuleName() + "'";
+        return "Kotlin " + ((KotlinBuildTargetType) getTargetType()).getLanguageName() + " in module '" + module.getName() + "'";
     }
 
     @NotNull
@@ -113,12 +143,12 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
             return false;
         }
 
-        return extension.equals(((KotlinBuildTarget) o).extension);
+        return module.equals(((KotlinBuildTarget) o).module);
     }
 
     @Override
     public int hashCode() {
-      return extension.hashCode();
+      return module.hashCode();
     }
 
     private static class MyBuildRootDescriptor extends BuildRootDescriptorImpl {

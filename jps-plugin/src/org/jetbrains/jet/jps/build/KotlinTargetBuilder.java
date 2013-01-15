@@ -17,6 +17,8 @@
 package org.jetbrains.jet.jps.build;
 
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +26,10 @@ import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.utils.PathUtil;
-import org.jetbrains.jps.builders.*;
+import org.jetbrains.jps.builders.BuildOutputConsumer;
+import org.jetbrains.jps.builders.BuildRootDescriptor;
+import org.jetbrains.jps.builders.DirtyFilesHolder;
+import org.jetbrains.jps.builders.FileProcessor;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
@@ -44,26 +49,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, KotlinBuildTarget> {
-    private static final Key<KotlinBuildContext> CONTEXT = Key.create("kbContext");
+    private static final Key<AtomicReference<Pair<Object, Method>>> CONTEXT = Key.create("kotlinBuildContext");
 
     private final String outputLanguageName;
+    private final String subCompilerClassName;
 
     public KotlinTargetBuilder(KotlinBuildTargetType targetType) {
         super(Collections.singletonList(targetType));
         outputLanguageName = targetType.getLanguageName();
+        subCompilerClassName = targetType.getSubCompilerClassName();
     }
-    
-    private static class KotlinBuildContext {
-        private final Object compiler;
-        private final Method compile;
 
-        public KotlinBuildContext(Object compiler, Method compile) {
-            this.compiler = compiler;
-            this.compile = compile;
-        }
-    }
 
     @NotNull
     @Override
@@ -73,15 +72,22 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
 
     @Override
     public void buildFinished(CompileContext context) {
-        KotlinBuildContext kotlinContext = context.getUserData(CONTEXT);
-        if (kotlinContext != null) {
-            try {
-                kotlinContext.compiler.getClass().getMethod("dispose").invoke(kotlinContext.compiler);
-            }
-            catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            context.putUserData(CONTEXT, null);
+        final AtomicReference<Pair<Object, Method>> kotlinContextRef = CONTEXT.get(context);
+        if (kotlinContextRef == null) {
+            return;
+        }
+
+        CONTEXT.set(context, null);
+        final Pair<Object, Method> kotlinContext = kotlinContextRef.getAndSet(null);
+        if (kotlinContext == null) {
+            return;
+        }
+
+        try {
+            kotlinContext.first.getClass().getMethod("dispose").invoke(kotlinContext.first);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         super.buildFinished(context);
@@ -106,21 +112,10 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
             return;
         }
 
-        JpsModule module = target.getExtension().getModule();
+        JpsModule module = target.getModule();
 
         context.processMessage(new ProgressMessage("Compiling Kotlin module '" + module.getName() + "' to " + outputLanguageName));
         KotlinSourceFileCollector.logCompiledFiles(filesToCompile, context, JsBuildTargetType.BUILDER_NAME);
-        
-        KotlinBuildContext kotlinContext = context.getUserData(CONTEXT);
-        if (kotlinContext == null) {
-            kotlinContext = createKotlinBuildContext(context);
-            if (kotlinContext == null) {
-                return;
-            }
-            else {
-                context.putUserData(CONTEXT, kotlinContext);
-            }
-        }
 
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
         compilerConfiguration.put(CompilerConfigurationKeys.MODULE_NAME, module.getName());
@@ -133,9 +128,10 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
             compilerConfiguration.put(JsCompilerConfigurationKeys.SOURCEMAP, true);
         }
 
+        final Ref<IOException> ioExceptionRef = Ref.create();
         try {
-            // todo nik why we should registerOutputFile?
-            kotlinContext.compile.invoke(kotlinContext.compiler, compilerConfiguration, new OutputConsumer() {
+            Pair<Object, Method> kotlinContext = getKotlinContext(context);
+            kotlinContext.second.invoke(kotlinContext.first, compilerConfiguration, new OutputConsumer() {
                 @Override
                 public void registerSources(final Collection<String> sourcePaths) {
                     if (context.getCancelStatus().isCanceled()) {
@@ -147,10 +143,12 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
                         public boolean process(File file) {
                             if (file.isFile()) {
                                 try {
+                                    // todo change according to nik notes (well, we should check - Can JPS to understand how delete sourcemap file (or anything else?) from artifact  output if module was renamed?)
                                     outputConsumer.registerOutputFile(file, sourcePaths);
                                 }
                                 catch (IOException e) {
-                                    throw new RuntimeException(e);
+                                    ioExceptionRef.set(e);
+                                    return false;
                                 }
                             }
                             return true;
@@ -164,30 +162,54 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
             // hide InvocationTargetException
             throw new ProjectBuildException(e.getMessage(), e.getCause());
         }
+        catch (ProjectBuildException e) {
+            throw e;
+        }
         catch (Exception e) {
             throw new ProjectBuildException(e);
+        }
+
+        if (!ioExceptionRef.isNull()) {
+            throw ioExceptionRef.get();
         }
     }
 
-    private static KotlinBuildContext createKotlinBuildContext(CompileContext context) throws ProjectBuildException {
+    @NotNull
+    private Pair<Object, Method> getKotlinContext(CompileContext context) throws Exception {
+        AtomicReference<Pair<Object, Method>> kotlinContextRef = CONTEXT.get(context);
+        if (kotlinContextRef == null) {
+            return createKotlinBuildContext(context, subCompilerClassName);
+        }
+        else {
+            Pair<Object, Method> kotlinContext = kotlinContextRef.get();
+            assert kotlinContext != null : "ref can be null only if build finished";
+            return kotlinContext;
+        }
+    }
+
+    @NotNull
+    private static synchronized Pair<Object, Method> createKotlinBuildContext(CompileContext context, String subCompilerClassName) throws Exception {
+        context.checkCanceled();
+
+        AtomicReference<Pair<Object, Method>> kotlinContextRef = CONTEXT.get(context);
+        if (kotlinContextRef != null) {
+            return kotlinContextRef.get();
+        }
+
         JpsModuleInfoProvider moduleInfoProvider = new JpsModuleInfoProvider(context);
         MessageCollector messageCollector = new KotlinBuilder.MessageCollectorAdapter(context);
         ClassLoader loader = CompilerRunnerUtil.getOrCreateClassLoader(PathUtil.getKotlinPathsForJpsPluginOrJpsTests(), messageCollector);
-        Object compiler;
-        Method compile;
-        try {
-            Class<?> compilerClass = Class.forName("org.jetbrains.kotlin.compiler.KotlinCompiler", true, loader);
-            Constructor<?> constructor = compilerClass.getConstructor(Class.class, ModuleInfoProvider.class, MessageCollector.class);
-            constructor.setAccessible(true);
-            compiler = constructor.newInstance(Class.forName("org.jetbrains.k2js.ToJsSubCompiler", false, loader), moduleInfoProvider, messageCollector);
 
-            compile = compilerClass.getMethod("compile", CompilerConfiguration.class, OutputConsumer.class);
-            compile.setAccessible(true);
-        }
-        catch (Exception e) {
-            throw new ProjectBuildException(e);
-        }
+        Class<?> compilerClass = Class.forName("org.jetbrains.kotlin.compiler.KotlinCompiler", true, loader);
+        Constructor<?> constructor = compilerClass.getConstructor(Class.class, ModuleInfoProvider.class, MessageCollector.class);
+        constructor.setAccessible(true);
+        Object compiler = constructor.newInstance(Class.forName(subCompilerClassName, false, loader), moduleInfoProvider, messageCollector);
 
-        return new KotlinBuildContext(compiler, compile);
+        Method compile = compilerClass.getMethod("compile", CompilerConfiguration.class, OutputConsumer.class);
+        compile.setAccessible(true);
+
+        Pair<Object, Method> result = Pair.create(compiler, compile);
+        CONTEXT.set(context, new AtomicReference<Pair<Object, Method>>(result));
+        return result;
     }
 }

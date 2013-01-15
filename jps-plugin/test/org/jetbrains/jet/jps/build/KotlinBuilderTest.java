@@ -19,17 +19,14 @@ package org.jetbrains.jet.jps.build;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.jps.model.JpsJsCompilerOutputPackagingElement;
-import org.jetbrains.jet.jps.model.JpsJsExtensionService;
+import org.jetbrains.jet.jps.model.JpsKotlinCompilerOutputPackagingElement;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.incremental.artifacts.ArtifactBuilderTestCase;
 import org.jetbrains.jps.incremental.artifacts.ModuleBuilder;
 import org.jetbrains.jps.model.JpsModuleRootModificationUtil;
 import org.jetbrains.jps.model.artifact.JpsArtifact;
-import org.jetbrains.jps.model.artifact.JpsArtifactService;
 import org.jetbrains.jps.model.artifact.elements.JpsPackagingElement;
-import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.java.JpsJavaLibraryType;
 import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
@@ -39,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 
 import static com.intellij.util.io.TestFileSystemBuilder.fs;
+import static org.jetbrains.jps.incremental.artifacts.ModuleBuilder.createArtifact;
 
 public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     // todo fix AbstractKotlinJpsBuildTestCase.TEST_DATA_PATH
@@ -93,27 +91,52 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     // c -> a[exported]
     // d -> c
     public void testDependentModule() throws IOException {
-        ModuleBuilder a = createModuleBuilder().copy("a.kt").artifact();
-        ModuleBuilder b = createModuleBuilder().dependsOn(a).copy("b.kt").artifact();
+        ModuleBuilder a = createModuleBuilder().copy("a.kt");
+        ModuleBuilder b = createModuleBuilder().dependsOn(a).copy("b.kt");
+
+        JpsArtifact artifactAB = createArtifact(a, b);
 
         rebuildAll();
 
-        ModuleBuilder c = createModuleBuilder().dependsOnAndExports(a).copy("c.kt").artifact();
+        ModuleBuilder c = createModuleBuilder().dependsOnAndExports(a).copy("c.kt");
         makeAll().assertSuccessful();
         c.assertCompiled("c.kt");
 
-        assertOutput(a.getArtifact(), fs().file(a.getName() + ".js"));
-        assertOutput(b.getArtifact(), fs().file(b.getName() + ".js"));
-        assertOutput(c.getArtifact(), fs().file(c.getName() + ".js"));
+        JpsArtifact artifactABC = createArtifact(a, b, c);
+        makeAll().assertSuccessful();
+        assertOutput(artifactAB, fs().file(a.getName() + ".js").file(b.getName() + ".js"));
+        assertOutput(artifactABC, fs().file(c.getName() + ".js").file(a.getName() + ".js").file(b.getName() + ".js"));
 
         ModuleBuilder d = createModuleBuilder().dependsOn(c).copy("d.kt").artifact();
         makeAll().assertSuccessful();
         d.assertCompiled("d.kt");
         // todo we must test that we cannot use symbols from transitive unexported module dependency
-        //final File dir = new File("/Users/develar/test");
-        //FileUtil.delete(dir);
-        //FileUtil.copyDir(new File(getAbsolutePath(".")), dir);
+        //copyProjectDir();
     }
+
+    private void copyProjectDir() throws IOException {
+        final File dir = new File("/Users/develar/test");
+        FileUtil.delete(dir);
+        FileUtil.copyDir(new File(getAbsolutePath(".")), dir);
+    }
+
+    //public void testSeveralModuleDependencies() throws IOException {
+    //    ModuleBuilder chromeExtApi = createModuleBuilder().file("chrome-ext-api.kt", "package org.jetbrains.chromium.debug\n" +
+    //                                                                                 "\n" +
+    //                                                                                 "public native fun dto<T>(vararg  p:Any?):T = noImpl");
+    //    //ModuleBuilder c = createModuleBuilder().dependsOn(chromeExtApi).copy("c.kt").artifact();
+    //
+    //    ModuleBuilder chromeExt = createModuleBuilder().dependsOn(chromeExtApi).file("chrome-ext.kt", "package com.jetbrains.browserConnection.chrome\n" +
+    //                                                                                                  "\n" +
+    //                                                                                                  "import org.jetbrains.chromium.debug.dto\n" +
+    //                                                                                                  "\n" +
+    //                                                                                                  "fun f() = dto<String>(\"dd\")");
+    //    JpsArtifact artifact = chromeExt.createArtifact();
+    //    new LayoutElementTestUtil.LayoutElementCreator(artifact.getRootElement(), null).element(((MyModuleBuilder) chromeExt).createPackagingElement(chromeExtApi.get()));
+    //    rebuildAll();
+    //    makeAll().assertSuccessful();
+    //    copyProjectDir();
+    //}
 
     @NotNull
     @Override
@@ -126,7 +149,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         super.loadProject(projectPath.charAt(0) == '/' ? FileUtil.getRelativePath(new File(getAbsolutePath(".")), new File(projectPath)) : projectPath);
     }
 
-    //public void etestA() {
+    //public void testA() {
     //    loadProject("/Users/develar/Documents/test-idea-kotlin-project");
     //    //for (JpsArtifact artifact : JpsArtifactService.getInstance().getArtifacts(myProject)) {
     //    //    if (artifact.getName().equals("Chrome extension")) {
@@ -134,7 +157,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     //    //        break;
     //    //    }
     //    //}
-    //    makeAll().assertSuccessful();
+    //    rebuildAll();
     //    for (JpsArtifact artifact : JpsArtifactService.getInstance().getArtifacts(myProject)) {
     //        artifact.setOutputPath(null);
     //    }
@@ -158,13 +181,11 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
             JpsLibrary library = module.addModuleLibrary(JsExternalizationConstants.JS_LIBRARY_NAME, JpsJavaLibraryType.INSTANCE);
             library.addRoot(PathUtil.getKotlinPathsForDistDirectory().getRuntimePath(false), JpsOrderRootType.SOURCES);
             JpsModuleRootModificationUtil.addDependency(module, library);
-
-            JpsJsExtensionService.getInstance().setExtension(module);
         }
 
         @Override
         protected JpsPackagingElement createPackagingElement(JpsModule module) {
-            return new JpsJsCompilerOutputPackagingElement(module.createReference());
+            return new JpsKotlinCompilerOutputPackagingElement(module.createReference());
         }
     }
 }

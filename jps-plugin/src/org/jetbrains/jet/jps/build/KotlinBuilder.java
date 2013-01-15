@@ -22,7 +22,6 @@ import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.compiler.runner.*;
-import org.jetbrains.jet.jps.model.JpsJsExtensionService;
 import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.ModuleChunk;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
@@ -63,13 +62,13 @@ public class KotlinBuilder extends ModuleLevelBuilder {
             OutputConsumer outputConsumer
     ) throws ProjectBuildException, IOException {
         String skipCompilation = System.getProperty("kotlin.compiler.skip");
-        if (skipCompilation != null && (skipCompilation.isEmpty() || Boolean.valueOf(skipCompilation))) {
+        //if (skipCompilation != null && (skipCompilation.isEmpty() || Boolean.valueOf(skipCompilation))) {
+        if (true) {
             return ExitCode.NOTHING_DONE;
         }
 
-        JpsJsExtensionService jsExtensionService = JpsJsExtensionService.getInstance();
         for (JpsModule module : chunk.getModules()) {
-            if (jsExtensionService.getExtension(module) != null) {
+            if (module.getContainer().getChild(KotlinBuildTarget.X_COMPILER_FLAG) != null) {
                 return ExitCode.NOTHING_DONE;
             }
         }
