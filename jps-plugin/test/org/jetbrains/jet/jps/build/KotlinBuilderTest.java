@@ -84,7 +84,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         assertNoKotlinModulesRecompiled();
         assertOutput(aSecondArtifact, fs().file(aOutFilename));
         assertEquals(aOutFileLastModified, aOutFile.lastModified());
-        copyProjectDir();
+        //copyProjectDir();
     }
 
     // a
@@ -116,7 +116,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     }
 
     private void copyProjectDir() throws IOException {
-        final File dir = new File("/Users/develar/test");
+        final File dir = new File(System.getProperty("user.home"), "test");
         FileUtil.delete(dir);
         FileUtil.copyDir(new File(getAbsolutePath(".")), dir);
     }
