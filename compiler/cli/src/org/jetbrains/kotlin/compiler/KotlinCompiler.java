@@ -222,9 +222,6 @@ public class KotlinCompiler {
                         moduleConfiguration = analyzeModule(name, dependency, false, Pair.create(Collections.<ModuleInfo>emptyList(),
                                                                                                  Collections.<ModuleInfo>emptySet()),
                                                             false);
-                        if (provided) {
-                            providedDependencies.add(moduleConfiguration);
-                        }
                     }
                     else {
                         //if (true) {
@@ -235,6 +232,10 @@ public class KotlinCompiler {
                     if (moduleConfiguration == null) {
                         return false;
                     }
+                }
+
+                if (provided) {
+                    providedDependencies.add(moduleConfiguration);
                 }
                 dependencies.add(moduleConfiguration);
                 return true;

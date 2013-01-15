@@ -84,6 +84,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         assertNoKotlinModulesRecompiled();
         assertOutput(aSecondArtifact, fs().file(aOutFilename));
         assertEquals(aOutFileLastModified, aOutFile.lastModified());
+        copyProjectDir();
     }
 
     // a
