@@ -44,7 +44,6 @@ import org.jetbrains.k2js.translate.reference.CallTranslator;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
-import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -274,7 +273,7 @@ public final class TopLevelFIF extends CompositeFIF {
                 if (referenceExpression != null) {
                     DeclarationDescriptor candidate = BindingUtils.getDescriptorForReferenceExpression(context.bindingContext(),
                                                                                                        referenceExpression);
-                    if (candidate instanceof PropertyDescriptor && AnnotationsUtils.isNativeObject(candidate)) {
+                    if (candidate instanceof PropertyDescriptor && context.isNative(candidate)) {
                         return asArrayAccess(thisOrReceiver, arguments, context);
                     }
                 }

@@ -27,8 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 public class ModuleInfo implements ModuleConfiguration {
-    public static final String STUBS_MODULE_NORMAL_NAME = "stubs";
-    public static final Name STUBS_MODULE_NAME = Name.special('<' + STUBS_MODULE_NORMAL_NAME + '>');
+    public static final Name STUBS_MODULE_NAME = Name.special('<' + "stubs" + '>');
 
     private final Project project;
 
@@ -75,7 +74,7 @@ public class ModuleInfo implements ModuleConfiguration {
         normalName = name;
     }
 
-    private ModuleInfo(ModuleDescriptor moduleDescriptor, Project project, @Nullable List<ModuleInfo> dependencies, @Nullable Set<ModuleInfo> providedDependencies) {
+    public ModuleInfo(ModuleDescriptor moduleDescriptor, Project project, @Nullable List<ModuleInfo> dependencies, @Nullable Set<ModuleInfo> providedDependencies) {
         this.moduleDescriptor = moduleDescriptor;
         this.project = project;
         this.providedDependencies = providedDependencies == null ? Collections.<ModuleInfo>emptySet() : providedDependencies;
@@ -91,6 +90,11 @@ public class ModuleInfo implements ModuleConfiguration {
 
     public boolean isDependencyProvided(ModuleInfo dependency) {
         return providedDependencies.contains(dependency);
+    }
+
+    public boolean isDependencyProvided(ModuleDescriptor descriptor) {
+        ModuleInfo dependency = findDependency(descriptor);
+        return dependency != null && providedDependencies.contains(dependency);
     }
 
     @NotNull

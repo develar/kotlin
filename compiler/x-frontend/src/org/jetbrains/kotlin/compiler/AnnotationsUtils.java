@@ -62,16 +62,8 @@ public final class AnnotationsUtils {
         return DescriptorUtils.getFQName(annotationDeclaration).getFqName();
     }
 
-    public static boolean isNativeObject(@NotNull DeclarationDescriptor descriptor) {
-        return isNativeObjectByModule(descriptor) || isNativeByAnnotation(descriptor);
-    }
-
     public static boolean isNativeByAnnotation(DeclarationDescriptor descriptor) {
         return hasAnnotationOrInsideAnnotatedClass(descriptor, PredefinedAnnotation.NATIVE);
-    }
-
-    public static boolean isNativeObjectByModule(@NotNull DeclarationDescriptor descriptor) {
-        return DescriptorUtils.getModuleDescriptor(descriptor).getName().equals(ModuleInfo.STUBS_MODULE_NAME);
     }
 
     public static boolean isLibraryObject(@NotNull DeclarationDescriptor descriptor) {

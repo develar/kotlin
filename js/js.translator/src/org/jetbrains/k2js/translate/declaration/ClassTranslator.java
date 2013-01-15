@@ -35,7 +35,6 @@ import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.initializer.ClassInitializerTranslator;
-import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
@@ -233,7 +232,7 @@ public final class ClassTranslator extends AbstractTranslator {
         List<JsExpression> list = null;
         for (JetType type : supertypes) {
             ClassDescriptor result = getClassDescriptorForType(type);
-            if (isNotAny(result) && !AnnotationsUtils.isNativeObject(result)) {
+            if (isNotAny(result) && !context().isNative(result)) {
                 switch (result.getKind()) {
                     case CLASS:
                         base = getClassReference(result);

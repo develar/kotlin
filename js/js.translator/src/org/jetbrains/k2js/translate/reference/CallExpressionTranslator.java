@@ -31,7 +31,6 @@ import org.jetbrains.jet.lang.resolve.calls.model.VariableAsFunctionResolvedCall
 import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.PsiUtils;
 
@@ -130,6 +129,6 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
     }
 
     private boolean isNative() {
-        return AnnotationsUtils.isNativeObject(resolvedCall.getCandidateDescriptor());
+        return context().isNative(resolvedCall.getCandidateDescriptor());
     }
 }

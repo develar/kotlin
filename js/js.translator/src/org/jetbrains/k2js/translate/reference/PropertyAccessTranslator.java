@@ -26,7 +26,6 @@ import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 
-import static org.jetbrains.kotlin.compiler.AnnotationsUtils.isNativeObject;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getResolvedCallForProperty;
 
 public abstract class PropertyAccessTranslator extends AbstractTranslator implements AccessTranslator {
@@ -59,7 +58,7 @@ public abstract class PropertyAccessTranslator extends AbstractTranslator implem
             @NotNull CallType callType,
             @NotNull TranslationContext context
     ) {
-        if (JetPsiUtil.isBackingFieldReference(expression) || isNativeObject(propertyDescriptor)) {
+        if (JetPsiUtil.isBackingFieldReference(expression) || context.isNative(propertyDescriptor)) {
             return new NativePropertyAccessTranslator(propertyDescriptor, callType, qualifier, context);
         }
         else {

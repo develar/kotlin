@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.VirtualFileSystem;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.util.SingletonSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
@@ -41,6 +42,7 @@ import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
 
 import java.lang.ref.SoftReference;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -79,8 +81,8 @@ public final class TranslationUtils {
             };
             XAnalyzerFacade.checkForErrors(allLibFiles);
             ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
-            AnalyzeExhaust exhaust = XAnalyzerFacade
-                    .analyzeFiles(moduleConfiguration, allLibFiles, new TopDownAnalysisParameters(filesWithCode), false);
+            AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleConfiguration, allLibFiles,
+                                                                  new TopDownAnalysisParameters(filesWithCode), false);
             exhaust.throwIfError();
             cachedLibraryContext = new SoftReference<ModuleInfo>(moduleConfiguration);
             context = moduleConfiguration;
@@ -104,8 +106,9 @@ public final class TranslationUtils {
             @NotNull EcmaVersion version, TestConfigFactory configFactory
     ) throws Exception {
         List<JetFile> psiFiles = createPsiFileList(project, inputFiles, null);
+        ModuleInfo libraryContext = getLibraryContext(project);
         ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(Name.special('<' + TestConfig.TEST_MODULE_NAME + '>')), project,
-                                                                              getLibraryContext(project));
+                                                        Collections.singletonList(libraryContext), new SingletonSet<ModuleInfo>(libraryContext));
         AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleConfiguration, psiFiles, true);
         exhaust.throwIfError();
         TestConfig config = configFactory.create(moduleConfiguration, version);

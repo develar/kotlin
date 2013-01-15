@@ -27,6 +27,7 @@ import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
+import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import java.util.Map;
@@ -238,5 +239,9 @@ public class TranslationContext {
 
     public ModuleInfo getModule() {
         return staticContext.configuration.getModule();
+    }
+
+    public boolean isNative(DeclarationDescriptor descriptor) {
+        return staticContext.isFromNativeModule(descriptor) || AnnotationsUtils.isNativeByAnnotation(descriptor);
     }
 }

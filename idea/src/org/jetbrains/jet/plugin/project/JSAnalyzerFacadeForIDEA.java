@@ -21,6 +21,7 @@ import com.google.common.base.Predicates;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import com.intellij.util.SingletonSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.analyzer.AnalyzerFacade;
@@ -41,6 +42,7 @@ import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
@@ -61,8 +63,13 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     ) {
         ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
         XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
-        ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(MODULE_NAME), project, libraryModuleConfiguration);
+        ModuleInfo moduleConfiguration = createModuleInfo(project, libraryModuleConfiguration);
         return XAnalyzerFacade.analyzeFilesAndStoreBodyContext(moduleConfiguration, files, false);
+    }
+
+    private static ModuleInfo createModuleInfo(Project project, ModuleInfo libraryModuleConfiguration) {
+        return new ModuleInfo(new ModuleDescriptor(MODULE_NAME), project, Collections.<ModuleInfo>singletonList(libraryModuleConfiguration),
+                              new SingletonSet<ModuleInfo>(libraryModuleConfiguration));
     }
 
     @NotNull
@@ -94,7 +101,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
         ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
         ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
         XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
-        return new ResolveSession(project, lazyModule, new ModuleInfo(new ModuleDescriptor(MODULE_NAME), project, libraryModuleConfiguration), declarationProviderFactory);
+        return new ResolveSession(project, lazyModule, createModuleInfo(project, libraryModuleConfiguration), declarationProviderFactory);
     }
 
     private static List<JetFile> getLibraryFiles(Project project) {

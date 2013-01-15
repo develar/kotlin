@@ -172,7 +172,7 @@ public final class StaticContext {
             return new JsNameRef(name);
         }
 
-        if (isNativeObjectByModule(descriptor)) {
+        if (isFromNativeModule(descriptor)) {
             return new JsNameRef(descriptor.getName().getName());
         }
 
@@ -246,10 +246,18 @@ public final class StaticContext {
             return Namer.KOTLIN_OBJECT_NAME_REF;
         }
 
-        if (module.getName().equals(ModuleInfo.STUBS_MODULE_NAME) || AnnotationsUtils.isNativeByAnnotation(descriptor)) {
+        if (isNativeModule(module) || AnnotationsUtils.isNativeByAnnotation(descriptor)) {
             return null;
         }
         return getPackageQualifier((NamespaceDescriptor) namespace, module);
+    }
+
+    private boolean isNativeModule(ModuleDescriptor descriptor) {
+        return descriptor != configuration.getModule().getModuleDescriptor() && configuration.getModule().isDependencyProvided(descriptor);
+    }
+
+    public boolean isFromNativeModule(DeclarationDescriptor descriptor) {
+        return isNativeModule(DescriptorUtils.getModuleDescriptor(descriptor));
     }
 
     @NotNull
@@ -263,9 +271,7 @@ public final class StaticContext {
                 else {
                     ModuleInfo dependency = configuration.getModule().findDependency(moduleDescriptor);
                     assert dependency != null;
-                    if (!configuration.getModule().isDependencyProvided(dependency)) {
-                        result = new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(dependency.getName()));
-                    }
+                    result = new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(dependency.getName()));
                 }
             }
             else {

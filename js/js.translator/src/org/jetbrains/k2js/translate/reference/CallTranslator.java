@@ -35,11 +35,10 @@ import org.jetbrains.k2js.translate.utils.TranslationUtils;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.reference.CallParametersResolver.resolveCallParameters;
-import static org.jetbrains.kotlin.compiler.AnnotationsUtils.isLibraryObject;
-import static org.jetbrains.kotlin.compiler.AnnotationsUtils.isNativeObject;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
+import static org.jetbrains.kotlin.compiler.AnnotationsUtils.isLibraryObject;
 
 //TODO: write tests on calling backing fields as functions
 public final class CallTranslator extends AbstractTranslator {
@@ -93,7 +92,7 @@ public final class CallTranslator extends AbstractTranslator {
             return createConstructorCallExpression(ReferenceTranslator.translateAsFQReference(descriptor, context()));
         }
         if (resolvedCall.getReceiverArgument().exists()) {
-            if (isNativeObject(descriptor)) {
+            if (context().isNative(descriptor)) {
                 return methodCall(callParameters.getReceiver());
             }
             return extensionFunctionCall(!(descriptor instanceof ExpressionAsFunctionDescriptor));
@@ -133,7 +132,7 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     public HasArguments createConstructorCallExpression(@NotNull JsExpression constructorReference) {
         if (!context().isEcma5() ||
-            (isNativeObject(resolvedCall.getCandidateDescriptor()) && !isLibraryObject(resolvedCall.getCandidateDescriptor()))) {
+            (context().isNative(resolvedCall.getCandidateDescriptor()) && !isLibraryObject(resolvedCall.getCandidateDescriptor()))) {
             return new JsNew(constructorReference, arguments);
         }
         else {
