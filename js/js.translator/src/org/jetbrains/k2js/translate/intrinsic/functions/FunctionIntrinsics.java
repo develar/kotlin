@@ -16,9 +16,10 @@
 
 package org.jetbrains.k2js.translate.intrinsic.functions;
 
-import com.google.common.collect.Lists;
 import com.intellij.openapi.util.Pair;
-import com.intellij.util.containers.MultiMap;
+import com.intellij.openapi.util.Ref;
+import com.intellij.util.Processor;
+import com.intellij.util.containers.MostlySingularMultiMap;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,16 +28,14 @@ import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.factories.*;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 public final class FunctionIntrinsics {
     public static final String ANY_MEMBER = "";
 
     // member name -> descriptor name predicate : intrinsic
-    private static final MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics = MultiMap.createSmartList();
-    private static final Collection<Pair<DescriptorPredicate, FunctionIntrinsic>> anyIntrinsics;
+    private static final MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics = new MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>>();
+    private static final Iterable<Pair<DescriptorPredicate, FunctionIntrinsic>> anyIntrinsics;
 
     static {
         new ArrayFIF(intrinsics);
@@ -49,21 +48,6 @@ public final class FunctionIntrinsics {
 
     @NotNull
     private final Map<FunctionDescriptor, FunctionIntrinsic> intrinsicCache = new THashMap<FunctionDescriptor, FunctionIntrinsic>();
-
-    @NotNull
-    private final List<FunctionIntrinsicFactory> factories = Lists.newArrayList();
-
-    public FunctionIntrinsics() {
-        registerFactories();
-    }
-
-    private void registerFactories() {
-        register(PrimitiveBinaryOperationFIF.INSTANCE);
-    }
-
-    private void register(@NotNull FunctionIntrinsicFactory instance) {
-        factories.add(instance);
-    }
 
     @NotNull
     public FunctionIntrinsic getIntrinsic(@NotNull FunctionDescriptor descriptor) {
@@ -83,42 +67,34 @@ public final class FunctionIntrinsics {
         return result;
     }
 
-    @Nullable
-    private static FunctionIntrinsic findIntrinsic(
-            @NotNull FunctionDescriptor descriptor,
-            @NotNull Collection<Pair<DescriptorPredicate, FunctionIntrinsic>> pairs
-    ) {
-        for (Pair<DescriptorPredicate, FunctionIntrinsic> pair : pairs) {
-            if (pair.first.apply(descriptor)) {
-                return pair.second;
-            }
-        }
-        return null;
-    }
-
     @NotNull
-    private FunctionIntrinsic computeIntrinsic(@NotNull FunctionDescriptor descriptor) {
-        Collection<Pair<DescriptorPredicate,FunctionIntrinsic>> pairs = intrinsics.get(descriptor.getName().getName());
-        if (!pairs.isEmpty()) {
-            FunctionIntrinsic intrinsic = findIntrinsic(descriptor, pairs);
-            if (intrinsic != null) {
-                return intrinsic;
+    private static FunctionIntrinsic computeIntrinsic(@NotNull final FunctionDescriptor descriptor) {
+        final Ref<FunctionIntrinsic> result = Ref.create();
+        intrinsics.processForKey(descriptor.getName().getName(), new Processor<Pair<DescriptorPredicate, FunctionIntrinsic>>() {
+            @Override
+            public boolean process(Pair<DescriptorPredicate, FunctionIntrinsic> pair) {
+                if (pair.first.apply(descriptor)) {
+                    result.set(pair.second);
+                    return false;
+                }
+                return true;
             }
+        });
+
+        if (!result.isNull()) {
+            return result.get();
         }
 
         if (anyIntrinsics != null) {
-            FunctionIntrinsic intrinsic = findIntrinsic(descriptor, anyIntrinsics);
-            if (intrinsic != null) {
-                return intrinsic;
+            for (Pair<DescriptorPredicate, FunctionIntrinsic> pair : anyIntrinsics) {
+                if (pair.first.apply(descriptor)) {
+                    return pair.second;
+                }
             }
         }
 
-        for (FunctionIntrinsicFactory factory : factories) {
-            FunctionIntrinsic intrinsic = factory.getIntrinsic(descriptor);
-            if (intrinsic != null) {
-                return intrinsic;
-            }
-        }
-        return FunctionIntrinsic.NO_INTRINSIC;
+        // todo register this fif in intrinsics
+        FunctionIntrinsic intrinsic = PrimitiveBinaryOperationFIF.INSTANCE.getIntrinsic(descriptor);
+        return intrinsic != null ? intrinsic : FunctionIntrinsic.NO_INTRINSIC;
     }
 }

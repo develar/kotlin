@@ -20,7 +20,7 @@ import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsPrefixOperation;
 import com.google.dart.compiler.backend.js.ast.JsUnaryOperator;
 import com.intellij.openapi.util.Pair;
-import com.intellij.util.containers.MultiMap;
+import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
@@ -41,7 +41,7 @@ import java.util.List;
  * @author Pavel Talanov
  */
 public class PrimitiveUnaryOperationFIF extends CompositeFIF {
-    public PrimitiveUnaryOperationFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+    public PrimitiveUnaryOperationFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);
 
         for (PrimitiveType numberType : PrimitiveType.NUMBER_TYPES) {

@@ -20,7 +20,7 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.openapi.util.Pair;
-import com.intellij.util.containers.MultiMap;
+import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
@@ -71,7 +71,7 @@ public final class ArrayFIF extends CompositeFIF {
         }
     };
 
-    public ArrayFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+    public ArrayFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);
 
         FunctionIntrinsic arrayFromFun = kotlinFunction("arrayFromFun");

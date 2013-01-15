@@ -19,7 +19,7 @@ package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.intellij.openapi.util.Pair;
-import com.intellij.util.containers.MultiMap;
+import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.translate.context.Namer;
@@ -59,14 +59,14 @@ public abstract class CompositeFIF {
         }
     };
 
-    private final MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics;
+    private final MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics;
 
-    protected CompositeFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+    protected CompositeFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         this.intrinsics = intrinsics;
     }
 
     protected void add(@NotNull String memberName, @NotNull DescriptorPredicate packageNamePattern, @NotNull FunctionIntrinsic intrinsic) {
-        intrinsics.putValue(memberName, Pair.create(packageNamePattern, intrinsic));
+        intrinsics.add(memberName, Pair.create(packageNamePattern, intrinsic));
     }
 
     protected static FunctionIntrinsic kotlinFunction(@NotNull String functionName) {

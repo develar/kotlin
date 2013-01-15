@@ -18,7 +18,7 @@ package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.openapi.util.Pair;
-import com.intellij.util.containers.MultiMap;
+import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -36,7 +36,7 @@ import java.util.List;
  * @author Pavel Talanov
  */
 public final class StringOperationFIF extends CompositeFIF {
-    public StringOperationFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+    public StringOperationFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);
 
         DescriptorPattern string = new DescriptorPattern("jet", "String");

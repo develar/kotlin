@@ -18,7 +18,7 @@ package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.openapi.util.Pair;
-import com.intellij.util.containers.MultiMap;
+import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -41,10 +41,10 @@ import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPatte
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.NamePredicate;
 import org.jetbrains.k2js.translate.reference.CallTranslator;
-import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
+import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -126,7 +126,7 @@ public final class TopLevelFIF extends CompositeFIF {
         }
     };
 
-    public TopLevelFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+    public TopLevelFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);
 
         DescriptorPattern jet = new DescriptorPattern("jet");

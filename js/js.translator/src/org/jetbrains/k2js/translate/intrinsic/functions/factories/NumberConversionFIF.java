@@ -22,7 +22,7 @@ import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.intellij.openapi.util.Pair;
-import com.intellij.util.containers.MultiMap;
+import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -92,7 +92,7 @@ public final class NumberConversionFIF extends CompositeFIF {
         }
     };
 
-    public NumberConversionFIF(MultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
+    public NumberConversionFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);
 
         add(FunctionIntrinsics.ANY_MEMBER, pattern(INTEGER_NUMBER_TYPES, SUPPORTED_CONVERSIONS), RETURN_RECEIVER);
