@@ -16,7 +16,9 @@
 
 package org.jetbrains.jet.compiler.runner;
 
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.Function;
+import com.intellij.util.SmartList;
 import com.intellij.util.lang.UrlClassLoader;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
@@ -26,10 +28,10 @@ import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.config.CompilerConfigurationKey;
 import org.jetbrains.jet.utils.KotlinPaths;
-import org.jetbrains.kotlin.compiler.OutputConsumer;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
+import org.jetbrains.kotlin.compiler.OutputConsumer;
 
 import java.io.*;
 import java.lang.ref.SoftReference;
@@ -51,19 +53,26 @@ public class CompilerRunnerUtil {
     }
 
     public static List<File> kompilerClasspath(KotlinPaths paths, MessageCollector messageCollector) {
-        File libs = paths.getLibPath();
+        List<File> result = new SmartList<File>();
+        String classpath = System.getProperty("kotlin.compiler.classpath");
+        if (classpath != null) {
+            for (String path : StringUtil.split(classpath, ";")) {
+                result.add(new File(path));
+            }
+            return result;
+        }
 
+        File libs = paths.getLibPath();
         if (!libs.exists() || libs.isFile()) {
             messageCollector.report(ERROR, "Broken compiler at '" + libs.getAbsolutePath() + "'. Make sure plugin is properly installed", NO_LOCATION);
             return Collections.emptyList();
         }
 
-        ArrayList<File> answer = new ArrayList<File>();
-        answer.add(new File(libs, "kotlin-compiler.jar"));
-        return answer;
+        result.add(new File(libs, "kotlin-compiler.jar"));
+        return result;
     }
 
-    public static ClassLoader getOrCreateClassLoader(KotlinPaths paths, MessageCollector messageCollector) {
+    public static synchronized ClassLoader getOrCreateClassLoader(KotlinPaths paths, MessageCollector messageCollector) {
         ClassLoader answer = ourClassLoaderRef.get();
         if (answer == null) {
             answer = createClassLoader(paths, messageCollector);
