@@ -22,7 +22,6 @@ import com.intellij.util.Processor;
 import com.intellij.util.containers.MostlySingularMultiMap;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.factories.*;
@@ -51,13 +50,8 @@ public final class FunctionIntrinsics {
 
     @NotNull
     public FunctionIntrinsic getIntrinsic(@NotNull FunctionDescriptor descriptor) {
-        FunctionIntrinsic intrinsic = lookUpCache(descriptor);
+        FunctionIntrinsic intrinsic = intrinsicCache.get(descriptor);
         return intrinsic != null ? intrinsic : computeAndCacheIntrinsic(descriptor);
-    }
-
-    @Nullable
-    private FunctionIntrinsic lookUpCache(@NotNull FunctionDescriptor descriptor) {
-        return intrinsicCache.get(descriptor);
     }
 
     @NotNull
