@@ -162,13 +162,12 @@ public class KotlinCompiler {
     }
 
     @Nullable
-    protected ModuleInfo compileModule(String moduleName, final boolean analyzeCompletely) {
+    protected ModuleInfo compileModule(String moduleName, boolean analyzeCompletely) {
         Pair<List<ModuleInfo>, Set<ModuleInfo>> dependencies = collectDependencies(moduleName);
         if (dependencies == null) {
             return null;
         }
-
-        return analyzeModule(moduleName, null, analyzeCompletely, dependencies, true);
+        return analyzeModule(moduleName, null, analyzeCompletely, dependencies.first, dependencies.second, true);
     }
 
     @Nullable
@@ -176,11 +175,11 @@ public class KotlinCompiler {
             String moduleName,
             @Nullable Object moduleObject,
             final boolean analyzeCompletely,
-            Pair<List<ModuleInfo>, Set<ModuleInfo>> dependencies,
+            @Nullable List<ModuleInfo> dependencies,
+            @Nullable Set<ModuleInfo> providedDependencies,
             boolean checkSyntax
     ) {
         List<JetFile> sources = collectSourceFiles(moduleName, moduleObject);
-
         if (checkSyntax) {
             AnalyzerWithCompilerReport.ErrorReportingVisitor visitor = new AnalyzerWithCompilerReport.ErrorReportingVisitor(messageCollector);
             for (JetFile file : sources) {
@@ -192,7 +191,7 @@ public class KotlinCompiler {
             }
         }
 
-        ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies.first, dependencies.second);
+        ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies, providedDependencies);
         AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
         exhaust.throwIfError();
         boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector, checkSyntax ? DIAGNOSTIC_CODE_FILTER : DIAGNOSTIC_LIBRARY_FILTER);
@@ -217,16 +216,11 @@ public class KotlinCompiler {
                 // todo now we assume that idea module name and library name are unique
                 ModuleInfo moduleConfiguration = compiledModules.get(name);
                 if (moduleConfiguration == null) {
-                    // todo dependencies for library?
                     if (isLibrary) {
-                        moduleConfiguration = analyzeModule(name, dependency, false, Pair.create(Collections.<ModuleInfo>emptyList(),
-                                                                                                 Collections.<ModuleInfo>emptySet()),
-                                                            false);
+                        // todo dependencies for library?
+                        moduleConfiguration = analyzeModule(name, dependency, false, null, null, false);
                     }
                     else {
-                        //if (true) {
-                        //    throw new IllegalStateException("All project module dependencies must be compiled before dependent module compilation. Project module '" + name + "' is not compiled.");
-                        //}
                         moduleConfiguration = compileModule(name, false);
                     }
                     if (moduleConfiguration == null) {
