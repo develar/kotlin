@@ -26,20 +26,24 @@ import org.jetbrains.jet.lang.psi.JetAnnotationEntry;
 import java.util.Collection;
 
 public class JetAnnotationsIndex extends StringStubIndexExtension<JetAnnotationEntry> {
+    private static final StubIndexKey<String, JetAnnotationEntry> KEY = KotlinIndexUtil.createIndexKey(JetAnnotationsIndex.class);
+
     private static final JetAnnotationsIndex ourInstance = new JetAnnotationsIndex();
 
     public static JetAnnotationsIndex getInstance() {
         return ourInstance;
     }
 
+    private JetAnnotationsIndex() {}
+
     @NotNull
     @Override
     public StubIndexKey<String, JetAnnotationEntry> getKey() {
-        return JetIndexKeys.ANNOTATIONS_KEY;
+        return KEY;
     }
 
     @Override
     public Collection<JetAnnotationEntry> get(final String s, final Project project, @NotNull final GlobalSearchScope scope) {
-        return super.get(s, project, new JetSourceFilterScope(scope));
+        return super.get(s, project, JetSourceFilterScope.kotlinSourcesAndLibraries(scope));
     }
 }

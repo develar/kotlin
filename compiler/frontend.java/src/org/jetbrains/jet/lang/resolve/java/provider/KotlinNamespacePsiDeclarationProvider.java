@@ -19,33 +19,34 @@ package org.jetbrains.jet.lang.resolve.java.provider;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiPackage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.lang.resolve.java.PsiClassFinder;
 
 import static org.jetbrains.jet.lang.resolve.java.provider.DeclarationOrigin.KOTLIN;
 
 public final class KotlinNamespacePsiDeclarationProvider extends ClassPsiDeclarationProviderImpl implements PackagePsiDeclarationProvider {
-
     @NotNull
-    private final PackagePsiDeclarationProvider packagePsiDeclarationProvider;
+    private final PsiPackage psiPackage;
 
     public KotlinNamespacePsiDeclarationProvider(
             @NotNull PsiPackage psiPackage,
-            @NotNull PsiClass psiClass
+            @NotNull PsiClass psiClass,
+            @NotNull PsiClassFinder psiClassFinder
     ) {
-        super(psiClass, true);
-        this.packagePsiDeclarationProvider = PsiDeclarationProviderFactory.createDeclarationProviderForNamespaceWithoutMembers(psiPackage);
+        super(psiClass, true, psiClassFinder);
+        this.psiPackage = psiPackage;
     }
 
     @NotNull
     @Override
     public PsiPackage getPsiPackage() {
-        return packagePsiDeclarationProvider.getPsiPackage();
+        return psiPackage;
     }
 
     @NotNull
     @Override
     protected MembersCache buildMembersCache() {
         MembersCache cacheWithMembers = super.buildMembersCache();
-        MembersCache.buildMembersByNameCache(cacheWithMembers, null, packagePsiDeclarationProvider.getPsiPackage(), true, getDeclarationOrigin() == KOTLIN);
+        MembersCache.buildMembersByNameCache(cacheWithMembers, psiClassFinder, null, psiPackage, true, getDeclarationOrigin() == KOTLIN);
         return cacheWithMembers;
     }
 

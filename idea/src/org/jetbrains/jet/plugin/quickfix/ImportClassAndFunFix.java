@@ -39,23 +39,19 @@ import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.asJava.JetLightClass;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
-import org.jetbrains.jet.lang.descriptors.Visibilities;
 import org.jetbrains.jet.lang.diagnostics.Diagnostic;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.ImportPath;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.plugin.JetBundle;
 import org.jetbrains.jet.plugin.actions.JetAddImportAction;
-import org.jetbrains.jet.plugin.caches.JetCacheManager;
 import org.jetbrains.jet.plugin.caches.JetShortNamesCache;
 import org.jetbrains.jet.plugin.project.JsModuleDetector;
 import org.jetbrains.jet.plugin.project.WholeProjectAnalyzerFacade;
@@ -121,7 +117,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
             @NotNull ResolveSession resolveSession,
             @NotNull Project project
     ) {
-        JetShortNamesCache namesCache = JetCacheManager.getInstance(project).getNamesCache();
+        JetShortNamesCache namesCache = JetShortNamesCache.getKotlinInstance(project);
 
         Collection<FunctionDescriptor> topLevelFunctions = namesCache.getTopLevelFunctionDescriptorsByName(
                 referenceName, expression, resolveSession, GlobalSearchScope.allScope(project));
@@ -141,7 +137,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
             @NotNull ResolveSession resolveSession,
             @NotNull Project project
     ) {
-        JetShortNamesCache namesCache = JetCacheManager.getInstance(project).getNamesCache();
+        JetShortNamesCache namesCache = JetShortNamesCache.getKotlinInstance(project);
         Collection<DeclarationDescriptor> jetCallableExtensions = namesCache.getJetCallableExtensions(
                 new Condition<String>() {
                     @Override
@@ -180,7 +176,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
     }
 
     private static Collection<FqName> getClassesFromCache(@NotNull final String typeName, @NotNull JetFile file) {
-        PsiShortNamesCache cache = JetCacheManager.getInstance(file.getProject()).getShortNamesCache(file);
+        PsiShortNamesCache cache = getShortNamesCache(file);
 
         PsiClass[] classes = cache.getClassesByName(typeName, GlobalSearchScope.allScope(file.getProject()));
 
@@ -204,8 +200,16 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
         });
     }
 
+    private static PsiShortNamesCache getShortNamesCache(@NotNull JetFile jetFile) {
+        if (JsModuleDetector.isJsModule(jetFile)) {
+            return JetShortNamesCache.getKotlinInstance(jetFile.getProject());
+        }
+
+        return PsiShortNamesCache.getInstance(jetFile.getProject());
+    }
+
     private static Collection<FqName> getJetClasses(@NotNull final String typeName, @NotNull Project project, @NotNull ResolveSession resolveSession) {
-        JetShortNamesCache cache = JetCacheManager.getInstance(project).getNamesCache();
+        JetShortNamesCache cache = JetShortNamesCache.getKotlinInstance(project);
         Collection<ClassDescriptor> descriptors = cache.getJetClassesDescriptors(new Condition<String>() {
             @Override
             public boolean value(String s) {
@@ -222,20 +226,6 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
     }
 
     private static boolean isAccessible(PsiMember member) {
-        if (member instanceof JetLightClass) {
-            // TODO: Now light classes losing accessibility information
-            JetLightClass lightClass = (JetLightClass) member;
-            BindingContext context = WholeProjectAnalyzerFacade.analyzeProjectWithCacheOnAFile((JetFile) lightClass.getContainingFile()).getBindingContext();
-            ClassDescriptor descriptor = context.get(BindingContext.FQNAME_TO_CLASS_DESCRIPTOR, lightClass.getFqName());
-
-            if (descriptor != null) {
-                return descriptor.getVisibility() == Visibilities.PUBLIC || descriptor.getVisibility() == Visibilities.INTERNAL;
-            }
-            else {
-                assert false : "Descriptor of the class isn't found in the binding context: " + member;
-            }
-        }
-
         return member.hasModifierProperty(PsiModifier.PUBLIC) || member.hasModifierProperty(PsiModifier.PROTECTED);
     }
 

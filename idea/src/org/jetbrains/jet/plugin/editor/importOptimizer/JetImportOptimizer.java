@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.ImportPath;
-import org.jetbrains.jet.lang.resolve.java.JvmAbi;
+import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.plugin.quickfix.ImportInsertHelper;
@@ -190,7 +190,7 @@ public class JetImportOptimizer implements ImportOptimizer {
         if (element instanceof JetFile) {
             return JetPsiUtil.getFQName((JetFile) element);
         }
-        
+
         if (element instanceof JetSimpleNameExpression) {
             JetNamespaceHeader namespaceHeader = PsiTreeUtil.getParentOfType(element, JetNamespaceHeader.class);
             if (namespaceHeader != null) {
@@ -221,7 +221,7 @@ public class JetImportOptimizer implements ImportOptimizer {
                 return new FqName(qualifiedName);
             }
         }
-        
+
         if (element instanceof PsiField) {
             PsiField field = (PsiField) element;
 
@@ -230,7 +230,7 @@ public class JetImportOptimizer implements ImportOptimizer {
                 return null;
             }
 
-            return combineClassFqNameWithMemberName(classFQN, field.getName());
+            return combineClassFqNameWithMemberName(field.getContainingClass(), classFQN, field.getName());
         }
 
         // TODO: Still problem with kotlin global properties imported from class files
@@ -245,7 +245,7 @@ public class JetImportOptimizer implements ImportOptimizer {
                 return classFQN;
             }
 
-            return combineClassFqNameWithMemberName(classFQN, method.getName());
+            return combineClassFqNameWithMemberName(method.getContainingClass(), classFQN, method.getName());
         }
 
         if (element instanceof PsiPackage) {
@@ -256,11 +256,11 @@ public class JetImportOptimizer implements ImportOptimizer {
     }
 
     @Nullable
-    private static FqName combineClassFqNameWithMemberName(FqName classFQN, String memberName) {
+    private static FqName combineClassFqNameWithMemberName(PsiClass containingClass, FqName classFQN, String memberName) {
         if (memberName == null) {
             return null;
         }
-        if (classFQN.shortName().getName().equals(JvmAbi.PACKAGE_CLASS)) {
+        if (PackageClassUtils.isPackageClass(containingClass)) {
             return QualifiedNamesUtil.combine(classFQN.parent(), Name.identifier(memberName));
         }
         else {

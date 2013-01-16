@@ -33,11 +33,11 @@ import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.java.JvmClassName;
+import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
+import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.codegen.state.Progress;
 
 import java.io.File;
 import java.util.Collection;
@@ -82,13 +82,16 @@ public class NamespaceCodegen extends MemberCodegen {
         });
     }
 
-    public void generate(CompilationErrorHandler errorHandler, final Progress progress) {
+    public void generate(CompilationErrorHandler errorHandler) {
         boolean multiFile = CodegenBinding.isMultiFileNamespace(state.getBindingContext(), name);
+
+        if (shouldGenerateNSClass(files)) {
+            v.getClassBuilder().newAnnotation(JvmStdlibNames.JET_PACKAGE_CLASS.getDescriptor(), true);
+        }
 
         for (JetFile file : files) {
             VirtualFile vFile = file.getVirtualFile();
             try {
-                final String path = vFile != null ? vFile.getPath() : "no_virtual_file/" + file.getName();
                 generate(file, multiFile);
             }
             catch (ProcessCanceledException e) {
@@ -113,6 +116,7 @@ public class NamespaceCodegen extends MemberCodegen {
 
     private void generate(JetFile file, boolean multiFile) {
         NamespaceDescriptor descriptor = state.getBindingContext().get(BindingContext.FILE_TO_NAMESPACE, file);
+        assert descriptor != null : "No namespace found for file " + file + " declared package: " + file.getPackageName();
         for (JetDeclaration declaration : file.getDeclarations()) {
             if (declaration instanceof JetProperty) {
                 final CodegenContext context = CodegenContext.STATIC.intoNamespace(descriptor);
@@ -125,8 +129,9 @@ public class NamespaceCodegen extends MemberCodegen {
                 }
             }
             else if (declaration instanceof JetClassOrObject) {
-                final CodegenContext context = CodegenContext.STATIC.intoNamespace(descriptor);
-                genClassOrObject(context, (JetClassOrObject) declaration);
+                if (state.isGenerateDeclaredClasses()) {
+                    generateClassOrObject(descriptor, (JetClassOrObject) declaration);
+                }
             }
             else if (declaration instanceof JetScript) {
                 state.getScriptCodegen().generate((JetScript) declaration);
@@ -142,7 +147,8 @@ public class NamespaceCodegen extends MemberCodegen {
             }
 
             if (k > 0) {
-                String namespaceInternalName = JvmClassName.byFqNameWithoutInnerClasses(name.child(Name.identifier(JvmAbi.PACKAGE_CLASS))).getInternalName();
+                String namespaceInternalName = JvmClassName.byFqNameWithoutInnerClasses(
+                                                    PackageClassUtils.getPackageClassFqName(name)).getInternalName();
                 String className = getMultiFileNamespaceInternalName(namespaceInternalName, file);
                 ClassBuilder builder = state.getFactory().forNamespacepart(className, file);
 
@@ -174,6 +180,11 @@ public class NamespaceCodegen extends MemberCodegen {
                 builder.done();
             }
         }
+    }
+
+    public void generateClassOrObject(@NotNull NamespaceDescriptor descriptor, @NotNull JetClassOrObject classOrObject) {
+        CodegenContext context = CodegenContext.STATIC.intoNamespace(descriptor);
+        genClassOrObject(context, classOrObject);
     }
 
     /**
@@ -266,11 +277,12 @@ public class NamespaceCodegen extends MemberCodegen {
 
     @NotNull
     public static JvmClassName getJVMClassNameForKotlinNs(@NotNull FqName fqName) {
+        String packageClassName = PackageClassUtils.getPackageClassName(fqName);
         if (fqName.isRoot()) {
-            return JvmClassName.byInternalName(JvmAbi.PACKAGE_CLASS);
+            return JvmClassName.byInternalName(packageClassName);
         }
 
-        return JvmClassName.byFqNameWithoutInnerClasses(fqName.child(Name.identifier(JvmAbi.PACKAGE_CLASS)));
+        return JvmClassName.byFqNameWithoutInnerClasses(fqName.child(Name.identifier(packageClassName)));
     }
 
     @NotNull

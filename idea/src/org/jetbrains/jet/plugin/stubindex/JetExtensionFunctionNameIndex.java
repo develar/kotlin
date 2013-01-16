@@ -22,15 +22,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetNamedFunction;
 
 public class JetExtensionFunctionNameIndex extends StringStubIndexExtension<JetNamedFunction> {
+    private static final StubIndexKey<String, JetNamedFunction> KEY = KotlinIndexUtil.createIndexKey(JetExtensionFunctionNameIndex.class);
+
     private static final JetExtensionFunctionNameIndex instance = new JetExtensionFunctionNameIndex();
 
     public static JetExtensionFunctionNameIndex getInstance() {
         return instance;
     }
 
+    private JetExtensionFunctionNameIndex() {}
+
     @NotNull
     @Override
     public StubIndexKey<String, JetNamedFunction> getKey() {
-        return JetIndexKeys.TOP_LEVEL_EXTENSION_FUNCTION_SHORT_NAME_KEY;
+        return KEY;
     }
 }

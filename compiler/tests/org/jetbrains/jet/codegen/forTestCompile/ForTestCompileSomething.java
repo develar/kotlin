@@ -27,7 +27,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Stack;
+import com.intellij.util.containers.Stack;
+
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -45,9 +46,9 @@ abstract class ForTestCompileSomething {
         long start = System.currentTimeMillis();
         this.jarName = jarName;
         try {
-            File tmpDir = JetTestUtils.tmpDir("runtimejar");
+            File tmpDir = JetTestUtils.tmpDir("test_jars");
 
-            jarFile = new File(tmpDir, "runtime.jar");
+            jarFile = new File(tmpDir, jarName + ".jar");
 
             File classesDir = new File(tmpDir, "classes");
 

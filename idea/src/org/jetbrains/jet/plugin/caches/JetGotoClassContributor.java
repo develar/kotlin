@@ -30,6 +30,7 @@ import org.jetbrains.jet.plugin.stubindex.JetShortClassNameIndex;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 public class JetGotoClassContributor implements GotoClassContributor {
     @Override
@@ -53,14 +54,14 @@ public class JetGotoClassContributor implements GotoClassContributor {
     @NotNull
     @Override
     public String[] getNames(Project project, boolean includeNonProjectItems) {
-        return JetCacheManager.getInstance(project).getNamesCache().getAllClassNames();
+        return JetShortNamesCache.getKotlinInstance(project).getAllClassNames();
     }
 
     @NotNull
     @Override
     public NavigationItem[] getItemsByName(String name, String pattern, Project project, boolean includeNonProjectItems) {
         final GlobalSearchScope scope = GlobalSearchScope.allScope(project);
-        PsiClass[] classes = JetCacheManager.getInstance(project).getNamesCache().getClassesByName(name, scope);
+        PsiClass[] classes = JetShortNamesCache.getKotlinInstance(project).getClassesByName(name, scope);
 
         Collection<String> javaQualifiedNames = new HashSet<String>();
 
@@ -71,25 +72,23 @@ public class JetGotoClassContributor implements GotoClassContributor {
             }
         }
 
-        ArrayList<NavigationItem> items = new ArrayList<NavigationItem>();
+        List<NavigationItem> items = new ArrayList<NavigationItem>();
         Collection<JetClassOrObject> classesOrObjects = JetShortClassNameIndex.getInstance().get(name, project, scope);
 
         for (JetClassOrObject classOrObject : classesOrObjects) {
-            if (classOrObject instanceof JetNamedDeclaration) {
-                FqName fqName = JetPsiUtil.getFQName((JetNamedDeclaration) classOrObject);
-                if (fqName == null || javaQualifiedNames.contains(fqName.toString())) {
-                    continue;
-                }
+            FqName fqName = JetPsiUtil.getFQName(classOrObject);
+            if (fqName == null || javaQualifiedNames.contains(fqName.toString())) {
+                continue;
+            }
 
-                if (classOrObject instanceof JetObjectDeclaration) {
-                    // items.add((JetObjectDeclaration) classOrObject);
-                }
-                else if (classOrObject instanceof JetClass) {
-                    items.add(classOrObject);
-                }
-                else {
-                    assert false;
-                }
+            if (classOrObject instanceof JetObjectDeclaration) {
+                // items.add((JetObjectDeclaration) classOrObject);
+            }
+            else if (classOrObject instanceof JetClass) {
+                items.add(classOrObject);
+            }
+            else {
+                assert false;
             }
         }
 

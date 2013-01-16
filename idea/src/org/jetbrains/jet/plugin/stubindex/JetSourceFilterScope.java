@@ -26,23 +26,34 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.plugin.JetFileType;
 
 public class JetSourceFilterScope extends DelegatingGlobalSearchScope {
-    private final ProjectFileIndex myIndex;
+    public static JetSourceFilterScope kotlinSourcesAndLibraries(@NotNull GlobalSearchScope delegate) {
+        return new JetSourceFilterScope(delegate, true);
+    }
 
-    public JetSourceFilterScope(@NotNull final GlobalSearchScope delegate) {
+    public static JetSourceFilterScope kotlinSources(@NotNull GlobalSearchScope delegate) {
+        return new JetSourceFilterScope(delegate, false);
+    }
+
+    private final ProjectFileIndex index;
+    private final boolean includeLibraries;
+
+    private JetSourceFilterScope(@NotNull GlobalSearchScope delegate, boolean includeLibraries) {
         super(delegate);
-        myIndex = ProjectRootManager.getInstance(getProject()).getFileIndex();
+        this.includeLibraries = includeLibraries;
+        index = ProjectRootManager.getInstance(getProject()).getFileIndex();
     }
 
     @Override
-    public boolean contains(final VirtualFile file) {
+    public boolean contains(VirtualFile file) {
         if (!super.contains(file)) {
             return false;
         }
 
-        if (StdFileTypes.CLASS == file.getFileType()) {
-            return myIndex.isInLibraryClasses(file);
+        if (includeLibraries && StdFileTypes.CLASS == file.getFileType()) {
+            return index.isInLibraryClasses(file);
         }
 
-        return file.getFileType().equals(JetFileType.INSTANCE) && (myIndex.isInSourceContent(file) || myIndex.isInLibrarySource(file));
+        return file.getFileType().equals(JetFileType.INSTANCE) &&
+               (index.isInSourceContent(file) || includeLibraries && index.isInLibrarySource(file));
     }
 }

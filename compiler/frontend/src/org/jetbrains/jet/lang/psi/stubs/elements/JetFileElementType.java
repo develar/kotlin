@@ -35,7 +35,7 @@ import org.jetbrains.jet.plugin.JetLanguage;
 import java.io.IOException;
 
 public class JetFileElementType extends IStubFileElementType<PsiJetFileStub> {
-    public static final int STUB_VERSION = 18;
+    public static final int STUB_VERSION = 20;
 
     public JetFileElementType() {
         super("jet.FILE", JetLanguage.INSTANCE);
@@ -82,6 +82,6 @@ public class JetFileElementType extends IStubFileElementType<PsiJetFileStub> {
 
     @Override
     public void indexStub(final PsiJetFileStub stub, final IndexSink sink) {
-        // Don't index file
+        StubIndexServiceFactory.getInstance().indexFile(stub, sink);
     }
 }

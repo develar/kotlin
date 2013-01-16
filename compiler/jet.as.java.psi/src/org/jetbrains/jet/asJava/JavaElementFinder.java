@@ -16,8 +16,11 @@
 
 package org.jetbrains.jet.asJava;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Sets;
+import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.*;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElementFinder;
 import com.intellij.psi.PsiManager;
@@ -29,66 +32,40 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.codegen.NamespaceCodegen;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.java.JavaPsiFacadeKotlinHacks;
-import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
-import org.jetbrains.jet.lang.resolve.java.JvmAbi;
+import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.util.QualifiedNamesUtil;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 import static org.jetbrains.jet.codegen.CodegenUtil.getLocalNameForObject;
 
 public class JavaElementFinder extends PsiElementFinder implements JavaPsiFacadeKotlinHacks.KotlinFinderMarker {
+
+    @NotNull
+    public static JavaElementFinder getInstance(@NotNull Project project) {
+        PsiElementFinder[] extensions = Extensions.getArea(project).getExtensionPoint(PsiElementFinder.EP_NAME).getExtensions();
+        for (PsiElementFinder extension : extensions) {
+            if (extension instanceof JavaElementFinder) {
+                return (JavaElementFinder) extension;
+            }
+        }
+        throw new IllegalStateException(JavaElementFinder.class.getSimpleName() + " is not found for project " + project);
+    }
+
     private final Project project;
     private final PsiManager psiManager;
+    private final LightClassGenerationSupport lightClassGenerationSupport;
 
-    private final WeakHashMap<GlobalSearchScope, Collection<JetFile>> jetFiles = new WeakHashMap<GlobalSearchScope, Collection<JetFile>>();
-
-    public JavaElementFinder(Project project) {
+    public JavaElementFinder(
+            @NotNull Project project,
+            @NotNull LightClassGenerationSupport lightClassGenerationSupport
+    ) {
         this.project = project;
-        psiManager = PsiManager.getInstance(project);
-
-        // Monitoring for files instead of collecting them each time
-        VirtualFileManager.getInstance().addVirtualFileListener(new VirtualFileListener() {
-            @Override
-            public void fileCreated(VirtualFileEvent event) {
-                invalidateJetFilesCache();
-            }
-
-            @Override
-            public void fileDeleted(VirtualFileEvent event) {
-                invalidateJetFilesCache();
-            }
-
-            @Override
-            public void fileMoved(VirtualFileMoveEvent event) {
-                invalidateJetFilesCache();
-            }
-
-            @Override
-            public void fileCopied(VirtualFileCopyEvent event) {
-                invalidateJetFilesCache();
-            }
-
-            @Override
-            public void propertyChanged(VirtualFilePropertyEvent event) {}
-
-            @Override
-            public void contentsChanged(VirtualFileEvent event) {}
-
-            @Override
-            public void beforePropertyChange(VirtualFilePropertyEvent event) {}
-
-            @Override
-            public void beforeContentsChange(VirtualFileEvent event) {}
-
-            @Override
-            public void beforeFileDeletion(VirtualFileEvent event) {}
-
-            @Override
-            public void beforeFileMovement(VirtualFileMoveEvent event) {}
-        });
+        this.psiManager = PsiManager.getInstance(project);
+        this.lightClassGenerationSupport = lightClassGenerationSupport;
     }
 
     @Override
@@ -104,57 +81,44 @@ public class JavaElementFinder extends PsiElementFinder implements JavaPsiFacade
             return PsiClass.EMPTY_ARRAY;
         }
 
+        List<PsiClass> answer = new SmartList<PsiClass>();
+
         FqName qualifiedName = new FqName(qualifiedNameString);
 
-        // Backend searches for java.lang.String. Will fail with SOE if continue
-        if (qualifiedName.getFqName().startsWith("java.")) return PsiClass.EMPTY_ARRAY;
+        findClassesAndObjects(qualifiedName, scope, answer);
 
-        List<PsiClass> answer = new SmartList<PsiClass>();
-        final Collection<JetFile> filesInScope = collectProjectJetFiles(project, scope);
-        for (JetFile file : filesInScope) {
-            final FqName packageName = JetPsiUtil.getFQName(file);
-            if (packageName != null && qualifiedName.getFqName().startsWith(packageName.getFqName())) {
-                if (qualifiedName.equals(QualifiedNamesUtil.combine(packageName, Name.identifier(JvmAbi.PACKAGE_CLASS))) &&
-                    NamespaceCodegen.shouldGenerateNSClass(Arrays.asList(file))) {
-                    JetLightClass lightClass = JetLightClass.create(psiManager, file, qualifiedName);
-                    if (lightClass != null) {
-                        answer.add(lightClass);
-                    }
-                }
-                else {
-                    for (JetDeclaration declaration : file.getDeclarations()) {
-                        scanClasses(answer, declaration, qualifiedName, packageName, file);
-                    }
-                }
-            }
+        FqName packageFQN = qualifiedName.parent();
+        if (PackageClassUtils.getPackageClassFqName(packageFQN).equals(qualifiedName)) {
+            findPackageClass(packageFQN, scope, answer);
         }
+
         return answer.toArray(new PsiClass[answer.size()]);
     }
 
-    private void scanClasses(List<PsiClass> answer, JetDeclaration declaration, FqName qualifiedName, FqName containerFqn, JetFile file) {
-        if (declaration instanceof JetClassOrObject) {
-            String localName = getLocalName(declaration);
-            if (localName != null) {
-                FqName fqn = QualifiedNamesUtil.combine(containerFqn, Name.identifier(localName));
-                if (qualifiedName.equals(fqn)) {
-                    if (!(declaration instanceof JetEnumEntry)) {
-                        JetLightClass lightClass = JetLightClass.create(psiManager, file, qualifiedName);
-                        if (lightClass != null) {
-                            answer.add(lightClass);
-                        }
-                    }
-                }
-                else if (QualifiedNamesUtil.isSubpackageOf(qualifiedName, fqn)) {
-                    if (!(declaration instanceof JetEnumEntry)) {
-                        for (JetDeclaration child : ((JetClassOrObject) declaration).getDeclarations()) {
-                            scanClasses(answer, child, qualifiedName, fqn, file);
-                        }
-                    }
+    // Finds explicitly declared classes and objects, not package classes
+    private void findClassesAndObjects(FqName qualifiedName, GlobalSearchScope scope, List<PsiClass> answer) {
+        Collection<JetClassOrObject> classOrObjectDeclarations =
+                lightClassGenerationSupport.findClassOrObjectDeclarations(qualifiedName, scope);
+
+        for (JetClassOrObject declaration : classOrObjectDeclarations) {
+            if (!(declaration instanceof JetEnumEntry)) {
+                KotlinLightClassForExplicitDeclaration
+                        lightClass = KotlinLightClassForExplicitDeclaration.create(psiManager, qualifiedName, declaration);
+                if (lightClass != null) {
+                    answer.add(lightClass);
                 }
             }
         }
-        else if (declaration instanceof JetClassObject) {
-            scanClasses(answer, ((JetClassObject) declaration).getObjectDeclaration(), qualifiedName, containerFqn, file);
+    }
+
+    private void findPackageClass(FqName qualifiedName, GlobalSearchScope scope, List<PsiClass> answer) {
+        Collection<JetFile> filesForPackage = lightClassGenerationSupport.findFilesForPackage(qualifiedName, scope);
+
+        if (!filesForPackage.isEmpty() && NamespaceCodegen.shouldGenerateNSClass(filesForPackage)) {
+            KotlinLightClassForPackage lightClass = KotlinLightClassForPackage.create(psiManager, qualifiedName, filesForPackage);
+            if (lightClass != null) {
+                answer.add(lightClass);
+            }
         }
     }
 
@@ -170,19 +134,20 @@ public class JavaElementFinder extends PsiElementFinder implements JavaPsiFacade
         return null;
     }
 
+    @NotNull
     @Override
     public Set<String> getClassNames(@NotNull PsiPackage psiPackage, @NotNull GlobalSearchScope scope) {
-        Set<String> answer = new HashSet<String>();
-
         FqName packageFQN = new FqName(psiPackage.getQualifiedName());
-        for (JetFile psiFile : collectProjectJetFiles(project, GlobalSearchScope.allScope(project))) {
-            if (packageFQN.equals(JetPsiUtil.getFQName(psiFile))) {
-                answer.add(JvmAbi.PACKAGE_CLASS);
-                for (JetDeclaration declaration : psiFile.getDeclarations()) {
-                    if (declaration instanceof JetClassOrObject) {
-                        answer.add(getLocalName(declaration));
-                    }
-                }
+
+        Collection<JetClassOrObject> declarations = lightClassGenerationSupport.findClassOrObjectDeclarationsInPackage(packageFQN, scope);
+
+        Set<String> answer = Sets.newHashSet();
+        answer.add(PackageClassUtils.getPackageClassName(packageFQN));
+
+        for (JetClassOrObject declaration : declarations) {
+            String name = declaration.getName();
+            if (name != null) {
+                answer.add(name);
             }
         }
 
@@ -197,12 +162,10 @@ public class JavaElementFinder extends PsiElementFinder implements JavaPsiFacade
 
         FqName fqName = new FqName(qualifiedNameString);
 
-        final Collection<JetFile> psiFiles = collectProjectJetFiles(project, GlobalSearchScope.allScope(project));
-
-        for (JetFile psiFile : psiFiles) {
-            if (QualifiedNamesUtil.isSubpackageOf(JetPsiUtil.getFQName(psiFile), fqName)) {
-                return new JetLightPackage(psiManager, fqName, psiFile.getNamespaceHeader());
-            }
+        // allScope() because the contract says that the whole project
+        GlobalSearchScope allScope = GlobalSearchScope.allScope(project);
+        if (lightClassGenerationSupport.packageExists(fqName, allScope)) {
+            return new JetLightPackage(psiManager, fqName, allScope);
         }
 
         return null;
@@ -210,19 +173,17 @@ public class JavaElementFinder extends PsiElementFinder implements JavaPsiFacade
 
     @NotNull
     @Override
-    public PsiPackage[] getSubPackages(@NotNull PsiPackage psiPackage, @NotNull GlobalSearchScope scope) {
-        final Collection<JetFile> psiFiles = collectProjectJetFiles(project, GlobalSearchScope.allScope(project));
+    public PsiPackage[] getSubPackages(@NotNull PsiPackage psiPackage, @NotNull final GlobalSearchScope scope) {
+        FqName packageFQN = new FqName(psiPackage.getQualifiedName());
 
-        Set<PsiPackage> answer = new HashSet<PsiPackage>();
+        Collection<FqName> subpackages = lightClassGenerationSupport.getSubPackages(packageFQN, scope);
 
-        for (JetFile psiFile : psiFiles) {
-            FqName jetRootNamespace = JetPsiUtil.getFQName(psiFile);
-
-            final FqName subPackageFQN = QualifiedNamesUtil.plusOneSegment(new FqName(psiPackage.getQualifiedName()), jetRootNamespace);
-            if (subPackageFQN != null) {
-                answer.add(new JetLightPackage(psiManager, subPackageFQN, psiFile.getNamespaceHeader()));
+        Collection<PsiPackage> answer = Collections2.transform(subpackages, new Function<FqName, PsiPackage>() {
+            @Override
+            public PsiPackage apply(@Nullable FqName input) {
+                return new JetLightPackage(psiManager, input, scope);
             }
-        }
+        });
 
         return answer.toArray(new PsiPackage[answer.size()]);
     }
@@ -231,46 +192,23 @@ public class JavaElementFinder extends PsiElementFinder implements JavaPsiFacade
     @Override
     public PsiClass[] getClasses(@NotNull PsiPackage psiPackage, @NotNull GlobalSearchScope scope) {
         List<PsiClass> answer = new SmartList<PsiClass>();
-        final Collection<JetFile> filesInScope = collectProjectJetFiles(project, scope);
         FqName packageFQN = new FqName(psiPackage.getQualifiedName());
-        for (JetFile file : filesInScope) {
-            if (packageFQN.equals(JetPsiUtil.getFQName(file))) {
-                JetLightClass lightClass = JetLightClass
-                        .create(psiManager, file, QualifiedNamesUtil.combine(packageFQN, Name.identifier(JvmAbi.PACKAGE_CLASS)));
-                if (lightClass != null) {
-                    answer.add(lightClass);
-                }
-                for (JetDeclaration declaration : file.getDeclarations()) {
-                    if (declaration instanceof JetClassOrObject) {
-                        String localName = getLocalName(declaration);
-                        if (localName != null) {
-                            JetLightClass aClass = JetLightClass.create(psiManager, file,
-                                                                   QualifiedNamesUtil.combine(packageFQN, Name.identifier(localName)));
-                            if (aClass != null) {
-                                answer.add(aClass);
-                            }
-                        }
-                    }
+
+        findPackageClass(packageFQN, scope, answer);
+
+        Collection<JetClassOrObject> declarations = lightClassGenerationSupport.findClassOrObjectDeclarationsInPackage(packageFQN, scope);
+        for (JetClassOrObject declaration : declarations) {
+            String localName = getLocalName(declaration);
+            if (localName != null) {
+                KotlinLightClassForExplicitDeclaration aClass = KotlinLightClassForExplicitDeclaration
+                        .create(psiManager, packageFQN.child(Name.identifier(localName)), declaration);
+                if (aClass != null) {
+                    answer.add(aClass);
                 }
             }
         }
 
         return answer.toArray(new PsiClass[answer.size()]);
-    }
-
-    private synchronized void invalidateJetFilesCache() {
-        jetFiles.clear();
-    }
-
-    private synchronized Collection<JetFile> collectProjectJetFiles(final Project project, @NotNull final GlobalSearchScope scope) {
-        Collection<JetFile> cachedFiles = jetFiles.get(scope);
-        
-        if (cachedFiles == null) {
-            cachedFiles = JetFilesProvider.getInstance(project).allInScope(scope);
-            jetFiles.put(scope, cachedFiles);
-        }
-
-        return cachedFiles;
     }
 }
 

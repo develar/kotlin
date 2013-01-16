@@ -29,6 +29,7 @@ import org.jetbrains.jet.codegen.flags.AbstractWriteFlagsTest;
 import org.jetbrains.jet.codegen.generated.AbstractCodegenTest;
 import org.jetbrains.jet.jvm.compiler.AbstractCompileJavaAgainstKotlinTest;
 import org.jetbrains.jet.jvm.compiler.AbstractCompileKotlinAgainstKotlinTest;
+import org.jetbrains.jet.jvm.compiler.AbstractCompileKotlinAgainstCustomJavaTest;
 import org.jetbrains.jet.jvm.compiler.AbstractLoadCompiledKotlinTest;
 import org.jetbrains.jet.jvm.compiler.AbstractLoadJavaTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveDescriptorRendererTest;
@@ -176,6 +177,13 @@ public class GenerateTests {
 
         generateTest(
                 "compiler/tests/",
+                "CompileKotlinAgainstCustomJavaGenerated",
+                AbstractCompileKotlinAgainstCustomJavaTest.class,
+                testModel("compiler/testData/compileKotlinAgainstCustomJava")
+        );
+
+        generateTest(
+                "compiler/tests/",
                 "LazyResolveDescriptorRendererTestGenerated",
                 AbstractLazyResolveDescriptorRendererTest.class,
                 testModel("compiler/testData/renderer")
@@ -206,7 +214,7 @@ public class GenerateTests {
                 testModel("idea/testData/checker", false, "kt", "doTest"),
                 testModel("idea/testData/checker/regression"),
                 testModel("idea/testData/checker/rendering"),
-                testModel("idea/testData/checker/infos")
+                testModel("idea/testData/checker/infos", false, "kt", "doTestWithInfos")
         );
 
         generateTest(

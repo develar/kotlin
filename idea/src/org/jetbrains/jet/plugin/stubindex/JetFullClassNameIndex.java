@@ -26,20 +26,24 @@ import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import java.util.Collection;
 
 public class JetFullClassNameIndex extends StringStubIndexExtension<JetClassOrObject> {
+    private static final StubIndexKey<String, JetClassOrObject> KEY = KotlinIndexUtil.createIndexKey(JetFullClassNameIndex.class);
+
     private static final JetFullClassNameIndex ourInstance = new JetFullClassNameIndex();
 
     public static JetFullClassNameIndex getInstance() {
         return ourInstance;
     }
 
+    private JetFullClassNameIndex() {}
+
     @NotNull
     @Override
     public StubIndexKey<String, JetClassOrObject> getKey() {
-        return JetIndexKeys.FQN_KEY;
+        return KEY;
     }
 
     @Override
     public Collection<JetClassOrObject> get(final String fqName, final Project project, @NotNull final GlobalSearchScope scope) {
-        return super.get(fqName, project, new JetSourceFilterScope(scope));
+        return super.get(fqName, project, JetSourceFilterScope.kotlinSourcesAndLibraries(scope));
     }
 }

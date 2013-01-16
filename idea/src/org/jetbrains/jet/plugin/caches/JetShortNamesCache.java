@@ -19,6 +19,7 @@ package org.jetbrains.jet.plugin.caches;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Sets;
+import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
 import com.intellij.psi.*;
@@ -27,6 +28,7 @@ import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.Processor;
 import com.intellij.util.containers.HashSet;
+import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,6 +39,7 @@ import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTraceContext;
 import org.jetbrains.jet.lang.resolve.ImportPath;
 import org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver;
+import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
@@ -44,6 +47,7 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils;
+import org.jetbrains.jet.plugin.caches.resolve.IDELightClassGenerationSupport;
 import org.jetbrains.jet.plugin.stubindex.*;
 
 import java.util.*;
@@ -54,14 +58,22 @@ import java.util.*;
  */
 public class JetShortNamesCache extends PsiShortNamesCache {
 
+    public static JetShortNamesCache getKotlinInstance(@NotNull Project project) {
+        PsiShortNamesCache[] extensions = Extensions.getArea(project).getExtensionPoint(PsiShortNamesCache.EP_NAME).getExtensions();
+        for (PsiShortNamesCache extension : extensions) {
+            if (extension instanceof JetShortNamesCache) {
+                return (JetShortNamesCache) extension;
+            }
+        }
+        throw new IllegalStateException(JetShortNamesCache.class.getSimpleName() + " is not found for project " + project);
+    }
+
     private static final PsiMethod[] NO_METHODS = new PsiMethod[0];
     private static final PsiField[] NO_FIELDS = new PsiField[0];
     private final Project project;
-    private final JavaElementFinder javaElementFinder;
 
     public JetShortNamesCache(Project project) {
         this.project = project;
-        this.javaElementFinder = new JavaElementFinder(project);
     }
 
     /**
@@ -71,6 +83,12 @@ public class JetShortNamesCache extends PsiShortNamesCache {
     @Override
     public String[] getAllClassNames() {
         Collection<String> classNames = JetShortClassNameIndex.getInstance().getAllKeys(project);
+
+        // .namespace classes can not be indexed, since they have no explicit declarations
+        IDELightClassGenerationSupport lightClassGenerationSupport = IDELightClassGenerationSupport.getInstanceForIDE(project);
+        Set<String> packageClassShortNames = lightClassGenerationSupport.getAllPackageClasses(GlobalSearchScope.allScope(project)).keySet();
+        classNames.addAll(packageClassShortNames);
+
         return ArrayUtil.toStringArray(classNames);
     }
 
@@ -80,21 +98,37 @@ public class JetShortNamesCache extends PsiShortNamesCache {
     @NotNull
     @Override
     public PsiClass[] getClassesByName(@NotNull @NonNls String name, @NotNull GlobalSearchScope scope) {
+        List<PsiClass> result = new ArrayList<PsiClass>();
+
+        IDELightClassGenerationSupport lightClassGenerationSupport = IDELightClassGenerationSupport.getInstanceForIDE(project);
+        MultiMap<String, FqName> packageClasses = lightClassGenerationSupport.getAllPackageClasses(scope);
+
+        // .namespace classes can not be indexed, since they have no explicit declarations
+        Collection<FqName> fqNames = packageClasses.get(name);
+        if (!fqNames.isEmpty()) {
+            for (FqName fqName : fqNames) {
+                PsiClass psiClass = JavaElementFinder.getInstance(project).findClass(fqName.getFqName(), scope);
+                if (psiClass != null) {
+                    result.add(psiClass);
+                }
+            }
+        }
+
         // Quick check for classes from getAllClassNames()
         Collection<JetClassOrObject> classOrObjects = JetShortClassNameIndex.getInstance().get(name, project, scope);
         if (classOrObjects.isEmpty()) {
-            return PsiClass.EMPTY_ARRAY;
+            return result.toArray(new PsiClass[result.size()]);
         }
 
-        List<PsiClass> result = new ArrayList<PsiClass>();
         for (JetClassOrObject classOrObject : classOrObjects) {
-            if (classOrObject instanceof JetNamedDeclaration) {
-                FqName fqName = JetPsiUtil.getFQName((JetNamedDeclaration) classOrObject);
-                if (fqName != null && fqName.shortName().getName().equals(name)) {
-                    PsiClass psiClass = javaElementFinder.findClass(fqName.getFqName(), scope);
-                    if (psiClass != null) {
-                        result.add(psiClass);
-                    }
+            FqName fqName = JetPsiUtil.getFQName(classOrObject);
+            if (fqName != null) {
+                assert fqName.shortName().getName().equals(name) : "A declaration obtained from index has non-matching name:\n" +
+                                                                   "in index: " + name + "\n" +
+                                                                   "declared: " + fqName.shortName() + "(" + fqName + ")";
+                PsiClass psiClass = JavaElementFinder.getInstance(project).findClass(fqName.getFqName(), scope);
+                if (psiClass != null) {
+                    result.add(psiClass);
                 }
             }
         }

@@ -26,20 +26,24 @@ import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
 import java.util.Collection;
 
 public class JetTopLevelShortObjectNameIndex extends StringStubIndexExtension<JetObjectDeclaration> {
+    private static final StubIndexKey<String, JetObjectDeclaration> KEY = KotlinIndexUtil.createIndexKey(JetTopLevelShortObjectNameIndex.class);
+
     private static final JetTopLevelShortObjectNameIndex ourInstance = new JetTopLevelShortObjectNameIndex();
 
     public static JetTopLevelShortObjectNameIndex getInstance() {
         return ourInstance;
     }
 
+    private JetTopLevelShortObjectNameIndex() {}
+
     @NotNull
     @Override
     public StubIndexKey<String, JetObjectDeclaration> getKey() {
-        return JetIndexKeys.TOP_LEVEL_OBJECT_SHORT_NAME_KEY;
+        return KEY;
     }
 
     @Override
     public Collection<JetObjectDeclaration> get(final String s, final Project project, @NotNull final GlobalSearchScope scope) {
-        return super.get(s, project, new JetSourceFilterScope(scope));
+        return super.get(s, project, JetSourceFilterScope.kotlinSourcesAndLibraries(scope));
     }
 }

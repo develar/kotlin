@@ -26,20 +26,24 @@ import org.jetbrains.jet.lang.psi.JetNamedFunction;
 import java.util.Collection;
 
 public class JetShortFunctionNameIndex extends StringStubIndexExtension<JetNamedFunction> {
+    private static final StubIndexKey<String, JetNamedFunction> KEY = KotlinIndexUtil.createIndexKey(JetShortFunctionNameIndex.class);
+
     private static final JetShortFunctionNameIndex ourInstance = new JetShortFunctionNameIndex();
 
     public static JetShortFunctionNameIndex getInstance() {
         return ourInstance;
     }
 
+    private JetShortFunctionNameIndex() {}
+
     @NotNull
     @Override
     public StubIndexKey<String, JetNamedFunction> getKey() {
-        return JetIndexKeys.TOP_LEVEL_FUNCTION_SHORT_NAME_KEY;
+        return KEY;
     }
 
     @Override
     public Collection<JetNamedFunction> get(final String s, final Project project, @NotNull final GlobalSearchScope scope) {
-        return super.get(s, project, new JetSourceFilterScope(scope));
+        return super.get(s, project, JetSourceFilterScope.kotlinSourcesAndLibraries(scope));
     }
 }

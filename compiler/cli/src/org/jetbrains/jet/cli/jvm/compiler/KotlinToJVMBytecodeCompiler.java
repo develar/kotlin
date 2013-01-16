@@ -35,8 +35,8 @@ import org.jetbrains.jet.cli.common.messages.*;
 import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.codegen.*;
 import org.jetbrains.jet.codegen.state.GenerationState;
-import org.jetbrains.jet.codegen.state.GenerationStrategy;
 import org.jetbrains.jet.codegen.state.Progress;
+import org.jetbrains.jet.codegen.state.StandardGenerationStrategy;
 import org.jetbrains.jet.config.CommonConfigurationKeys;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.parsing.JetScriptDefinition;
@@ -44,9 +44,10 @@ import org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
+import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.ScriptNameUtil;
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
-import org.jetbrains.jet.lang.resolve.java.JvmAbi;
+import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.plugin.JetMainDetector;
@@ -165,7 +166,7 @@ public class KotlinToJVMBytecodeCompiler {
                     return null;
                 }
                 FqName fqName = JetPsiUtil.getFQName(file);
-                mainClass = fqName.child(Name.identifier(JvmAbi.PACKAGE_CLASS));
+                mainClass = PackageClassUtils.getPackageClassFqName(fqName);
             }
         }
         return mainClass;
@@ -311,11 +312,14 @@ public class KotlinToJVMBytecodeCompiler {
                     @NotNull
                     @Override
                     public AnalyzeExhaust compute() {
+                        BindingTrace sharedTrace = CliLightClassGenerationSupport.getInstanceForCli(environment.getProject()).getTrace();
                         return AnalyzerFacadeForJVM.analyzeFilesWithJavaIntegration(
                                 environment.getProject(),
                                 environment.getSourceFiles(),
+                                sharedTrace,
                                 scriptParameters,
-                                filesToAnalyzeCompletely
+                                filesToAnalyzeCompletely,
+                                false
                         );
                     }
                 }, environment.getSourceFiles()
@@ -344,12 +348,13 @@ public class KotlinToJVMBytecodeCompiler {
             }
         };
         GenerationState generationState = new GenerationState(
-                project, ClassBuilderFactories.binaries(stubs), backendProgress, exhaust, environment.getSourceFiles(),
+                project, ClassBuilderFactories.binaries(stubs), backendProgress, exhaust.getBindingContext(), environment.getSourceFiles(),
                 configuration.get(JVMConfigurationKeys.BUILTIN_TO_JAVA_TYPES_MAPPING_KEY, BuiltinToJavaTypesMapping.ENABLED),
                 configuration.get(JVMConfigurationKeys.GENERATE_NOT_NULL_ASSERTIONS, false),
-                configuration.get(JVMConfigurationKeys.GENERATE_NOT_NULL_PARAMETER_ASSERTIONS, false)
+                configuration.get(JVMConfigurationKeys.GENERATE_NOT_NULL_PARAMETER_ASSERTIONS, false),
+                /*generateDeclaredClasses = */true
         );
-        GenerationStrategy.STANDARD.compileCorrectFiles(generationState, CompilationErrorHandler.THROW_EXCEPTION);
+        KotlinCodegenFacade.compileCorrectFiles(generationState, StandardGenerationStrategy.INSTANCE, CompilationErrorHandler.THROW_EXCEPTION);
 
         CompilerPluginContext context = new CompilerPluginContext(project, exhaust.getBindingContext(), environment.getSourceFiles());
         for (CompilerPlugin plugin : configuration.getList(CLIConfigurationKeys.COMPILER_PLUGINS)) {
