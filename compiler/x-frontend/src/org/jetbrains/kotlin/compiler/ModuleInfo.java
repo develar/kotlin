@@ -47,7 +47,7 @@ public class ModuleInfo implements ModuleConfiguration {
     private final Set<ModuleInfo> providedDependencies;
 
     @NotNull
-    public static final List<ImportPath> DEFAULT_IMPORT_PATHS = Arrays.asList(
+    private static final List<ImportPath> DEFAULT_IMPORT_PATHS = Arrays.asList(
             new ImportPath("js.*"),
             new ImportPath("java.lang.*"),
             new ImportPath(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), true),

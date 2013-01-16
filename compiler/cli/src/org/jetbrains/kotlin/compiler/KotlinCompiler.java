@@ -17,9 +17,7 @@
 package org.jetbrains.kotlin.compiler;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.util.Condition;
-import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.*;
 import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -28,7 +26,7 @@ import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.SmartList;
-import gnu.trove.THashMap;
+import com.intellij.util.containers.StripedLockConcurrentHashMap;
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +46,7 @@ import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 
 import static org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport.reportDiagnostics;
 import static org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport.reportIncompleteHierarchies;
@@ -56,9 +55,6 @@ import static org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport.r
  * Kotlin compiler to any target (source-based, JavaScript as example).
  * Per project.
  * You must call dispose() if it is not need anymore.
- *
- * It is your responsibility to build all module dependencies before and
- * you must care about synchronization and multithread issues (as IntelliJ IDEA JPS does)
  */
 public class KotlinCompiler {
     private static final Condition<Diagnostic> DIAGNOSTIC_LIBRARY_FILTER = new Condition<Diagnostic>() {
@@ -81,13 +77,23 @@ public class KotlinCompiler {
         }
     };
 
+    // we cannot instantiate ModuleInfo on init because it causes KotlinBuiltIns initialization (see ModuleInfo.DEFAULT_IMPORT_PATHS)
+    private static final AtomicNotNullLazyValue<ModuleInfo> MODULE_WITH_ERRORS = new AtomicNotNullLazyValue<ModuleInfo>() {
+        @NotNull
+        @Override
+        protected ModuleInfo compute() {
+            return new ModuleInfo(null);
+        }
+    };
+
     private final ModuleInfoProvider moduleInfoProvider;
     private final MessageCollector messageCollector;
     private final CompileContext compileContext;
 
     private final Disposable compileContextParentDisposable = Disposer.newDisposable();
 
-    private final Map<String, ModuleInfo> compiledModules = new THashMap<String, ModuleInfo>();
+    private final ConcurrentMap<String, AtomicNotNullLazyValue<ModuleInfo>> compiledModules =
+            new StripedLockConcurrentHashMap<String, AtomicNotNullLazyValue<ModuleInfo>>();
 
     private final SubCompiler subCompiler;
 
@@ -105,7 +111,8 @@ public class KotlinCompiler {
     }
 
     public void compile(@NotNull CompilerConfiguration configuration, @Nullable OutputConsumer outputConsumer) throws IOException {
-        ModuleInfo moduleConfiguration = compileModule(configuration.get(CompilerConfigurationKeys.MODULE_NAME), true);
+        String moduleName = configuration.getNotNull(CompilerConfigurationKeys.MODULE_NAME);
+        ModuleInfo moduleConfiguration = getModuleInfo(moduleName, true, null);
         if (moduleConfiguration == null) {
             return;
         }
@@ -124,6 +131,20 @@ public class KotlinCompiler {
         finally {
             moduleConfiguration.sourceFiles = null;
         }
+    }
+
+    @Nullable
+    private ModuleInfo getModuleInfo(String moduleName, boolean analyzeCompletely, Object dependency) {
+        AtomicNotNullLazyValue<ModuleInfo> moduleInfoRef = compiledModules.get(moduleName);
+        if (moduleInfoRef == null) {
+            AtomicNotNullLazyValue<ModuleInfo> candidate =
+                    compiledModules.putIfAbsent(moduleName, moduleInfoRef = new ModuleInfoAtomicLazyValue(moduleName, dependency, analyzeCompletely));
+            if (candidate != null) {
+                moduleInfoRef = candidate;
+            }
+        }
+        final ModuleInfo moduleInfo = moduleInfoRef.getValue();
+        return moduleInfo == MODULE_WITH_ERRORS.getValue() ? null : moduleInfo;
     }
 
     protected List<JetFile> collectSourceFiles(String name, @Nullable Object object) {
@@ -162,7 +183,7 @@ public class KotlinCompiler {
     }
 
     @Nullable
-    protected ModuleInfo compileModule(String moduleName, boolean analyzeCompletely) {
+    private ModuleInfo analyzeProjectModule(@NotNull String moduleName, boolean analyzeCompletely) {
         Pair<List<ModuleInfo>, Set<ModuleInfo>> dependencies = collectDependencies(moduleName);
         if (dependencies == null) {
             return null;
@@ -172,16 +193,17 @@ public class KotlinCompiler {
 
     @Nullable
     private ModuleInfo analyzeModule(
-            String moduleName,
+            @NotNull String moduleName,
             @Nullable Object moduleObject,
-            final boolean analyzeCompletely,
+            boolean analyzeCompletely,
             @Nullable List<ModuleInfo> dependencies,
             @Nullable Set<ModuleInfo> providedDependencies,
             boolean checkSyntax
     ) {
         List<JetFile> sources = collectSourceFiles(moduleName, moduleObject);
         if (checkSyntax) {
-            AnalyzerWithCompilerReport.ErrorReportingVisitor visitor = new AnalyzerWithCompilerReport.ErrorReportingVisitor(messageCollector);
+            AnalyzerWithCompilerReport.ErrorReportingVisitor visitor =
+                    new AnalyzerWithCompilerReport.ErrorReportingVisitor(messageCollector);
             for (JetFile file : sources) {
                 file.accept(visitor);
                 // don't stop if hasErrors, report about errors in all files
@@ -192,46 +214,37 @@ public class KotlinCompiler {
         }
 
         ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies, providedDependencies);
-        AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
+        AnalyzeExhaust exhaust =
+                XAnalyzerFacade.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
         exhaust.throwIfError();
-        boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector, checkSyntax ? DIAGNOSTIC_CODE_FILTER : DIAGNOSTIC_LIBRARY_FILTER);
+        boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector,
+                                              checkSyntax ? DIAGNOSTIC_CODE_FILTER : DIAGNOSTIC_LIBRARY_FILTER);
         hasErrors |= reportIncompleteHierarchies(exhaust, messageCollector);
         if (hasErrors) {
             return null;
         }
 
         moduleConfiguration.sourceFiles = sources;
-        ModuleInfo prevValue = compiledModules.put(moduleName, moduleConfiguration);
-        assert prevValue == null;
         return moduleConfiguration;
     }
 
     @Nullable
-    private Pair<List<ModuleInfo>, Set<ModuleInfo>> collectDependencies(String moduleName) {
+    private Pair<List<ModuleInfo>, Set<ModuleInfo>> collectDependencies(@NotNull String moduleName) {
         final List<ModuleInfo> dependencies = new SmartList<ModuleInfo>();
         final Set<ModuleInfo> providedDependencies = new THashSet<ModuleInfo>();
         boolean completed = moduleInfoProvider.processDependencies(moduleName, new ModuleInfoProvider.DependenciesProcessor() {
             @Override
             public boolean process(String name, Object dependency, boolean isLibrary, boolean provided) {
                 // todo now we assume that idea module name and library name are unique
-                ModuleInfo moduleConfiguration = compiledModules.get(name);
-                if (moduleConfiguration == null) {
-                    if (isLibrary) {
-                        // todo dependencies for library?
-                        moduleConfiguration = analyzeModule(name, dependency, false, null, null, false);
-                    }
-                    else {
-                        moduleConfiguration = compileModule(name, false);
-                    }
-                    if (moduleConfiguration == null) {
-                        return false;
-                    }
+                // todo dependencies for library?
+                ModuleInfo moduleInfo = getModuleInfo(name, false, isLibrary ? dependency : null);
+                if (moduleInfo == null) {
+                    return false;
                 }
-
                 if (provided) {
-                    providedDependencies.add(moduleConfiguration);
+                    providedDependencies.add(moduleInfo);
                 }
-                dependencies.add(moduleConfiguration);
+                dependencies.add(moduleInfo);
                 return true;
             }
         });
@@ -247,5 +260,30 @@ public class KotlinCompiler {
 
     public void dispose() {
         Disposer.dispose(compileContextParentDisposable);
+    }
+
+    private final class ModuleInfoAtomicLazyValue extends AtomicNotNullLazyValue<ModuleInfo> {
+        private final String name;
+        private final Object dependency;
+        private final boolean analyzeCompletely;
+
+        public ModuleInfoAtomicLazyValue(String name, Object dependency, boolean analyzeCompletely) {
+            this.name = name;
+            this.dependency = dependency;
+            this.analyzeCompletely = analyzeCompletely;
+        }
+
+        @NotNull
+        @Override
+        protected ModuleInfo compute() {
+            ModuleInfo result;
+            if (dependency == null) {
+                result = analyzeProjectModule(name, analyzeCompletely);
+            }
+            else {
+                result = analyzeModule(name, dependency, false, null, null, false);
+            }
+            return result == null ? MODULE_WITH_ERRORS.getValue() : result;
+        }
     }
 }
