@@ -39,7 +39,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,7 +46,8 @@ import static org.jetbrains.jet.cli.common.messages.CompilerMessageLocation.NO_L
 import static org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity.ERROR;
 
 public class CompilerRunnerUtil {
-    private static SoftReference<ClassLoader> ourClassLoaderRef = new SoftReference<ClassLoader>(null);
+    private static final Object classLoaderRefLock = new Object();
+    private static volatile SoftReference<ClassLoader> classLoaderRef = new SoftReference<ClassLoader>(null);
 
     private CompilerRunnerUtil() {
     }
@@ -72,13 +72,21 @@ public class CompilerRunnerUtil {
         return result;
     }
 
-    public static synchronized ClassLoader getOrCreateClassLoader(KotlinPaths paths, MessageCollector messageCollector) {
-        ClassLoader answer = ourClassLoaderRef.get();
-        if (answer == null) {
-            answer = createClassLoader(paths, messageCollector);
-            ourClassLoaderRef = new SoftReference<ClassLoader>(answer);
+    public static ClassLoader getOrCreateClassLoader(KotlinPaths paths, MessageCollector messageCollector) {
+        ClassLoader result = classLoaderRef.get();
+        if (result != null) {
+            return result;
         }
-        return answer;
+
+        synchronized (classLoaderRefLock) {
+            result = classLoaderRef.get();
+            if (result == null) {
+                result = createClassLoader(paths, messageCollector);
+                classLoaderRef = new SoftReference<ClassLoader>(result);
+            }
+        }
+
+        return result;
     }
 
     private static UrlClassLoader createClassLoader(KotlinPaths paths, MessageCollector messageCollector) {
