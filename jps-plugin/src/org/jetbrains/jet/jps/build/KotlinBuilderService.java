@@ -29,17 +29,32 @@ public class KotlinBuilderService extends BuilderService {
     @NotNull
     @Override
     public List<? extends ModuleLevelBuilder> createModuleLevelBuilders() {
-        return Collections.singletonList(new KotlinBuilder());
+        if (Boolean.valueOf(System.getProperty(GlobalOptions.SKIP_K2JVM))) {
+            return Collections.emptyList();
+        }
+        else {
+            return Collections.singletonList(new KotlinBuilder());
+        }
     }
 
     @Override
     public List<? extends BuildTargetType<?>> getTargetTypes() {
-        return Collections.singletonList(JsBuildTargetType.INSTANCE);
+        if (Boolean.valueOf(System.getProperty(GlobalOptions.SKIP_K2X))) {
+            return Collections.emptyList();
+        }
+        else {
+            return Collections.singletonList(JsBuildTargetType.INSTANCE);
+        }
     }
 
     @NotNull
     @Override
     public List<? extends TargetBuilder<?, ?>> createBuilders() {
-        return Collections.singletonList(new KotlinTargetBuilder(JsBuildTargetType.INSTANCE));
+        if (Boolean.valueOf(System.getProperty(GlobalOptions.SKIP_K2X))) {
+            return Collections.emptyList();
+        }
+        else {
+            return Collections.singletonList(new KotlinTargetBuilder(JsBuildTargetType.INSTANCE));
+        }
     }
 }

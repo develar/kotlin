@@ -34,6 +34,8 @@ public class KotlinJpsBuildTestCase extends AbstractKotlinJpsBuildTestCase {
 
     @Override
     public void setUp() throws Exception {
+        System.setProperty(GlobalOptions.SKIP_K2X, "true");
+
         super.setUp();
         File sourceFilesRoot = new File(TEST_DATA_PATH + getTestName(false));
         workDir = copyTestDataToTmpDir(sourceFilesRoot);
@@ -41,6 +43,8 @@ public class KotlinJpsBuildTestCase extends AbstractKotlinJpsBuildTestCase {
 
     @Override
     public void tearDown() throws Exception {
+        System.clearProperty(GlobalOptions.SKIP_K2X);
+
         FileUtil.delete(workDir);
         super.tearDown();
     }

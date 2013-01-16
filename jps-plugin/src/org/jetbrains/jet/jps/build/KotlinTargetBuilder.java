@@ -63,7 +63,6 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         subCompilerClassName = targetType.getSubCompilerClassName();
     }
 
-
     @NotNull
     @Override
     public String getPresentableName() {

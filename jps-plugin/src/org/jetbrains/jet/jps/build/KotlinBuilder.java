@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.jetbrains.jet.jps.build;
 
-import com.intellij.openapi.util.Key;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
@@ -42,8 +41,6 @@ import static org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity.EXCE
 
 // todo please rename me to KotlinJavaBuilder
 public class KotlinBuilder extends ModuleLevelBuilder {
-    private static final Key<Boolean> IS_ENABLED = Key.create("k2jvm_enabled");
-
     private static final String KOTLIN_BUILDER_NAME = "Kotlin Builder";
 
     protected KotlinBuilder() {
@@ -57,22 +54,12 @@ public class KotlinBuilder extends ModuleLevelBuilder {
     }
 
     @Override
-      public void buildStarted(CompileContext context) {
-        String skipCompilation = System.getProperty("kotlin.k2jvm.skip");
-        IS_ENABLED.set(context, skipCompilation != null && (skipCompilation.isEmpty() || Boolean.valueOf(skipCompilation)));
-    }
-
-    @Override
     public ExitCode build(
             CompileContext context,
             ModuleChunk chunk,
             DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
             OutputConsumer outputConsumer
     ) throws ProjectBuildException, IOException {
-        if (!IS_ENABLED.get(context, Boolean.TRUE)) {
-            return ExitCode.NOTHING_DONE;
-        }
-
         for (JpsModule module : chunk.getModules()) {
             if (module.getContainer().getChild(KotlinBuildTarget.X_COMPILER_FLAG) != null) {
                 return ExitCode.NOTHING_DONE;

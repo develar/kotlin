@@ -30,14 +30,15 @@ public class JavaCompileContext extends CompileContext {
         applicationEnvironment.registerParserDefinition(new JavaParserDefinition());
 
         MockProject project = projectEnvironment.getProject();
+        project.registerService(JetFilesProvider.class, new CliJetFilesProvider(sourceFiles));
         project.registerService(CoreJavaFileManager.class, (CoreJavaFileManager) ServiceManager.getService(project, JavaFileManager.class));
 
         CliLightClassGenerationSupport cliLightClassGenerationSupport = new CliLightClassGenerationSupport();
         project.registerService(LightClassGenerationSupport.class, cliLightClassGenerationSupport);
         project.registerService(CliLightClassGenerationSupport.class, cliLightClassGenerationSupport);
+
         Extensions.getArea(project).getExtensionPoint(PsiElementFinder.EP_NAME).registerExtension(
                 new JavaElementFinder(project, cliLightClassGenerationSupport));
-        project.registerService(JetFilesProvider.class, new CliJetFilesProvider(sourceFiles));
 
         annotationsManager = new CoreExternalAnnotationsManager(project.getComponent(PsiManager.class));
         project.registerService(ExternalAnnotationsManager.class, annotationsManager);
