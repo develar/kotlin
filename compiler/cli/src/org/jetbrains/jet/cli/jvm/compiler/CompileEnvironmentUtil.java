@@ -78,12 +78,7 @@ public class CompileEnvironmentUtil {
 
     @NotNull
     public static List<Module> loadModuleScript(KotlinPaths paths, String moduleScriptFile, MessageCollector messageCollector) {
-        Disposable disposable = new Disposable() {
-            @Override
-            public void dispose() {
-
-            }
-        };
+        Disposable disposable = Disposer.newDisposable();
         CompilerConfiguration configuration = new CompilerConfiguration();
         File runtimePath = paths.getRuntimePath();
         if (runtimePath.exists()) {
