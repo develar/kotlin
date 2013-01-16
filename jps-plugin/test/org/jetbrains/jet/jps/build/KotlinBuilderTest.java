@@ -24,12 +24,15 @@ import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.incremental.artifacts.ArtifactBuilderTestCase;
 import org.jetbrains.jps.incremental.artifacts.ModuleBuilder;
+import org.jetbrains.jps.model.JpsDummyElement;
 import org.jetbrains.jps.model.JpsModuleRootModificationUtil;
 import org.jetbrains.jps.model.artifact.JpsArtifact;
 import org.jetbrains.jps.model.artifact.elements.JpsPackagingElement;
 import org.jetbrains.jps.model.java.JpsJavaLibraryType;
 import org.jetbrains.jps.model.library.JpsLibrary;
+import org.jetbrains.jps.model.library.JpsLibraryRoot;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
+import org.jetbrains.jps.model.library.JpsTypedLibrary;
 import org.jetbrains.jps.model.module.JpsModule;
 
 import java.io.File;
@@ -188,5 +191,20 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         protected JpsPackagingElement createPackagingElement(JpsModule module) {
             return new JpsKotlinCompilerOutputPackagingElement(module.createReference());
         }
+    }
+
+    public void testIdeaToJpsModel() {
+        addJdk("IDEA_JDK");
+        loadProject("IdeaToJpsModel/KotlinProject.ipr");
+
+        JpsTypedLibrary<JpsDummyElement> library =
+                myProject.getLibraryCollection().findLibrary(JsExternalizationConstants.JS_LIBRARY_NAME, JpsJavaLibraryType.INSTANCE);
+        assert library != null;
+        for (JpsLibraryRoot root : library.getRoots(JpsOrderRootType.SOURCES)) {
+            library.removeUrl(root.getUrl(), JpsOrderRootType.SOURCES);
+        }
+        library.addRoot(PathUtil.getKotlinPathsForDistDirectory().getRuntimePath(false), JpsOrderRootType.SOURCES);
+
+        makeAll().assertSuccessful();
     }
 }
