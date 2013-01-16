@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.jps.build;
 
+import com.intellij.openapi.util.Key;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
@@ -41,6 +42,7 @@ import static org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity.EXCE
 
 // todo please rename me to KotlinJavaBuilder
 public class KotlinBuilder extends ModuleLevelBuilder {
+    private static final Key<Boolean> IS_ENABLED = Key.create("k2jvm_enabled");
 
     private static final String KOTLIN_BUILDER_NAME = "Kotlin Builder";
 
@@ -55,15 +57,19 @@ public class KotlinBuilder extends ModuleLevelBuilder {
     }
 
     @Override
+      public void buildStarted(CompileContext context) {
+        String skipCompilation = System.getProperty("kotlin.k2jvm.skip");
+        IS_ENABLED.set(context, skipCompilation != null && (skipCompilation.isEmpty() || Boolean.valueOf(skipCompilation)));
+    }
+
+    @Override
     public ExitCode build(
             CompileContext context,
             ModuleChunk chunk,
             DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
             OutputConsumer outputConsumer
     ) throws ProjectBuildException, IOException {
-        String skipCompilation = System.getProperty("kotlin.compiler.skip");
-        //if (skipCompilation != null && (skipCompilation.isEmpty() || Boolean.valueOf(skipCompilation))) {
-        if (true) {
+        if (!IS_ENABLED.get(context, Boolean.TRUE)) {
             return ExitCode.NOTHING_DONE;
         }
 
