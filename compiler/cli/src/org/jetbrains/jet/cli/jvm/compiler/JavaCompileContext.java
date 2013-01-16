@@ -14,6 +14,7 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.file.impl.JavaFileManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.asJava.JavaElementFinder;
+import org.jetbrains.jet.asJava.LightClassGenerationSupport;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
 import org.jetbrains.kotlin.compiler.CompileContext;
@@ -30,7 +31,12 @@ public class JavaCompileContext extends CompileContext {
 
         MockProject project = projectEnvironment.getProject();
         project.registerService(CoreJavaFileManager.class, (CoreJavaFileManager) ServiceManager.getService(project, JavaFileManager.class));
-        Extensions.getArea(project).getExtensionPoint(PsiElementFinder.EP_NAME).registerExtension(new JavaElementFinder(project));
+
+        CliLightClassGenerationSupport cliLightClassGenerationSupport = new CliLightClassGenerationSupport();
+        project.registerService(LightClassGenerationSupport.class, cliLightClassGenerationSupport);
+        project.registerService(CliLightClassGenerationSupport.class, cliLightClassGenerationSupport);
+        Extensions.getArea(project).getExtensionPoint(PsiElementFinder.EP_NAME).registerExtension(
+                new JavaElementFinder(project, cliLightClassGenerationSupport));
         project.registerService(JetFilesProvider.class, new CliJetFilesProvider(sourceFiles));
 
         annotationsManager = new CoreExternalAnnotationsManager(project.getComponent(PsiManager.class));
