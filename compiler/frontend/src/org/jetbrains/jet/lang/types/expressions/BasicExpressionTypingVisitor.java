@@ -156,10 +156,11 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     @Nullable
     private NamespaceType lookupNamespaceType(@NotNull JetSimpleNameExpression expression, @NotNull ExpressionTypingContext context) {
         Name name = expression.getReferencedNameAsName();
-        NamespaceDescriptor namespace = context.scope.getNamespace(name);
-        if (namespace == null) {
+        List<NamespaceDescriptor> namespaces = context.scope.getNamespaces(name);
+        if (namespaces.isEmpty()) {
             return null;
         }
+        NamespaceDescriptor namespace = namespaces.get(0);
         context.trace.record(REFERENCE_TARGET, expression, namespace);
 
         // Construct a NamespaceType with everything from the namespace and with static nested classes of the corresponding class (if any)
