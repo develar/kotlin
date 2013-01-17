@@ -127,16 +127,18 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
 
     private void translatePrimaryConstructorParameters(List<JsParameter> result) {
         ConstructorDescriptor primaryConstructor = descriptor.getUnsubstitutedPrimaryConstructor();
+        List<ValueParameterDescriptor> parameters;
         if (primaryConstructor == null) {
-            return;
+            parameters = null;
         }
-
-        FunctionTranslator.translateDefaultParametersInitialization(primaryConstructor, context(), initializerStatements);
+        else {
+            parameters = primaryConstructor.getValueParameters();
+            FunctionTranslator.translateDefaultParametersInitialization(primaryConstructor, context(), initializerStatements);
+        }
 
         mayBeAddCallToSuperMethod(initializerFunction);
 
-        List<ValueParameterDescriptor> parameters = primaryConstructor.getValueParameters();
-        if (parameters.isEmpty()) {
+        if (parameters == null || parameters.isEmpty()) {
             return;
         }
 

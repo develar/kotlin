@@ -22,12 +22,10 @@ import com.intellij.openapi.util.Trinity;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.ClassKind;
-import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
-import org.jetbrains.jet.lang.psi.JetParameter;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.LabelGenerator;
@@ -46,8 +44,6 @@ import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorF
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isNotAny;
 import static org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator.createPlace;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForConstructorParameter;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 
 /**
  * Generates a definition of a single class.
@@ -272,10 +268,15 @@ public final class ClassTranslator extends AbstractTranslator {
 
     private void translatePropertiesAsConstructorParameters(@NotNull TranslationContext classDeclarationContext,
             @NotNull List<JsPropertyInitializer> result) {
-        for (JetParameter parameter : getPrimaryConstructorParameters(classDeclaration)) {
-            PropertyDescriptor descriptor = getPropertyDescriptorForConstructorParameter(bindingContext(), parameter);
-            if (descriptor != null) {
-                PropertyTranslator.translateAccessors(descriptor, result, classDeclarationContext);
+        ConstructorDescriptor primaryConstructor = descriptor.getUnsubstitutedPrimaryConstructor();
+        if (primaryConstructor == null || primaryConstructor.getValueParameters().isEmpty()) {
+            return;
+        }
+
+        for (ValueParameterDescriptor parameter : primaryConstructor.getValueParameters()) {
+            PropertyDescriptor property = bindingContext().get(BindingContext.VALUE_PARAMETER_AS_PROPERTY, parameter);
+            if (property != null) {
+                PropertyTranslator.translateAccessors(property, result, classDeclarationContext);
             }
         }
     }

@@ -96,12 +96,6 @@ public final class BindingUtils {
         return DescriptorUtils.getClassDescriptorForType(getTypeByReference(context, typeReference));
     }
 
-    @Nullable
-    public static PropertyDescriptor getPropertyDescriptorForConstructorParameter(@NotNull BindingContext context,
-            @NotNull JetParameter parameter) {
-        return context.get(BindingContext.PRIMARY_CONSTRUCTOR_PARAMETER, parameter);
-    }
-
     @NotNull
     public static DeclarationDescriptor getDescriptorForReferenceExpression(@NotNull BindingContext context,
             @NotNull JetReferenceExpression reference) {
