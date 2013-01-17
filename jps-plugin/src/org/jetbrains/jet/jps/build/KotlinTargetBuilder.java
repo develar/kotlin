@@ -21,6 +21,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.util.Processor;
+import com.intellij.util.containers.ConcurrentHashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
@@ -35,6 +36,7 @@ import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
 import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.jetbrains.jps.model.module.JpsModule;
+import org.jetbrains.kotlin.KotlinModuleIndex;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
@@ -45,14 +47,13 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, KotlinBuildTarget> {
     private static final Key<AtomicReference<Pair<Object, Method>>> CONTEXT = Key.create("kotlinBuildContext");
+    // dirty because some dependencies was changed, but not because some source file was changed
+    private static final Key<Set<JpsModule>> DIRTY_MODULES = Key.create("kotlinDirtyModules");
 
     private final String outputLanguageName;
     private final String subCompilerClassName;
@@ -70,7 +71,14 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
     }
 
     @Override
+    public void buildStarted(CompileContext context) {
+        DIRTY_MODULES.set(context, new ConcurrentHashSet<JpsModule>());
+    }
+
+    @Override
     public void buildFinished(CompileContext context) {
+        DIRTY_MODULES.set(context, null);
+
         final AtomicReference<Pair<Object, Method>> kotlinContextRef = CONTEXT.get(context);
         if (kotlinContextRef == null) {
             return;
@@ -107,11 +115,16 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
                 return true;
             }
         });
-        if (filesToCompile.isEmpty() && !dirtyFilesHolder.hasRemovedFiles()) {
-            return;
-        }
-
         JpsModule module = target.getModule();
+        if (filesToCompile.isEmpty() && !dirtyFilesHolder.hasRemovedFiles()) {
+            //noinspection ConstantConditions
+            if (DIRTY_MODULES.get(context).contains(module)) {
+                // todo don't compile, just reanalyze
+            }
+            else {
+                return;
+            }
+        }
 
         context.processMessage(new ProgressMessage("Compiling Kotlin module '" + module.getName() + "' to " + outputLanguageName));
         KotlinSourceFileCollector.logCompiledFiles(filesToCompile, context, JsBuildTargetType.BUILDER_NAME);
@@ -128,8 +141,9 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         }
 
         final Ref<IOException> ioExceptionRef = Ref.create();
+        Pair<Object, Method> kotlinContext;
         try {
-            Pair<Object, Method> kotlinContext = getKotlinContext(context);
+            kotlinContext = getKotlinContext(context);
             kotlinContext.second.invoke(kotlinContext.first, compilerConfiguration, new OutputConsumer() {
                 @Override
                 public void registerSources(final Collection<String> sourcePaths) {
@@ -171,6 +185,10 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         if (!ioExceptionRef.isNull()) {
             throw ioExceptionRef.get();
         }
+
+        // we must reanalyze all dependents if something was changed
+        // todo don't reanalyze if public API was not changed (i.e. changes affect only internal code)
+        KotlinModuleIndex.getIndex(module.getProject()).addAllDependentsTo(module, DIRTY_MODULES.get(context));
     }
 
     @NotNull
