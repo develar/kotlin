@@ -53,15 +53,15 @@ public class ModuleInfo implements ModuleConfiguration {
             new ImportPath(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), true),
             new ImportPath("kotlin.*"));
 
-    public ModuleInfo(Project project) {
+    public ModuleInfo(@NotNull Project project) {
         this(new ModuleDescriptor(Name.special("<module>")), project, null, null);
     }
 
-    public ModuleInfo(ModuleDescriptor moduleDescriptor, Project project) {
+    public ModuleInfo(@NotNull ModuleDescriptor moduleDescriptor, @NotNull Project project) {
         this(moduleDescriptor, project, null, null);
     }
 
-    public ModuleInfo(ModuleDescriptor moduleDescriptor, Project project, @Nullable ModuleInfo dependency) {
+    public ModuleInfo(@NotNull ModuleDescriptor moduleDescriptor, @NotNull Project project, @Nullable ModuleInfo dependency) {
         this(moduleDescriptor, project, Collections.singletonList(dependency), null);
     }
 

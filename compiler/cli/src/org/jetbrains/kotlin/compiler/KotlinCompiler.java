@@ -77,14 +77,7 @@ public class KotlinCompiler {
         }
     };
 
-    // we cannot instantiate ModuleInfo on init because it causes KotlinBuiltIns initialization (see ModuleInfo.DEFAULT_IMPORT_PATHS)
-    private static final AtomicNotNullLazyValue<ModuleInfo> MODULE_WITH_ERRORS = new AtomicNotNullLazyValue<ModuleInfo>() {
-        @NotNull
-        @Override
-        protected ModuleInfo compute() {
-            return new ModuleInfo(null);
-        }
-    };
+    private final ModuleInfo moduleWithErrors;
 
     private final ModuleInfoProvider moduleInfoProvider;
     private final MessageCollector messageCollector;
@@ -101,6 +94,8 @@ public class KotlinCompiler {
         this.moduleInfoProvider = moduleInfoProvider;
         this.messageCollector = messageCollector;
         compileContext = new CompileContext(compileContextParentDisposable);
+        // initialization must be here, after compileContext creation
+        moduleWithErrors = new ModuleInfo(compileContext.getProject());
 
         try {
             subCompiler = subCompilerClass.newInstance();
@@ -144,7 +139,7 @@ public class KotlinCompiler {
             }
         }
         final ModuleInfo moduleInfo = moduleInfoRef.getValue();
-        return moduleInfo == MODULE_WITH_ERRORS.getValue() ? null : moduleInfo;
+        return moduleInfo == moduleWithErrors ? null : moduleInfo;
     }
 
     protected List<JetFile> collectSourceFiles(String name, @Nullable Object object) {
@@ -283,7 +278,7 @@ public class KotlinCompiler {
             else {
                 result = analyzeModule(name, dependency, false, null, null, false);
             }
-            return result == null ? MODULE_WITH_ERRORS.getValue() : result;
+            return result == null ? moduleWithErrors : result;
         }
     }
 }
