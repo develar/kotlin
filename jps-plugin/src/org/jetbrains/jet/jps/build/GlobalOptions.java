@@ -17,8 +17,8 @@
 package org.jetbrains.jet.jps.build;
 
 public final class GlobalOptions {
-    public static final String SKIP_K2X = "use.memory.temp.cache";
-    public static final String SKIP_K2JVM = "use.external.javac.process";
+    public static final String SKIP_K2X = "k2x.skip";
+    public static final String SKIP_K2JVM = "k2jvm.skip";
 
     private GlobalOptions() {
     }
