@@ -17,18 +17,18 @@
 package org.jetbrains.k2js.test;
 
 import com.google.common.collect.Lists;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.JetTestUtils;
-import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
-import org.jetbrains.jet.config.CompilerConfiguration;
-import org.jetbrains.jet.lang.resolve.lazy.KotlinTestWithEnvironment;
+import org.jetbrains.jet.KotlinTestWithEnvironmentManagement;
 import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.test.config.TestConfig;
 import org.jetbrains.k2js.test.config.TestConfigFactory;
 import org.jetbrains.k2js.test.rhino.RhinoResultChecker;
 import org.jetbrains.k2js.test.utils.TranslationUtils;
+import org.jetbrains.kotlin.compiler.CompileContext;
 
 import java.io.File;
 import java.util.Collections;
@@ -38,9 +38,11 @@ import java.util.Map;
 import static org.jetbrains.k2js.test.rhino.RhinoUtils.runRhinoTest;
 import static org.jetbrains.k2js.test.utils.JsTestUtils.convertFileNameToDotJsFile;
 
-public abstract class BasicTest extends KotlinTestWithEnvironment {
+public abstract class BasicTest extends KotlinTestWithEnvironmentManagement {
     // predictable order of ecma version in tests
     protected static final Iterable<EcmaVersion> DEFAULT_ECMA_VERSIONS = Lists.newArrayList(EcmaVersion.v5, EcmaVersion.v3);
+
+    private CompileContext compileContext;
 
     private static final boolean DELETE_OUT = false;
     private static final String TEST_FILES = "js/js.translator/testFiles/";
@@ -52,13 +54,13 @@ public abstract class BasicTest extends KotlinTestWithEnvironment {
     private String mainDirectory = "";
 
     @SuppressWarnings("JUnitTestCaseWithNonTrivialConstructors")
-    public BasicTest(@NotNull String main) {
+    protected BasicTest(@NotNull String main) {
         this.mainDirectory = main;
     }
 
-    @Override
-    protected JetCoreEnvironment createEnvironment() {
-        return new JetCoreEnvironment(getTestRootDisposable(), new CompilerConfiguration());
+    @NotNull
+    public Project getProject() {
+        return compileContext.getProject();
     }
 
     @NotNull
@@ -73,6 +75,9 @@ public abstract class BasicTest extends KotlinTestWithEnvironment {
     @Override
     public void setUp() throws Exception {
         super.setUp();
+
+        compileContext = new CompileContext(getTestRootDisposable());
+
         if (!shouldCreateOut()) {
             return;
         }
@@ -84,6 +89,9 @@ public abstract class BasicTest extends KotlinTestWithEnvironment {
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
+
+        compileContext = null;
+
         //noinspection ConstantConditions,PointlessBooleanExpression
         if (!shouldCreateOut() || !DELETE_OUT) {
             return;

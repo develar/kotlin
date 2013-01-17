@@ -107,13 +107,13 @@ public final class TranslationUtils {
     ) throws Exception {
         List<JetFile> psiFiles = createPsiFileList(project, inputFiles, null);
         ModuleInfo libraryContext = getLibraryContext(project);
-        ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(Name.special('<' + TestConfig.TEST_MODULE_NAME + '>')), project,
+        ModuleInfo moduleInfo = new ModuleInfo(new ModuleDescriptor(Name.special('<' + TestConfig.TEST_MODULE_NAME + '>')), project,
                                                         Collections.singletonList(libraryContext), new SingletonSet<ModuleInfo>(libraryContext));
-        AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleConfiguration, psiFiles, true);
+        AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleInfo, psiFiles, true);
         exhaust.throwIfError();
-        TestConfig config = configFactory.create(moduleConfiguration, version);
+        TestConfig config = configFactory.create(moduleInfo, version);
         K2JSTranslator.translateAndSaveToFile(mainCallParameters, psiFiles, outputFile, config,
-                                              moduleConfiguration.getBindingContext());
+                                              moduleInfo.getBindingContext());
     }
 
     @NotNull

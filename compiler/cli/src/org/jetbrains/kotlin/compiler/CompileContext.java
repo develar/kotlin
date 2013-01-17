@@ -16,17 +16,14 @@
 
 package org.jetbrains.kotlin.compiler;
 
-import com.intellij.core.CoreApplicationEnvironment;
 import com.intellij.core.JavaCoreApplicationEnvironment;
 import com.intellij.core.JavaCoreProjectEnvironment;
 import com.intellij.mock.MockApplication;
 import com.intellij.mock.MockProject;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFileSystem;
 import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
-import com.intellij.psi.impl.compiled.ClsCustomNavigationPolicy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.parsing.JetParserDefinition;
 import org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider;
@@ -50,10 +47,6 @@ public class CompileContext {
 
         MockProject project = projectEnvironment.getProject();
         project.registerService(JetScriptDefinitionProvider.class, new JetScriptDefinitionProvider());
-
-        // This extension point should be registered in JavaCoreApplicationEnvironment
-        CoreApplicationEnvironment.registerExtensionPoint(Extensions.getRootArea(), ClsCustomNavigationPolicy.EP_NAME,
-                                                          ClsCustomNavigationPolicy.class);
 
         initializeKotlinBuiltIns();
     }

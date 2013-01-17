@@ -11,6 +11,7 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.psi.PsiElementFinder;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.impl.compiled.ClsCustomNavigationPolicy;
 import com.intellij.psi.impl.file.impl.JavaFileManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.asJava.JavaElementFinder;
@@ -26,6 +27,9 @@ public class JavaCompileContext extends CompileContext {
 
     public JavaCompileContext(@NotNull Disposable parentDisposable, List<JetFile> sourceFiles) {
         super(parentDisposable);
+
+        CoreApplicationEnvironment.registerExtensionPoint(Extensions.getRootArea(), ClsCustomNavigationPolicy.EP_NAME,
+                                                          ClsCustomNavigationPolicy.class);
 
         applicationEnvironment.registerParserDefinition(new JavaParserDefinition());
 
