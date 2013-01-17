@@ -110,42 +110,52 @@ public final class FunctionTranslator {
         JsNode node = translateBody(descriptor, declaration, context);
         List<JsStatement> statements = function.getBody().getStatements();
 
-        for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
-            if (valueParameter.hasDefaultValue()) {
-                ValueParameterDescriptor declarator = valueParameter;
-                boolean maybeAlien = false;
-                if (!valueParameter.declaresDefaultValue()) {
-                    for (ValueParameterDescriptor parameterDescriptor : valueParameter.getOverriddenDescriptors()) {
-                        if (parameterDescriptor.declaresDefaultValue()) {
-                            declarator = parameterDescriptor;
-                            maybeAlien = true;
-                            break;
-                        }
-                    }
-                }
-
-                BindingContext bindingContext;
-                if (maybeAlien) {
-                    bindingContext = context.getModule().findBindingContext(DescriptorUtils.getModuleDescriptor(declarator));
-                    assert bindingContext != null;
-                }
-                else {
-                    bindingContext = context.bindingContext();
-                }
-
-                JetExpression parameter = getParameterForDescriptor(bindingContext, declarator).getDefaultValue();
-                JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
-                assert parameter != null;
-                statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
-                                        assignment(parameterRef, translateAsExpression(parameter, context)).makeStmt()));
-            }
-        }
+        translateDefaultParametersInitialization(descriptor, context, statements);
 
         if (node instanceof JsBlock) {
             statements.addAll(((JsBlock) node).getStatements());
         }
         else {
             statements.add(JsAstUtils.convertToStatement(node));
+        }
+    }
+
+    public static void translateDefaultParametersInitialization(
+            @NotNull FunctionDescriptor descriptor,
+            @NotNull TranslationContext context,
+            @NotNull List<JsStatement> statements
+    ) {
+        for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
+            if (!valueParameter.hasDefaultValue()) {
+                continue;
+            }
+
+            ValueParameterDescriptor declarator = valueParameter;
+            boolean maybeAlien = false;
+            if (!valueParameter.declaresDefaultValue()) {
+                for (ValueParameterDescriptor parameterDescriptor : valueParameter.getOverriddenDescriptors()) {
+                    if (parameterDescriptor.declaresDefaultValue()) {
+                        declarator = parameterDescriptor;
+                        maybeAlien = true;
+                        break;
+                    }
+                }
+            }
+
+            BindingContext bindingContext;
+            if (maybeAlien) {
+                bindingContext = context.getModule().findBindingContext(DescriptorUtils.getModuleDescriptor(declarator));
+                assert bindingContext != null;
+            }
+            else {
+                bindingContext = context.bindingContext();
+            }
+
+            JetExpression parameter = getParameterForDescriptor(bindingContext, declarator).getDefaultValue();
+            JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
+            assert parameter != null;
+            statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
+                                    assignment(parameterRef, translateAsExpression(parameter, context)).makeStmt()));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,19 +24,16 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetDelegationSpecifier;
 import org.jetbrains.jet.lang.psi.JetDelegatorToSuperCall;
-import org.jetbrains.jet.lang.psi.JetParameter;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.expression.FunctionTranslator;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptorForConstructorParameter;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.getPrimaryConstructorParameters;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateArgumentList;
 
 public final class ClassInitializerTranslator extends AbstractTranslator {
@@ -55,7 +52,8 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     ) {
         JsFunction fun = new JsFunction(classContext.scope(), new JsBlock());
         TranslationContext context = classContext.newFunctionBody(fun, null, null);
-        return new ClassInitializerTranslator(declaration, descriptor, fun, context).generateInitializeMethod();
+        new ClassInitializerTranslator(declaration, descriptor, fun, context).translate();
+        return fun;
     }
 
     private ClassInitializerTranslator(
@@ -70,12 +68,11 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         this.descriptor = descriptor;
     }
 
-    @NotNull
-    public JsFunction generateInitializeMethod() {
+    private void translate() {
         //NOTE: while we translate constructor parameters we also add property initializer statements
         // for properties declared as constructor parameters
         translatePrimaryConstructorParameters(initializerFunction.getParameters());
-        mayBeAddCallToSuperMethod(initializerFunction);
+
         new InitializerVisitor(initializerStatements).traverseContainer(declaration, context());
 
         List<JsStatement> funStatements = initializerFunction.getBody().getStatements();
@@ -87,8 +84,6 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
                 funStatements.add(statement);
             }
         }
-
-        return initializerFunction;
     }
 
     private void mayBeAddCallToSuperMethod(JsFunction initializer) {
@@ -131,34 +126,28 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     }
 
     private void translatePrimaryConstructorParameters(List<JsParameter> result) {
-        List<JetParameter> parameterList = getPrimaryConstructorParameters(declaration);
-        if (!parameterList.isEmpty()) {
-            for (JetParameter jetParameter : parameterList) {
-                result.add(translateParameter(jetParameter));
-            }
-        }
-    }
-
-    @NotNull
-    private JsParameter translateParameter(@NotNull JetParameter jetParameter) {
-        VariableDescriptor parameterDescriptor = BindingContextUtils.getNotNull(bindingContext(), BindingContext.VALUE_PARAMETER, jetParameter);
-        JsParameter jsParameter = new JsParameter(context().getNameForDescriptor(parameterDescriptor));
-        mayBeAddInitializerStatementForProperty(jsParameter, jetParameter);
-        return jsParameter;
-    }
-
-    private void mayBeAddInitializerStatementForProperty(@NotNull JsParameter jsParameter,
-            @NotNull JetParameter jetParameter) {
-        PropertyDescriptor propertyDescriptor =
-                getPropertyDescriptorForConstructorParameter(bindingContext(), jetParameter);
-        if (propertyDescriptor == null) {
+        ConstructorDescriptor primaryConstructor = descriptor.getUnsubstitutedPrimaryConstructor();
+        if (primaryConstructor == null) {
             return;
         }
-        JsNameRef initialValueForProperty = new JsNameRef(jsParameter.getName());
-        addInitializerOrPropertyDefinition(initialValueForProperty, propertyDescriptor);
-    }
 
-    private void addInitializerOrPropertyDefinition(@NotNull JsNameRef initialValue, @NotNull PropertyDescriptor propertyDescriptor) {
-        initializerStatements.add(InitializerUtils.generateInitializerForProperty(context(), propertyDescriptor, initialValue));
+        FunctionTranslator.translateDefaultParametersInitialization(primaryConstructor, context(), initializerStatements);
+
+        mayBeAddCallToSuperMethod(initializerFunction);
+
+        List<ValueParameterDescriptor> parameters = primaryConstructor.getValueParameters();
+        if (parameters.isEmpty()) {
+            return;
+        }
+
+        for (ValueParameterDescriptor parameter : parameters) {
+            JsParameter jsParameter = new JsParameter(context().getNameForDescriptor(parameter));
+            PropertyDescriptor propertyDescriptor = bindingContext().get(BindingContext.VALUE_PARAMETER_AS_PROPERTY, parameter);
+            if (propertyDescriptor != null) {
+                initializerStatements.add(InitializerUtils.generateInitializerForProperty(context(), propertyDescriptor,
+                                                                                          new JsNameRef(jsParameter.getName())));
+            }
+            result.add(jsParameter);
+        }
     }
 }

@@ -113,13 +113,9 @@ public final class ClassTranslator extends AbstractTranslator {
     @NotNull
     public JsInvocation translate(@NotNull TranslationContext declarationContext) {
         JsInvocation createInvocation = context().namer().classCreateInvocation(descriptor);
-        translate(createInvocation, declarationContext);
-        return createInvocation;
-    }
-
-    private void translate(@NotNull JsInvocation createInvocation, @NotNull TranslationContext context) {
         addSuperclassReferences(createInvocation);
-        addClassOwnDeclarations(createInvocation.getArguments(), context);
+        addClassOwnDeclarations(createInvocation.getArguments(), declarationContext);
+        return createInvocation;
     }
 
     private boolean isTrait() {
