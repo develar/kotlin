@@ -23,10 +23,12 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.psi.JetElement;
 import org.jetbrains.jet.lang.psi.JetFunction;
+import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.DescriptorSubstitutor;
 import org.jetbrains.jet.lang.types.JetType;
@@ -433,27 +435,48 @@ public class DescriptorUtils {
         return parameterTypes;
     }
 
-    @NotNull
-    public static ModuleDescriptor getModuleDescriptor(DeclarationDescriptor parent) {
-        ModuleDescriptor result = getParentOfType(parent, ModuleDescriptor.class);
-        assert result != null;
-        return result;
+    public static boolean isConstructorOfStaticNestedClass(@Nullable CallableDescriptor descriptor) {
+        return descriptor instanceof ConstructorDescriptor && isStaticNestedClass(descriptor.getContainingDeclaration());
+    }
+
+    /**
+     * @return true if descriptor is a class inside another class and does not have access to the outer class
+     */
+    public static boolean isStaticNestedClass(@NotNull DeclarationDescriptor descriptor) {
+        DeclarationDescriptor containing = descriptor.getContainingDeclaration();
+        return descriptor instanceof ClassDescriptor &&
+               containing instanceof ClassDescriptor &&
+               !((ClassDescriptor) descriptor).isInner() &&
+               !((ClassDescriptor) containing).getKind().isObject();
     }
 
     @Nullable
-    public static ClassDescriptor getContainingClass(@NotNull DeclarationDescriptor descriptor) {
-        DeclarationDescriptor containing = descriptor;
-        while ((containing = containing.getContainingDeclaration()) != null) {
-            if (containing instanceof ClassDescriptor) {
-                ClassDescriptor containingClass = (ClassDescriptor) containing;
-                if (containingClass.getKind() != ClassKind.CLASS_OBJECT) {
-                    return containingClass;
+    public static ClassDescriptor getContainingClass(@NotNull JetScope scope) {
+        DeclarationDescriptor containingDeclaration = scope.getContainingDeclaration();
+        return getParentOfType(containingDeclaration, ClassDescriptor.class, false);
+    }
+    
+    @NotNull
+        public static ModuleDescriptor getModuleDescriptor(DeclarationDescriptor parent) {
+            ModuleDescriptor result = getParentOfType(parent, ModuleDescriptor.class);
+            assert result != null;
+            return result;
+        }
+    
+        @Nullable
+        public static ClassDescriptor getContainingClass(@NotNull DeclarationDescriptor descriptor) {
+            DeclarationDescriptor containing = descriptor;
+            while ((containing = containing.getContainingDeclaration()) != null) {
+                if (containing instanceof ClassDescriptor) {
+                    ClassDescriptor containingClass = (ClassDescriptor) containing;
+                    if (containingClass.getKind() != ClassKind.CLASS_OBJECT) {
+                        return containingClass;
+                    }
+                }
+                else if (containing instanceof NamespaceDescriptor) {
+                    return null;
                 }
             }
-            else if (containing instanceof NamespaceDescriptor) {
-                return null;
-            }
+            return null;
         }
-        return null;
-    }
 }

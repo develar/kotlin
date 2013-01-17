@@ -21,16 +21,19 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.util.Pair;
+import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.diagnostics.Errors;
+import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.psi.JetModifierList;
 import org.jetbrains.jet.lang.psi.JetModifierListOwner;
 import org.jetbrains.jet.lexer.JetKeywordToken;
 import org.jetbrains.jet.lexer.JetToken;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import static org.jetbrains.jet.lexer.JetTokens.*;
@@ -57,6 +60,7 @@ public class ModifiersChecker {
         JetModifierList modifierList = modifierListOwner.getModifierList();
         checkModalityModifiers(modifierList);
         checkVisibilityModifiers(modifierList, descriptor);
+        checkInnerModifier(modifierListOwner, descriptor);
     }
 
     public void checkModifiersForLocalDeclaration(@NotNull JetModifierListOwner modifierListOwner) {
@@ -91,6 +95,41 @@ public class ModifiersChecker {
         }
 
         checkCompatibility(modifierList, VISIBILITY_MODIFIERS);
+    }
+
+    private void checkInnerModifier(@NotNull JetModifierListOwner modifierListOwner, @NotNull DeclarationDescriptor descriptor) {
+        JetModifierList modifierList = modifierListOwner.getModifierList();
+
+        if (modifierList != null && modifierList.hasModifier(INNER_KEYWORD)) {
+            if (isIllegalInner(descriptor)) {
+                checkIllegalInThisContextModifiers(modifierList, Collections.singletonList(INNER_KEYWORD));
+            }
+        }
+        else {
+            if (modifierListOwner instanceof JetClass && isIllegalNestedClass(descriptor)) {
+                PsiElement name = ((JetClass) modifierListOwner).getNameIdentifier();
+                if (name != null) {
+                    trace.report(Errors.NESTED_CLASS_NOT_ALLOWED.on(name));
+                }
+            }
+        }
+    }
+
+    private static boolean isIllegalInner(@NotNull DeclarationDescriptor descriptor) {
+        if (!(descriptor instanceof ClassDescriptor)) return true;
+        ClassDescriptor classDescriptor = (ClassDescriptor) descriptor;
+        if (classDescriptor.getKind() != ClassKind.CLASS) return true;
+        DeclarationDescriptor containingDeclaration = classDescriptor.getContainingDeclaration();
+        if (!(containingDeclaration instanceof ClassDescriptor)) return true;
+        return ((ClassDescriptor) containingDeclaration).getKind() == ClassKind.TRAIT;
+    }
+
+    private static boolean isIllegalNestedClass(@NotNull DeclarationDescriptor descriptor) {
+        if (!(descriptor instanceof ClassDescriptor)) return false;
+        DeclarationDescriptor containingDeclaration = descriptor.getContainingDeclaration();
+        if (!(containingDeclaration instanceof ClassDescriptor)) return false;
+        ClassDescriptor containingClass = (ClassDescriptor) containingDeclaration;
+        return containingClass.isInner() || containingClass.getContainingDeclaration() instanceof FunctionDescriptor;
     }
 
     private void checkCompatibility(@Nullable JetModifierList modifierList, Collection<JetKeywordToken> availableModifiers, Collection<JetToken>... availableCombinations) {
@@ -190,6 +229,10 @@ public class ModifiersChecker {
         if (modifierList.hasModifier(PROTECTED_KEYWORD)) return Visibilities.PROTECTED;
         if (modifierList.hasModifier(INTERNAL_KEYWORD)) return Visibilities.INTERNAL;
         return defaultVisibility;
+    }
+
+    public static boolean isInnerClass(@Nullable JetModifierList modifierList) {
+        return modifierList != null && modifierList.hasModifier(INNER_KEYWORD);
     }
 
     @NotNull

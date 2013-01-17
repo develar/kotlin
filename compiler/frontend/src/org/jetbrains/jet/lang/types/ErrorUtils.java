@@ -141,7 +141,8 @@ public class ErrorUtils {
 
     static {
         ERROR_CLASS.initialize(
-            true, Collections.<TypeParameterDescriptor>emptyList(), Collections.<JetType>emptyList(), createErrorScope("ERROR_CLASS"), ERROR_CONSTRUCTOR_GROUP, ERROR_CONSTRUCTOR);
+            true, Collections.<TypeParameterDescriptor>emptyList(), Collections.<JetType>emptyList(), createErrorScope("ERROR_CLASS"), ERROR_CONSTRUCTOR_GROUP,
+            ERROR_CONSTRUCTOR, false);
     }
 
     public static JetScope createErrorScope(String debugMessage) {

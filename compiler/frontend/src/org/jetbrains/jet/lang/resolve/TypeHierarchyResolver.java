@@ -196,8 +196,6 @@ public class TypeHierarchyResolver {
             declaration.accept(collector);
         }
 
-        collector.finishProcessing();
-
         return forDeferredResolve;
     }
 
@@ -470,8 +468,6 @@ public class TypeHierarchyResolver {
         private final NamespaceLikeBuilder owner;
         private final Collection<JetDeclarationContainer> forDeferredResolve;
 
-        private final List<JetClass> enumsToAddLater = new ArrayList<JetClass>(0);
-
         public ClassifierCollector(@NotNull JetScope outerScope,
                 @NotNull NamespaceLikeBuilder owner,
                 @NotNull Collection<JetDeclarationContainer> forDeferredResolve
@@ -501,23 +497,9 @@ public class TypeHierarchyResolver {
 
         @Override
         public void visitClass(JetClass klass) {
-            if (getClassKind(klass) == ClassKind.ENUM_CLASS && inClass()) {
-                // Enums inside non-static context are put not to owner, but rather into its class object.
-                // This is handled after visiting all declarations in this class, because we may or may not
-                // encounter class object to put this enum into.
-                enumsToAddLater.add(klass);
-                return;
-            }
-
             MutableClassDescriptor mutableClassDescriptor = createClassDescriptorForClass(klass, owner.getOwnerForChildren());
 
             owner.addClassifierDescriptor(mutableClassDescriptor);
-        }
-
-        private boolean inClass() {
-            if (!(owner.getOwnerForChildren() instanceof ClassDescriptor)) return false;
-            ClassKind kind = ((ClassDescriptor) owner.getOwnerForChildren()).getKind();
-            return kind == ClassKind.CLASS || kind == ClassKind.ENUM_CLASS || kind == ClassKind.TRAIT;
         }
 
         @Override
@@ -585,7 +567,7 @@ public class TypeHierarchyResolver {
                 @NotNull Visibility visibility
         ) {
             MutableClassDescriptor classObjectDescriptor = new MutableClassDescriptor(
-                    classDescriptor, outerScope, ClassKind.CLASS_OBJECT, getClassObjectName(classDescriptor.getName()));
+                    classDescriptor, outerScope, ClassKind.CLASS_OBJECT, false, getClassObjectName(classDescriptor.getName()));
             classObjectDescriptor.setModality(Modality.FINAL);
             classObjectDescriptor.setVisibility(visibility);
             classObjectDescriptor.setTypeParameterDescriptors(new ArrayList<TypeParameterDescriptor>(0));
@@ -600,8 +582,12 @@ public class TypeHierarchyResolver {
                 @NotNull JetClass klass,
                 @NotNull DeclarationDescriptor containingDeclaration
         ) {
+            ClassKind kind = getClassKind(klass);
+            // Kind check is needed in order to not consider enums as inner in any case
+            // (otherwise it would be impossible to create a class object in the enum)
+            boolean isInner = kind == ClassKind.CLASS && klass.isInner();
             MutableClassDescriptor mutableClassDescriptor = new MutableClassDescriptor(
-                    containingDeclaration, outerScope, getClassKind(klass), JetPsiUtil.safeName(klass.getName()));
+                    containingDeclaration, outerScope, kind, isInner, JetPsiUtil.safeName(klass.getName()));
             context.getClasses().put(klass, mutableClassDescriptor);
             trace.record(FQNAME_TO_CLASS_DESCRIPTOR, JetPsiUtil.getFQName(klass), mutableClassDescriptor);
 
@@ -620,7 +606,7 @@ public class TypeHierarchyResolver {
                 @NotNull JetScope scope, @NotNull Name name, @NotNull ClassKind kind
         ) {
             MutableClassDescriptor mutableClassDescriptor = new MutableClassDescriptor(
-                    owner.getOwnerForChildren(), scope, kind, name);
+                    owner.getOwnerForChildren(), scope, kind, false, name);
             context.getObjects().put(declaration, mutableClassDescriptor);
 
             JetScope classScope = mutableClassDescriptor.getScopeForMemberResolution();
@@ -638,7 +624,7 @@ public class TypeHierarchyResolver {
         ) {
             MutableClassDescriptor mutableClassDescriptor = new MutableClassDescriptor(
                     owner.getOwnerForChildren(), getStaticScope(declaration, owner), ClassKind.ENUM_ENTRY,
-                    JetPsiUtil.safeName(declaration.getName()));
+                    false, JetPsiUtil.safeName(declaration.getName()));
             context.getClasses().put(declaration, mutableClassDescriptor);
 
             prepareForDeferredCall(mutableClassDescriptor.getScopeForMemberResolution(), mutableClassDescriptor, declaration);
@@ -668,51 +654,6 @@ public class TypeHierarchyResolver {
             forDeferredResolve.add(container);
             context.normalScope.put(container, outerScope);
             context.forDeferredResolver.put(container, descriptorForDeferredResolve);
-        }
-
-        @Nullable
-        private MutableClassDescriptor getOrCreateClassObjectDescriptor() {
-            ClassDescriptor ownerForChildren = (ClassDescriptor) owner.getOwnerForChildren();
-            MutableClassDescriptor classObjectDescriptor = (MutableClassDescriptor) ownerForChildren.getClassObjectDescriptor();
-
-            if (classObjectDescriptor == null) {
-                classObjectDescriptor = createClassObjectDescriptor(ownerForChildren, Visibilities.PUBLIC);
-                NamespaceLikeBuilder.ClassObjectStatus status = owner.setClassObjectDescriptor(classObjectDescriptor);
-                assert status != NamespaceLikeBuilder.ClassObjectStatus.DUPLICATE :
-                        "Attempting to create an artificial class object where the real one exists: " + ownerForChildren;
-                if (status == NamespaceLikeBuilder.ClassObjectStatus.NOT_ALLOWED) {
-                    return null;
-                }
-            }
-
-            return classObjectDescriptor;
-        }
-
-        private void putEnumsIntoOuterClassObject() {
-            if (enumsToAddLater.isEmpty()) return;
-
-            MutableClassDescriptor classObjectDescriptor = getOrCreateClassObjectDescriptor();
-            if (classObjectDescriptor == null) {
-                // A class object is not allowed in outer class, so report an error on every declared enum
-                for (JetClass klass : enumsToAddLater) {
-                    JetModifierList modifierList = klass.getModifierList();
-                    assert modifierList != null : "Enum class without modifier list: " + klass.getText();
-                    ASTNode node = modifierList.getModifierNode(JetTokens.ENUM_KEYWORD);
-                    assert node != null : "Enum class without enum modifier: " + klass.getText();
-                    trace.report(ENUM_NOT_ALLOWED.on(node.getPsi()));
-                }
-                return;
-            }
-
-            for (JetClass klass : enumsToAddLater) {
-                MutableClassDescriptor mutableClassDescriptor = createClassDescriptorForClass(klass, classObjectDescriptor);
-                trace.record(BindingContext.IS_ENUM_MOVED_TO_CLASS_OBJECT, mutableClassDescriptor);
-                classObjectDescriptor.getBuilder().addClassifierDescriptor(mutableClassDescriptor);
-            }
-        }
-
-        private void finishProcessing() {
-            putEnumsIntoOuterClassObject();
         }
     }
 }

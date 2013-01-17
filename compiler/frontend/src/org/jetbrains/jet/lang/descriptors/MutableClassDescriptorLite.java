@@ -45,6 +45,8 @@ public abstract class MutableClassDescriptorLite extends ClassDescriptorBase {
     private Modality modality;
     private Visibility visibility;
 
+    private final boolean isInner;
+
     private MutableClassDescriptorLite classObjectDescriptor;
     private JetType classObjectType;
     private final ClassKind kind;
@@ -58,9 +60,12 @@ public abstract class MutableClassDescriptorLite extends ClassDescriptorBase {
     private final DeclarationDescriptor containingDeclaration;
 
     public MutableClassDescriptorLite(@NotNull DeclarationDescriptor containingDeclaration,
-                                      @NotNull ClassKind kind) {
+                                      @NotNull ClassKind kind,
+                                      boolean isInner
+    ) {
         this.containingDeclaration = containingDeclaration;
         this.kind = kind;
+        this.isInner = isInner;
     }
 
     @NotNull
@@ -84,23 +89,6 @@ public abstract class MutableClassDescriptorLite extends ClassDescriptorBase {
     @Override
     public DeclarationDescriptor getOriginal() {
         return this;
-    }
-
-    private static boolean isStatic(ClassDescriptor declarationClassDescriptor) {
-        if (declarationClassDescriptor.getKind() == ClassKind.ENUM_CLASS) {
-            return true;
-        }
-        DeclarationDescriptor containingDescriptor = declarationClassDescriptor.getContainingDeclaration();
-        if (containingDescriptor instanceof NamespaceDescriptor) {
-            return true;
-        }
-        else if (containingDescriptor instanceof ClassDescriptor) {
-            ClassDescriptor containingClassDescriptor = (ClassDescriptor) containingDescriptor;
-            return containingClassDescriptor.getKind().isObject();
-        }
-        else {
-            return false;
-        }
     }
 
     @NotNull
@@ -174,6 +162,11 @@ public abstract class MutableClassDescriptorLite extends ClassDescriptorBase {
     @Override
     public Visibility getVisibility() {
         return visibility;
+    }
+
+    @Override
+    public boolean isInner() {
+        return isInner;
     }
 
     public Collection<JetType> getSupertypes() {
@@ -284,16 +277,12 @@ public abstract class MutableClassDescriptorLite extends ClassDescriptorBase {
 
                 @Override
                 public ClassObjectStatus setClassObjectDescriptor(@NotNull MutableClassDescriptorLite classObjectDescriptor) {
-                    if (getKind().isObject()) {
+                    if (getKind().isObject() || isInner()) {
                         return ClassObjectStatus.NOT_ALLOWED;
                     }
 
                     if (MutableClassDescriptorLite.this.classObjectDescriptor != null) {
                         return ClassObjectStatus.DUPLICATE;
-                    }
-
-                    if (!isStatic(MutableClassDescriptorLite.this)) {
-                        return ClassObjectStatus.NOT_ALLOWED;
                     }
 
                     assert classObjectDescriptor.getKind() == ClassKind.CLASS_OBJECT;

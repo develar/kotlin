@@ -219,7 +219,8 @@ public final class JavaClassResolver {
         JetClassAnnotation jetClassAnnotation = JetClassAnnotation.get(psiClass);
         ClassKind kind = getClassKind(psiClass, jetClassAnnotation);
         ClassPsiDeclarationProvider classData = semanticServices.getPsiDeclarationProviderFactory().createBinaryClassData(psiClass);
-        ClassDescriptorFromJvmBytecode classDescriptor = new ClassDescriptorFromJvmBytecode(containingDeclaration, kind);
+        ClassDescriptorFromJvmBytecode classDescriptor = new ClassDescriptorFromJvmBytecode(containingDeclaration, kind,
+                                                                                            isInnerClass(psiClass));
 
         cache(javaClassToKotlinFqName(fqName), classDescriptor);
         classDescriptor.setName(Name.identifier(psiClass.getName()));
@@ -338,6 +339,10 @@ public final class JavaClassResolver {
         return psiClass.getContainingClass() != null;
     }
 
+    private static boolean isInnerClass(@NotNull PsiClass psiClass) {
+        return isContainedInClass(psiClass) && !psiClass.hasModifierProperty(PsiModifier.STATIC);
+    }
+
     @NotNull
     private ClassOrNamespaceDescriptor resolveParentClass(@NotNull PsiClass psiClass) {
         PsiClass containingClass = psiClass.getContainingClass();
@@ -347,13 +352,6 @@ public final class JavaClassResolver {
         if (parentClass == null) {
             throw new IllegalStateException(
                     "PsiClass not found by name " + containerFqName + ", required to be container declaration of " + getFqName(psiClass));
-        }
-        if (DescriptorResolverUtils.isInnerEnum(psiClass, parentClass) && DescriptorResolverUtils.isKotlinClass(psiClass)) {
-            ClassDescriptor classObjectDescriptor = parentClass.getClassObjectDescriptor();
-            if (classObjectDescriptor == null) {
-                throw new IllegalStateException("Class object for a class with inner enum should've been created earlier: " + parentClass);
-            }
-            return classObjectDescriptor;
         }
         return parentClass;
     }
