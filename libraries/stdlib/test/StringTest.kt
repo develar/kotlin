@@ -1,7 +1,6 @@
 package test
 
 import kotlin.test.*
-
 import org.junit.Test as test
 
 class StringTest {
@@ -48,5 +47,4 @@ class StringTest {
         assertEquals("abcd", "Abcd".decapitalize())
         assertEquals("uRL", "URL".decapitalize())
     }
-
 }

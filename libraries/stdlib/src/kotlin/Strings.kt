@@ -1,6 +1,9 @@
 package kotlin
 
 import java.util.ArrayList
+import java.util.HashMap
+import java.util.HashSet
+import java.util.LinkedList
 
 /** Returns the string with leading and trailing text matching the given string removed */
 public inline fun String.trim(text: String) : String = trimLeading(text).trimTrailing(text)
