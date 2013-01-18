@@ -9,6 +9,7 @@ import com.intellij.mock.MockProject;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.extensions.Extensions;
+import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.psi.PsiElementFinder;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.compiled.ClsCustomNavigationPolicy;
@@ -30,7 +31,8 @@ public class JavaCompileContext extends CompileContext {
 
         CoreApplicationEnvironment.registerExtensionPoint(Extensions.getRootArea(), ClsCustomNavigationPolicy.EP_NAME,
                                                           ClsCustomNavigationPolicy.class);
-
+        // ability to get text from annotations xml files
+        applicationEnvironment.registerFileType(PlainTextFileType.INSTANCE, "xml");
         applicationEnvironment.registerParserDefinition(new JavaParserDefinition());
 
         MockProject project = projectEnvironment.getProject();
