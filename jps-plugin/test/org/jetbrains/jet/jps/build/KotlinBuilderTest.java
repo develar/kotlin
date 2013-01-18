@@ -24,6 +24,7 @@ import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.incremental.artifacts.ArtifactBuilderTestCase;
 import org.jetbrains.jps.incremental.artifacts.ModuleBuilder;
+import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.model.JpsDummyElement;
 import org.jetbrains.jps.model.JpsModuleRootModificationUtil;
 import org.jetbrains.jps.model.artifact.JpsArtifact;
@@ -37,6 +38,7 @@ import org.jetbrains.jps.model.module.JpsModule;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import static com.intellij.util.io.TestFileSystemBuilder.fs;
 import static org.jetbrains.jps.incremental.artifacts.ModuleBuilder.createArtifact;
@@ -58,15 +60,15 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     }
 
     public void testSingleModule() throws IOException {
-        ModuleBuilder main = createModuleBuilder();
+        ModuleBuilder main = createModule();
         JpsArtifact artifact = main.copy("a.kt").createArtifact();
         rebuildAll();
         assertOutput(artifact, fs().file(main.getName() + ".js"));
     }
 
     public void testSeveralIndependentModules() throws IOException {
-        ModuleBuilder a = createModuleBuilder().copy("a.kt").artifact();
-        ModuleBuilder b = createModuleBuilder().copy("a.kt").artifact();
+        ModuleBuilder a = createModule().copy("a.kt").artifact();
+        ModuleBuilder b = createModule().copy("a.kt").artifact();
 
         rebuildAll();
 
@@ -95,14 +97,14 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     // c -> a[exported]
     // d -> c
     public void testDependentModule() throws IOException {
-        ModuleBuilder a = createModuleBuilder().copy("a.kt");
-        ModuleBuilder b = createModuleBuilder().dependsOn(a).copy("b.kt");
+        ModuleBuilder a = createModule().copy("a.kt");
+        ModuleBuilder b = createModule().dependsOn(a).copy("b.kt");
 
         JpsArtifact artifactAB = createArtifact(a, b);
 
         rebuildAll();
 
-        ModuleBuilder c = createModuleBuilder().dependsOnAndExports(a).copy("c.kt");
+        ModuleBuilder c = createModule().dependsOnAndExports(a).copy("c.kt");
         makeAll().assertSuccessful();
         c.assertCompiled("c.kt");
 
@@ -111,11 +113,29 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         assertOutput(artifactAB, fs().file(a.getName() + ".js").file(b.getName() + ".js"));
         assertOutput(artifactABC, fs().file(c.getName() + ".js").file(a.getName() + ".js").file(b.getName() + ".js"));
 
-        ModuleBuilder d = createModuleBuilder().dependsOn(c).copy("d.kt").artifact();
+        ModuleBuilder d = createModule().dependsOn(c).copy("d.kt").artifact();
         makeAll().assertSuccessful();
         d.assertCompiled("d.kt");
         // todo we must test that we cannot use symbols from transitive unexported module dependency
         //copyProjectDir();
+    }
+
+    public void testDependencyChanged() throws IOException {
+        ModuleBuilder a = createModule().copy("a.kt");
+        ModuleBuilder b = createModule().dependsOn(a).copy("b.kt");
+
+        JpsArtifact artifactAB = createArtifact(a, b);
+
+        rebuildAll();
+
+        a.file("a.kt", "package com.example.a");
+        List<BuildMessage> errorMessages = makeAll().getErrorMessages();
+        assertSize(2, errorMessages);
+        assertEquals(errorMessages.get(0).getKind(), BuildMessage.Kind.ERROR);
+        assertEquals(errorMessages.get(1).getKind(), BuildMessage.Kind.ERROR);
+        assertTrue(errorMessages.get(0).getMessageText().contains("Unresolved reference: a"));
+        assertTrue(errorMessages.get(1).getMessageText().contains("Unresolved reference: A"));
+
     }
 
     private void copyProjectDir() throws IOException {
@@ -171,7 +191,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         assertCompiled(JsBuildTargetType.BUILDER_NAME);
     }
 
-    private ModuleBuilder createModuleBuilder() {
+    private ModuleBuilder createModule() {
         return new MyModuleBuilder(this);
     }
 

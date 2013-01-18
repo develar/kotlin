@@ -27,16 +27,12 @@ import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.utils.PathUtil;
-import org.jetbrains.jps.builders.BuildOutputConsumer;
-import org.jetbrains.jps.builders.BuildRootDescriptor;
-import org.jetbrains.jps.builders.DirtyFilesHolder;
-import org.jetbrains.jps.builders.FileProcessor;
+import org.jetbrains.jps.builders.*;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
 import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.jetbrains.jps.model.module.JpsModule;
-import org.jetbrains.kotlin.KotlinModuleIndex;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
@@ -115,17 +111,24 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
                 return true;
             }
         });
-        JpsModule module = target.getModule();
+
+
+        Set<JpsModule> dirtyModules = DIRTY_MODULES.get(context);
+        assert dirtyModules != null;
         if (filesToCompile.isEmpty() && !dirtyFilesHolder.hasRemovedFiles()) {
-            //noinspection ConstantConditions
-            if (DIRTY_MODULES.get(context).contains(module)) {
-                // todo don't compile, just reanalyze
+            boolean dirty = false;
+            for (BuildTarget<?> buildTarget : context.getProjectDescriptor().getBuildTargetIndex().getDependencies(target, context)) {
+                if (dirtyModules.contains(((KotlinBuildTarget) buildTarget).getModule())) {
+                    dirty = true;
+                    break;
+                }
             }
-            else {
+            if (!dirty) {
                 return;
             }
         }
 
+        JpsModule module = target.getModule();
         context.processMessage(new ProgressMessage("Compiling Kotlin module '" + module.getName() + "' to " + outputLanguageName));
         KotlinSourceFileCollector.logCompiledFiles(filesToCompile, context, JsBuildTargetType.BUILDER_NAME);
 
@@ -188,7 +191,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
 
         // we must reanalyze all dependents if something was changed
         // todo don't reanalyze if public API was not changed (i.e. changes affect only internal code)
-        KotlinModuleIndex.getIndex(module.getProject()).addAllDependentsTo(module, DIRTY_MODULES.get(context));
+        dirtyModules.add(module);
     }
 
     @NotNull

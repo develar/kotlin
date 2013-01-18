@@ -36,7 +36,6 @@ import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.module.JpsTypedModuleSourceRoot;
 import org.jetbrains.jps.util.JpsPathUtil;
-import org.jetbrains.kotlin.KotlinModuleIndex;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -68,7 +67,6 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
     public Collection<BuildTarget<?>> computeDependencies(BuildTargetRegistry targetRegistry, TargetOutputIndex outputIndex) {
         module.getContainer().setChild(X_COMPILER_FLAG, JpsElementFactory.getInstance().createDummyElement());
 
-        final KotlinModuleIndex moduleIndex = KotlinModuleIndex.getOrCreateIndex(module.getProject());
         JpsJavaDependenciesEnumerator enumerator = JpsJavaExtensionService.dependencies(module).compileOnly().productionOnly();
         final List<BuildTarget<?>> dependencies = new SmartList<BuildTarget<?>>();
         enumerator.processModules(new Consumer<JpsModule>() {
@@ -77,7 +75,6 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
                 dependency.getContainer().setChild(X_COMPILER_FLAG, JpsElementFactory.getInstance().createDummyElement());
                 // we must compile module even if it is not included in any artifact — module will be compiled, but not copied to some artifact output directory
                 dependencies.add(JsBuildTargetType.createTarget(dependency));
-                moduleIndex.addDependent(module, dependency);
             }
         });
         return dependencies;
