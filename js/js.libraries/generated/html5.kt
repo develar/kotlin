@@ -1383,7 +1383,7 @@ public native class WebSocket<T: Any>(url: String, vararg protocols: String) {
 	public val protocol: String
 	public var onopen: (org.w3c.dom.Event)->Unit
 
-	public native trait MessageEvent : org.w3c.dom.Event {
+	public native abstract inner class MessageEvent : org.w3c.dom.Event {
 		public val data: T
 	}
 	public var onmessage: (event: MessageEvent)->Unit
