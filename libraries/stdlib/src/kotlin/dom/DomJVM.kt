@@ -98,8 +98,8 @@ get() = this.getLength()
 val NodeList.length: Int
 get() = this.getLength()
 
-val CharacterData.length: Int
-get() = this.getLength()
+//val CharacterData.length: Int
+//get() = this.getLength()
 
 val NamedNodeMap.length: Int
 get() = this.getLength()
