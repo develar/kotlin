@@ -119,6 +119,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
             boolean dirty = false;
             for (BuildTarget<?> buildTarget : context.getProjectDescriptor().getBuildTargetIndex().getDependencies(target, context)) {
                 if (dirtyModules.contains(((KotlinBuildTarget) buildTarget).getModule())) {
+                    // todo don't compile, just reanalyze
                     dirty = true;
                     break;
                 }
