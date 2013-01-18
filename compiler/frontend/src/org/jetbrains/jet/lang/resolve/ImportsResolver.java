@@ -18,10 +18,14 @@ package org.jetbrains.jet.lang.resolve;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.ModuleConfiguration;
-import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
+import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
@@ -32,9 +36,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.jetbrains.jet.lang.diagnostics.Errors.PLATFORM_CLASS_MAPPED_TO_KOTLIN;
-import static org.jetbrains.jet.lang.diagnostics.Errors.USELESS_HIDDEN_IMPORT;
-import static org.jetbrains.jet.lang.diagnostics.Errors.USELESS_SIMPLE_IMPORT;
+import static org.jetbrains.jet.lang.diagnostics.Errors.*;
 
 public class ImportsResolver {
     @NotNull
@@ -175,8 +177,7 @@ public class ImportsResolver {
             isResolved = namespaceScope.getLocalVariable(aliasName);
         }
         else if (wasResolved instanceof NamespaceDescriptor) {
-            List<NamespaceDescriptor> namespaces = namespaceScope.getNamespaces(aliasName);
-            isResolved = namespaces.isEmpty() ? null : namespaces.get(0);
+            isResolved = namespaceScope.processNamespaces(aliasName, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
         }
         if (isResolved != null && isResolved != wasResolved) {
             trace.report(USELESS_HIDDEN_IMPORT.on(importedReference));

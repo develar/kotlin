@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.lang.types;
 
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -68,10 +69,10 @@ public class ErrorUtils {
             return ERROR_PROPERTY;
         }
 
-        @NotNull
         @Override
-        public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
-            return Collections.emptyList(); // TODO : review
+        public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+            // TODO : review
+            return processor;
         }
 
         @NotNull

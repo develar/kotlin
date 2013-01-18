@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.resolve.lazy;
 
 import com.google.common.collect.Maps;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetDeclaration;
@@ -26,8 +27,6 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,24 +40,28 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
         super(resolveSession, declarationProvider, thisPackage);
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
         NamespaceDescriptor known = packageDescriptors.get(name);
-        if (known != null) return Collections.singletonList(known);
-        if (allDescriptorsComputed) return Collections.emptyList();
+        if (known != null) {
+            processor.process(known);
+            return processor;
+        }
 
-        if (!declarationProvider.isPackageDeclared(name)) return Collections.emptyList();
+        if (allDescriptorsComputed || !declarationProvider.isPackageDeclared(name)) return processor;
 
-        PackageMemberDeclarationProvider packageMemberDeclarationProvider = resolveSession.getDeclarationProviderFactory().getPackageMemberDeclarationProvider(
-                DescriptorUtils.getFQName(thisDescriptor).child(name).toSafe());
+        PackageMemberDeclarationProvider packageMemberDeclarationProvider =
+                resolveSession.getDeclarationProviderFactory().getPackageMemberDeclarationProvider(
+                        DescriptorUtils.getFQName(thisDescriptor).child(name).toSafe());
         assert packageMemberDeclarationProvider != null : "Package is declared, but declaration provider is not found: " + name;
-        NamespaceDescriptor namespaceDescriptor = new LazyPackageDescriptor(thisDescriptor, name, resolveSession, packageMemberDeclarationProvider);
+        NamespaceDescriptor namespaceDescriptor =
+                new LazyPackageDescriptor(thisDescriptor, name, resolveSession, packageMemberDeclarationProvider);
 
         packageDescriptors.put(name, namespaceDescriptor);
         allDescriptors.add(namespaceDescriptor);
 
-        return Collections.singletonList(namespaceDescriptor);
+        processor.process(namespaceDescriptor);
+        return processor;
     }
 
     @Override
@@ -93,7 +96,8 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
     @Override
     protected void addExtraDescriptors() {
         for (FqName packageFqName : declarationProvider.getAllDeclaredPackages()) {
-            getNamespaces(packageFqName.shortName());
+            //noinspection unchecked
+            processNamespaces(packageFqName.shortName(), Processor.TRUE);
         }
     }
 

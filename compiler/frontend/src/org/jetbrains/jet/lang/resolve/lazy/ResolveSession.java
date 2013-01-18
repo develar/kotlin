@@ -21,6 +21,7 @@ import com.google.common.base.Predicates;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import com.intellij.util.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +29,10 @@ import org.jetbrains.jet.di.InjectorForLazyResolve;
 import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
-import org.jetbrains.jet.lang.resolve.*;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.BindingTrace;
+import org.jetbrains.jet.lang.resolve.BindingTraceContext;
+import org.jetbrains.jet.lang.resolve.ObservableBindingTrace;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -128,8 +132,7 @@ public class ResolveSession {
 
     @Nullable
     public NamespaceDescriptor getPackageDescriptor(@NotNull Name shortName) {
-        final List<NamespaceDescriptor> namespaces = rootPackage.getMemberScope().getNamespaces(shortName);
-        return namespaces.isEmpty() ? null : namespaces.get(0);
+        return rootPackage.getMemberScope().processNamespaces(shortName, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
     }
 
     @Nullable
@@ -141,8 +144,9 @@ public class ResolveSession {
         NamespaceDescriptor current = getPackageDescriptor(names.get(0));
         if (current == null) return null;
         for (Name name : names.subList(1, names.size())) {
-            final List<NamespaceDescriptor> namespaces = current.getMemberScope().getNamespaces(name);
-            current = namespaces.isEmpty() ? null : namespaces.get(0);
+            FindFirstProcessor<NamespaceDescriptor> processor = new FindFirstProcessor<NamespaceDescriptor>();
+            current.getMemberScope().processNamespaces(name, processor);
+            current = processor.isFound() ? processor.getFoundValue() : null;
             if (current == null) return null;
         }
         return current;

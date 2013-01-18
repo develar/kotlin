@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.lang.resolve.java.scope;
 
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
@@ -23,9 +24,6 @@ import org.jetbrains.jet.lang.resolve.java.JavaSemanticServices;
 import org.jetbrains.jet.lang.resolve.java.provider.ClassPsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-
-import java.util.Collections;
-import java.util.List;
 
 public final class JavaClassStaticMembersScope extends JavaClassMembersScope {
     @NotNull
@@ -41,15 +39,12 @@ public final class JavaClassStaticMembersScope extends JavaClassMembersScope {
         this.packageFQN = packageFQN;
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
         NamespaceDescriptor descriptor = getResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
-        if (descriptor == null) {
-            return Collections.emptyList();
+        if (descriptor != null) {
+            processor.process(descriptor);
         }
-        else {
-            return Collections.singletonList(descriptor);
-        }
+        return processor;
     }
 }

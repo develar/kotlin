@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.resolve.scopes;
 
 import com.google.common.collect.*;
+import com.intellij.util.Processor;
 import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -430,20 +431,26 @@ public class WritableScopeImpl extends WritableScopeWithImports {
         return null;
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
         checkMayRead();
 
         NamespaceDescriptor declaredNamespace = getDeclaredNamespace(name);
-        if (declaredNamespace != null) return Collections.singletonList(declaredNamespace);
+        if (declaredNamespace != null) {
+            processor.process(declaredNamespace);
+            return processor;
+        }
 
         NamespaceDescriptor aliased = getNamespaceAliases().get(name);
-        if (aliased != null) return Collections.singletonList(aliased);
+        if (aliased != null) {
+            processor.process(aliased);
+            return processor;
+        }
 
-        List<NamespaceDescriptor> namespaces = getWorkerScope().getNamespaces(name);
-        if (!namespaces.isEmpty()) return namespaces;
-        return super.getNamespaces(name);
+        getWorkerScope().processNamespaces(name, processor);
+        // todo should we stop if found (as in prev implementation)?
+        super.processNamespaces(name, processor);
+        return processor;
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.lang.resolve.java.scope;
 
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
@@ -29,8 +30,6 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 import static org.jetbrains.jet.lang.resolve.java.scope.ScopeUtils.computeAllPackageDeclarations;
 
@@ -72,17 +71,13 @@ public abstract class JavaPackageScope extends JavaBaseScope {
         return null;
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
-        final NamespaceDescriptor descriptor = getResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
-        if (descriptor == null) {
-            return Collections.emptyList();
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+        NamespaceDescriptor descriptor = getResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
+        if (descriptor != null) {
+            processor.process(descriptor);
         }
-        else {
-            return Collections.singletonList(descriptor);
-        }
-
+        return processor;
     }
 
     @NotNull

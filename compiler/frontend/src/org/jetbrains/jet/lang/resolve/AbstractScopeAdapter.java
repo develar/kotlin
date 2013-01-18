@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.lang.resolve;
 
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
@@ -44,10 +45,9 @@ public abstract class AbstractScopeAdapter implements JetScope {
         return getWorkerScope().getFunctions(name);
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
-        return getWorkerScope().getNamespaces(name);
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+        return getWorkerScope().processNamespaces(name, processor);
     }
 
     @Override

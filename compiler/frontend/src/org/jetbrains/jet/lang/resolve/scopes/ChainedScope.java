@@ -18,7 +18,7 @@ package org.jetbrains.jet.lang.resolve.scopes;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.intellij.util.SmartList;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
@@ -68,14 +68,12 @@ public class ChainedScope implements JetScope {
         return objectDescriptors;
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
-        List<NamespaceDescriptor> result = new SmartList<NamespaceDescriptor>();
-        for (JetScope jetScope : scopeChain) {
-            result.addAll(jetScope.getNamespaces(name));
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+        for (JetScope scope : scopeChain) {
+            scope.processNamespaces(name, processor);
         }
-        return result;
+        return processor;
     }
 
     @NotNull

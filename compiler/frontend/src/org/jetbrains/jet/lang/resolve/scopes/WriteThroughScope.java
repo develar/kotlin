@@ -19,6 +19,7 @@ package org.jetbrains.jet.lang.resolve.scopes;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -26,7 +27,6 @@ import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 public class WriteThroughScope extends WritableScopeWithImports {
@@ -105,18 +105,15 @@ public class WriteThroughScope extends WritableScopeWithImports {
         return super.getLocalVariable(name); // Imports
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
         checkMayRead();
 
-        List<NamespaceDescriptor> namespace = writableWorker.getNamespaces(name);
-        if (!namespace.isEmpty()) return namespace;
-
-        namespace = getWorkerScope().getNamespaces(name);
-        if (!namespace.isEmpty()) return namespace;
-
-        return super.getNamespaces(name); // Imports
+        // todo should we stop if found (as in prev implementation)?
+        writableWorker.processNamespaces(name, processor);
+        getWorkerScope().processNamespaces(name, processor);
+        super.processNamespaces(name, processor);
+        return processor;
     }
 
     @Override

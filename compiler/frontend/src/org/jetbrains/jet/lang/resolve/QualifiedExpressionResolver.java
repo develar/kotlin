@@ -20,6 +20,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.intellij.util.CommonProcessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.ModuleConfiguration;
@@ -31,7 +32,6 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
@@ -230,11 +230,9 @@ public class QualifiedExpressionResolver {
             @NotNull JetScope outerScope, boolean onlyClasses, boolean namespaceLevel) {
         Name referencedName = referenceExpression.getReferencedNameAsName();
 
-        Set<DeclarationDescriptor> descriptors = Sets.newHashSet();
-        List<NamespaceDescriptor> namespaceDescriptors = outerScope.getNamespaces(referencedName);
-        if (!namespaceDescriptors.isEmpty()) {
-            descriptors.addAll(namespaceDescriptors);
-        }
+        final Set<DeclarationDescriptor> descriptors = Sets.newHashSet();
+        //noinspection unchecked
+        outerScope.processNamespaces(referencedName, new CommonProcessors.CollectProcessor(descriptors));
 
         ClassifierDescriptor classifierDescriptor = outerScope.getClassifier(referencedName);
         if (classifierDescriptor != null) {

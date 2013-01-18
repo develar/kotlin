@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.lang.resolve.scopes;
 
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -51,8 +52,7 @@ public interface JetScope {
     @NotNull
     Collection<ClassDescriptor> getObjectDescriptors();
 
-    @NotNull
-    List<NamespaceDescriptor> getNamespaces(@NotNull Name name);
+    <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor);
 
     @NotNull
     Collection<VariableDescriptor> getProperties(@NotNull Name name);

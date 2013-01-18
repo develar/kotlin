@@ -22,6 +22,7 @@ import com.google.common.collect.Multimap;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
+import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.JetNodeTypes;
@@ -156,11 +157,10 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     @Nullable
     private NamespaceType lookupNamespaceType(@NotNull JetSimpleNameExpression expression, @NotNull ExpressionTypingContext context) {
         Name name = expression.getReferencedNameAsName();
-        List<NamespaceDescriptor> namespaces = context.scope.getNamespaces(name);
-        if (namespaces.isEmpty()) {
+        NamespaceDescriptor namespace = context.scope.processNamespaces(name, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
+        if (namespace  == null) {
             return null;
         }
-        NamespaceDescriptor namespace = namespaces.get(0);
         context.trace.record(REFERENCE_TARGET, expression, namespace);
 
         // Construct a NamespaceType with everything from the namespace and with static nested classes of the corresponding class (if any)

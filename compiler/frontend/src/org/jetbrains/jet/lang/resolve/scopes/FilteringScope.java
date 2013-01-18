@@ -18,7 +18,7 @@ package org.jetbrains.jet.lang.resolve.scopes;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-import com.intellij.util.SmartList;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -26,7 +26,6 @@ import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 
 import java.util.Collection;
-import java.util.List;
 
 public class FilteringScope extends JetScopeAdapter {
     private final Predicate<DeclarationDescriptor> predicate;
@@ -50,16 +49,18 @@ public class FilteringScope extends JetScopeAdapter {
         return descriptor != null && predicate.apply(descriptor) ? descriptor : null;
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
-        List<NamespaceDescriptor> result = new SmartList<NamespaceDescriptor>();
-        for (NamespaceDescriptor descriptor : super.getNamespaces(name)) {
-            if (predicate.apply(descriptor)) {
-                result.add(descriptor);
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull final P processor) {
+        super.processNamespaces(name, new Processor<NamespaceDescriptor>() {
+            @Override
+            public boolean process(NamespaceDescriptor descriptor) {
+                if (predicate.apply(descriptor)) {
+                    processor.process(descriptor);
+                }
+                return true;
             }
-        }
-        return result;
+        });
+        return processor;
     }
 
     @Override

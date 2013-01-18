@@ -18,6 +18,7 @@ package org.jetbrains.jet.lang.resolve.lazy;
 
 import com.google.common.base.Predicate;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
@@ -63,8 +64,8 @@ public abstract class AbstractLazyResolveNamespaceComparingTest extends KotlinTe
         ModuleDescriptor lazyModule = LazyResolveTestUtil.resolveLazily(files, getEnvironment());
 
         Name test = Name.identifier("test");
-        NamespaceDescriptor actual = lazyModule.getRootNamespace().getMemberScope().getNamespaces(test).get(0);
-        NamespaceDescriptor expected = eagerModule.getRootNamespace().getMemberScope().getNamespaces(test).get(0);
+        NamespaceDescriptor actual = lazyModule.getRootNamespace().getMemberScope().processNamespaces(test, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
+        NamespaceDescriptor expected = eagerModule.getRootNamespace().getMemberScope().processNamespaces(test, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
 
         File serializeResultsTo = new File(FileUtil.getNameWithoutExtension(testFileName) + ".txt");
 

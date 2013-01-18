@@ -26,6 +26,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiFileFactory;
+import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import com.intellij.util.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -312,7 +313,7 @@ public class KotlinBuiltIns {
 
     @NotNull
     public NamespaceDescriptor getBuiltInsPackage() {
-        NamespaceDescriptor namespace = getBuiltInsModule().getRootNamespace().getMemberScope().getNamespaces(BUILT_INS_PACKAGE_NAME).get(0);
+        NamespaceDescriptor namespace = getBuiltInsModule().getRootNamespace().getMemberScope().processNamespaces(BUILT_INS_PACKAGE_NAME, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
         assert namespace != null : "Built ins namespace not found: " + BUILT_INS_PACKAGE_NAME;
         return namespace;
     }

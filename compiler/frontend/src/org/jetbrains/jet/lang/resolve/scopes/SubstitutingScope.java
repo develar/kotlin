@@ -18,6 +18,7 @@ package org.jetbrains.jet.lang.resolve.scopes;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -110,10 +111,10 @@ public class SubstitutingScope implements JetScope {
         return substitute(workerScope.getFunctions(name));
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
-        return workerScope.getNamespaces(name); // TODO
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+        workerScope.processNamespaces(name, processor); // TODO
+        return processor;
     }
 
     @NotNull

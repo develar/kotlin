@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.resolve.scopes;
 
 import com.google.common.collect.Lists;
+import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
 import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
@@ -89,7 +90,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
             imports = new SmartList<JetScope>(imported);
         }
         else {
-            imports.add(0, imported);
+            imports.add(imported);
         }
         currentIndividualImportScope = null;
     }
@@ -195,16 +196,14 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
         return null;
     }
 
-    @NotNull
     @Override
-    public List<NamespaceDescriptor> getNamespaces(@NotNull Name name) {
+    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
         checkMayRead();
 
-        List<NamespaceDescriptor> result = new SmartList<NamespaceDescriptor>();
         for (JetScope imported : imports) {
-            result.addAll(imported.getNamespaces(name));
+            imported.processNamespaces(name, processor);
         }
-        return result;
+        return processor;
     }
 
     private WritableScope getCurrentIndividualImportScope() {

@@ -18,6 +18,7 @@ package org.jetbrains.jet.lang.resolve.lazy;
 
 import com.google.common.collect.Lists;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.KotlinTestWithEnvironmentManagement;
@@ -56,8 +57,8 @@ public class LazyResolveStdlibLoadingTest extends KotlinTestWithEnvironmentManag
         ModuleDescriptor lazyModule = LazyResolveTestUtil.resolveLazily(files, stdlibEnvironment);
 
         for (Name name : namespaceShortNames) {
-            NamespaceDescriptor eager = module.getRootNamespace().getMemberScope().getNamespaces(name).get(0);
-            NamespaceDescriptor lazy = lazyModule.getRootNamespace().getMemberScope().getNamespaces(name).get(0);
+            NamespaceDescriptor eager = module.getRootNamespace().getMemberScope().processNamespaces(name, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
+            NamespaceDescriptor lazy = lazyModule.getRootNamespace().getMemberScope().processNamespaces(name, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
             NamespaceComparator.compareNamespaces(eager, lazy, NamespaceComparator.RECURSIVE, null);
         }
     }
