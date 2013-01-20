@@ -90,7 +90,7 @@ public class KotlinCompiler {
 
     private final Disposable compileContextParentDisposable = Disposer.newDisposable();
 
-    private final ConcurrentMap<String, NotNullLazyValue<ModuleInfo>> compiledModules =
+    private final ConcurrentMap<String, NotNullLazyValue<ModuleInfo>> analyzedModules =
             new StripedLockConcurrentHashMap<String, NotNullLazyValue<ModuleInfo>>();
 
     private final SubCompiler subCompiler;
@@ -118,7 +118,7 @@ public class KotlinCompiler {
             return;
         }
 
-        NotNullLazyValue<ModuleInfo> prev = compiledModules.put(name, new PrecomputedModuleInfoValue(moduleInfo));
+        NotNullLazyValue<ModuleInfo> prev = analyzedModules.put(name, new PrecomputedModuleInfoValue(moduleInfo));
         assert prev == null;
 
         subCompiler.compile(configuration, moduleInfo, sources);
@@ -126,9 +126,9 @@ public class KotlinCompiler {
 
     @Nullable
     private ModuleInfo getModuleInfo(String moduleName, boolean analyzeCompletely, Object dependency) {
-        NotNullLazyValue<ModuleInfo> moduleInfoRef = compiledModules.get(moduleName);
+        NotNullLazyValue<ModuleInfo> moduleInfoRef = analyzedModules.get(moduleName);
         if (moduleInfoRef == null) {
-            NotNullLazyValue<ModuleInfo> candidate = compiledModules.putIfAbsent(moduleName, moduleInfoRef =
+            NotNullLazyValue<ModuleInfo> candidate = analyzedModules.putIfAbsent(moduleName, moduleInfoRef =
                     new ModuleInfoAtomicLazyValue(moduleName, dependency, analyzeCompletely));
             if (candidate != null) {
                 moduleInfoRef = candidate;
