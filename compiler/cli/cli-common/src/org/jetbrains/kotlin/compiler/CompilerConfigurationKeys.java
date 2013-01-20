@@ -23,6 +23,7 @@ import java.io.File;
 public final class CompilerConfigurationKeys {
     public static final CompilerConfigurationKey<File> OUTPUT_ROOT = CompilerConfigurationKey.create("outputRoot");
     public static final CompilerConfigurationKey<String> MODULE_NAME = CompilerConfigurationKey.create("moduleName");
+    public static final CompilerConfigurationKey<Boolean> ANALYZE_ONLY = CompilerConfigurationKey.create("analyzeOnly");
 
     private CompilerConfigurationKeys() {
     }

@@ -115,12 +115,13 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
 
         Set<JpsModule> dirtyModules = DIRTY_MODULES.get(context);
         assert dirtyModules != null;
+        boolean analyzeOnly = false;
         if (filesToCompile.isEmpty() && !dirtyFilesHolder.hasRemovedFiles()) {
             boolean dirty = false;
             for (BuildTarget<?> buildTarget : context.getProjectDescriptor().getBuildTargetIndex().getDependencies(target, context)) {
                 if (dirtyModules.contains(((KotlinBuildTarget) buildTarget).getModule())) {
-                    // todo don't compile, just reanalyze
                     dirty = true;
+                    analyzeOnly = true;
                     break;
                 }
             }
@@ -142,6 +143,10 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         compilerConfiguration.put(JsCompilerConfigurationKeys.TARGET, "5");
         if (!"true".equalsIgnoreCase(System.getProperty("kotlin.jps.tests"))) {
             compilerConfiguration.put(JsCompilerConfigurationKeys.SOURCEMAP, true);
+        }
+
+        if (analyzeOnly) {
+            compilerConfiguration.put(CompilerConfigurationKeys.ANALYZE_ONLY, true);
         }
 
         final Ref<IOException> ioExceptionRef = Ref.create();

@@ -121,7 +121,9 @@ public class KotlinCompiler {
         NotNullLazyValue<ModuleInfo> prev = analyzedModules.put(name, new PrecomputedModuleInfoValue(moduleInfo));
         assert prev == null;
 
-        subCompiler.compile(configuration, moduleInfo, sources);
+        if (!configuration.get(CompilerConfigurationKeys.ANALYZE_ONLY, false)) {
+            subCompiler.compile(configuration, moduleInfo, sources);
+        }
     }
 
     @Nullable
@@ -206,7 +208,6 @@ public class KotlinCompiler {
         ModuleInfo moduleConfiguration = new ModuleInfo(moduleName, compileContext.getProject(), dependencies, providedDependencies);
         AnalyzeExhaust exhaust =
                 XAnalyzerFacade.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
-        exhaust.throwIfError();
         boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector,
                                               checkSyntax ? DIAGNOSTIC_CODE_FILTER : DIAGNOSTIC_LIBRARY_FILTER);
         hasErrors |= reportIncompleteHierarchies(exhaust, messageCollector);
