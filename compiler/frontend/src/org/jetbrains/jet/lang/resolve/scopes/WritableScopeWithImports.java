@@ -90,7 +90,7 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
             imports = new SmartList<JetScope>(imported);
         }
         else {
-            imports.add(imported);
+            imports.add(0, imported);
         }
         currentIndividualImportScope = null;
     }
