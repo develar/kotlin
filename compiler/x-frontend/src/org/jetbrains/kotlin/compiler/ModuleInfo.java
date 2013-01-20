@@ -8,7 +8,6 @@ import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetImportDirective;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
 import org.jetbrains.jet.lang.resolve.BindingContext;
@@ -20,11 +19,7 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public final class ModuleInfo implements ModuleConfiguration {
     public static final Name STUBS_MODULE_NAME = Name.special('<' + "stubs" + '>');
@@ -40,9 +35,6 @@ public final class ModuleInfo implements ModuleConfiguration {
     private BindingContext bindingContext;
 
     private String normalName;
-
-    // todo use dirty files holder and remove this field
-    List<JetFile> sourceFiles;
 
     private final Set<ModuleInfo> providedDependencies;
 

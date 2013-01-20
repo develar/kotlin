@@ -19,9 +19,6 @@ package org.jetbrains.jet.jps.build;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
-import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.util.Consumer;
-import com.intellij.util.Processor;
 import com.intellij.util.containers.ConcurrentHashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
@@ -43,7 +40,10 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, KotlinBuildTarget> {
@@ -148,32 +148,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         Pair<Object, Method> kotlinContext;
         try {
             kotlinContext = getKotlinContext(context);
-            kotlinContext.second.invoke(kotlinContext.first, compilerConfiguration, new Consumer<Collection<String>>() {
-                @Override
-                public void consume(final Collection<String> sourcePaths) {
-                    if (context.getCancelStatus().isCanceled()) {
-                        return;
-                    }
-
-                    FileUtil.processFilesRecursively(outputRoot, new Processor<File>() {
-                        @Override
-                        public boolean process(File file) {
-                            if (file.isFile()) {
-                                try {
-                                    // todo change according to nik notes (well, we should check - Can JPS to understand how delete sourcemap file (or anything else?) from artifact  output if module was renamed?)
-                                    outputConsumer.registerOutputFile(file, sourcePaths);
-                                }
-                                catch (IOException e) {
-                                    ioExceptionRef.set(e);
-                                    return false;
-                                }
-                            }
-                            return true;
-                        }
-                    });
-                }
-            });
-            context.checkCanceled();
+            kotlinContext.second.invoke(kotlinContext.first, compilerConfiguration);
         }
         catch (InvocationTargetException e) {
             // hide InvocationTargetException
@@ -189,6 +164,8 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         if (!ioExceptionRef.isNull()) {
             throw ioExceptionRef.get();
         }
+
+        context.checkCanceled();
 
         // we must reanalyze all dependents if something was changed
         // todo don't reanalyze if public API was not changed (i.e. changes affect only internal code)
@@ -226,7 +203,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         constructor.setAccessible(true);
         Object compiler = constructor.newInstance(Class.forName(subCompilerClassName, false, loader), moduleInfoProvider, messageCollector);
 
-        Method compile = compilerClass.getMethod("compile", CompilerConfiguration.class, Consumer.class);
+        Method compile = compilerClass.getMethod("compile", CompilerConfiguration.class);
         compile.setAccessible(true);
 
         Pair<Object, Method> result = Pair.create(compiler, compile);
