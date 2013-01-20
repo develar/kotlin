@@ -27,9 +27,6 @@ import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getResolvedCall;
 
-/**
- * @author Pavel Talanov
- */
 public final class UnaryOperationTranslator {
     private UnaryOperationTranslator() {
     }

@@ -37,9 +37,6 @@ import org.jetbrains.k2js.translate.operation.OperatorTable;
 
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public class PrimitiveUnaryOperationFIF extends CompositeFIF {
     public PrimitiveUnaryOperationFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);

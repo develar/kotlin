@@ -31,9 +31,6 @@ import org.jetbrains.k2js.config.EcmaVersion;
 
 import static org.jetbrains.jet.plugin.quickfix.ConfigureKotlinLibraryNotificationProvider.findLibraryFile;
 
-/**
- * @author Pavel Talanov
- */
 @State(name = "K2JSModule", storages = @Storage(file = "$MODULE_FILE$"))
 public final class KotlinJsBuildConfigurationManager implements PersistentStateComponent<KotlinJsBuildConfigurationManager> {
     @NotNull

@@ -31,9 +31,6 @@ import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public abstract class CompositeFIF {
     @NotNull
     public static final FunctionIntrinsic LENGTH_PROPERTY_INTRINSIC = new BuiltInPropertyIntrinsic("length");

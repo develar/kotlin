@@ -29,9 +29,6 @@ import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
-/**
- * @author Pavel Talanov
- */
 public final class JsDescriptorUtils {
 
     private JsDescriptorUtils() {

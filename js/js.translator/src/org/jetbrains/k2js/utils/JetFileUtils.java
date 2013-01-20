@@ -22,9 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.plugin.JetLanguage;
 
-/**
- * @author Pavel Talanov
- */
 public final class JetFileUtils {
 
     private JetFileUtils() {

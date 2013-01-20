@@ -35,9 +35,6 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToBlock;
 
-/**
- * @author Pavel Talanov
- */
 public final class TryTranslator {
     private TryTranslator() {
     }

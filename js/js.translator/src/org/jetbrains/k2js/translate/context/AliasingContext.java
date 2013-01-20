@@ -26,9 +26,6 @@ import org.jetbrains.jet.lang.psi.JetExpression;
 import java.util.Collections;
 import java.util.Map;
 
-/**
- * @author Pavel Talanov
- */
 public class AliasingContext {
     private static final AliasingContext ROOT = new AliasingContext(null) {
         @Override

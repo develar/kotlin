@@ -45,9 +45,6 @@ import java.lang.ref.SoftReference;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 //TODO: use method object
 public final class TranslationUtils {
 

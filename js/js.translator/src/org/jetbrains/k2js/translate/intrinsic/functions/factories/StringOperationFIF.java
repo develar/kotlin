@@ -32,9 +32,6 @@ import org.jetbrains.k2js.translate.utils.TranslationUtils;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * @author Pavel Talanov
- */
 public final class StringOperationFIF extends CompositeFIF {
     public StringOperationFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);

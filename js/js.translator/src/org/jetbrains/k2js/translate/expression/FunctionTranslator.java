@@ -51,9 +51,6 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.equality;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getDeclarationDescriptorForReceiver;
 import static org.jetbrains.k2js.translate.utils.mutator.LastExpressionMutator.mutateLastExpression;
 
-/**
- * @author Pavel Talanov
- */
 public final class FunctionTranslator {
     private FunctionTranslator() {
     }

@@ -33,9 +33,6 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getDeclarationDescriptorForReceiver;
 
-/**
- * @author Pavel Talanov
- */
 public final class CallParametersResolver implements CallParameters {
     private JsExpression functionReference;
     private final JsExpression thisObject;

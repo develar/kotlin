@@ -51,7 +51,6 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * @author Evgeny Gerashchenko
  * @since 5/16/12
  */
 class DeclarationHintSupport implements StartupActivity {

@@ -23,9 +23,6 @@ import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 
-/**
- * @author Pavel Talanov
- */
 public final class ErrorReportingUtils {
     private ErrorReportingUtils() {
     }

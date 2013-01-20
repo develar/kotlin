@@ -38,9 +38,6 @@ import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.sum;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getNameIfStandardType;
 
-/**
- * @author Pavel Talanov
- */
 public final class StringTemplateTranslator extends AbstractTranslator {
     private final JetStringTemplateEntry[] expressionEntries;
 

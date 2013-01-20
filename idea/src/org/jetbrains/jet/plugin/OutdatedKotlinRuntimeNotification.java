@@ -44,7 +44,6 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
 /**
- * @author Evgeny Gerashchenko
  * @since 5/22/12
  */
 public class OutdatedKotlinRuntimeNotification implements StartupActivity, DumbAware {
