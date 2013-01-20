@@ -133,13 +133,9 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
 
     @Override
     @NotNull
-    public JsNode visitParenthesizedExpression(@NotNull JetParenthesizedExpression expression,
-            @NotNull TranslationContext context) {
+    public JsNode visitParenthesizedExpression(@NotNull JetParenthesizedExpression expression, @NotNull TranslationContext context) {
         JetExpression expressionInside = expression.getExpression();
-        if (expressionInside != null) {
-            return expressionInside.accept(this, context);
-        }
-        return context.program().getEmptyStatement();
+        return expressionInside != null ? expressionInside.accept(this, context) : JsStatement.EMPTY;
     }
 
     @Override
@@ -213,7 +209,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     private JsStatement translateNullableExpressionAsNotNullStatement(@Nullable JetExpression nullableExpression,
             @NotNull TranslationContext context) {
         if (nullableExpression == null) {
-            return context.program().getEmptyStatement();
+            return JsStatement.EMPTY;
         }
         return convertToStatement(nullableExpression.accept(this, context));
     }
@@ -358,7 +354,6 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
 
     private static String getReferencedName(JetSimpleNameExpression expression) {
         String name = expression.getReferencedName();
-        assert name != null;
         return name.charAt(0) == '@' ? name.substring(1) + '$' : name;
     }
 
