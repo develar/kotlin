@@ -16,26 +16,14 @@
 
 package org.jetbrains.k2js.translate.intrinsic.operation;
 
-import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetBinaryExpression;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
-import java.util.List;
-
 public final class BinaryOperationIntrinsics {
-
     @NotNull
-    private final List<BinaryOperationIntrinsic> intrinsics = Lists.newArrayList();
-
-    {
-        intrinsics.add(new EqualsIntrinsic());
-        intrinsics.add(new CompareToInstrinsic());
-    }
-
-    public BinaryOperationIntrinsics() {
-    }
+    private final BinaryOperationIntrinsic[] intrinsics = new BinaryOperationIntrinsic[]{new EqualsIntrinsic(), new CompareToInstrinsic()};
 
     @Nullable
     public BinaryOperationIntrinsic getIntrinsic(@NotNull JetBinaryExpression expression, @NotNull TranslationContext context) {

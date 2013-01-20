@@ -94,15 +94,7 @@ public final class Translation {
     }
 
     @NotNull
-    public static JsProgram generateAst(@NotNull BindingContext bindingContext,
-            @NotNull Collection<JetFile> files, @NotNull MainCallParameters mainCallParameters,
-            @NotNull Config config)
-            {
-            return doGenerateAst(bindingContext, files, mainCallParameters, config);
-    }
-
-    @NotNull
-    private static JsProgram doGenerateAst(
+    public static JsProgram generateAst(
             @NotNull BindingContext bindingContext, @NotNull Collection<JetFile> files,
             @NotNull MainCallParameters mainCallParameters,
             @NotNull Config config
