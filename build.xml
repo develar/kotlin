@@ -234,7 +234,6 @@
 
             <zap pattern="org.mozilla.javascript.xml.impl.xmlbeans.**"/>
 
-            <rule pattern="com.intellij.**" result="org.jetbrains.jet.internal.com.intellij.@1"/>
             <rule pattern="com.sun.jna.**" result="org.jetbrains.jet.internal.com.sun.jna.@1"/>
             <rule pattern="org.apache.log4j.**" result="org.jetbrains.jet.internal.org.apache.log4j.@1"/>
             <rule pattern="org.jdom.**" result="org.jetbrains.jet.internal.org.jdom.@1"/>
@@ -301,8 +300,8 @@
                     -injars '${output}/kotlin-compiler-before-proguard.jar'
                     -outjars '${kotlin-home}/lib/kotlin-compiler.jar'
 
-                    -dontwarn org.jetbrains.jet.internal.com.intellij.util.**
-                    -dontwarn org.jetbrains.jet.internal.com.intellij.codeInsight.**
+                    -dontwarn com.intellij.util.**
+                    -dontwarn com.intellij.codeInsight.**
                     -dontwarn org.jetbrains.jet.internal.com.thoughtworks.xstream.**
                     -dontwarn org.fusesource.**
 

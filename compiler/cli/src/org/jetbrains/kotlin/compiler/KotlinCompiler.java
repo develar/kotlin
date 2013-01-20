@@ -17,7 +17,10 @@
 package org.jetbrains.kotlin.compiler;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.util.*;
+import com.intellij.openapi.util.AtomicNotNullLazyValue;
+import com.intellij.openapi.util.Condition;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -25,6 +28,8 @@ import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiManager;
+import com.intellij.util.Consumer;
+import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
 import com.intellij.util.containers.StripedLockConcurrentHashMap;
 import gnu.trove.THashSet;
@@ -105,7 +110,7 @@ public class KotlinCompiler {
         }
     }
 
-    public void compile(@NotNull CompilerConfiguration configuration, @Nullable OutputConsumer outputConsumer) throws IOException {
+    public void compile(@NotNull CompilerConfiguration configuration, @Nullable Consumer<Collection<String>> outputConsumer) throws IOException {
         String moduleName = configuration.getNotNull(CompilerConfigurationKeys.MODULE_NAME);
         ModuleInfo moduleConfiguration = getModuleInfo(moduleName, true, null);
         if (moduleConfiguration == null) {
@@ -120,7 +125,7 @@ public class KotlinCompiler {
                 for (int i = 0; i < files.size(); i++) {
                     filenames[i] = files.get(i).getViewProvider().getVirtualFile().getPath();
                 }
-                outputConsumer.registerSources(Arrays.asList(filenames));
+                outputConsumer.consume(Arrays.asList(filenames));
             }
         }
         finally {
@@ -146,7 +151,7 @@ public class KotlinCompiler {
         final List<JetFile> result = new ArrayList<JetFile>();
         final PsiManager psiManager = PsiManager.getInstance(compileContext.getProject());
         final CoreLocalFileSystem localFileSystem = compileContext.getLocalFileSystem();
-        moduleInfoProvider.processSourceFiles(name, object, new ModuleInfoProvider.Processor<File>() {
+        moduleInfoProvider.processSourceFiles(name, object, new Processor<File>() {
             @Override
             public boolean process(File file) {
                 VirtualFile virtualFile = localFileSystem.findFileByIoFile(file);

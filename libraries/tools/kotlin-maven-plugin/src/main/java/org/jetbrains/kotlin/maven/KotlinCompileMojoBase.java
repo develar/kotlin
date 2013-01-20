@@ -37,7 +37,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.jetbrains.jet.internal.com.intellij.openapi.util.text.StringUtil.join;
+import static com.intellij.openapi.util.text.StringUtil.join;
 
 public abstract class KotlinCompileMojoBase extends AbstractMojo {
 

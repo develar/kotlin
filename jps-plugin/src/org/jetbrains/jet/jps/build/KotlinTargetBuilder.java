@@ -20,6 +20,7 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.util.Consumer;
 import com.intellij.util.Processor;
 import com.intellij.util.containers.ConcurrentHashSet;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +37,6 @@ import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
-import org.jetbrains.kotlin.compiler.OutputConsumer;
 
 import java.io.File;
 import java.io.IOException;
@@ -148,9 +148,9 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         Pair<Object, Method> kotlinContext;
         try {
             kotlinContext = getKotlinContext(context);
-            kotlinContext.second.invoke(kotlinContext.first, compilerConfiguration, new OutputConsumer() {
+            kotlinContext.second.invoke(kotlinContext.first, compilerConfiguration, new Consumer<Collection<String>>() {
                 @Override
-                public void registerSources(final Collection<String> sourcePaths) {
+                public void consume(final Collection<String> sourcePaths) {
                     if (context.getCancelStatus().isCanceled()) {
                         return;
                     }
@@ -226,7 +226,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         constructor.setAccessible(true);
         Object compiler = constructor.newInstance(Class.forName(subCompilerClassName, false, loader), moduleInfoProvider, messageCollector);
 
-        Method compile = compilerClass.getMethod("compile", CompilerConfiguration.class, OutputConsumer.class);
+        Method compile = compilerClass.getMethod("compile", CompilerConfiguration.class, Consumer.class);
         compile.setAccessible(true);
 
         Pair<Object, Method> result = Pair.create(compiler, compile);

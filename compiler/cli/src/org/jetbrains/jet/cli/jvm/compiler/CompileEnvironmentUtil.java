@@ -52,11 +52,6 @@ import java.util.jar.*;
 
 public class CompileEnvironmentUtil {
 
-    // BytecodeCompiler.java, thanks to pro guard
-    public static Disposable newDisposable() {
-        return Disposer.newDisposable();
-    }
-
     @Nullable
     public static File getUnpackedRuntimePath() {
         URL url = KotlinToJVMBytecodeCompiler.class.getClassLoader().getResource("jet/JetObject.class");

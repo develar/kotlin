@@ -17,6 +17,7 @@
 package org.jetbrains.jet.jps.build;
 
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.util.Processor;
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
@@ -104,7 +105,7 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
     }
 
     @Override
-    public void processSourceFiles(String name, @Nullable Object object, final ModuleInfoProvider.Processor<File> processor) {
+    public void processSourceFiles(String name, @Nullable Object object, final Processor<File> processor) {
         if (object instanceof JpsLibrary) {
             for (File file : ((JpsLibrary) object).getFiles(JpsOrderRootType.SOURCES)) {
                 if (!processor.process(file)) {

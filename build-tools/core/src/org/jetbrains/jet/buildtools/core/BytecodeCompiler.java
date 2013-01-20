@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.buildtools.core;
 
+import com.intellij.openapi.util.Disposer;
 import jet.modules.Module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,7 +64,7 @@ public class BytecodeCompiler {
     private JetCoreEnvironment env(String stdlib, String[] classpath, String[] sourceRoots) {
         CompilerConfiguration configuration = createConfiguration(stdlib, classpath, sourceRoots);
 
-        return new JetCoreEnvironment(CompileEnvironmentUtil.newDisposable(), configuration);
+        return new JetCoreEnvironment(Disposer.newDisposable(), configuration);
     }
 
     private CompilerConfiguration createConfiguration(String stdlib, String[] classpath, String[] sourceRoots) {

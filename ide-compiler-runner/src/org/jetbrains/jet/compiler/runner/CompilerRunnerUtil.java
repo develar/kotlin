@@ -17,7 +17,9 @@
 package org.jetbrains.jet.compiler.runner;
 
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.util.Consumer;
 import com.intellij.util.Function;
+import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
 import com.intellij.util.lang.UrlClassLoader;
 import gnu.trove.THashMap;
@@ -31,7 +33,6 @@ import org.jetbrains.jet.utils.KotlinPaths;
 import org.jetbrains.kotlin.compiler.CompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.JsCompilerConfigurationKeys;
 import org.jetbrains.kotlin.compiler.ModuleInfoProvider;
-import org.jetbrains.kotlin.compiler.OutputConsumer;
 
 import java.io.*;
 import java.lang.ref.SoftReference;
@@ -147,9 +148,9 @@ public class CompilerRunnerUtil {
             super(urls, null);
 
             Class<?>[] sharedClasses = {CompilerConfiguration.class, CompilerConfigurationKey.class, CompilerConfigurationKeys.class,
-                    ModuleInfoProvider.class, ModuleInfoProvider.DependenciesProcessor.class, ModuleInfoProvider.Processor.class,
+                    ModuleInfoProvider.class, ModuleInfoProvider.DependenciesProcessor.class, Processor.class,
                     MessageCollector.class, CompilerMessageSeverity.class, CompilerMessageLocation.class, JsCompilerConfigurationKeys.class,
-                    OutputConsumer.class};
+                    Consumer.class};
             sharedClassesMap = new THashMap<String, Class>(sharedClasses.length);
             for (Class sharedClass : sharedClasses) {
                 sharedClassesMap.put(sharedClass.getName(), sharedClass);
