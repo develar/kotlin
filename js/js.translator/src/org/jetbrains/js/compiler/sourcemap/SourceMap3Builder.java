@@ -148,7 +148,8 @@ public class SourceMap3Builder implements SourceMapBuilder {
     @Override
     public void addLink() {
         textOutput.print("\n//@ sourceMappingURL=file://");
-        textOutput.print(getOutFile().getAbsolutePath());
+        textOutput.print(generatedFile.getName());
+        textOutput.print(".map");
     }
 
     private static final class Base64VLQ {
