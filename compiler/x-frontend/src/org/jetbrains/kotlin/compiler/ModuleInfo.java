@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class ModuleInfo implements ModuleConfiguration {
+public final class ModuleInfo implements ModuleConfiguration {
     public static final Name STUBS_MODULE_NAME = Name.special('<' + "stubs" + '>');
 
     private final Project project;
@@ -37,7 +37,7 @@ public class ModuleInfo implements ModuleConfiguration {
 
     private final ModuleDescriptor moduleDescriptor;
 
-    public BindingContext bindingContext;
+    private BindingContext bindingContext;
 
     private String normalName;
 
@@ -112,6 +112,11 @@ public class ModuleInfo implements ModuleConfiguration {
 
     public BindingContext getBindingContext() {
         return bindingContext;
+    }
+
+    public void setBindingContext(@NotNull BindingContext value) {
+        assert bindingContext == null;
+        bindingContext = value;
     }
 
     public Project getProject() {

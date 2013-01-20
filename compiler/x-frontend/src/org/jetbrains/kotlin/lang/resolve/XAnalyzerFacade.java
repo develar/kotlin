@@ -61,7 +61,7 @@ public final class XAnalyzerFacade {
 
     @NotNull
     private static AnalyzeExhaust analyzeFiles(
-            ModuleInfo moduleConfiguration,
+            ModuleInfo moduleInfo,
             @NotNull Collection<JetFile> files,
             @NotNull TopDownAnalysisParameters topDownAnalysisParameters,
             @Nullable BodiesResolveContext bodiesResolveContext,
@@ -69,17 +69,15 @@ public final class XAnalyzerFacade {
 
     ) {
         BindingTrace trace = new BindingTraceContext();
-        InjectorForTopDownXAnalyzer
-                injector = new InjectorForTopDownXAnalyzer(moduleConfiguration.getProject(), topDownAnalysisParameters, trace, moduleConfiguration.getModuleDescriptor(),
-                                                                                       moduleConfiguration);
+        InjectorForTopDownXAnalyzer injector =
+                new InjectorForTopDownXAnalyzer(moduleInfo.getProject(), topDownAnalysisParameters, trace, moduleInfo.getModuleDescriptor(),
+                                                moduleInfo);
         try {
             injector.getTopDownAnalyzer().analyzeFiles(files, Collections.<AnalyzerScriptParameter>emptyList());
             assert !storeContextForBodiesResolve || bodiesResolveContext == null;
-            moduleConfiguration.bindingContext = trace.getBindingContext();
-            return AnalyzeExhaust.success(trace.getBindingContext(),
-                                          storeContextForBodiesResolve ? new CachedBodiesResolveContext(
-                                                  injector.getTopDownAnalysisContext()) : bodiesResolveContext,
-                                          injector.getModuleConfiguration());
+            moduleInfo.setBindingContext(trace.getBindingContext());
+            return AnalyzeExhaust.success(trace.getBindingContext(), storeContextForBodiesResolve ? new CachedBodiesResolveContext(
+                    injector.getTopDownAnalysisContext()) : bodiesResolveContext, injector.getModuleConfiguration());
         }
         finally {
             injector.destroy();
