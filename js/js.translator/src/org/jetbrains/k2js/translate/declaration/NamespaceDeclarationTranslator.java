@@ -33,18 +33,13 @@ import java.util.*;
 import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 
 public final class NamespaceDeclarationTranslator extends AbstractTranslator {
-    private final Iterable<JetFile> files;
-    private final Map<NamespaceDescriptor,NamespaceTranslator> descriptorToTranslator =
-            new LinkedHashMap<NamespaceDescriptor, NamespaceTranslator>();
-
-    public NamespaceDeclarationTranslator(@NotNull Iterable<JetFile> files, @NotNull TranslationContext context) {
+    public NamespaceDeclarationTranslator(@NotNull TranslationContext context) {
         super(context);
-
-        this.files = files;
     }
 
-    public void translate(List<JsStatement> result) {
+    public void translate(Iterable<JetFile> files, List<JsStatement> result) {
         // predictable order
+        Map<NamespaceDescriptor,NamespaceTranslator> descriptorToTranslator = new LinkedHashMap<NamespaceDescriptor, NamespaceTranslator>();
         Map<NamespaceDescriptor, List<JsExpression>> descriptorToDefineInvocation = new THashMap<NamespaceDescriptor, List<JsExpression>>();
         JsObjectLiteral rootNamespaceDefinition = null;
 

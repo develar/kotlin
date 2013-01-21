@@ -132,7 +132,7 @@ public final class Translation {
 
         TranslationContext context = TranslationContext.rootContext(staticContext, definitionFunction);
         staticContext.initTranslators(context);
-        new NamespaceDeclarationTranslator(files, context).translate(statements);
+        new NamespaceDeclarationTranslator(context).translate(files, statements);
 
         if (mainCallParameters.shouldBeGenerated()) {
             JsStatement statement = generateCallToMain(context, files, mainCallParameters.arguments());

@@ -1,3 +1,3 @@
 package foo.bar
 
-val a = 3
+val c = 42
