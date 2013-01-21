@@ -63,11 +63,6 @@ public abstract class KotlinBuildTargetType extends BuildTargetType<KotlinBuildT
         });
 
         for (JpsArtifact artifact : JpsArtifactService.getInstance().getArtifacts(model.getProject())) {
-            // todo if artifact created in tests, should we set build on make?
-            //if (!artifact.isBuildOnMake()) {
-            //    continue;
-            //}
-
             for (JpsPackagingElement element : artifact.getRootElement().getChildren()) {
                 if (element instanceof JpsKotlinCompilerOutputPackagingElement) {
                     JpsModuleReference reference = ((JpsKotlinCompilerOutputPackagingElement) element).getModuleReference();
@@ -98,9 +93,7 @@ public abstract class KotlinBuildTargetType extends BuildTargetType<KotlinBuildT
         @Nullable
         @Override
         public KotlinBuildTarget createTarget(@NotNull String targetId) {
-            final KotlinBuildTarget target = targets.get(targetId);
-            assert target != null;
-            return target;
+            return targets.get(targetId);
         }
     }
 }
