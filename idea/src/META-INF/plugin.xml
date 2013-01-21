@@ -76,6 +76,8 @@
 
       <fileTypeFactory implementation="org.jetbrains.jet.plugin.JetFileFactory"/>
 
+      <compileServer.plugin classpath="jps/kotlin-jps-plugin.jar"/>
+
       <lang.syntaxHighlighterFactory key="jet" implementationClass="org.jetbrains.jet.plugin.highlighter.JetSyntaxHighlighterFactory"/>
       <lang.braceMatcher language="jet" implementationClass="org.jetbrains.jet.plugin.JetPairMatcher"/>
       <lang.parserDefinition language="jet" implementationClass="org.jetbrains.jet.lang.parsing.JetParserDefinition"/>
@@ -223,7 +225,7 @@
       </intentionAction>
 
       <intentionAction>
-        <className>org.jetbrains.jet.plugin.codeInsight.ktSignature.AddKotlinSignatureAnnotation</className>
+        <className>org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureAnnotationIntention</className>
         <category>Kotlin</category>
       </intentionAction>
 
@@ -239,6 +241,5 @@
 
       <packaging.elementType implementation="org.jetbrains.jet.plugin.packaging.JsCompilerOutputElementType"/>
       <compiler.buildTargetScopeProvider implementation="org.jetbrains.jet.plugin.build.KotlinBuildTargetScopeProvider"/>
-      <compileServer.plugin classpath="jps/kotlin-jps-plugin.jar"/>
   </extensions>
 </idea-plugin>
