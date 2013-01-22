@@ -22,7 +22,6 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.newvfs.NewVirtualFile;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -107,12 +106,13 @@ public class BuiltInsReferenceResolver {
         assert vf != null : "Virtual file not found by URL: " + url;
 
         // Refreshing VFS: in case the plugin jar was updated, the caches may hold the old value
-        if (vf instanceof NewVirtualFile) {
-            NewVirtualFile newVirtualFile = (NewVirtualFile) vf;
-            newVirtualFile.markDirtyRecursively(); // This doesn't happen in a JARFS entry, unless we do it manually here
-        }
-        vf.getChildren();
-        vf.refresh(false, true);
+        // develar: why we should do it? now this class is not project component, so, it seems, refresh will be already done
+        //if (vf instanceof NewVirtualFile) {
+        //    NewVirtualFile newVirtualFile = (NewVirtualFile) vf;
+        //    newVirtualFile.markDirtyRecursively(); // This doesn't happen in a JARFS entry, unless we do it manually here
+        //}
+        //vf.getChildren();
+        //vf.refresh(false, true);
 
         PsiDirectory psiDirectory = PsiManager.getInstance(myProject).findDirectory(vf);
         assert psiDirectory != null : "No PsiDirectory for " + vf;
