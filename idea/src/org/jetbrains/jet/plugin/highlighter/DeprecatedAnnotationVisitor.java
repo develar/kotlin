@@ -186,9 +186,9 @@ public class DeprecatedAnnotationVisitor extends AfterAnalysisHighlightingVisito
 
     private void checkPropertyAccessor(
             @NotNull PropertyAccessorDescriptor accessor,
-            @NotNull JetExpression expression, boolean isVar
+            @NotNull JetExpression expression, boolean isCrossingDisallowed
     ) {
-        reportAnnotationIfNeeded(expression, accessor, isVar);
+        reportAnnotationIfNeeded(expression, accessor, isCrossingDisallowed);
     }
 
     private void checkDeprecatedForOperations(@NotNull JetReferenceExpression expression) {
@@ -202,15 +202,15 @@ public class DeprecatedAnnotationVisitor extends AfterAnalysisHighlightingVisito
         return reportAnnotationIfNeeded(element, descriptor, false);
     }
 
-    private boolean reportAnnotationIfNeeded(@NotNull PsiElement element, @NotNull DeclarationDescriptor descriptor, boolean isWarning) {
+    private boolean reportAnnotationIfNeeded(@NotNull PsiElement element, @NotNull DeclarationDescriptor descriptor, boolean isCrossingDisallowed) {
         AnnotationDescriptor deprecated = getDeprecated(descriptor);
         if (deprecated != null) {
-            if (isWarning) {
-                holder.createInfoAnnotation(element, composeTooltipString(descriptor, deprecated))
+            if (isCrossingDisallowed) {
+                holder.createWarningAnnotation(element, composeTooltipString(descriptor, deprecated))
                         .setTextAttributes(CodeInsightColors.WARNINGS_ATTRIBUTES);
             }
             else {
-                holder.createInfoAnnotation(element, composeTooltipString(descriptor, deprecated))
+                holder.createWarningAnnotation(element, composeTooltipString(descriptor, deprecated))
                         .setTextAttributes(CodeInsightColors.DEPRECATED_ATTRIBUTES);
             }
             return true;

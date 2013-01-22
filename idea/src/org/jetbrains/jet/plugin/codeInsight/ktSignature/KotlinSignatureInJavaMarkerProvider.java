@@ -25,6 +25,7 @@ import com.intellij.ide.DataManager;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.markup.GutterIconRenderer;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
@@ -36,10 +37,13 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.di.InjectorForJavaSemanticServices;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
+import org.jetbrains.jet.lang.resolve.java.scope.JavaClassNonStaticMembersScope;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.plugin.JetIcons;
 
 import java.awt.event.MouseEvent;
@@ -59,6 +63,7 @@ public class KotlinSignatureInJavaMarkerProvider implements LineMarkerProvider {
             }
         }
     };
+    private static final Logger LOG = Logger.getInstance(KotlinSignatureInJavaMarkerProvider.class);
 
 
     @Override
@@ -92,35 +97,10 @@ public class KotlinSignatureInJavaMarkerProvider implements LineMarkerProvider {
                 continue;
             }
 
-            PsiClass containingClass = member.getContainingClass();
-            if (containingClass == null) { // e.g., type parameter
-                continue;
-            }
+            DeclarationDescriptor memberDescriptor = getDescriptorForMember(javaDescriptorResolver, member, bindingContext);
 
-            String qualifiedName = containingClass.getQualifiedName();
-            assert qualifiedName != null;
+            if (memberDescriptor == null) continue;
 
-            FqName classFqName = new FqName(qualifiedName);
-            ClassDescriptor klass = javaDescriptorResolver.resolveClass(classFqName);
-            assert klass != null : " Couldn't find class " + classFqName;
-
-            String memberNameAsString = member.getName();
-            assert memberNameAsString != null;
-
-            Name name = Name.identifier(memberNameAsString);
-            if (element instanceof PsiMethod) {
-                klass.getDefaultType().getMemberScope().getFunctions(name);
-            }
-            else if (element instanceof PsiField) {
-                klass.getDefaultType().getMemberScope().getProperties(name);
-            }
-            else {
-                continue;
-            }
-
-            PsiModifierListOwner annotationOwner = getAnnotationOwner(element);
-            DeclarationDescriptor memberDescriptor = bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, annotationOwner);
-            assert memberDescriptor != null : "Couldn't find descriptor for " + annotationOwner;
             List<String> errors = bindingContext.get(BindingContext.LOAD_FROM_JAVA_SIGNATURE_ERRORS, memberDescriptor);
             boolean hasSignatureAnnotation = findKotlinSignatureAnnotation(element) != null;
 
@@ -128,6 +108,82 @@ public class KotlinSignatureInJavaMarkerProvider implements LineMarkerProvider {
                 result.add(new MyLineMarkerInfo((PsiModifierListOwner) element, errors, hasSignatureAnnotation));
             }
         }
+    }
+
+    @Nullable
+    private static DeclarationDescriptor getDescriptorForMember(
+            @NotNull JavaDescriptorResolver javaDescriptorResolver,
+            @NotNull PsiMember member,
+            @NotNull BindingContext bindingContext
+    ) {
+        PsiClass containingClass = member.getContainingClass();
+        if (containingClass == null) { // e.g., type parameter
+            return null;
+        }
+
+        String qualifiedName = containingClass.getQualifiedName();
+        if (qualifiedName == null) {
+            // Trying to get line markers for anonymous or local class
+            return null;
+        }
+
+        FqName classFqName = new FqName(qualifiedName);
+        JetScope memberScope = getScopeForMember(javaDescriptorResolver, classFqName, member);
+
+        return getDescriptorForMember(member, memberScope, bindingContext);
+    }
+
+    @NotNull
+    private static JetScope getScopeForMember(
+            @NotNull JavaDescriptorResolver javaDescriptorResolver,
+            @NotNull FqName classFqName,
+            @NotNull PsiMember member
+    ) {
+        if (member.hasModifierProperty(PsiModifier.STATIC)) {
+            NamespaceDescriptor packageDescriptor = javaDescriptorResolver.resolveNamespace(classFqName);
+            assert packageDescriptor != null : "No package descriptor for Java class " + classFqName + " that has a static member " + member;
+
+            return packageDescriptor.getMemberScope();
+        }
+        else {
+            ClassDescriptor klass = javaDescriptorResolver.resolveClass(classFqName);
+            assert klass != null : " Couldn't find class " + classFqName;
+
+            return klass.getDefaultType().getMemberScope();
+        }
+    }
+
+    @Nullable
+    private static DeclarationDescriptor getDescriptorForMember(
+            @NotNull PsiMember member,
+            @NotNull JetScope memberScope,
+            @NotNull BindingContext bindingContext
+    ) {
+        String memberNameAsString = member.getName();
+        assert memberNameAsString != null: "No name for member: \n" + member.getText();
+
+        Name name = Name.identifier(memberNameAsString);
+        if (member instanceof PsiMethod) {
+            if (((PsiMethod) member).isConstructor()) {
+                assert memberScope instanceof JavaClassNonStaticMembersScope;
+                ((JavaClassNonStaticMembersScope) memberScope).getConstructors();
+            }
+            else {
+                memberScope.getFunctions(name);
+            }
+        }
+        else if (member instanceof PsiField) {
+            memberScope.getProperties(name);
+        }
+        else {
+            return null;
+        }
+
+        PsiModifierListOwner annotationOwner = getAnnotationOwner(member);
+        DeclarationDescriptor memberDescriptor = bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, annotationOwner);
+        LOG.assertTrue(memberDescriptor != null, "Couldn't find descriptor for " + annotationOwner + "\n"
+                                                 + annotationOwner.getContainingFile().getText());
+        return memberDescriptor;
     }
 
     public static boolean isMarkersEnabled(@NotNull Project project) {
