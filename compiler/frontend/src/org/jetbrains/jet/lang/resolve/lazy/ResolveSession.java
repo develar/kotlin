@@ -21,8 +21,8 @@ import com.google.common.base.Predicates;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import com.intellij.util.Function;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.di.InjectorForLazyResolve;
@@ -131,25 +131,45 @@ public class ResolveSession {
     }
 
     @Nullable
-    public NamespaceDescriptor getPackageDescriptor(@NotNull Name shortName) {
-        return rootPackage.getMemberScope().processNamespaces(shortName, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
-    }
-
-    @Nullable
     public NamespaceDescriptor getPackageDescriptorByFqName(FqName fqName) {
         if (fqName.isRoot()) {
             return rootPackage;
         }
+
         List<Name> names = fqName.pathSegments();
-        NamespaceDescriptor current = getPackageDescriptor(names.get(0));
-        if (current == null) return null;
-        for (Name name : names.subList(1, names.size())) {
-            FindFirstProcessor<NamespaceDescriptor> processor = new FindFirstProcessor<NamespaceDescriptor>();
-            current.getMemberScope().processNamespaces(name, processor);
-            current = processor.isFound() ? processor.getFoundValue() : null;
-            if (current == null) return null;
+        if (names.isEmpty()) {
+            return null;
         }
-        return current;
+
+        PackageProcessor processor = new PackageProcessor(names);
+        processor.process(rootPackage);
+        return processor.result;
+    }
+
+    private static final class PackageProcessor implements Processor<NamespaceDescriptor> {
+        private int currentNameIndex = 0;
+        private NamespaceDescriptor result;
+        private final List<Name> names;
+
+        private PackageProcessor(List<Name> names) {
+            this.names = names;
+        }
+
+        @Override
+        public boolean process(NamespaceDescriptor descriptor) {
+            if (currentNameIndex == names.size()) {
+                result = descriptor;
+                return false;
+            }
+
+            final int nameIndex = currentNameIndex;
+            descriptor.getMemberScope().processNamespaces(names.get(currentNameIndex++), this);
+            if (result != null) {
+                return false;
+            }
+            currentNameIndex = nameIndex;
+            return true;
+        }
     }
 
     @NotNull
