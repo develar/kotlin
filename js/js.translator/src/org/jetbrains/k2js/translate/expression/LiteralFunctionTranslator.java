@@ -21,10 +21,14 @@ import com.intellij.openapi.util.Trinity;
 import com.intellij.util.containers.Stack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.psi.JetClassBody;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetDeclarationWithBody;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.AliasingContext;
 import org.jetbrains.k2js.translate.context.Namer;
@@ -92,7 +96,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         }
         else {
             outerClass = null;
-            asInner = descriptor.getContainingDeclaration() instanceof NamespaceDescriptor;
+            asInner = DescriptorUtils.isTopLevelDeclaration(descriptor);
         }
 
         TranslationContext funContext = outerContext.newFunctionBody(fun, aliasingContext,
