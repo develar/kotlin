@@ -24,6 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
@@ -112,7 +113,7 @@ public class KotlinCompiler {
 
     public void compile(@NotNull CompilerConfiguration configuration) throws IOException {
         String name = configuration.getNotNull(CompilerConfigurationKeys.MODULE_NAME);
-        List<JetFile> sources = collectSourceFiles(name, null);
+        List<JetFile> sources = collectSourceFiles(name, null, false);
         final ModuleInfo moduleInfo = analyzeProjectModule(name, sources, true);
         if (moduleInfo == null) {
             return;
@@ -140,7 +141,7 @@ public class KotlinCompiler {
         return moduleInfo == moduleWithErrors ? null : moduleInfo;
     }
 
-    protected List<JetFile> collectSourceFiles(String name, @Nullable Object object) {
+    protected List<JetFile> collectSourceFiles(String name, @Nullable Object object, final boolean collectFromJar) {
         final List<JetFile> result = new ArrayList<JetFile>();
         final PsiManager psiManager = PsiManager.getInstance(compileContext.getProject());
         final CoreLocalFileSystem localFileSystem = compileContext.getLocalFileSystem();
@@ -153,9 +154,11 @@ public class KotlinCompiler {
                 }
 
                 // root from library
-                VirtualFile jarFile = StandardFileSystems.getJarRootForLocalFile(virtualFile);
+                VirtualFile jarFile = collectFromJar ? StandardFileSystems.getJarRootForLocalFile(virtualFile) : null;
                 if (jarFile == null) {
-                    result.add((JetFile) psiManager.findFile(virtualFile));
+                    PsiFile psiFile = psiManager.findFile(virtualFile);
+                    assert psiFile instanceof JetFile : virtualFile.getPath() + " is not Kotlin PSI file";
+                    result.add((JetFile) psiFile);
                 }
                 else {
                     VfsUtilCore.visitChildrenRecursively(jarFile, new VirtualFileVisitor() {
@@ -277,8 +280,9 @@ public class KotlinCompiler {
         @Override
         protected ModuleInfo compute() {
             ModuleInfo result;
-            List<JetFile> sources = collectSourceFiles(name, dependency);
-            if (dependency == null) {
+            boolean isProjectModule = dependency == null;
+            List<JetFile> sources = collectSourceFiles(name, dependency, !isProjectModule);
+            if (isProjectModule) {
                 result = analyzeProjectModule(name, sources, analyzeCompletely);
             }
             else {
