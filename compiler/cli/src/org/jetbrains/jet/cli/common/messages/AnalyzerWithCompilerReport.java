@@ -144,6 +144,20 @@ public final class AnalyzerWithCompilerReport {
         }
     }
 
+    private void reportAbiVersionErrors() {
+        assert analyzeExhaust != null;
+        BindingContext bindingContext = analyzeExhaust.getBindingContext();
+
+        Collection<PsiClass> psiClasses = bindingContext.getKeys(AbiVersionUtil.ABI_VERSION_ERRORS);
+        for (PsiClass psiClass : psiClasses) {
+            Integer abiVersion = bindingContext.get(AbiVersionUtil.ABI_VERSION_ERRORS, psiClass);
+            messageCollectorWrapper.report(CompilerMessageSeverity.ERROR,
+                                           "Class '" + psiClass.getQualifiedName() + "' was compiled with an incompatible version of Kotlin. " +
+                                           "Its ABI version is " + abiVersion + ", expected ABI version is " + JvmAbi.VERSION,
+                                           MessageUtil.psiElementToMessageLocation(psiClass));
+        }
+    }
+
     public static boolean reportDiagnostics(
             @NotNull BindingContext bindingContext,
             @NotNull MessageCollector messageCollector,
@@ -240,6 +254,8 @@ public final class AnalyzerWithCompilerReport {
         reportDiagnostics(analyzeExhaust.getBindingContext(), messageCollectorWrapper);
         reportIncompleteHierarchies(analyzeExhaust, messageCollectorWrapper);
         reportAlternativeSignatureErrors();
+        reportAbiVersionErrors();
+        return hasErrors() ? null : analyzeExhaust;
     }
 
     private static class MyDiagnostic<E extends PsiElement> extends SimpleDiagnostic<E> {
