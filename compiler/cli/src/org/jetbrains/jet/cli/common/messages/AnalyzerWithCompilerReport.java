@@ -20,6 +20,7 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiErrorElement;
 import com.intellij.psi.PsiModifierListOwner;
@@ -37,6 +38,8 @@ import org.jetbrains.jet.lang.resolve.AnalyzingUtils;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
+import org.jetbrains.jet.lang.resolve.java.AbiVersionUtil;
+import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 
 import java.util.Collection;
 import java.util.List;
@@ -237,7 +240,6 @@ public final class AnalyzerWithCompilerReport {
         reportDiagnostics(analyzeExhaust.getBindingContext(), messageCollectorWrapper);
         reportIncompleteHierarchies(analyzeExhaust, messageCollectorWrapper);
         reportAlternativeSignatureErrors();
-        return hasErrors() ? null : analyzeExhaust;
     }
 
     private static class MyDiagnostic<E extends PsiElement> extends SimpleDiagnostic<E> {

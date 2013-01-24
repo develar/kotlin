@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.resolve.name;
 
 import com.google.common.collect.Lists;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.PairConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +26,12 @@ import java.util.List;
 
 public class FqName extends FqNameBase {
 
+    @NotNull
+    public static FqName fromSegments(@NotNull List<String> names) {
+        String fqName = StringUtil.join(names, ".");
+        return new FqName(fqName);
+    }
+
     public static final FqName ROOT = new FqName("");
 
     @NotNull
@@ -32,7 +39,6 @@ public class FqName extends FqNameBase {
 
     // cache
     private transient FqName parent;
-
 
     public FqName(@NotNull String fqName) {
         this.fqName = new FqNameUnsafe(fqName, this);

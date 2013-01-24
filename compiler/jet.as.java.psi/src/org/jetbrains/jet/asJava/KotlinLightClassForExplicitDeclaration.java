@@ -103,6 +103,11 @@ public class KotlinLightClassForExplicitDeclaration extends AbstractLightClass i
     }
 
     @NotNull
+    public JetClassOrObject getJetClassOrObject() {
+        return classOrObject;
+    }
+
+    @NotNull
     @Override
     public FqName getFqName() {
         return classFqName;
@@ -273,6 +278,7 @@ public class KotlinLightClassForExplicitDeclaration extends AbstractLightClass i
 
     @NotNull
     private String[] computeModifiers() {
+        boolean nestedClass = classOrObject.getParent() != classOrObject.getContainingFile();
         Collection<String> psiModifiers = Sets.newHashSet();
 
         // PUBLIC, PROTECTED, PRIVATE, ABSTRACT, FINAL
@@ -280,8 +286,6 @@ public class KotlinLightClassForExplicitDeclaration extends AbstractLightClass i
                 Pair.create(PUBLIC_KEYWORD, PsiModifier.PUBLIC),
                 Pair.create(INTERNAL_KEYWORD, PsiModifier.PUBLIC),
                 Pair.create(PROTECTED_KEYWORD, PsiModifier.PROTECTED),
-                Pair.create(PRIVATE_KEYWORD, PsiModifier.PRIVATE),
-                Pair.create(ABSTRACT_KEYWORD, PsiModifier.ABSTRACT),
                 Pair.create(FINAL_KEYWORD, PsiModifier.FINAL));
 
         for (Pair<JetKeywordToken, String> tokenAndModifier : jetTokenToPsiModifier) {
@@ -290,23 +294,34 @@ public class KotlinLightClassForExplicitDeclaration extends AbstractLightClass i
             }
         }
 
+        if (classOrObject.hasModifier(PRIVATE_KEYWORD)) {
+            // Top-level private class has PUBLIC visibility in Java
+            // Nested private class has PRIVATE visibility
+            psiModifiers.add(nestedClass ? PsiModifier.PRIVATE : PsiModifier.PUBLIC);
+        }
+
         if (!psiModifiers.contains(PsiModifier.PRIVATE) && !psiModifiers.contains(PsiModifier.PROTECTED)) {
             psiModifiers.add(PsiModifier.PUBLIC); // For internal (default) visibility
         }
 
+
         // FINAL
-        if (!classOrObject.hasModifier(OPEN_KEYWORD) && !classOrObject.hasModifier(ABSTRACT_KEYWORD)) {
+        if (isAbstract(classOrObject)) {
+            psiModifiers.add(PsiModifier.ABSTRACT);
+        }
+        else if (!classOrObject.hasModifier(OPEN_KEYWORD)) {
             psiModifiers.add(PsiModifier.FINAL);
         }
 
-        // STATIC
-        if (classOrObject.getParent() != classOrObject.getContainingFile()
-                //TODO: && !jetModifierList.hasModifier(INNER_KEYWORD)
-                ) {
+        if (nestedClass && !classOrObject.hasModifier(INNER_KEYWORD)) {
             psiModifiers.add(PsiModifier.STATIC);
         }
 
         return psiModifiers.toArray(new String[psiModifiers.size()]);
+    }
+
+    private boolean isAbstract(@NotNull JetClassOrObject object) {
+        return object.hasModifier(ABSTRACT_KEYWORD) || isInterface();
     }
 
     @Override
@@ -330,22 +345,22 @@ public class KotlinLightClassForExplicitDeclaration extends AbstractLightClass i
             if (typeReference == null) continue;
 
             JetTypeElement typeElement = typeReference.getTypeElement();
-            if (typeElement == null) continue;
+            if (!(typeElement instanceof JetUserType)) continue; // If it's not a user type, it's definitely not a ref to deprecated
 
-            // typeElement.getText() is either
-            //   simple name => we just compare it to "deprecated"
-            //   qualified name => we compare to FqName, there may be spaces, comments etc, we do not support these cases
-            //   function type, etc => comparisons below fail
-            String text = typeElement.getText();
-            if (deprecatedFqName.getFqName().equals(text)) return true;
-            if (deprecatedName.equals(text)) return true;
+            FqName fqName = JetPsiUtil.toQualifiedName((JetUserType) typeElement);
+            if (fqName == null) continue;
+
+            if (deprecatedFqName.equals(fqName.toUnsafe())) return true;
+            if (deprecatedName.equals(fqName.getFqName())) return true;
         }
         return false;
     }
 
     @Override
     public boolean isInterface() {
-        return classOrObject instanceof JetClass && ((JetClass) classOrObject).isTrait();
+        if (!(classOrObject instanceof JetClass)) return false;
+        JetClass jetClass = (JetClass) classOrObject;
+        return jetClass.isTrait() || jetClass.isAnnotation();
     }
 
     @Override

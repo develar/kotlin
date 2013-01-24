@@ -406,7 +406,7 @@ public class DescriptorUtils {
 
     public static boolean isExternallyAccessible(PropertyDescriptor propertyDescriptor) {
         return propertyDescriptor.getVisibility() != Visibilities.PRIVATE || isClassObject(propertyDescriptor.getContainingDeclaration())
-               || propertyDescriptor.getContainingDeclaration() instanceof NamespaceDescriptor;
+               || isTopLevelDeclaration(propertyDescriptor);
     }
 
     @NotNull

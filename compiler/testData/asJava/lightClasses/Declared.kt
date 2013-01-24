@@ -11,6 +11,8 @@ class Outer {
     protected class Protected
     private class Private
     internal class Internal
+
+    inner class Inner
 }
 
 // Modality
@@ -24,8 +26,13 @@ enum class Enum
 trait Trait
 
 // Deprecation
-deprecated class Deprecated
-[deprecated] class DeprecatedWithBrackets
+deprecated("") class Deprecated
+jet.deprecated("") class DeprecatedFQN
+jet. deprecated /**/ ("") class DeprecatedFQNSpaces
+[deprecated("")] class DeprecatedWithBrackets
+[jet.deprecated("")] class DeprecatedWithBracketsFQN
+[jet
+./**/deprecated  ("")] class DeprecatedWithBracketsFQNSpaces
 
 // Generic
 class Generic1<T>

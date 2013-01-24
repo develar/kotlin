@@ -37,6 +37,7 @@ import org.jetbrains.jet.cli.jvm.compiler.CliLightClassGenerationSupport;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.codegen.forTestCompile.ForTestCompileRuntime;
 import org.jetbrains.jet.codegen.forTestCompile.ForTestPackJdkAnnotations;
+import org.jetbrains.jet.config.CommonConfigurationKeys;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.diagnostics.Diagnostic;
 import org.jetbrains.jet.lang.diagnostics.Severity;
@@ -48,6 +49,7 @@ import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
+import org.jetbrains.jet.lang.resolve.lazy.LazyResolveTestUtil;
 import org.jetbrains.jet.plugin.JetLanguage;
 import org.jetbrains.jet.test.InnerTestClasses;
 import org.jetbrains.jet.test.TestMetadata;
@@ -339,6 +341,16 @@ public class JetTestUtils {
         CliLightClassGenerationSupport.getInstanceForCli(environment.getProject()).newBindingTrace();
     }
 
+    public static void resolveAllKotlinFiles(JetCoreEnvironment environment) throws IOException {
+        List<String> paths = environment.getConfiguration().get(CommonConfigurationKeys.SOURCE_ROOTS_KEY);
+        assert paths != null;
+        List<JetFile> jetFiles = Lists.newArrayList();
+        for (String path : paths) {
+            jetFiles.add(loadJetFile(environment.getProject(), new File(path)));
+        }
+        LazyResolveTestUtil.resolveEagerly(jetFiles, environment);
+    }
+
     public interface TestFileFactory<F> {
         F create(String fileName, String text);
     }
@@ -535,6 +547,6 @@ public class JetTestUtils {
 
     public static JetFile loadJetFile(@NotNull Project project, @NotNull File ioFile) throws IOException {
         String text = FileUtil.loadFile(ioFile);
-        return JetPsiFactory.createFile(project, text);
+        return JetPsiFactory.createPhysicalFile(project, ioFile.getName(), text);
     }
 }

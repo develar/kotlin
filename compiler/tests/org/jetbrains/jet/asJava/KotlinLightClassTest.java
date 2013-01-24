@@ -18,7 +18,6 @@ package org.jetbrains.jet.asJava;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
@@ -27,28 +26,27 @@ import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.JetTestUtils;
-import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
-import org.jetbrains.jet.config.CommonConfigurationKeys;
-import org.jetbrains.jet.config.CompilerConfiguration;
-import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
-import org.jetbrains.jet.lang.resolve.lazy.KotlinTestWithEnvironment;
-import org.jetbrains.jet.lang.resolve.lazy.LazyResolveTestUtil;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import static org.jetbrains.jet.asJava.KotlinLightClassTest.ClassProperty.*;
 
-public abstract class KotlinLightClassTest extends KotlinTestWithEnvironment {
+@SuppressWarnings("JUnitTestClassNamingConvention")
+public abstract class KotlinLightClassTest extends KotlinAsJavaTestBase {
 
     public static class Declared extends KotlinLightClassTest {
-        public Declared() {
-            super(new File("compiler/testData/asJava/lightClasses/Declared.kt"));
+
+        @Override
+        protected List<File> getKotlinSourceRoots() {
+            return Collections.singletonList(
+                    new File("compiler/testData/asJava/lightClasses/Declared.kt")
+            );
         }
 
         public void testNoModifiers() {
@@ -57,15 +55,17 @@ public abstract class KotlinLightClassTest extends KotlinTestWithEnvironment {
 
         public void testTopLevelVisibilities() {
             checkModifiers("test.Public", PUBLIC, FINAL);
-            //checkModifiers("test.Private", PUBLIC, FINAL);
+            checkModifiers("test.Private", PUBLIC, FINAL);
             checkModifiers("test.Internal", PUBLIC, FINAL);
         }
 
         public void testNestedVisibilities() {
-            //checkModifiers("test.Outer.Public", PUBLIC, FINAL, INNER);
-            //checkModifiers("test.Outer.Protected", PROTECTED, FINAL, INNER);
-            //checkModifiers("test.Outer.Internal", PUBLIC, FINAL, INNER);
-            //checkModifiers("test.Outer.Private", PRIVATE, FINAL, INNER);
+            checkModifiers("test.Outer.Public", PUBLIC, STATIC, FINAL, NESTED);
+            checkModifiers("test.Outer.Protected", PROTECTED, STATIC, FINAL, NESTED);
+            checkModifiers("test.Outer.Internal", PUBLIC, STATIC, FINAL, NESTED);
+            checkModifiers("test.Outer.Private", PRIVATE, STATIC, FINAL, NESTED);
+
+            checkModifiers("test.Outer.Inner", PUBLIC, FINAL, NESTED);
         }
         public void testModalities() {
             checkModifiers("test.Abstract", PUBLIC, ABSTRACT);
@@ -73,21 +73,25 @@ public abstract class KotlinLightClassTest extends KotlinTestWithEnvironment {
             checkModifiers("test.Final", PUBLIC, FINAL);
         }
 
-        //public void testAnnotation() {
-        //    checkModifiers("test.Annotation", PUBLIC, FINAL, ANNOTATION, INTERFACE);
-        //}
+        public void testAnnotation() {
+            checkModifiers("test.Annotation", PUBLIC, ANNOTATION, ABSTRACT, INTERFACE);
+        }
 
-        //public void testEnum() {
-        //    checkModifiers("test.Enum", PUBLIC, FINAL, ENUM);
-        //}
+        public void testEnum() {
+            checkModifiers("test.Enum", PUBLIC, FINAL, ENUM);
+        }
 
-        //public void testTrait() {
-        //    checkModifiers("test.Trait", PUBLIC, ABSTRACT, INTERFACE);
-        //}
+        public void testTrait() {
+            checkModifiers("test.Trait", PUBLIC, ABSTRACT, INTERFACE);
+        }
 
         public void testDeprecation() {
             checkModifiers("test.Deprecated", PUBLIC, FINAL, DEPRECATED);
+            checkModifiers("test.DeprecatedFQN", PUBLIC, FINAL, DEPRECATED);
+            checkModifiers("test.DeprecatedFQNSpaces", PUBLIC, FINAL, DEPRECATED);
             checkModifiers("test.DeprecatedWithBrackets", PUBLIC, FINAL, DEPRECATED);
+            checkModifiers("test.DeprecatedWithBracketsFQN", PUBLIC, FINAL, DEPRECATED);
+            checkModifiers("test.DeprecatedWithBracketsFQNSpaces", PUBLIC, FINAL, DEPRECATED);
         }
 
         public void testGenericity() {
@@ -96,72 +100,46 @@ public abstract class KotlinLightClassTest extends KotlinTestWithEnvironment {
         }
     }
 
-    //public static class DeclaredWithGenerics extends KotlinLightClassTest {
-    //
-    //    public DeclaredWithGenerics() {
-    //        super(new File("compiler/testData/asJava/lightClasses/DeclaredWithGenerics.kt"));
-    //    }
-    //
-    //    public void testGeneric1() throws Exception {
-    //        checkGenericParameter("test.Generic1", 0, "T");
-    //    }
-    //
-    //    public void testGeneric1WithBounds() throws Exception {
-    //        checkGenericParameter("test.Generic1WithBounds", 0, "T", "test.Bound1");
-    //    }
-    //
-    //    public void testGeneric2() throws Exception {
-    //        checkGenericParameter("test.Generic2", 0, "A");
-    //        checkGenericParameter("test.Generic2", 1, "B");
-    //    }
-    //
-    //    public void testGeneric2WithBounds() throws Exception {
-    //        checkGenericParameter("test.Generic2WithBounds", 0, "A", "test.Bound1", "test.Bound2");
-    //        checkGenericParameter("test.Generic2WithBounds", 1, "B", "test.Generic1<A>");
-    //    }
-    //}
+    public static class DeclaredWithGenerics extends KotlinLightClassTest {
+
+        @Override
+        protected List<File> getKotlinSourceRoots() {
+            return Collections.singletonList(
+                    new File("compiler/testData/asJava/lightClasses/DeclaredWithGenerics.kt")
+            );
+        }
+
+        public void testGeneric1() throws Exception {
+            checkGenericParameter("test.Generic1", 0, "T");
+        }
+
+        public void testGeneric1WithBounds() throws Exception {
+            checkGenericParameter("test.Generic1WithBounds", 0, "T", "test.Bound1");
+        }
+
+        public void testGeneric2() throws Exception {
+            checkGenericParameter("test.Generic2", 0, "A");
+            checkGenericParameter("test.Generic2", 1, "B");
+        }
+
+        public void testGeneric2WithBounds() throws Exception {
+            checkGenericParameter("test.Generic2WithBounds", 0, "A", "test.Bound1", "test.Bound2");
+            checkGenericParameter("test.Generic2WithBounds", 1, "B", "test.Generic1<A>");
+        }
+    }
 
     public static class Package extends KotlinLightClassTest {
 
-        public Package() {
-            super(new File("compiler/testData/asJava/lightClasses/Package.kt"));
+        @Override
+        protected List<File> getKotlinSourceRoots() {
+            return Collections.singletonList(
+                    new File("compiler/testData/asJava/lightClasses/Package.kt")
+            );
         }
 
         public void testPackage() throws Exception {
-            checkModifiers("test." + PackageClassUtils.getPackageClassName(new FqName("test")), PUBLIC, FINAL);
+            checkModifiers("test.TestPackage", PUBLIC, FINAL);
         }
-    }
-
-    private final File path;
-    private JavaElementFinder finder;
-
-    protected KotlinLightClassTest(File path) {
-        this.path = path;
-    }
-
-    @Override
-    protected JetCoreEnvironment createEnvironment() {
-        CompilerConfiguration configuration = new CompilerConfiguration();
-
-        configuration.add(CommonConfigurationKeys.SOURCE_ROOTS_KEY, path.getPath());
-
-        return new JetCoreEnvironment(getTestRootDisposable(), configuration);
-    }
-
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-
-        finder = JavaElementFinder.getInstance(getProject());
-
-        // We need to resolve all the files in order to fill in the trace that sits inside LightClassGenerationSupport
-        List<String> paths = getEnvironment().getConfiguration().get(CommonConfigurationKeys.SOURCE_ROOTS_KEY);
-        assert paths != null;
-        List<JetFile> jetFiles = Lists.newArrayList();
-        for (String path : paths) {
-            jetFiles.add(JetTestUtils.loadJetFile(getProject(), new File(path)));
-        }
-        LazyResolveTestUtil.resolveEagerly(jetFiles, getEnvironment());
     }
 
     @NotNull
@@ -235,7 +213,7 @@ public abstract class KotlinLightClassTest extends KotlinTestWithEnvironment {
         ENUM {
             @Override
             public boolean present(@NotNull PsiClass psiClass) {
-                return psiClass.isInterface();
+                return psiClass.isEnum();
             }
         },
         ANNOTATION {
@@ -250,7 +228,7 @@ public abstract class KotlinLightClassTest extends KotlinTestWithEnvironment {
                 return psiClass.isDeprecated();
             }
         },
-        INNER {
+        NESTED {
             @Override
             public boolean present(@NotNull PsiClass psiClass) {
                 return psiClass.getContainingClass() != null;

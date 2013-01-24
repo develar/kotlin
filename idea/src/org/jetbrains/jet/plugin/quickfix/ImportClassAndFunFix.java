@@ -32,8 +32,6 @@ import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiMember;
-import com.intellij.psi.PsiModifier;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.IncorrectOperationException;
@@ -55,6 +53,7 @@ import org.jetbrains.jet.plugin.actions.JetAddImportAction;
 import org.jetbrains.jet.plugin.caches.JetShortNamesCache;
 import org.jetbrains.jet.plugin.project.JsModuleDetector;
 import org.jetbrains.jet.plugin.project.WholeProjectAnalyzerFacade;
+import org.jetbrains.jet.plugin.util.JetPsiHeuristicsUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -173,7 +172,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
         return Lists.newArrayList(possibleResolveNames);
     }
 
-    private static Collection<FqName> getClassesFromCache(@NotNull final String typeName, @NotNull JetFile file) {
+    private static Collection<FqName> getClassesFromCache(@NotNull final String typeName, @NotNull final JetFile file) {
         PsiShortNamesCache cache = getShortNamesCache(file);
 
         PsiClass[] classes = cache.getClassesByName(typeName, GlobalSearchScope.allScope(file.getProject()));
@@ -182,7 +181,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
             @Override
             public boolean apply(PsiClass psiClass) {
                 assert psiClass != null;
-                return isAccessible(psiClass);
+                return JetPsiHeuristicsUtil.isAccessible(psiClass, file);
             }
         });
 
@@ -221,10 +220,6 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
                 return DescriptorUtils.getFQName(descriptor).toSafe();
             }
         });
-    }
-
-    private static boolean isAccessible(PsiMember member) {
-        return member.hasModifierProperty(PsiModifier.PUBLIC) || member.hasModifierProperty(PsiModifier.PROTECTED);
     }
 
     @Override

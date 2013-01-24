@@ -33,7 +33,6 @@ import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.codegen.state.GenerationState;
-import org.jetbrains.jet.codegen.state.StandardGenerationStrategy;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.AnalyzingUtils;
@@ -45,10 +44,7 @@ import org.jetbrains.jet.codegen.state.Progress;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -64,6 +60,7 @@ public abstract class CodegenTestCase extends UsefulTestCase {
 
     protected Object scriptInstance;
     private GenerationState alreadyGenerated;
+    private GeneratedClassLoader initializedClassLoader;
 
     protected void createEnvironmentWithMockJdkAndIdeaAnnotations() {
         if (myEnvironment != null) {
@@ -108,6 +105,12 @@ public abstract class CodegenTestCase extends UsefulTestCase {
         myEnvironment = null;
         scriptInstance = null;
         alreadyGenerated = null;
+
+        if (initializedClassLoader != null) {
+            initializedClassLoader.dispose();
+            initializedClassLoader = null;
+        }
+
         super.tearDown();
     }
 
@@ -279,8 +282,6 @@ public abstract class CodegenTestCase extends UsefulTestCase {
         } catch (Throwable e) {
             System.out.println(generateToText());
             throw new RuntimeException(e);
-        } finally {
-            loader.dispose();
         }
     }
 
@@ -317,6 +318,10 @@ public abstract class CodegenTestCase extends UsefulTestCase {
     }
 
     protected GeneratedClassLoader createClassLoader(ClassFileFactory codegens, boolean classPathInTheSameClassLoader) {
+        if (initializedClassLoader != null) {
+            fail("Double initialization of class loader in same test");
+        }
+
         List<URL> urls = Lists.newArrayList();
         for (File file : myEnvironment.getConfiguration().getList(JVMConfigurationKeys.CLASSPATH_KEY)) {
             try {
@@ -326,15 +331,17 @@ public abstract class CodegenTestCase extends UsefulTestCase {
             }
         }
 
-        final URL[] urlsArray = urls.toArray(new URL[0]);
+        final URL[] urlsArray = urls.toArray(new URL[urls.size()]);
 
         if (!classPathInTheSameClassLoader) {
             ClassLoader parentClassLoader = new URLClassLoader(urlsArray, CodegenTestCase.class.getClassLoader());
-            return new GeneratedClassLoader(codegens, parentClassLoader);
+            initializedClassLoader = new GeneratedClassLoader(codegens, parentClassLoader);
         }
         else {
-            return new GeneratedClassLoader(codegens, CodegenTestCase.class.getClassLoader(), urlsArray);
+            initializedClassLoader = new GeneratedClassLoader(codegens, CodegenTestCase.class.getClassLoader(), urlsArray);
         }
+
+        return initializedClassLoader;
     }
 
     protected String generateToText() {
@@ -364,13 +371,12 @@ public abstract class CodegenTestCase extends UsefulTestCase {
                 configuration.get(JVMConfigurationKeys.GENERATE_NOT_NULL_PARAMETER_ASSERTIONS, true),
                 /*generateDeclaredClasses = */true
         );
-        KotlinCodegenFacade.compileCorrectFiles(state, StandardGenerationStrategy.INSTANCE, CompilationErrorHandler.THROW_EXCEPTION);
+        KotlinCodegenFacade.compileCorrectFiles(state, CompilationErrorHandler.THROW_EXCEPTION);
         return state;
     }
 
     protected Class generateNamespaceClass() {
         ClassFileFactory state = generateClassesInFile();
-
         return loadRootNamespaceClass(state);
     }
 
@@ -477,5 +483,4 @@ public abstract class CodegenTestCase extends UsefulTestCase {
     protected Class loadImplementationClass(@NotNull ClassFileFactory codegens, final String name) {
         return loadClass(name, codegens);
     }
-
 }

@@ -21,10 +21,7 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.asm4.AnnotationVisitor;
-import org.jetbrains.asm4.Label;
-import org.jetbrains.asm4.MethodVisitor;
-import org.jetbrains.asm4.Type;
+import org.jetbrains.asm4.*;
 import org.jetbrains.asm4.commons.InstructionAdapter;
 import org.jetbrains.asm4.commons.Method;
 import org.jetbrains.jet.codegen.binding.CalculatedClosure;
@@ -46,10 +43,7 @@ import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.OverridingUtil;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
-import org.jetbrains.jet.lang.resolve.java.AsmTypeConstants;
-import org.jetbrains.jet.lang.resolve.java.JvmAbi;
-import org.jetbrains.jet.lang.resolve.java.JvmClassName;
-import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
+import org.jetbrains.jet.lang.resolve.java.*;
 import org.jetbrains.jet.lang.resolve.java.kt.DescriptorKindUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.JetType;
@@ -119,6 +113,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
             if (!jetClass.hasModifier(JetTokens.OPEN_KEYWORD) && !isAbstract) {
                 isFinal = true;
             }
+            isStatic = !jetClass.isInner();
         }
         else {
             isStatic = myClass.getParent() instanceof JetClassObject;
@@ -127,7 +122,20 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
         int access = 0;
 
-        access |= getVisibilityAccessFlagForClass(descriptor);
+        if (state.getClassBuilderMode() == ClassBuilderMode.SIGNATURES && !DescriptorUtils.isTopLevelDeclaration(descriptor)) {
+            // ClassBuilderMode.SIGNATURES means we are generating light classes & looking at a nested or inner class
+            // Light class generation is implemented so that Cls-classes only read bare code of classes,
+            // without knowing whether these classes are inner or not (see ClassStubBuilder.EMPTY_STRATEGY)
+            // Thus we must write full accessibility flags on inner classes in this mode
+            access |= getVisibilityAccessFlag(descriptor);
+            // Same for STATIC
+            if (isStatic) {
+                access |= ACC_STATIC;
+            }
+        }
+        else {
+            access |= getVisibilityAccessFlagForClass(descriptor);
+        }
         if (isAbstract) {
             access |= ACC_ABSTRACT;
         }
@@ -139,9 +147,6 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         }
         if (isFinal) {
             access |= ACC_FINAL;
-        }
-        if (isStatic) {
-            access |= ACC_STATIC;
         }
         if (isAnnotation) {
             access |= ACC_ANNOTATION;
@@ -227,15 +232,14 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
     }
 
     private void writeClassSignatureIfNeeded(JvmClassSignature signature) {
-        if (signature.getKotlinGenericSignature() != null || descriptor.getVisibility() != Visibilities.PUBLIC) {
-            AnnotationVisitor annotationVisitor = v.newAnnotation(JvmStdlibNames.JET_CLASS.getDescriptor(), true);
-            annotationVisitor.visit(JvmStdlibNames.JET_CLASS_SIGNATURE, signature.getKotlinGenericSignature());
-            int flags = getFlagsForVisibility(descriptor.getVisibility()) | getFlagsForClassKind(descriptor);
-            if (JvmStdlibNames.FLAGS_DEFAULT_VALUE != flags) {
-                annotationVisitor.visit(JvmStdlibNames.JET_FLAGS_FIELD, flags);
-            }
-            annotationVisitor.visitEnd();
+        AnnotationVisitor annotationVisitor = v.newAnnotation(JvmStdlibNames.JET_CLASS.getDescriptor(), true);
+        annotationVisitor.visit(JvmStdlibNames.JET_CLASS_SIGNATURE, signature.getKotlinGenericSignature());
+        int flags = getFlagsForVisibility(descriptor.getVisibility()) | getFlagsForClassKind(descriptor);
+        if (JvmStdlibNames.FLAGS_DEFAULT_VALUE != flags) {
+            annotationVisitor.visit(JvmStdlibNames.JET_FLAGS_FIELD, flags);
         }
+        annotationVisitor.visit(JvmStdlibNames.ABI_VERSION_NAME, JvmAbi.VERSION);
+        annotationVisitor.visitEnd();
     }
 
     @Nullable
