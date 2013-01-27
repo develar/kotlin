@@ -22,6 +22,7 @@ import com.google.dart.compiler.backend.js.ast.JsLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.psi.JetCallExpression;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetReferenceExpression;
@@ -62,9 +63,9 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
 
     protected abstract boolean shouldWrapVarargInArray();
 
-    protected void translateSingleArgument(@NotNull ResolvedValueArgument argument, @NotNull List<JsExpression> result) {
+    protected boolean translateSingleArgument(@NotNull ResolvedValueArgument argument, @NotNull List<JsExpression> result) {
         if (argument instanceof VarargValueArgument) {
-            translateVarargArgument(argument.getArguments(), result);
+            return translateVarargArgument(argument.getArguments(), result);
         }
         else if (argument instanceof DefaultValueArgument) {
             result.add(JsLiteral.UNDEFINED);
@@ -76,14 +77,15 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
             assert argumentExpression != null;
             result.add(Translation.translateAsExpression(argumentExpression, context()));
         }
+        return false;
     }
 
-    private void translateVarargArgument(@NotNull List<ValueArgument> arguments, @NotNull List<JsExpression> result) {
+    private boolean translateVarargArgument(@NotNull List<ValueArgument> arguments, @NotNull List<JsExpression> result) {
         if (arguments.isEmpty()) {
             if (shouldWrapVarargInArray()) {
                 result.add(new JsArrayLiteral(Collections.<JsExpression>emptyList()));
             }
-            return;
+            return false;
         }
 
         List<JsExpression> list;
@@ -96,7 +98,11 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
             if (arguments.size() == 1) {
                 JetExpression expression = arguments.get(0).getArgumentExpression();
                 if (expression instanceof JetReferenceExpression) {
-                    DeclarationDescriptor aNull = BindingContextUtils.getNotNull(bindingContext(), BindingContext.REFERENCE_TARGET, (JetReferenceExpression) expression);
+                    DeclarationDescriptor referenceTarget = BindingContextUtils.getNotNull(bindingContext(), BindingContext.REFERENCE_TARGET, (JetReferenceExpression) expression);
+                    if (referenceTarget instanceof ValueParameterDescriptor) {
+                        result.add(Translation.translateAsExpression(expression, context()));
+                        return true;
+                    }
                 }
             }
         }
@@ -105,5 +111,6 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
             assert argumentExpression != null;
             list.add(Translation.translateAsExpression(argumentExpression, context()));
         }
+        return false;
     }
 }

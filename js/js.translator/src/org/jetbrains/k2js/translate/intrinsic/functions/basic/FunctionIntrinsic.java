@@ -47,7 +47,7 @@ public abstract class FunctionIntrinsic {
 
     @NotNull
     public JsExpression apply(@NotNull CallTranslator callTranslator, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context) {
-        return apply(callTranslator.getCallParameters().getThisOrReceiverOrNull(), arguments, context);
+        return apply(callTranslator.getParameters().getThisOrReceiverOrNull(), arguments, context);
     }
 
     @NotNull

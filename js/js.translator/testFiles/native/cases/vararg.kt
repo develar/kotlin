@@ -1,11 +1,11 @@
 package foo
 
-import js.*
-
-native
-fun paramCount(vararg a : Int) : Int = js.noImpl
+native fun console_log(vararg message: Any): String = noImpl
+native fun paramCount(vararg a : Int) : Int = noImpl
 
 fun count(vararg a : Int) = a.size
+
+fun log(vararg message: Any) = console_log(message)
 
 fun box() : Boolean {
     if (paramCount(1, 2 ,3) != 3) {
@@ -20,5 +20,5 @@ fun box() : Boolean {
     if (count(1, 1, 1, 1) != 4) {
         return false;
     }
-    return true;
+    return log("foo", "bar") == "foo,bar";
 }

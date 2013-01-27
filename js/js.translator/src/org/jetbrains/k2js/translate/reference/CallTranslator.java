@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@
 
 package org.jetbrains.k2js.translate.reference;
 
-import com.google.dart.compiler.backend.js.ast.HasArguments;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsInvocation;
-import com.google.dart.compiler.backend.js.ast.JsNew;
+import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -52,24 +49,20 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     private final CallParameters callParameters;
 
-    CallTranslator(@NotNull List<JsExpression> arguments,
+    CallTranslator(
+            @NotNull List<JsExpression> arguments,
             @NotNull ResolvedCall<? extends CallableDescriptor> resolvedCall,
-            @NotNull CallableDescriptor descriptorToCall,
             @NotNull CallType callType,
             @NotNull CallParameters callParameters,
-            boolean callAsApply,
-            @NotNull TranslationContext context) {
+            @NotNull TranslationContext context
+    ) {
         super(context);
+
         this.arguments = arguments;
         this.resolvedCall = resolvedCall;
         this.callType = callType;
-        this.descriptor = descriptorToCall;
+        descriptor = callParameters.getDescriptor();
         this.callParameters = callParameters;
-    }
-
-    @NotNull
-    public CallableDescriptor getDescriptor() {
-        return descriptor;
     }
 
     @NotNull
@@ -78,7 +71,7 @@ public final class CallTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    public CallParameters getCallParameters() {
+    public CallParameters getParameters() {
         return callParameters;
     }
 
@@ -154,8 +147,7 @@ public final class CallTranslator extends AbstractTranslator {
                 if (useThis) {
                     setQualifier(functionReference, getThisObjectOrQualifier());
                 }
-                return new JsInvocation(callParameters.getFunctionReference(),
-                                        TranslationUtils.generateInvocationArguments(receiver, arguments));
+                return new JsInvocation(functionReference, TranslationUtils.generateInvocationArguments(receiver, arguments));
             }
         }, context());
     }
@@ -170,7 +162,9 @@ public final class CallTranslator extends AbstractTranslator {
                 if (isDirectPropertyAccess()) {
                     return directPropertyAccess(qualifiedCallee);
                 }
-
+                if (callParameters.invokeAsApply()) {
+                    return new JsInvocation(new JsNameRef("apply", qualifiedCallee), TranslationUtils.generateInvocationArguments(JsLiteral.NULL, arguments));
+                }
                 return new JsInvocation(qualifiedCallee, arguments);
             }
         }, context());

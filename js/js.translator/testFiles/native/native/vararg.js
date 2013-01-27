@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,5 +15,9 @@
  */
 
 function paramCount() {
-    return arguments.length
+    return arguments.length;
+}
+
+function console_log() {
+    return Array.prototype.join.call(arguments, ",");
 }

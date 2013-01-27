@@ -19,6 +19,7 @@ package org.jetbrains.k2js.translate.reference;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 
 public interface CallParameters {
     @NotNull
@@ -34,4 +35,7 @@ public interface CallParameters {
     JsExpression getThisOrReceiverOrNull();
 
     boolean invokeAsApply();
+
+    @NotNull
+    CallableDescriptor getDescriptor();
 }

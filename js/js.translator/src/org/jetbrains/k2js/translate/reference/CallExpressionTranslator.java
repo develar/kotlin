@@ -34,7 +34,6 @@ import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.PsiUtils;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getCallee;
@@ -60,13 +59,13 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
 
     @NotNull
     private JsExpression translate() {
-        return CallBuilder.build(context())
+        CallBuilder callBuilder = CallBuilder.build(context())
                 .receiver(receiver)
                 .callee(getCalleeExpression())
-                .args(translateArguments())
                 .resolvedCall(getResolvedCall())
-                .type(callType)
-                .translate();
+                .type(callType);
+        translateArguments(callBuilder);
+        return callBuilder.translate();
     }
 
     @NotNull
@@ -100,11 +99,10 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
         return Translation.translateAsExpression(callee, context());
     }
 
-    @NotNull
-    private List<JsExpression> translateArguments() {
+    private void translateArguments(CallBuilder callBuilder) {
         List<ValueParameterDescriptor> valueParameters = resolvedCall.getResultingDescriptor().getValueParameters();
         if (valueParameters.isEmpty()) {
-            return Collections.emptyList();
+            return;
         }
 
         List<JsExpression> result = JsAstUtils.newList(valueParameters.size());
@@ -118,9 +116,12 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
                 continue;
             }
 
-            translateSingleArgument(argument, result);
+            if (translateSingleArgument(argument, result)) {
+                callBuilder.invokeAsApply(true);
+            }
         }
-        return result;
+
+        callBuilder.args(result);
     }
 
     @Override

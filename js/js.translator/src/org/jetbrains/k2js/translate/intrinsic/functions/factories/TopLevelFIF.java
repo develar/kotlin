@@ -159,8 +159,8 @@ public final class TopLevelFIF extends CompositeFIF {
                         @NotNull List<JsExpression> arguments,
                         @NotNull TranslationContext context
                 ) {
-                    JsExpression thisExpression = callTranslator.getCallParameters().getThisObject();
-                    JsExpression functionReference = callTranslator.getCallParameters().getFunctionReference();
+                    JsExpression thisExpression = callTranslator.getParameters().getThisObject();
+                    JsExpression functionReference = callTranslator.getParameters().getFunctionReference();
                     if (thisExpression == null) {
                         return new JsInvocation(functionReference, arguments);
                     }
@@ -230,9 +230,10 @@ public final class TopLevelFIF extends CompositeFIF {
                         @NotNull List<JsExpression> arguments,
                         @NotNull TranslationContext context
                 ) {
+                    JsStringLiteral exceptionName = context.program().getStringLiteral(
+                            callTranslator.getParameters().getDescriptor().getContainingDeclaration().getName().getName());
                     return new JsInvocation(Namer.NEW_EXCEPTION_FUN_NAME_REF,
-                                            Arrays.asList(arguments.size() == 1 ? arguments.get(0) : JsLiteral.NULL, context.program().getStringLiteral(
-                                                    callTranslator.getDescriptor().getContainingDeclaration().getName().getName())));
+                                            Arrays.asList(arguments.size() == 1 ? arguments.get(0) : JsLiteral.NULL, exceptionName));
                 }
             }
         );
@@ -255,7 +256,7 @@ public final class TopLevelFIF extends CompositeFIF {
         @Override
         public JsExpression apply(@NotNull CallTranslator callTranslator, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context) {
             ExpressionReceiver expressionReceiver = getExpressionReceiver(callTranslator.getResolvedCall());
-            JsExpression thisOrReceiver = callTranslator.getCallParameters().getThisOrReceiverOrNull();
+            JsExpression thisOrReceiver = callTranslator.getParameters().getThisOrReceiverOrNull();
             assert thisOrReceiver != null;
             if (expressionReceiver != null) {
                 JetExpression expression = expressionReceiver.getExpression();

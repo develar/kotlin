@@ -135,4 +135,10 @@ public final class CallParametersResolver implements CallParameters {
         assert receiver == null;
         return thisObject;
     }
+
+    @Override
+    @NotNull
+    public CallableDescriptor getDescriptor() {
+        return descriptor;
+    }
 }
