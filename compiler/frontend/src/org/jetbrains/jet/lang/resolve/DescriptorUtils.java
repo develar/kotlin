@@ -451,28 +451,55 @@ public class DescriptorUtils {
         DeclarationDescriptor containingDeclaration = scope.getContainingDeclaration();
         return getParentOfType(containingDeclaration, ClassDescriptor.class, false);
     }
-    
+
     @NotNull
-        public static ModuleDescriptor getModuleDescriptor(DeclarationDescriptor parent) {
-            ModuleDescriptor result = getParentOfType(parent, ModuleDescriptor.class);
-            assert result != null;
-            return result;
-        }
-    
-        @Nullable
-        public static ClassDescriptor getContainingClass(@NotNull DeclarationDescriptor descriptor) {
-            DeclarationDescriptor containing = descriptor;
-            while ((containing = containing.getContainingDeclaration()) != null) {
-                if (containing instanceof ClassDescriptor) {
-                    ClassDescriptor containingClass = (ClassDescriptor) containing;
-                    if (containingClass.getKind() != ClassKind.CLASS_OBJECT) {
-                        return containingClass;
-                    }
-                }
-                else if (containing instanceof NamespaceDescriptor) {
-                    return null;
+    public static ModuleDescriptor getModuleDescriptor(DeclarationDescriptor parent) {
+        ModuleDescriptor result = getParentOfType(parent, ModuleDescriptor.class);
+        assert result != null;
+        return result;
+    }
+
+    @Nullable
+    public static ClassDescriptor getContainingClass(@NotNull DeclarationDescriptor descriptor) {
+        DeclarationDescriptor containing = descriptor;
+        while ((containing = containing.getContainingDeclaration()) != null) {
+            if (containing instanceof ClassDescriptor) {
+                ClassDescriptor containingClass = (ClassDescriptor) containing;
+                if (containingClass.getKind() != ClassKind.CLASS_OBJECT) {
+                    return containingClass;
                 }
             }
+            else if (containing instanceof NamespaceDescriptor) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static ClassDescriptor getClassForCorrespondingJavaNamespace(@NotNull NamespaceDescriptor correspondingNamespace) {
+        NamespaceDescriptorParent containingDeclaration = correspondingNamespace.getContainingDeclaration();
+        if (!(containingDeclaration instanceof NamespaceDescriptor)) {
             return null;
         }
+
+        NamespaceDescriptor namespaceDescriptor = (NamespaceDescriptor) containingDeclaration;
+
+        ClassifierDescriptor classDescriptor = namespaceDescriptor.getMemberScope().getClassifier(correspondingNamespace.getName());
+        if (classDescriptor != null && classDescriptor instanceof ClassDescriptor) {
+            return (ClassDescriptor) classDescriptor;
+        }
+
+        ClassDescriptor classDescriptorForOuterClass = getClassForCorrespondingJavaNamespace(namespaceDescriptor);
+        if (classDescriptorForOuterClass == null) {
+            return null;
+        }
+
+        ClassifierDescriptor innerClassDescriptor =
+                classDescriptorForOuterClass.getUnsubstitutedInnerClassesScope().getClassifier(correspondingNamespace.getName());
+        if (innerClassDescriptor instanceof ClassDescriptor) {
+            return (ClassDescriptor) innerClassDescriptor;
+        }
+        return null;
+    }
 }

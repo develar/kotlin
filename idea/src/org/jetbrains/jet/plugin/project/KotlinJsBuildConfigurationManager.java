@@ -27,9 +27,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.plugin.versions.KotlinLibrariesNotificationProvider;
 import org.jetbrains.k2js.config.EcmaVersion;
 
-import static org.jetbrains.jet.plugin.quickfix.ConfigureKotlinLibraryNotificationProvider.findLibraryFile;
 
 @State(name = "K2JSModule", storages = @Storage(file = "$MODULE_FILE$"))
 public final class KotlinJsBuildConfigurationManager implements PersistentStateComponent<KotlinJsBuildConfigurationManager> {
@@ -46,7 +46,7 @@ public final class KotlinJsBuildConfigurationManager implements PersistentStateC
     public static VirtualFile getLibLocation(Project project) {
         final AccessToken token = ReadAction.start();
         try {
-            return findLibraryFile(project, false);
+            return KotlinLibrariesNotificationProvider.findLibraryFile(project, false);
         }
         finally {
             token.finish();

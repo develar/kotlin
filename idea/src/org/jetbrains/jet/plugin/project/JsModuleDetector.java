@@ -34,7 +34,7 @@ import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.plugin.quickfix.ConfigureKotlinLibraryNotificationProvider;
+import org.jetbrains.jet.plugin.versions.KotlinLibrariesNotificationProvider;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,7 +70,7 @@ public final class JsModuleDetector {
                 @Override
                 public boolean process(Library library) {
                     if (JsExternalizationConstants.JS_LIBRARY_NAME.equals(library.getName()) &&
-                        ConfigureKotlinLibraryNotificationProvider.findLibraryFile(library, false) != null) {
+                        KotlinLibrariesNotificationProvider.findLibraryFile(library, false) != null) {
                         module.putUserData(IS_JS_MODULE, modificationCount.get());
                         result.set(true);
                         return false;
