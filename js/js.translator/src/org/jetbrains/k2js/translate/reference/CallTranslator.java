@@ -34,7 +34,6 @@ import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.reference.CallParametersResolver.resolveCallParameters;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
@@ -53,18 +52,19 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     private final CallParameters callParameters;
 
-    /*package*/ CallTranslator(@Nullable JsExpression receiver, @Nullable JsExpression callee,
-            @NotNull List<JsExpression> arguments,
+    CallTranslator(@NotNull List<JsExpression> arguments,
             @NotNull ResolvedCall<? extends CallableDescriptor> resolvedCall,
             @NotNull CallableDescriptor descriptorToCall,
             @NotNull CallType callType,
+            @NotNull CallParameters callParameters,
+            boolean callAsApply,
             @NotNull TranslationContext context) {
         super(context);
         this.arguments = arguments;
         this.resolvedCall = resolvedCall;
         this.callType = callType;
         this.descriptor = descriptorToCall;
-        this.callParameters = resolveCallParameters(receiver, callee, descriptor, resolvedCall, context);
+        this.callParameters = callParameters;
     }
 
     @NotNull
@@ -97,10 +97,7 @@ public final class CallTranslator extends AbstractTranslator {
             }
             return extensionFunctionCall(!(descriptor instanceof ExpressionAsFunctionDescriptor));
         }
-        if (isExpressionAsFunction()) {
-            return expressionAsFunctionCall();
-        }
-        return methodCall(getThisObjectOrQualifier());
+        return methodCall(isExpressionAsFunction() ? null : getThisObjectOrQualifier());
     }
 
     private boolean isExpressionAsFunction() {
@@ -108,17 +105,12 @@ public final class CallTranslator extends AbstractTranslator {
                resolvedCall instanceof VariableAsFunctionResolvedCall;
     }
 
-    @NotNull
-    private JsExpression expressionAsFunctionCall() {
-        return methodCall(null);
-    }
-
     @Nullable
     private JsExpression intrinsicInvocation() {
         if (descriptor instanceof FunctionDescriptor) {
             try {
                 FunctionIntrinsic intrinsic = context().intrinsics().getFunctionIntrinsics().getIntrinsic((FunctionDescriptor) descriptor);
-                if (intrinsic.exists()) {
+                if (intrinsic != null) {
                     return intrinsic.apply(this, arguments, context());
                 }
             }

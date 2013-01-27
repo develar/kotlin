@@ -222,7 +222,7 @@ public final class TranslationUtils {
         FunctionDescriptor operationDescriptor = getFunctionDescriptorForOperationExpression(context.bindingContext(), expression);
 
         if (operationDescriptor == null) return true;
-        if (context.intrinsics().getFunctionIntrinsics().getIntrinsic(operationDescriptor).exists()) return true;
+        if (context.intrinsics().getFunctionIntrinsics().getIntrinsic(operationDescriptor) != null) return true;
 
         return false;
     }

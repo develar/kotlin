@@ -69,5 +69,4 @@ public enum CallType {
         @NotNull
         JsExpression construct(@Nullable JsExpression receiver);
     }
-
 }

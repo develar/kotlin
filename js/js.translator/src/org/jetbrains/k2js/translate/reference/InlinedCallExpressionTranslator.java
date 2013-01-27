@@ -38,7 +38,6 @@ import org.jetbrains.k2js.translate.utils.mutator.Mutator;
 import java.util.List;
 import java.util.Map;
 
-import static org.jetbrains.k2js.translate.reference.CallParametersResolver.resolveCallParameters;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionForDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedThisDescriptor;
@@ -113,7 +112,7 @@ public final class InlinedCallExpressionTranslator extends AbstractCallExpressio
     private TranslationContext createContextWithAliasForThisExpression(@NotNull TranslationContext contextForInlining) {
         TranslationContext contextWithAliasForThisExpression = contextForInlining;
         SimpleFunctionDescriptor functionDescriptor = getFunctionDescriptor();
-        CallParameters callParameters = resolveCallParameters(receiver, null, functionDescriptor, resolvedCall, contextForInlining);
+        CallParameters callParameters = new CallParametersResolver(receiver, null, functionDescriptor, resolvedCall, contextForInlining);
         JsExpression receiver = callParameters.getReceiver();
         if (receiver != null) {
             contextWithAliasForThisExpression =

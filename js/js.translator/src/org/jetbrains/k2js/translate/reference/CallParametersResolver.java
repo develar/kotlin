@@ -38,14 +38,6 @@ public final class CallParametersResolver implements CallParameters {
     private final JsExpression thisObject;
     private final JsExpression receiver;
 
-    public static CallParameters resolveCallParameters(@Nullable JsExpression qualifier,
-            @Nullable JsExpression callee,
-            @NotNull CallableDescriptor descriptor,
-            @NotNull ResolvedCall<? extends CallableDescriptor> call,
-            @NotNull TranslationContext context) {
-        return new CallParametersResolver(qualifier, callee, descriptor, call, context);
-    }
-
     @NotNull
     private final CallableDescriptor descriptor;
     @NotNull
@@ -53,7 +45,9 @@ public final class CallParametersResolver implements CallParameters {
     @NotNull
     private final ResolvedCall<? extends CallableDescriptor> resolvedCall;
 
-    private CallParametersResolver(@Nullable JsExpression qualifier,
+    boolean invokeAsApply;
+
+    public CallParametersResolver(@Nullable JsExpression qualifier,
             @Nullable JsExpression callee,
             @NotNull CallableDescriptor descriptor,
             @NotNull ResolvedCall<? extends CallableDescriptor> call,
@@ -62,9 +56,7 @@ public final class CallParametersResolver implements CallParameters {
         this.context = context;
         this.resolvedCall = call;
 
-        if (callee != null) {
-            functionReference = callee;
-        }
+        functionReference = callee;
 
         boolean extensionCall = resolvedCall.getReceiverArgument().exists();
         if (qualifier != null && !extensionCall) {
@@ -82,6 +74,11 @@ public final class CallParametersResolver implements CallParameters {
         else {
             receiver = null;
         }
+    }
+
+    @Override
+    public boolean invokeAsApply() {
+        return invokeAsApply;
     }
 
     @Nullable

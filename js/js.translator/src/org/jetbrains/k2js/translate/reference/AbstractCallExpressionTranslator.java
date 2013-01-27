@@ -21,9 +21,13 @@ import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.JetCallExpression;
 import org.jetbrains.jet.lang.psi.JetExpression;
+import org.jetbrains.jet.lang.psi.JetReferenceExpression;
 import org.jetbrains.jet.lang.psi.ValueArgument;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.calls.model.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
@@ -89,6 +93,12 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
         }
         else {
             list = result;
+            if (arguments.size() == 1) {
+                JetExpression expression = arguments.get(0).getArgumentExpression();
+                if (expression instanceof JetReferenceExpression) {
+                    DeclarationDescriptor aNull = BindingContextUtils.getNotNull(bindingContext(), BindingContext.REFERENCE_TARGET, (JetReferenceExpression) expression);
+                }
+            }
         }
         for (ValueArgument argument : arguments) {
             JetExpression argumentExpression = argument.getArgumentExpression();

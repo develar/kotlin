@@ -34,7 +34,6 @@ import java.util.Collections;
 import java.util.List;
 
 public final class CallBuilder {
-
     public static CallBuilder build(@NotNull TranslationContext context) {
         return new CallBuilder(context);
     }
@@ -119,7 +118,8 @@ public final class CallBuilder {
             descriptor = resolvedCall.getCandidateDescriptor().getOriginal();
         }
         assert resolvedCall != null;
-        return new CallTranslator(receiver, callee, args, resolvedCall, descriptor, callType, context);
+        CallParametersResolver callParametersResolver = new CallParametersResolver(receiver, callee, descriptor, resolvedCall, context);
+        return new CallTranslator(args, resolvedCall, descriptor, callType, callParametersResolver, context);
     }
 
     @NotNull

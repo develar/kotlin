@@ -32,4 +32,6 @@ public interface CallParameters {
 
     @Nullable
     JsExpression getThisOrReceiverOrNull();
+
+    boolean invokeAsApply();
 }

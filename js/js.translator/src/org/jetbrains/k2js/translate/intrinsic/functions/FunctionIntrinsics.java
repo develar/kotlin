@@ -22,6 +22,7 @@ import com.intellij.util.Processor;
 import com.intellij.util.containers.MostlySingularMultiMap;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.factories.*;
@@ -48,17 +49,14 @@ public final class FunctionIntrinsics {
     @NotNull
     private final Map<FunctionDescriptor, FunctionIntrinsic> intrinsicCache = new THashMap<FunctionDescriptor, FunctionIntrinsic>();
 
-    @NotNull
+    @Nullable
     public FunctionIntrinsic getIntrinsic(@NotNull FunctionDescriptor descriptor) {
         FunctionIntrinsic intrinsic = intrinsicCache.get(descriptor);
-        return intrinsic != null ? intrinsic : computeAndCacheIntrinsic(descriptor);
-    }
-
-    @NotNull
-    private FunctionIntrinsic computeAndCacheIntrinsic(@NotNull FunctionDescriptor descriptor) {
-        FunctionIntrinsic result = computeIntrinsic(descriptor);
-        intrinsicCache.put(descriptor, result);
-        return result;
+        if (intrinsic == null) {
+            intrinsic = computeIntrinsic(descriptor);
+            intrinsicCache.put(descriptor, intrinsic);
+        }
+        return intrinsic.exists() ? intrinsic : null;
     }
 
     @NotNull
