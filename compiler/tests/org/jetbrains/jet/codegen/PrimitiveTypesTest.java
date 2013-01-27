@@ -30,9 +30,6 @@ public class PrimitiveTypesTest extends CodegenTestCase {
 
     public void testPlus() throws Exception {
         loadText("fun f(a: Int, b: Int): Int { return a + b }");
-
-//        System.out.println(generateToText());
-
         final Method main = generateFunction();
         final int returnValue = (Integer) main.invoke(null, 37, 5);
         assertEquals(42, returnValue);
@@ -41,7 +38,6 @@ public class PrimitiveTypesTest extends CodegenTestCase {
     public void testGt() throws Exception {
         loadText("fun foo(f: Int): Boolean { if (f > 0) return true; return false; }");
 
-//        System.out.println(generateToText());
         final Method main = generateFunction();
         assertEquals(true, main.invoke(null, 1));
         assertEquals(false, main.invoke(null, 0));
@@ -78,7 +74,6 @@ public class PrimitiveTypesTest extends CodegenTestCase {
 
     public void testLong() throws Exception {
         loadText("fun foo(a: Long, b: Long): Long = a + b");
-//        System.out.println(generateToText());
         final Method main = generateFunction();
         long arg = (long) Integer.MAX_VALUE;
         long expected = 2 * (long) Integer.MAX_VALUE;
@@ -87,7 +82,6 @@ public class PrimitiveTypesTest extends CodegenTestCase {
 
     public void testLongCmp() throws Exception {
         loadText("fun foo(a: Long, b: Long): Long = if (a == b) 0xffffffff else 0xfffffffe");
-//        System.out.println(generateToText());
         final Method main = generateFunction();
         assertEquals(0xffffffffL, main.invoke(null, 1, 1));
         assertEquals(0xfffffffeL, main.invoke(null, 1, 0));
@@ -153,7 +147,6 @@ public class PrimitiveTypesTest extends CodegenTestCase {
 
     public void testDoubleToInt() throws Exception {
         loadText("fun foo(a: Double): Int = a.toInt()");
-//        System.out.println(generateToText());
         final Method main = generateFunction();
         assertEquals(1, main.invoke(null, 1.0));
     }
@@ -237,7 +230,6 @@ public class PrimitiveTypesTest extends CodegenTestCase {
 
     public void testBitInv() throws Exception {
         loadText("fun foo(a: Int): Int = a.inv()");
-//        System.out.println(generateToText());
         final Method main = generateFunction();
         assertEquals(0xffff0000, main.invoke(null, 0x0000ffff));
     }
@@ -269,45 +261,43 @@ public class PrimitiveTypesTest extends CodegenTestCase {
     }
 
     public void testDecrementAsStatement() throws Exception {
-        loadFile("bottles.jet");
-//        System.out.println(generateToText());
+        loadFile("bottles.kt");
         final Method main = generateFunction();
         main.invoke(null);  // ensure no exception
     }
 
     private void binOpTest(final String text, final Object arg1, final Object arg2, final Object expected) throws Exception {
         loadText(text);
-//        System.out.println(generateToText());
         final Method main = generateFunction();
         assertEquals(expected, main.invoke(null, arg1, arg2));
     }
 
     public void testEa35963() {
-        blackBoxFile("regressions/ea35963.jet");
+        blackBoxFile("regressions/ea35963.kt");
     }
 
     public void testKt242 () throws Exception {
-        blackBoxFile("regressions/kt242.jet");
+        blackBoxFile("regressions/kt242.kt");
     }
 
     public void testKt239 () throws Exception {
-        blackBoxFile("regressions/kt239.jet");
+        blackBoxFile("regressions/kt239.kt");
     }
 
     public void testKt243 () throws Exception {
-        blackBoxFile("regressions/kt243.jet");
+        blackBoxFile("regressions/kt243.kt");
     }
 
     public void testKt248 () throws Exception {
-        blackBoxFile("regressions/kt248.jet");
+        blackBoxFile("regressions/kt248.kt");
     }
 
     public void testKt446 () throws Exception {
-        blackBoxFile("regressions/kt446.jet");
+        blackBoxFile("regressions/kt446.kt");
     }
 
     public void testKt518 () throws Exception {
-        blackBoxFile("regressions/kt518.jet");
+        blackBoxFile("regressions/kt518.kt");
     }
 
     public void testKt711 () throws Exception {
@@ -357,36 +347,35 @@ public class PrimitiveTypesTest extends CodegenTestCase {
     }
 
     public void testKt752 () {
-        blackBoxFile("regressions/kt752.jet");
+        blackBoxFile("regressions/kt752.kt");
     }
 
     public void testKt753 () {
-        blackBoxFile("regressions/kt753.jet");
+        blackBoxFile("regressions/kt753.kt");
     }
 
     public void testKt684 () {
-        blackBoxFile("regressions/kt684.jet");
+        blackBoxFile("regressions/kt684.kt");
     }
 
     public void testKt756 () {
-        blackBoxFile("regressions/kt756.jet");
-        //System.out.println(generateToText());
+        blackBoxFile("regressions/kt756.kt");
     }
 
     public void testKt757 () {
-        blackBoxFile("regressions/kt757.jet");
+        blackBoxFile("regressions/kt757.kt");
     }
 
     public void testKt877 () {
-        blackBoxFile("regressions/kt877.jet");
+        blackBoxFile("regressions/kt877.kt");
     }
 
     public void testKt882 () {
-        blackBoxFile("regressions/kt882.jet");
+        blackBoxFile("regressions/kt882.kt");
     }
 
     public void testKt887 () {
-        blackBoxFile("regressions/kt887.jet");
+        blackBoxFile("regressions/kt887.kt");
     }
 
     public void testKt821 () {
@@ -406,7 +395,7 @@ public class PrimitiveTypesTest extends CodegenTestCase {
     }
 
     public void testKt945 () {
-        blackBoxFile("regressions/kt945.jet");
+        blackBoxFile("regressions/kt945.kt");
     }
 
     public void testKt935 () {

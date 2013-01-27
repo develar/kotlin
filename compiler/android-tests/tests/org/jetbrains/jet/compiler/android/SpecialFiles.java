@@ -16,10 +16,8 @@
 
 package org.jetbrains.jet.compiler.android;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import java.util.Map;
 import java.util.Set;
 
 
@@ -27,13 +25,11 @@ public class SpecialFiles {
     private static final Set<String> excludedFiles = Sets.newHashSet();
     private static final Set<String> filesCompiledWithoutStdLib = Sets.newHashSet();
     private static final Set<String> filesCompiledWithJUnit = Sets.newHashSet();
-    private static final Map<String, String> filesWithSpecialResult = Maps.newHashMap();
 
     static {
         fillExcludedFiles();
         fillFilesCompiledWithoutStdLib();
         fillFilesCompiledWithJUnit();
-        fillFilesWithSpecialResult();
     }
 
 
@@ -49,14 +45,6 @@ public class SpecialFiles {
         return filesCompiledWithoutStdLib;
     }
 
-    public static Map<String, String> getFilesWithSpecialResult() {
-        return filesWithSpecialResult;
-    }
-
-    private static void fillFilesWithSpecialResult() {
-        filesWithSpecialResult.put("kt2398.kt", "OKKO");
-    }
-
     private static void fillFilesCompiledWithJUnit() {
         filesCompiledWithJUnit.add("kt2334.kt");
     }
@@ -64,13 +52,13 @@ public class SpecialFiles {
     private static void fillFilesCompiledWithoutStdLib() {
         filesCompiledWithoutStdLib.add("kt1980.kt");
         filesCompiledWithoutStdLib.add("kt1953_class.kt"); // Exception in code
-        filesCompiledWithoutStdLib.add("basicmethodSuperClass.jet"); // Exception in code
-        filesCompiledWithoutStdLib.add("kt503.jet"); // OVERLOAD_RESOLUTION_AMBIGUITY
-        filesCompiledWithoutStdLib.add("kt504.jet"); // OVERLOAD_RESOLUTION_AMBIGUITY
-        filesCompiledWithoutStdLib.add("kt772.jet"); // OVERLOAD_RESOLUTION_AMBIGUITY
-        filesCompiledWithoutStdLib.add("kt773.jet"); // OVERLOAD_RESOLUTION_AMBIGUITY
-        filesCompiledWithoutStdLib.add("kt796_797.jet"); // OVERLOAD_RESOLUTION_AMBIGUITY
-        filesCompiledWithoutStdLib.add("kt950.jet"); // OVERLOAD_RESOLUTION_AMBIGUITY
+        filesCompiledWithoutStdLib.add("basicmethodSuperClass.kt"); // Exception in code
+        filesCompiledWithoutStdLib.add("kt503.kt"); // OVERLOAD_RESOLUTION_AMBIGUITY
+        filesCompiledWithoutStdLib.add("kt504.kt"); // OVERLOAD_RESOLUTION_AMBIGUITY
+        filesCompiledWithoutStdLib.add("kt772.kt"); // OVERLOAD_RESOLUTION_AMBIGUITY
+        filesCompiledWithoutStdLib.add("kt773.kt"); // OVERLOAD_RESOLUTION_AMBIGUITY
+        filesCompiledWithoutStdLib.add("kt796_797.kt"); // OVERLOAD_RESOLUTION_AMBIGUITY
+        filesCompiledWithoutStdLib.add("kt950.kt"); // OVERLOAD_RESOLUTION_AMBIGUITY
         filesCompiledWithoutStdLib.add("kt2395.kt"); // With MOCK_JDK
     }
 
@@ -84,27 +72,11 @@ public class SpecialFiles {
         excludedFiles.add("simpleJavaEnumWithStaticImport.kt"); // Must compile Java files before
         excludedFiles.add("removeInIterator.kt"); // Must compile Java files before
         excludedFiles.add("kt3238.kt"); // Reflection
-        excludedFiles.add("namespaceQualifiedMethod.jet"); // Cannot change package name
+        excludedFiles.add("namespaceQualifiedMethod.kt"); // Cannot change package name
         excludedFiles.add("kt1482_2279.kt"); // Cannot change package name
         excludedFiles.add("kt1482.kt"); // Cannot change package name
-        excludedFiles.add("importFromClassObject.jet"); // Cannot find usages in Codegen tests
-        excludedFiles.add("withtypeparams.jet"); // Cannot find usages in Codegen tests
-        excludedFiles.add("kt1113.kt"); // Commented
-        excludedFiles.add("kt326.jet"); // Commented
+        excludedFiles.add("kt326.kt"); // Commented
         excludedFiles.add("kt1213.kt"); // Commented
-        excludedFiles.add("kt882.jet"); // Commented
-        excludedFiles.add("kt789.jet"); // Commented
-        excludedFiles.add("enum.kt"); // Commented
-        excludedFiles.add("withclosure.kt"); // Commented
-        excludedFiles.add("isTypeParameter.jet"); // Commented
-        excludedFiles.add("nullability.jet"); // Commented
-        excludedFiles.add("genericFunction.jet"); // Commented
-        excludedFiles.add("forwardTypeParameter.jet"); // Commented
-        excludedFiles.add("kt259.jet"); // Commented
-        excludedFiles.add("classObjectMethod.jet"); // Commented
-        
-        excludedFiles.add("inRangeConditionsInWhen.jet"); // Commented
-        excludedFiles.add("kt1592.kt"); // Codegen don't execute blackBoxFile() on it
 
         excludedFiles.add("box.kt");      // MultiFileTest not supported yet
         excludedFiles.add("kt2060_1.kt"); // MultiFileTest not supported yet
@@ -112,10 +84,10 @@ public class SpecialFiles {
         excludedFiles.add("kt1528_1.kt"); // MultiFileTest not supported yet
         excludedFiles.add("thisPackage.kt"); // MultiFileTest not supported yet
 
-        excludedFiles.add("kt684.jet"); // StackOverflow with StringBuilder (escape())
+        excludedFiles.add("kt684.kt"); // StackOverflow with StringBuilder (escape())
 
-        excludedFiles.add("kt344.jet"); // Bug KT-2251
         excludedFiles.add("kt529.kt");  // Bug
+        excludedFiles.add("kt344.kt");  // Bug
 
         excludedFiles.add("noClassObjectForJavaClass.kt");
 
@@ -125,6 +97,20 @@ public class SpecialFiles {
 
         excludedFiles.add("nestedInPackage.kt"); // Custom packages are not supported
         excludedFiles.add("importNestedClass.kt"); // Won't work when moved to another package
+
+        excludedFiles.add("protectedStaticClass.kt");                       // Java
+        excludedFiles.add("protectedStaticClass2.kt");                      // Java
+        excludedFiles.add("protectedStaticFun.kt");                         // Java
+        excludedFiles.add("protectedStaticFunCallInConstructor.kt");        // Java
+        excludedFiles.add("protectedStaticFunClassObject.kt");              // Java
+        excludedFiles.add("protectedStaticFunGenericClass.kt");             // Java
+        excludedFiles.add("protectedStaticFunNestedStaticClass.kt");        // Java
+        excludedFiles.add("protectedStaticFunNestedStaticClass2.kt");       // Java
+        excludedFiles.add("protectedStaticFunNestedStaticGenericClass.kt"); // Java
+        excludedFiles.add("protectedStaticFunNotDirectSuperClass.kt");      // Java
+        excludedFiles.add("protectedStaticFunObject.kt");                   // Java
+        excludedFiles.add("protectedStaticProperty.kt");                    // Java
+
     }
 
     private SpecialFiles() {

@@ -22,22 +22,22 @@ public class SafeRefTest extends CodegenTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_AND_ANNOTATIONS);
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
     }
 
-    public void test247 () throws Exception {
-        blackBoxFile("regressions/kt247.jet");
+    public void test247() {
+        blackBoxFile("regressions/kt247.kt");
     }
 
-    public void test245 () throws Exception {
-        blackBoxFile("regressions/kt245.jet");
+    public void test245() {
+        blackBoxFile("regressions/kt245.kt");
     }
 
-    public void test232 () throws Exception {
-        blackBoxFile("regressions/kt232.jet");
+    public void test232() {
+        blackBoxFile("regressions/kt232.kt");
     }
 
-    public void test1572 () throws Exception {
-        blackBoxFile("regressions/kt1572.jet");
+    public void test1572() {
+        blackBoxFile("regressions/kt1572.kt");
     }
 }

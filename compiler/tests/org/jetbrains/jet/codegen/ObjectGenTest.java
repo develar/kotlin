@@ -26,34 +26,31 @@ public class ObjectGenTest extends CodegenTestCase {
     }
 
     public void testSimpleObject() {
-        blackBoxFile("objects/simpleObject.jet");
-//        System.out.println(generateToText());
+        blackBoxFile("objects/simpleObject.kt");
     }
 
     public void testObjectLiteral() {
-        blackBoxFile("objects/objectLiteral.jet");
-//        System.out.println(generateToText());
+        blackBoxFile("objects/objectLiteral.kt");
     }
 
     public void testObjectLiteralInClosure() {
-        blackBoxFile("objects/objectLiteralInClosure.jet");
-//        System.out.println(generateToText());
+        blackBoxFile("objects/objectLiteralInClosure.kt");
     }
 
     public void testMethodOnObject() {
-        blackBoxFile("objects/methodOnObject.jet");
+        blackBoxFile("objects/methodOnObject.kt");
     }
 
     public void testKt535() {
-        blackBoxFile("regressions/kt535.jet");
+        blackBoxFile("regressions/kt535.kt");
     }
 
     public void testKt560() {
-        blackBoxFile("regressions/kt560.jet");
+        blackBoxFile("regressions/kt560.kt");
     }
 
     public void testKt640() {
-        blackBoxFile("regressions/kt640.jet");
+        blackBoxFile("regressions/kt640.kt");
     }
 
     public void testKt1136() {
@@ -97,7 +94,7 @@ public class ObjectGenTest extends CodegenTestCase {
     }
 
     public void testKt2398() {
-        blackBoxFile("regressions/kt2398.kt", "OKKO");
+        blackBoxFile("regressions/kt2398.kt");
     }
 
     public void testKt2675() {

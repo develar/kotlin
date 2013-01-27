@@ -19,45 +19,42 @@ package org.jetbrains.jet.codegen;
 import org.jetbrains.jet.ConfigurationKind;
 
 public class ClosuresGenTest extends CodegenTestCase {
-
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
     }
 
-    public void testSimplestClosure() throws Exception {
-        blackBoxFile("classes/simplestClosure.jet");
-//        System.out.println(generateToText());
+    public void testSimplestClosure() {
+        blackBoxFile("classes/simplestClosure.kt");
     }
 
-    public void testSimplestClosureAndBoxing() throws Exception {
-        blackBoxFile("classes/simplestClosureAndBoxing.jet");
+    public void testSimplestClosureAndBoxing() {
+        blackBoxFile("classes/simplestClosureAndBoxing.kt");
     }
 
-    public void testClosureWithParameter() throws Exception {
-        blackBoxFile("classes/closureWithParameter.jet");
+    public void testClosureWithParameter() {
+        blackBoxFile("classes/closureWithParameter.kt");
     }
 
-    public void testClosureWithParameterAndBoxing() throws Exception {
-        blackBoxFile("classes/closureWithParameterAndBoxing.jet");
+    public void testClosureWithParameterAndBoxing() {
+        blackBoxFile("classes/closureWithParameterAndBoxing.kt");
     }
 
-    public void testExtensionClosure() throws Exception {
-        blackBoxFile("classes/extensionClosure.jet");
+    public void testExtensionClosure() {
+        blackBoxFile("classes/extensionClosure.kt");
     }
 
-    public void testEnclosingLocalVariable() throws Exception {
-        blackBoxFile("classes/enclosingLocalVariable.jet");
-//        System.out.println(generateToText());
+    public void testEnclosingLocalVariable() {
+        blackBoxFile("classes/enclosingLocalVariable.kt");
     }
 
-    public void testDoubleEnclosedLocalVariable() throws Exception {
-        blackBoxFile("classes/doubleEnclosedLocalVariable.jet");
+    public void testDoubleEnclosedLocalVariable() {
+        blackBoxFile("classes/doubleEnclosedLocalVariable.kt");
     }
 
-    public void testEnclosingThis() throws Exception {
-        blackBoxFile("classes/enclosingThis.jet");
+    public void testEnclosingThis() {
+        blackBoxFile("classes/enclosingThis.kt");
     }
 
     public void testKt2151() {

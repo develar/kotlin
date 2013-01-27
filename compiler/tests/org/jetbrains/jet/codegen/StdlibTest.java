@@ -74,7 +74,7 @@ public class StdlibTest extends CodegenTestCase {
     }
 
     public void testKt789 () {
-        blackBoxFile("regressions/kt789.jet");
+        blackBoxFile("regressions/kt789.kt");
     }
 
     public void testKt828 () {
@@ -86,7 +86,7 @@ public class StdlibTest extends CodegenTestCase {
     }
 
     public void testKt864 () {
-        blackBoxFile("regressions/kt864.jet");
+        blackBoxFile("regressions/kt864.kt");
     }
 
     public void testKt274 () {
@@ -95,14 +95,13 @@ public class StdlibTest extends CodegenTestCase {
 
     //from ClassGenTest
     public void testKt344 () throws Exception {
-        loadFile("regressions/kt344.jet");
-//        System.out.println(generateToText());
+        loadFile("regressions/kt344.kt");
         blackBox();
     }
 
     //from ExtensionFunctionsTest
     public void testGeneric() throws Exception {
-        blackBoxFile("extensionFunctions/generic.jet");
+        blackBoxFile("extensionFunctions/generic.kt");
     }
 
     //from NamespaceGenTest
@@ -147,7 +146,7 @@ public class StdlibTest extends CodegenTestCase {
         loadFile("regressions/kt1592.kt");
         String fqName = NamespaceCodegen.getJVMClassNameForKotlinNs(JetPsiUtil.getFQName(myFiles.getPsiFile())).getFqName().getFqName();
         Class<?> namespaceClass = generateClass(fqName);
-        Method method = namespaceClass.getMethod("box", Method.class);
+        Method method = namespaceClass.getMethod("foo", Method.class);
         method.setAccessible(true);
         Test annotation = method.getAnnotation(Test.class);
         assertEquals(annotation.timeout(), 0l);
@@ -339,7 +338,6 @@ public class StdlibTest extends CodegenTestCase {
 
     public void testKt2210() throws Exception {
         blackBoxFile("regressions/kt2210.kt");
-//        System.out.println(generateToText());
     }
 
     public void testKt2593() {
@@ -368,5 +366,13 @@ public class StdlibTest extends CodegenTestCase {
 
     public void testNoClassObjectForJavaClass() throws Exception {
         blackBoxFileWithJava("stdlib/noClassObjectForJavaClass.kt");
+    }
+
+    public void testKt1076() {
+        blackBoxFile("regressions/kt1076.kt");
+    }
+
+    public void testKt1515() {
+        blackBoxMultiFile("/multi/kt1515/thisPackage.kt", "/multi/kt1515/otherPackage.kt");
     }
 }

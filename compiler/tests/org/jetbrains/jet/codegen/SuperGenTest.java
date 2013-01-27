@@ -24,23 +24,23 @@ public class SuperGenTest extends CodegenTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_AND_ANNOTATIONS);
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
     }
 
     public void testBasicProperty () {
-        blackBoxFile("/super/basicproperty.jet");
+        blackBoxFile("/super/basicproperty.kt");
     }
 
     public void testTraitProperty () {
-        blackBoxFile("/super/traitproperty.jet");
+        blackBoxFile("/super/traitproperty.kt");
     }
 
     public void testBasicMethodSuperTrait () {
-        blackBoxFile("/super/basicmethodSuperTrait.jet");
+        blackBoxFile("/super/basicmethodSuperTrait.kt");
     }
 
     public void testBasicMethodSuperClass () {
-        blackBoxFile("/super/basicmethodSuperClass.jet");
+        blackBoxFile("/super/basicmethodSuperClass.kt");
     }
 
     public void testInnerClassLabeledSuper() {
@@ -56,11 +56,11 @@ public class SuperGenTest extends CodegenTestCase {
     }
 
     public void testEnclosedFun () {
-        blackBoxFile("/super/enclosedFun.jet");
+        blackBoxFile("/super/enclosedFun.kt");
     }
 
     public void testEnclosedVar () {
-        blackBoxFile("/super/enclosedVar.jet");
+        blackBoxFile("/super/enclosedVar.kt");
     }
 
     public void testKt2887() {

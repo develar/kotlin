@@ -84,11 +84,20 @@ public final class DescriptorResolverUtils {
                 return Visibilities.INTERNAL;
             }
         }
-        return modifierListOwner.hasModifierProperty(PsiModifier.PUBLIC) ? Visibilities.PUBLIC :
-               (modifierListOwner.hasModifierProperty(PsiModifier.PRIVATE) ? Visibilities.PRIVATE :
-                (modifierListOwner.hasModifierProperty(PsiModifier.PROTECTED) ? Visibilities.PROTECTED :
-                 //Visibilities.PUBLIC));
-                 JavaDescriptorResolver.PACKAGE_VISIBILITY));
+
+        if (modifierListOwner.hasModifierProperty(PsiModifier.PUBLIC)) {
+            return Visibilities.PUBLIC;
+        }
+        if (modifierListOwner.hasModifierProperty(PsiModifier.PRIVATE)) {
+            return Visibilities.PRIVATE;
+        }
+        if (modifierListOwner.hasModifierProperty(PsiModifier.PROTECTED)) {
+            if (modifierListOwner.hasModifierProperty(PsiModifier.STATIC)) {
+                return JavaDescriptorResolver.PROTECTED_STATIC_VISIBILITY;
+            }
+            return Visibilities.PROTECTED;
+        }
+        return JavaDescriptorResolver.PACKAGE_VISIBILITY;
     }
 
     @Nullable
@@ -107,6 +116,14 @@ public final class DescriptorResolverUtils {
             }
         }
         return null;
+    }
+
+    public static Visibility getConstructorVisibility(ClassDescriptor classDescriptor) {
+        Visibility containingClassVisibility = classDescriptor.getVisibility();
+        if (containingClassVisibility == JavaDescriptorResolver.PROTECTED_STATIC_VISIBILITY) {
+            return Visibilities.PROTECTED;
+        }
+        return containingClassVisibility;
     }
 
     public static void checkPsiClassIsNotJet(@Nullable PsiClass psiClass) {
