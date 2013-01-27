@@ -31,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.jet.lang.resolve.AnalyzingUtils;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.k2js.config.EcmaVersion;
@@ -108,6 +109,8 @@ public final class TranslationUtils {
                                                         Collections.singletonList(libraryContext), new SingletonSet<ModuleInfo>(libraryContext));
         AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleInfo, psiFiles, true);
         exhaust.throwIfError();
+        AnalyzingUtils.throwExceptionOnErrors(moduleInfo.getBindingContext());
+        XAnalyzerFacade.checkForErrors(psiFiles);
         TestConfig config = configFactory.create(moduleInfo, version);
         K2JSTranslator.translateAndSaveToFile(mainCallParameters, psiFiles, outputFile, config,
                                               moduleInfo.getBindingContext());
