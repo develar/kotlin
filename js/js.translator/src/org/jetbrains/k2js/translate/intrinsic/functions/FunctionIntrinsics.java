@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.intrinsic.functions;
 
 import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.util.Ref;
 import com.intellij.util.Processor;
 import com.intellij.util.containers.MostlySingularMultiMap;
 import gnu.trove.THashMap;
@@ -53,6 +52,9 @@ public final class FunctionIntrinsics {
     public FunctionIntrinsic getIntrinsic(@NotNull FunctionDescriptor descriptor) {
         FunctionIntrinsic intrinsic = intrinsicCache.get(descriptor);
         if (intrinsic == null) {
+            if (intrinsics.valuesForKey(descriptor.getName().getName()) == 0) {
+                return null;
+            }
             intrinsic = computeIntrinsic(descriptor);
             intrinsicCache.put(descriptor, intrinsic);
         }
@@ -60,21 +62,11 @@ public final class FunctionIntrinsics {
     }
 
     @NotNull
-    private static FunctionIntrinsic computeIntrinsic(@NotNull final FunctionDescriptor descriptor) {
-        final Ref<FunctionIntrinsic> result = Ref.create();
-        intrinsics.processForKey(descriptor.getName().getName(), new Processor<Pair<DescriptorPredicate, FunctionIntrinsic>>() {
-            @Override
-            public boolean process(Pair<DescriptorPredicate, FunctionIntrinsic> pair) {
-                if (pair.first.apply(descriptor)) {
-                    result.set(pair.second);
-                    return false;
-                }
-                return true;
-            }
-        });
-
-        if (!result.isNull()) {
-            return result.get();
+    private static FunctionIntrinsic computeIntrinsic(@NotNull FunctionDescriptor descriptor) {
+        MyProcessor processor = new MyProcessor(descriptor);
+        intrinsics.processForKey(descriptor.getName().getName(), processor);
+        if (processor.result != null) {
+            return processor.result;
         }
 
         if (anyIntrinsics != null) {
@@ -86,5 +78,23 @@ public final class FunctionIntrinsics {
         }
 
         return FunctionIntrinsic.NO_INTRINSIC;
+    }
+
+    private static final class MyProcessor implements Processor<Pair<DescriptorPredicate, FunctionIntrinsic>> {
+        private final FunctionDescriptor descriptor;
+        private FunctionIntrinsic result;
+
+        public MyProcessor(FunctionDescriptor descriptor) {
+            this.descriptor = descriptor;
+        }
+
+        @Override
+        public boolean process(Pair<DescriptorPredicate, FunctionIntrinsic> pair) {
+            if (pair.first.apply(descriptor)) {
+                result = pair.second;
+                return false;
+            }
+            return true;
+        }
     }
 }
