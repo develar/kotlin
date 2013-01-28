@@ -88,17 +88,9 @@ public final class RhinoUtils {
     private RhinoUtils() {
     }
 
-    private static void runFileWithRhino(@NotNull String inputFile,
-            @NotNull Context context,
-            @NotNull Scriptable scope) throws Exception {
-        String result;
-        try {
-            result = FileUtil.loadFile(new File(inputFile));
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        context.evaluateString(scope, result, inputFile, 1, null);
+    private static void runFileWithRhino(@NotNull String inputFile, @NotNull Context context, @NotNull Scriptable scope)
+            throws IOException {
+        context.evaluateString(scope, FileUtil.loadFile(new File(inputFile)), inputFile, 1, null);
     }
 
     public static void runRhinoTest(@NotNull List<String> fileNames, @NotNull RhinoResultChecker checker) throws Exception {
