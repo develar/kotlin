@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,15 @@ package org.jetbrains.k2js.translate.operation;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
 import com.google.dart.compiler.backend.js.ast.JsUnaryOperator;
+import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lexer.JetToken;
 import org.jetbrains.jet.lexer.JetTokens;
 
 import java.util.Map;
 
 public final class OperatorTable {
-
     //TODO : not all operators , add and test bit operators
     private static final Map<JetToken, JsBinaryOperator> binaryOperatorsMap = ImmutableBiMap.<JetToken, JsBinaryOperator>builder()
             .put(JetTokens.PLUS, JsBinaryOperator.ADD)
@@ -48,31 +49,36 @@ public final class OperatorTable {
             .put(JetTokens.PERCEQ, JsBinaryOperator.ASG_MOD)
             .build();
 
-    private static final ImmutableBiMap<JetToken, JsUnaryOperator> unaryOperatorsMap = ImmutableBiMap.<JetToken, JsUnaryOperator>builder()
-            .put(JetTokens.PLUSPLUS, JsUnaryOperator.INC)
-            .put(JetTokens.MINUSMINUS, JsUnaryOperator.DEC)
-            .put(JetTokens.EXCL, JsUnaryOperator.NOT)
-            .put(JetTokens.MINUS, JsUnaryOperator.NEG)
-            .put(JetTokens.PLUS, JsUnaryOperator.POS)
-            .build();
+    private static final Map<JetToken, JsUnaryOperator> unaryOperatorsMap;
+
+    static {
+        unaryOperatorsMap = new THashMap<JetToken, JsUnaryOperator>();
+        unaryOperatorsMap.put(JetTokens.PLUSPLUS, JsUnaryOperator.INC);
+        unaryOperatorsMap.put(JetTokens.MINUSMINUS, JsUnaryOperator.DEC);
+        unaryOperatorsMap.put(JetTokens.EXCL, JsUnaryOperator.NOT);
+        unaryOperatorsMap.put(JetTokens.MINUS, JsUnaryOperator.NEG);
+        unaryOperatorsMap.put(JetTokens.PLUS, JsUnaryOperator.POS);
+    }
 
     private OperatorTable() {
     }
-
 
     public static boolean hasCorrespondingBinaryOperator(@NotNull JetToken token) {
         return binaryOperatorsMap.containsKey(token);
     }
 
     @NotNull
-    static public JsBinaryOperator getBinaryOperator(@NotNull JetToken token) {
-        assert JetTokens.OPERATIONS.contains(token) : "Token should represent an operation!";
+    public static JsBinaryOperator getBinaryOperator(@NotNull JetToken token) {
+        return binaryOperatorsMap.get(token);
+    }
+
+    @Nullable
+    public static JsBinaryOperator getNullableBinaryOperator(@NotNull JetToken token) {
         return binaryOperatorsMap.get(token);
     }
 
     @NotNull
-    static public JsUnaryOperator getUnaryOperator(@NotNull JetToken token) {
-        assert JetTokens.OPERATIONS.contains(token) : "Token should represent an operation!";
+    public static JsUnaryOperator getUnaryOperator(@NotNull JetToken token) {
         return unaryOperatorsMap.get(token);
     }
 }

@@ -79,7 +79,7 @@ public final class JsDescriptorUtils {
         if (namespace == null) {
             return false;
         }
-        return namespace.equals(KotlinBuiltIns.getInstance().getBuiltInsScope().getContainingDeclaration());
+        return namespace == KotlinBuiltIns.getInstance().getBuiltInsScope().getContainingDeclaration();
     }
 
     @Nullable
@@ -93,13 +93,16 @@ public final class JsDescriptorUtils {
         return type != null ? getNameIfStandardType(type) : null;
     }
 
+    public static boolean isInBuiltInsPackage(@NotNull DeclarationDescriptor descriptor) {
+        return descriptor.getContainingDeclaration() == KotlinBuiltIns.getInstance().getBuiltInsPackage();
+    }
+
     @Nullable
     public static Name getNameIfStandardType(@NotNull JetType type) {
         ClassifierDescriptor descriptor = type.getConstructor().getDeclarationDescriptor();
-        if (descriptor != null && descriptor.getContainingDeclaration() == KotlinBuiltIns.getInstance().getBuiltInsPackage()) {
+        if (descriptor != null && isInBuiltInsPackage(descriptor)) {
             return descriptor.getName();
         }
-
         return null;
     }
 }

@@ -16,40 +16,88 @@
 
 package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsPrefixOperation;
-import com.google.dart.compiler.backend.js.ast.JsUnaryOperator;
+import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.openapi.util.Pair;
 import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
 import org.jetbrains.jet.lang.types.lang.PrimitiveType;
 import org.jetbrains.jet.lexer.JetToken;
-import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPattern;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 import org.jetbrains.k2js.translate.operation.OperatorTable;
+import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 
 import java.util.List;
+import java.util.Map;
 
 public class PrimitiveUnaryOperationFIF extends CompositeFIF {
     public PrimitiveUnaryOperationFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);
 
-        for (PrimitiveType numberType : PrimitiveType.NUMBER_TYPES) {
-            DescriptorPredicate predicate = new MyDescriptorPredicate(new DescriptorPattern("jet", numberType.getTypeName().getName()));
-            for (Name name : OperatorConventions.UNARY_OPERATION_NAMES.values()) {
-                JetToken jetToken = OperatorConventions.UNARY_OPERATION_NAMES.inverse().get(name);
-                add(name.getName(), predicate, new MyFunctionIntrinsic(OperatorTable.getUnaryOperator(jetToken)));
+        DescriptorPredicate numberPredicate = new DescriptorPredicate() {
+            @Override
+            public boolean apply(@NotNull FunctionDescriptor descriptor) {
+                DeclarationDescriptor classDescriptor = descriptor.getContainingDeclaration();
+                if (!JsDescriptorUtils.isInBuiltInsPackage(classDescriptor)) {
+                    return false;
+                }
+                for (PrimitiveType type : PrimitiveType.NUMBER_TYPES) {
+                    if (type.getTypeName().equals(classDescriptor.getName())) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+
+        DescriptorPredicate predicate = new MyDescriptorPredicate(numberPredicate);
+        for (Map.Entry<JetToken, Name> entry : OperatorConventions.UNARY_OPERATION_NAMES.entrySet()) {
+            add(entry.getValue().getName(), predicate, new MyFunctionIntrinsic(OperatorTable.getUnaryOperator(entry.getKey())));
+        }
+
+        for (Map.Entry<JetToken, Name> entry : OperatorConventions.BINARY_OPERATION_NAMES.entrySet()) {
+            JsBinaryOperator operator = OperatorTable.getNullableBinaryOperator(entry.getKey());
+            if (operator != null) {
+                add(entry.getValue().getName(), numberPredicate, new PrimitiveBinaryOperationFunctionIntrinsic(operator));
             }
         }
-        add("not", new MyDescriptorPredicate(new DescriptorPattern("jet", "Boolean")),
-            new MyFunctionIntrinsic(OperatorTable.getUnaryOperator(JetTokens.EXCL)));
+
+        DescriptorPattern booleanPattern = new DescriptorPattern("jet", "Boolean");
+        add("or", booleanPattern, new PrimitiveBinaryOperationFunctionIntrinsic(JsBinaryOperator.OR));
+        add("and", booleanPattern, new PrimitiveBinaryOperationFunctionIntrinsic(JsBinaryOperator.AND));
+        add("xor", booleanPattern, new PrimitiveBinaryOperationFunctionIntrinsic(JsBinaryOperator.BIT_XOR));
+
+        add("not", new MyDescriptorPredicate(booleanPattern), new MyFunctionIntrinsic(JsUnaryOperator.NOT));
+
+        add("plus", new DescriptorPattern("jet", "String"), new PrimitiveBinaryOperationFunctionIntrinsic(JsBinaryOperator.ADD));
+    }
+
+    private static class PrimitiveBinaryOperationFunctionIntrinsic extends FunctionIntrinsic {
+        @NotNull
+        private final JsBinaryOperator operator;
+
+        private PrimitiveBinaryOperationFunctionIntrinsic(@NotNull JsBinaryOperator operator) {
+            this.operator = operator;
+        }
+
+        @NotNull
+        @Override
+        public JsExpression apply(
+                @Nullable JsExpression receiver,
+                @NotNull List<JsExpression> arguments,
+                @NotNull TranslationContext context
+        ) {
+            assert receiver != null;
+            assert arguments.size() == 1 : "Binary operator should have a receiver and one argument";
+            return new JsBinaryOperation(operator, receiver, arguments.get(0));
+        }
     }
 
     private static class MyFunctionIntrinsic extends FunctionIntrinsic {
@@ -71,16 +119,17 @@ public class PrimitiveUnaryOperationFIF extends CompositeFIF {
         }
     }
 
+    // todo eliminate this class
     private static class MyDescriptorPredicate implements DescriptorPredicate {
-        private final DescriptorPattern pattern;
+        private final DescriptorPredicate predicate;
 
-        private MyDescriptorPredicate(DescriptorPattern pattern) {
-            this.pattern = pattern;
+        private MyDescriptorPredicate(DescriptorPredicate pattern) {
+            this.predicate = pattern;
         }
 
         @Override
         public boolean apply(@NotNull FunctionDescriptor descriptor) {
-            return descriptor.getValueParameters().isEmpty() && pattern.apply(descriptor);
+            return descriptor.getValueParameters().isEmpty() && predicate.apply(descriptor);
         }
     }
 }

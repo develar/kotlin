@@ -33,7 +33,7 @@ import java.util.Map;
 public final class FunctionIntrinsics {
     public static final String ANY_MEMBER = "";
 
-    // member name -> descriptor name predicate : intrinsic
+    // member name -> descriptor predicate : intrinsic
     private static final MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics = new MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>>();
     private static final Iterable<Pair<DescriptorPredicate, FunctionIntrinsic>> anyIntrinsics;
 
@@ -85,8 +85,6 @@ public final class FunctionIntrinsics {
             }
         }
 
-        // todo register this fif in intrinsics
-        FunctionIntrinsic intrinsic = PrimitiveBinaryOperationFIF.INSTANCE.getIntrinsic(descriptor);
-        return intrinsic != null ? intrinsic : FunctionIntrinsic.NO_INTRINSIC;
+        return FunctionIntrinsic.NO_INTRINSIC;
     }
 }

@@ -25,8 +25,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.lang.PrimitiveType;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 public final class NamePredicate implements Predicate<Name> {
@@ -43,22 +41,10 @@ public final class NamePredicate implements Predicate<Name> {
     @NotNull
     private final List<Name> validNames = Lists.newArrayList();
 
-    public NamePredicate(@NotNull String... validNames) {
-        this(Arrays.asList(validNames));
-    }
-
     public NamePredicate(@NotNull List<String> validNames) {
         for (String validName : validNames) {
             this.validNames.add(Name.guess(validName));
         }
-    }
-
-    public NamePredicate(@NotNull Collection<Name> validNames) {
-        this.validNames.addAll(validNames);
-    }
-
-    public NamePredicate(@NotNull Name... validNames) {
-        this.validNames.addAll(Lists.newArrayList(validNames));
     }
 
     @Override

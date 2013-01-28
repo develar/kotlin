@@ -16,48 +16,27 @@
 
 package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
-import com.google.common.collect.Sets;
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.util.AstUtil;
 import com.intellij.openapi.util.Pair;
 import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.k2js.translate.context.Namer;
+import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.intrinsic.functions.FunctionIntrinsics;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
+import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPattern;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
-import org.jetbrains.k2js.translate.intrinsic.functions.patterns.NamePredicate;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 import static org.jetbrains.jet.lang.types.expressions.OperatorConventions.*;
-import static org.jetbrains.k2js.translate.intrinsic.functions.patterns.PatternBuilder.pattern;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.subtract;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
 
 public final class NumberConversionFIF extends CompositeFIF {
-    @NotNull
-    private static final NamePredicate SUPPORTED_CONVERSIONS;
-
-    static {
-        Set<Name> supportedConversions = Sets.newHashSet(NUMBER_CONVERSIONS);
-        //TODO: support longs and chars
-        supportedConversions.remove(CHAR);
-        supportedConversions.remove(LONG);
-        SUPPORTED_CONVERSIONS = new NamePredicate(supportedConversions);
-    }
-
-    @NotNull
-    private static final NamePredicate FLOATING_POINT_CONVERSIONS = new NamePredicate(FLOAT, DOUBLE);
-
-    @NotNull
-    private static final NamePredicate INTEGER_CONVERSIONS = new NamePredicate(INT, SHORT, BYTE);
-
     @NotNull
     private static final FunctionIntrinsic RETURN_RECEIVER = new FunctionIntrinsic() {
         @NotNull
@@ -72,10 +51,39 @@ public final class NumberConversionFIF extends CompositeFIF {
     };
 
     @NotNull
-    public static final String INTEGER_NUMBER_TYPES = "Int|Byte|Short";
-    //NOTE: treat Number as if it is floating point type
+    private static final FunctionIntrinsic INTEGER_DIVISION_INTRINSIC = new FunctionIntrinsic() {
+        @NotNull
+        @Override
+        public JsExpression apply(@Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context) {
+            assert receiver != null;
+            TemporaryVariable left = context.declareTemporary(receiver);
+            assert arguments.size() == 1;
+            TemporaryVariable right = context.declareTemporary(arguments.get(0));
+            JsBinaryOperation divRes = new JsBinaryOperation(JsBinaryOperator.DIV, left.reference(), right.reference());
+            JsBinaryOperation modRes = new JsBinaryOperation(JsBinaryOperator.MOD, left.reference(), right.reference());
+            JsBinaryOperation fractionalPart = new JsBinaryOperation(JsBinaryOperator.DIV, modRes, right.reference());
+            return AstUtil.newSequence(left.assignmentExpression(), right.assignmentExpression(), subtract(divRes, fractionalPart));
+        }
+    };
+
     @NotNull
-    private static final String FLOATING_POINT_NUMBER_TYPES = "Float|Double|Number";
+    private static final FunctionIntrinsic RANGE_TO_INTRINSIC = new FunctionIntrinsic() {
+
+        @NotNull
+        @Override
+        public JsExpression apply(@Nullable JsExpression rangeStart, @NotNull List<JsExpression> arguments,
+                @NotNull TranslationContext context) {
+            assert arguments.size() == 1 : "RangeTo must have one argument.";
+            assert rangeStart != null;
+            JsExpression rangeEnd = arguments.get(0);
+            JsBinaryOperation rangeSize = sum(subtract(rangeEnd, rangeStart), context.program().getNumberLiteral(1));
+            JsExpression nameRef = Namer.kotlin("NumberRange");
+            //TODO: add tests and correct expression for reversed ranges.
+            List<JsExpression> args = Arrays.asList(rangeStart, rangeSize, /*range is not reversed*/JsLiteral.FALSE);
+            return context.isEcma5() ? new JsInvocation(nameRef, args) : new JsNew(nameRef, args);
+        }
+    };
+
     @NotNull
     private static final FunctionIntrinsic GET_INTEGER_PART = new FunctionIntrinsic() {
         @NotNull
@@ -95,8 +103,30 @@ public final class NumberConversionFIF extends CompositeFIF {
     public NumberConversionFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);
 
-        add(FunctionIntrinsics.ANY_MEMBER, pattern(INTEGER_NUMBER_TYPES, SUPPORTED_CONVERSIONS), RETURN_RECEIVER);
-        add(FunctionIntrinsics.ANY_MEMBER, pattern(FLOATING_POINT_NUMBER_TYPES, INTEGER_CONVERSIONS), GET_INTEGER_PART);
-        add(FunctionIntrinsics.ANY_MEMBER, pattern(FLOATING_POINT_NUMBER_TYPES, FLOATING_POINT_CONVERSIONS), RETURN_RECEIVER);
+        for (String typeName : new String[] {"Int", "Byte", "Short"}) {
+            DescriptorPattern packagePattern = new DescriptorPattern("jet", typeName);
+            for (Name conversionMethodName : NUMBER_CONVERSIONS) {
+                add(conversionMethodName.getName(), packagePattern, RETURN_RECEIVER);
+            }
+            add(CHAR.getName(), packagePattern, RETURN_RECEIVER);
+            add(LONG.getName(), packagePattern, RETURN_RECEIVER);
+
+            add("div", packagePattern, INTEGER_DIVISION_INTRINSIC);
+            add("rangeTo", packagePattern, RANGE_TO_INTRINSIC);
+        }
+
+        Name[] integerConversions = {INT, SHORT, BYTE};
+        for (String typeName : new String[] {"Float", "Double", "Number"}) {
+            DescriptorPattern packagePattern = new DescriptorPattern("jet", typeName);
+
+            for (Name conversionMethodName : integerConversions) {
+                add(conversionMethodName.getName(), packagePattern, GET_INTEGER_PART);
+            }
+
+            add(FLOAT.getName(), packagePattern, RETURN_RECEIVER);
+            add(DOUBLE.getName(), packagePattern, RETURN_RECEIVER);
+
+            add("rangeTo", packagePattern, RANGE_TO_INTRINSIC);
+        }
     }
 }
