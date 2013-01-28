@@ -90,10 +90,14 @@ public final class WhenTranslator extends AbstractTranslator {
 
         JsIf prevIf = null;
         for (JetWhenEntry entry : whenExpression.getEntries()) {
-            final JsStatement statement = withReturnValueCaptured(translateEntryExpression(entry));
+            JsStatement statement = withReturnValueCaptured(translateEntryExpression(entry));
             if (entry.isElse()) {
-                assert prevIf != null;
-                prevIf.setElseStatement(statement);
+                if (prevIf == null) {
+                    statements.add(statement);
+                }
+                else {
+                    prevIf.setElseStatement(statement);
+                }
                 break;
             }
 
