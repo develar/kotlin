@@ -1362,8 +1362,7 @@ public class DescriptorResolver {
         while (descriptor != null) {
             if (descriptor instanceof ClassDescriptor) {
                 ClassDescriptor classDescriptor = (ClassDescriptor) descriptor;
-                // todo KT-3284
-                if (((ClassDescriptor) descriptor).getKind().isObject() || isSubclass(classDescriptor, target)) {
+                if (isSubclass(classDescriptor, target)) {
                     return true;
                 }
                 if (isStaticNestedClass(classDescriptor)) {

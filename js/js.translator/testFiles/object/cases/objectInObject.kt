@@ -11,7 +11,7 @@ object B {
 
 class C {
   fun ov() = "d"
-  object query {val status = "complete" + ov()}
+  val query = object {val status = "complete" + ov()}
 }
 
 fun box() =  A.query.status == "complete" && B.query.status == "completed" && C().query.status == "completed"
