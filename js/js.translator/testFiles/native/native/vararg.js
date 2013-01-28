@@ -18,6 +18,12 @@ function paramCount() {
     return arguments.length;
 }
 
-function console_log() {
-    return Array.prototype.join.call(arguments, ",");
-}
+var testConsole = {
+    myProperty: 42,
+    log: function () {
+        if (this.myProperty != 42) {
+            throw new Error("this is not correct");
+        }
+        return Array.prototype.join.call(arguments, ",");
+    }
+};

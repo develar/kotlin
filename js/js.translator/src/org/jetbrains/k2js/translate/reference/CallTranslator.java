@@ -158,12 +158,16 @@ public final class CallTranslator extends AbstractTranslator {
             @NotNull
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
-                JsExpression qualifiedCallee = getQualifiedCallee(receiver);
+                JsExpression qualifiedCallee = callParameters.getFunctionReference();
+                if (receiver != null) {
+                    setQualifier(qualifiedCallee, receiver);
+                }
+
                 if (isDirectPropertyAccess()) {
                     return directPropertyAccess(qualifiedCallee);
                 }
                 if (callParameters.invokeAsApply()) {
-                    return new JsInvocation(new JsNameRef("apply", qualifiedCallee), TranslationUtils.generateInvocationArguments(JsLiteral.NULL, arguments));
+                    return new JsInvocation(new JsNameRef("apply", qualifiedCallee), TranslationUtils.generateInvocationArguments(receiver == null ? JsLiteral.NULL : receiver, arguments));
                 }
                 return new JsInvocation(qualifiedCallee, arguments);
             }
@@ -191,15 +195,6 @@ public final class CallTranslator extends AbstractTranslator {
     private boolean isObjectAccessor(@NotNull PropertyAccessorDescriptor propertyAccessorDescriptor) {
         PropertyDescriptor correspondingProperty = propertyAccessorDescriptor.getCorrespondingProperty();
         return isObjectDeclaration(bindingContext(), correspondingProperty);
-    }
-
-    @NotNull
-    private JsExpression getQualifiedCallee(@Nullable JsExpression receiver) {
-        JsExpression callee = callParameters.getFunctionReference();
-        if (receiver != null) {
-            setQualifier(callee, receiver);
-        }
-        return callee;
     }
 
     @Nullable

@@ -1,12 +1,15 @@
 package foo
 
-native fun console_log(vararg message: Any): String = noImpl
+native object testConsole {
+    native fun log(vararg message: Any): String = noImpl
+}
+
 native fun paramCount(vararg a: Int): Int = noImpl
 
 fun count(vararg a: Int) = a.size
 
-fun debug(vararg message: Any) = console_log(message)
-fun info(message: String) = console_log(message)
+fun debug(vararg message: Any) = testConsole.log(message)
+fun info(message: String) = testConsole.log(message)
 
 fun box(): Boolean {
     if (paramCount(1, 2, 3) != 3) {
