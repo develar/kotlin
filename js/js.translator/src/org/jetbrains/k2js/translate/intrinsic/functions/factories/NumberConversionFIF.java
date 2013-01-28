@@ -16,25 +16,27 @@
 
 package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
-import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
+import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.google.dart.compiler.util.AstUtil;
 import com.intellij.openapi.util.Pair;
 import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPattern;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredicate;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.jetbrains.jet.lang.types.expressions.OperatorConventions.*;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.subtract;
 
 public final class NumberConversionFIF extends CompositeFIF {
     @NotNull
@@ -67,24 +69,6 @@ public final class NumberConversionFIF extends CompositeFIF {
     };
 
     @NotNull
-    private static final FunctionIntrinsic RANGE_TO_INTRINSIC = new FunctionIntrinsic() {
-
-        @NotNull
-        @Override
-        public JsExpression apply(@Nullable JsExpression rangeStart, @NotNull List<JsExpression> arguments,
-                @NotNull TranslationContext context) {
-            assert arguments.size() == 1 : "RangeTo must have one argument.";
-            assert rangeStart != null;
-            JsExpression rangeEnd = arguments.get(0);
-            JsBinaryOperation rangeSize = sum(subtract(rangeEnd, rangeStart), context.program().getNumberLiteral(1));
-            JsExpression nameRef = Namer.kotlin("NumberRange");
-            //TODO: add tests and correct expression for reversed ranges.
-            List<JsExpression> args = Arrays.asList(rangeStart, rangeSize, /*range is not reversed*/JsLiteral.FALSE);
-            return context.isEcma5() ? new JsInvocation(nameRef, args) : new JsNew(nameRef, args);
-        }
-    };
-
-    @NotNull
     private static final FunctionIntrinsic GET_INTEGER_PART = new FunctionIntrinsic() {
         @NotNull
         @Override
@@ -112,7 +96,6 @@ public final class NumberConversionFIF extends CompositeFIF {
             add(LONG.getName(), packagePattern, RETURN_RECEIVER);
 
             add("div", packagePattern, INTEGER_DIVISION_INTRINSIC);
-            add("rangeTo", packagePattern, RANGE_TO_INTRINSIC);
         }
 
         Name[] integerConversions = {INT, SHORT, BYTE};
@@ -125,8 +108,6 @@ public final class NumberConversionFIF extends CompositeFIF {
 
             add(FLOAT.getName(), packagePattern, RETURN_RECEIVER);
             add(DOUBLE.getName(), packagePattern, RETURN_RECEIVER);
-
-            add("rangeTo", packagePattern, RANGE_TO_INTRINSIC);
         }
     }
 }

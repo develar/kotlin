@@ -27,6 +27,8 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
 import org.jetbrains.jet.lang.types.lang.PrimitiveType;
 import org.jetbrains.jet.lexer.JetToken;
+import org.jetbrains.jet.lexer.JetTokens;
+import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPattern;
@@ -34,10 +36,30 @@ import org.jetbrains.k2js.translate.intrinsic.functions.patterns.DescriptorPredi
 import org.jetbrains.k2js.translate.operation.OperatorTable;
 import org.jetbrains.k2js.translate.utils.JsDescriptorUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.subtract;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.sum;
+
 public class PrimitiveUnaryOperationFIF extends CompositeFIF {
+    private static final FunctionIntrinsic RANGE_TO_INTRINSIC = new FunctionIntrinsic() {
+        @NotNull
+        @Override
+        public JsExpression apply(@Nullable JsExpression rangeStart, @NotNull List<JsExpression> arguments,
+                @NotNull TranslationContext context) {
+            assert arguments.size() == 1 : "RangeTo must have one argument.";
+            assert rangeStart != null;
+            JsExpression rangeEnd = arguments.get(0);
+            JsBinaryOperation rangeSize = sum(subtract(rangeEnd, rangeStart), context.program().getNumberLiteral(1));
+            JsExpression nameRef = Namer.kotlin("NumberRange");
+            //TODO: add tests and correct expression for reversed ranges.
+            List<JsExpression> args = Arrays.asList(rangeStart, rangeSize, /*range is not reversed*/JsLiteral.FALSE);
+            return context.isEcma5() ? new JsInvocation(nameRef, args) : new JsNew(nameRef, args);
+        }
+    };
+
     public PrimitiveUnaryOperationFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);
 
@@ -63,10 +85,20 @@ public class PrimitiveUnaryOperationFIF extends CompositeFIF {
         }
 
         for (Map.Entry<JetToken, Name> entry : OperatorConventions.BINARY_OPERATION_NAMES.entrySet()) {
-            JsBinaryOperator operator = OperatorTable.getNullableBinaryOperator(entry.getKey());
+            JetToken token = entry.getKey();
+            JsBinaryOperator operator = OperatorTable.getNullableBinaryOperator(token);
+            FunctionIntrinsic intrinsic;
             if (operator != null) {
-                add(entry.getValue().getName(), numberPredicate, new PrimitiveBinaryOperationFunctionIntrinsic(operator));
+                intrinsic = new PrimitiveBinaryOperationFunctionIntrinsic(operator);
             }
+            else if (token == JetTokens.RANGE) {
+                intrinsic = RANGE_TO_INTRINSIC;
+            }
+            else {
+                continue;
+            }
+
+            add(entry.getValue().getName(), numberPredicate, intrinsic);
         }
 
         DescriptorPattern booleanPattern = new DescriptorPattern("jet", "Boolean");
