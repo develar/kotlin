@@ -20,8 +20,9 @@ import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.text.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
@@ -29,15 +30,11 @@ import org.jetbrains.jet.plugin.JetPluginUtil;
 
 import javax.swing.event.HyperlinkEvent;
 
-public class OutdatedKotlinRuntimeNotification extends AbstractProjectComponent {
+public class OutdatedKotlinRuntimeNotification implements StartupActivity, DumbAware {
     private static final String SUPPRESSED_PROPERTY_NAME = "oudtdated.runtime.suppressed.plugin.version";
 
-    public OutdatedKotlinRuntimeNotification(final Project project) {
-        super(project);
-    }
-
     @Override
-    public void projectOpened() {
+    public void runActivity(final Project myProject) {
         if (ApplicationManager.getApplication().isInternal()) return;
         String runtimeVersion = KotlinRuntimeLibraryUtil.getRuntimeVersion(myProject);
         final String pluginVersion = JetPluginUtil.getPluginVersion();

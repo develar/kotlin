@@ -235,7 +235,7 @@
                      serviceImplementation="org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager"/>
 
       <postStartupActivity implementation="org.jetbrains.jet.plugin.compiler.JetCompilerManager"/>
-      <postStartupActivity implementation="org.jetbrains.jet.plugin.OutdatedKotlinRuntimeNotification"/>
+      <postStartupActivity implementation="org.jetbrains.jet.plugin.versions.OutdatedKotlinRuntimeNotification"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerUpdater"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.BuiltInsInitializer"/>
       <postStartupActivity implementation="org.jetbrains.jet.plugin.highlighter.DeclarationHintSupport"/>
