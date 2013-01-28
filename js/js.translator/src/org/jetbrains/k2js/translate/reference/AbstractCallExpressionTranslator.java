@@ -99,7 +99,8 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
                 JetExpression expression = arguments.get(0).getArgumentExpression();
                 if (expression instanceof JetReferenceExpression) {
                     DeclarationDescriptor referenceTarget = BindingContextUtils.getNotNull(bindingContext(), BindingContext.REFERENCE_TARGET, (JetReferenceExpression) expression);
-                    if (referenceTarget instanceof ValueParameterDescriptor) {
+                    if (referenceTarget instanceof ValueParameterDescriptor &&
+                        ((ValueParameterDescriptor) referenceTarget).getVarargElementType() != null) {
                         result.add(Translation.translateAsExpression(expression, context()));
                         return true;
                     }
