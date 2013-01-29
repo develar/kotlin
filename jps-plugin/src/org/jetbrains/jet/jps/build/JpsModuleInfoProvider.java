@@ -120,9 +120,9 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
             if (buildTarget.getId().equals(name)) {
                 List<BuildRootDescriptor> roots = buildRootIndex.getTargetRoots(buildTarget, context);
                 for (BuildRootDescriptor root : roots) {
-                    final FileFilter fileFilter = root.createFileFilter(context.getProjectDescriptor());
+                    final FileFilter fileFilter = root.createFileFilter();
                     //noinspection UnnecessaryFullyQualifiedName
-                    FileUtil.processFilesRecursively(root.getRootFile(), new com.intellij.util.Processor<File>() {
+                    FileUtil.processFilesRecursively(root.getRootFile(), new Processor<File>() {
                         @Override
                         public boolean process(File file) {
                             if (fileFilter.accept(file)) {

@@ -23,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.builders.*;
 import org.jetbrains.jps.builders.impl.BuildRootDescriptorImpl;
 import org.jetbrains.jps.builders.storage.BuildDataPaths;
-import org.jetbrains.jps.cmdline.ProjectDescriptor;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.indices.IgnoredFileIndex;
 import org.jetbrains.jps.indices.ModuleExcludeIndex;
@@ -138,8 +137,9 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
             super(target, JpsPathUtil.urlToFile(sourceRoot.getUrl()), true);
         }
 
+        @NotNull
         @Override
-        public FileFilter createFileFilter(@NotNull ProjectDescriptor descriptor) {
+        public FileFilter createFileFilter() {
             return KotlinSourceFileCollector.KOTLIN_SOURCES_FILTER;
         }
     }
