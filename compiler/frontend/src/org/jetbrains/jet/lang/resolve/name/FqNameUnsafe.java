@@ -17,7 +17,6 @@
 package org.jetbrains.jet.lang.resolve.name;
 
 import com.google.common.collect.Lists;
-import com.intellij.util.PairConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -162,13 +161,17 @@ public class FqNameUnsafe extends FqNameBase {
         }
     }
 
+    interface WalkCallback {
+        void segment(@NotNull Name shortName, @NotNull FqNameUnsafe fqName);
+    }
+
     @NotNull
     public List<FqNameUnsafe> path() {
         final List<FqNameUnsafe> path = Lists.newArrayList();
         path.add(FqName.ROOT.toUnsafe());
-        walk(new PairConsumer<Name, FqNameUnsafe>() {
+        walk(new WalkCallback() {
             @Override
-            public void consume(@NotNull Name shortName, @NotNull FqNameUnsafe fqName) {
+            public void segment(@NotNull Name shortName, @NotNull FqNameUnsafe fqName) {
                 path.add(fqName);
             }
         });
@@ -178,9 +181,9 @@ public class FqNameUnsafe extends FqNameBase {
     @NotNull
     public List<Name> pathSegments() {
         final List<Name> path = Lists.newArrayList();
-        walk(new PairConsumer<Name, FqNameUnsafe>() {
+        walk(new WalkCallback() {
             @Override
-            public void consume(@NotNull Name shortName, @NotNull FqNameUnsafe fqName) {
+            public void segment(@NotNull Name shortName, @NotNull FqNameUnsafe fqName) {
                 path.add(shortName);
             }
         });
@@ -188,7 +191,7 @@ public class FqNameUnsafe extends FqNameBase {
     }
 
 
-    void walk(@NotNull PairConsumer<Name, FqNameUnsafe> callback) {
+    void walk(@NotNull WalkCallback callback) {
         if (isRoot()) {
             return;
         }
@@ -202,13 +205,13 @@ public class FqNameUnsafe extends FqNameBase {
             if (this.shortName == null) {
                 this.shortName = Name.guess(fqName);
             }
-            callback.consume(shortName, this);
+            callback.segment(shortName, this);
             return;
         }
 
         Name firstSegment = Name.guess(fqName.substring(0, pos));
         FqNameUnsafe last = new FqNameUnsafe(firstSegment.getName(), FqName.ROOT.toUnsafe(), firstSegment);
-        callback.consume(firstSegment, last);
+        callback.segment(firstSegment, last);
 
         while (true) {
             int next = fqName.indexOf('.', pos + 1);
@@ -220,13 +223,13 @@ public class FqNameUnsafe extends FqNameBase {
                 if (this.shortName == null) {
                     this.shortName = shortName;
                 }
-                callback.consume(shortName, this);
+                callback.segment(shortName, this);
                 return;
             }
 
             Name shortName = Name.guess(fqName.substring(pos + 1, next));
             last = new FqNameUnsafe(fqName.substring(0, next), last, shortName);
-            callback.consume(shortName, last);
+            callback.segment(shortName, last);
 
             pos = next;
         }

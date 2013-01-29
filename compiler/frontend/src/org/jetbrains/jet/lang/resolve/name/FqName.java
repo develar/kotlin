@@ -18,7 +18,6 @@ package org.jetbrains.jet.lang.resolve.name;
 
 import com.google.common.collect.Lists;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.util.PairConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -126,9 +125,9 @@ public class FqName extends FqNameBase {
     public List<FqName> path() {
         final List<FqName> path = Lists.newArrayList();
         path.add(ROOT);
-        fqName.walk(new PairConsumer<Name, FqNameUnsafe>() {
+        fqName.walk(new FqNameUnsafe.WalkCallback() {
             @Override
-            public void consume(@NotNull Name shortName, @NotNull FqNameUnsafe fqName) {
+            public void segment(@NotNull Name shortName, @NotNull FqNameUnsafe fqName) {
                 // TODO: do not validate
                 path.add(new FqName(fqName));
             }
