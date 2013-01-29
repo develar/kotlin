@@ -106,14 +106,17 @@ public class WriteThroughScope extends WritableScopeWithImports {
     }
 
     @Override
-    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
         checkMayRead();
 
         // todo should we stop if found (as in prev implementation)?
-        writableWorker.processNamespaces(name, processor);
-        getWorkerScope().processNamespaces(name, processor);
-        super.processNamespaces(name, processor);
-        return processor;
+        if (!writableWorker.processNamespaces(name, processor)) {
+            return false;
+        }
+        if (!getWorkerScope().processNamespaces(name, processor)) {
+            return false;
+        }
+        return super.processNamespaces(name, processor);
     }
 
     @Override

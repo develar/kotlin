@@ -72,12 +72,12 @@ public abstract class JavaPackageScope extends JavaBaseScope {
     }
 
     @Override
-    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
         NamespaceDescriptor descriptor = getResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
         if (descriptor != null) {
-            processor.process(descriptor);
+            return processor.process(descriptor);
         }
-        return processor;
+        return true;
     }
 
     @NotNull

@@ -19,7 +19,6 @@ package org.jetbrains.jet.types;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.JetLiteFixture;
@@ -622,8 +621,7 @@ public class JetTypeCheckerTest extends JetLiteFixture {
                 getEnvironment()
         );
 
-        NamespaceDescriptor testData = moduleDescriptor.getRootNamespace().getMemberScope()
-                .processNamespaces(Name.identifier("testData"), new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
+        NamespaceDescriptor testData = JetScopeUtils.findFirst(moduleDescriptor.getRootNamespace().getMemberScope(), Name.identifier("testData"));
         return addImports(testData.getMemberScope());
     }
 

@@ -197,13 +197,15 @@ public abstract class WritableScopeWithImports extends JetScopeAdapter implement
     }
 
     @Override
-    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
         checkMayRead();
 
         for (JetScope imported : imports) {
-            imported.processNamespaces(name, processor);
+            if (!imported.processNamespaces(name, processor)) {
+                return false;
+            }
         }
-        return processor;
+        return true;
     }
 
     private WritableScope getCurrentIndividualImportScope() {

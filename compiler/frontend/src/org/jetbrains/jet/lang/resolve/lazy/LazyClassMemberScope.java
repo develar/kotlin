@@ -314,8 +314,8 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
     }
 
     @Override
-    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
-        return processor;
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
+        return true;
     }
 
     @NotNull

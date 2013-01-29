@@ -70,9 +70,9 @@ public class ErrorUtils {
         }
 
         @Override
-        public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+        public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
             // TODO : review
-            return processor;
+            return true;
         }
 
         @NotNull

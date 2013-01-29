@@ -26,7 +26,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiFileFactory;
-import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import com.intellij.util.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +47,7 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
+import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.plugin.JetFileType;
@@ -313,7 +313,7 @@ public class KotlinBuiltIns {
 
     @NotNull
     public NamespaceDescriptor getBuiltInsPackage() {
-        NamespaceDescriptor namespace = getBuiltInsModule().getRootNamespace().getMemberScope().processNamespaces(BUILT_INS_PACKAGE_NAME, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
+        NamespaceDescriptor namespace = JetScopeUtils.findFirst(getBuiltInsModule().getRootNamespace().getMemberScope(), BUILT_INS_PACKAGE_NAME);
         assert namespace != null : "Built ins namespace not found: " + BUILT_INS_PACKAGE_NAME;
         return namespace;
     }

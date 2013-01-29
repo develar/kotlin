@@ -18,7 +18,6 @@ package org.jetbrains.jet.lang.resolve.lazy;
 
 import com.google.common.collect.Lists;
 import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.KotlinTestWithEnvironmentManagement;
@@ -29,6 +28,7 @@ import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 import org.jetbrains.jet.test.util.NamespaceComparator;
 
 import java.io.File;
@@ -57,8 +57,8 @@ public class LazyResolveStdlibLoadingTest extends KotlinTestWithEnvironmentManag
         ModuleDescriptor lazyModule = LazyResolveTestUtil.resolveLazily(files, stdlibEnvironment);
 
         for (Name name : namespaceShortNames) {
-            NamespaceDescriptor eager = module.getRootNamespace().getMemberScope().processNamespaces(name, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
-            NamespaceDescriptor lazy = lazyModule.getRootNamespace().getMemberScope().processNamespaces(name, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
+            NamespaceDescriptor eager = JetScopeUtils.findFirst(module.getRootNamespace().getMemberScope(), name);
+            NamespaceDescriptor lazy = JetScopeUtils.findFirst(lazyModule.getRootNamespace().getMemberScope(), name);
             NamespaceComparator.compareNamespaces(eager, lazy, NamespaceComparator.RECURSIVE, null);
         }
     }

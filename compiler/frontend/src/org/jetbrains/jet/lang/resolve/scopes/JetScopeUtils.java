@@ -20,10 +20,14 @@ import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 
 import java.util.Collection;
@@ -66,5 +70,12 @@ public final class JetScopeUtils {
         }
 
         return result;
+    }
+
+    @Nullable
+    public static NamespaceDescriptor findFirst(@NotNull JetScope scope, @NotNull Name name) {
+        FindFirstProcessor<NamespaceDescriptor> processor = new FindFirstProcessor<NamespaceDescriptor>();
+        scope.processNamespaces(name, processor);
+        return processor.getFoundValue();
     }
 }

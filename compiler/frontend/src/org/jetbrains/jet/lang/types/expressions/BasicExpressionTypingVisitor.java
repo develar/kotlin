@@ -22,7 +22,6 @@ import com.google.common.collect.Multimap;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
-import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.JetNodeTypes;
@@ -38,13 +37,9 @@ import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResults;
 import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResultsUtil;
 import org.jetbrains.jet.lang.resolve.calls.util.CallMaker;
 import org.jetbrains.jet.lang.resolve.constants.*;
-import org.jetbrains.jet.lang.resolve.constants.StringValue;
 import org.jetbrains.jet.lang.resolve.name.LabelName;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.ChainedScope;
-import org.jetbrains.jet.lang.resolve.scopes.FilteringScope;
-import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.resolve.scopes.WritableScopeImpl;
+import org.jetbrains.jet.lang.resolve.scopes.*;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.*;
@@ -157,7 +152,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     @Nullable
     private NamespaceType lookupNamespaceType(@NotNull JetSimpleNameExpression expression, @NotNull ExpressionTypingContext context) {
         Name name = expression.getReferencedNameAsName();
-        NamespaceDescriptor namespace = context.scope.processNamespaces(name, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
+        NamespaceDescriptor namespace = JetScopeUtils.findFirst(context.scope, name);
         if (namespace  == null) {
             return null;
         }

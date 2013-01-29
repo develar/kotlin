@@ -69,11 +69,13 @@ public class ChainedScope implements JetScope {
     }
 
     @Override
-    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
         for (JetScope scope : scopeChain) {
-            scope.processNamespaces(name, processor);
+            if (!scope.processNamespaces(name, processor)) {
+                return false;
+            }
         }
-        return processor;
+        return true;
     }
 
     @NotNull

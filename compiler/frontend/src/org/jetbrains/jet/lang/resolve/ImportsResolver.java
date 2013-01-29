@@ -18,7 +18,6 @@ package org.jetbrains.jet.lang.resolve;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.intellij.util.CommonProcessors.FindFirstProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
@@ -29,6 +28,7 @@ import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
+import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 
 import javax.inject.Inject;
@@ -177,7 +177,7 @@ public class ImportsResolver {
             isResolved = namespaceScope.getLocalVariable(aliasName);
         }
         else if (wasResolved instanceof NamespaceDescriptor) {
-            isResolved = namespaceScope.processNamespaces(aliasName, new FindFirstProcessor<NamespaceDescriptor>()).getFoundValue();
+            isResolved = JetScopeUtils.findFirst(namespaceScope, aliasName);
         }
         if (isResolved != null && isResolved != wasResolved) {
             trace.report(USELESS_HIDDEN_IMPORT.on(importedReference));

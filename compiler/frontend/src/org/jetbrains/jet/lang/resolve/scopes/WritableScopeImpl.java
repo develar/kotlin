@@ -432,25 +432,23 @@ public class WritableScopeImpl extends WritableScopeWithImports {
     }
 
     @Override
-    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
         checkMayRead();
 
         NamespaceDescriptor declaredNamespace = getDeclaredNamespace(name);
         if (declaredNamespace != null) {
-            processor.process(declaredNamespace);
-            return processor;
+            return processor.process(declaredNamespace);
         }
 
         NamespaceDescriptor aliased = getNamespaceAliases().get(name);
         if (aliased != null) {
-            processor.process(aliased);
-            return processor;
+            return processor.process(aliased);
         }
 
-        getWorkerScope().processNamespaces(name, processor);
-        // todo should we stop if found (as in prev implementation)?
-        super.processNamespaces(name, processor);
-        return processor;
+        if (!getWorkerScope().processNamespaces(name, processor)) {
+            return false;
+        }
+        return super.processNamespaces(name, processor);
     }
 
     @Override

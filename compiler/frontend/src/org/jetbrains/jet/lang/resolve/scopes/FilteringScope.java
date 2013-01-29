@@ -50,17 +50,18 @@ public class FilteringScope extends JetScopeAdapter {
     }
 
     @Override
-    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull final P processor) {
-        super.processNamespaces(name, new Processor<NamespaceDescriptor>() {
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull final P processor) {
+        return super.processNamespaces(name, new Processor<NamespaceDescriptor>() {
             @Override
             public boolean process(NamespaceDescriptor descriptor) {
                 if (predicate.apply(descriptor)) {
-                    processor.process(descriptor);
+                    if (!processor.process(descriptor)) {
+                        return false;
+                    }
                 }
                 return true;
             }
         });
-        return processor;
     }
 
     @Override

@@ -52,7 +52,7 @@ public interface JetScope {
     @NotNull
     Collection<ClassDescriptor> getObjectDescriptors();
 
-    <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor);
+    <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor);
 
     @NotNull
     Collection<VariableDescriptor> getProperties(@NotNull Name name);

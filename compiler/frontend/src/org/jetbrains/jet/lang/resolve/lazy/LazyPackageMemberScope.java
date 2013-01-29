@@ -41,14 +41,13 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
     }
 
     @Override
-    public <P extends Processor<NamespaceDescriptor>> P processNamespaces(@NotNull Name name, @NotNull P processor) {
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
         NamespaceDescriptor known = packageDescriptors.get(name);
         if (known != null) {
-            processor.process(known);
-            return processor;
+            return processor.process(known);
         }
 
-        if (allDescriptorsComputed || !declarationProvider.isPackageDeclared(name)) return processor;
+        if (allDescriptorsComputed || !declarationProvider.isPackageDeclared(name)) return true;
 
         PackageMemberDeclarationProvider packageMemberDeclarationProvider =
                 resolveSession.getDeclarationProviderFactory().getPackageMemberDeclarationProvider(
@@ -60,8 +59,7 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
         packageDescriptors.put(name, namespaceDescriptor);
         allDescriptors.add(namespaceDescriptor);
 
-        processor.process(namespaceDescriptor);
-        return processor;
+        return processor.process(namespaceDescriptor);
     }
 
     @Override
