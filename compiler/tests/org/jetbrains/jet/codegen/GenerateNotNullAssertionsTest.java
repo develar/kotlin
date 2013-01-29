@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,14 @@ import org.jetbrains.jet.TestJdkKind;
 import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentUtil;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
-import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 
 import java.io.File;
+
+import static org.jetbrains.jet.codegen.CodegenTestUtil.compileJava;
+import static org.jetbrains.jet.codegen.CodegenTestUtil.generateFiles;
 
 public class GenerateNotNullAssertionsTest extends CodegenTestCase {
     @Override
@@ -55,7 +57,7 @@ public class GenerateNotNullAssertionsTest extends CodegenTestCase {
 
         setUpEnvironment(generateAssertions, false, javaClassesTempDirectory);
 
-        blackBoxMultiFile(false, "notNullAssertions/AssertionChecker.kt", ktFile);
+        blackBoxMultiFile("notNullAssertions/AssertionChecker.kt", ktFile);
     }
 
     public void testGenerateAssertions() throws Exception {
@@ -78,10 +80,10 @@ public class GenerateNotNullAssertionsTest extends CodegenTestCase {
         CompilerConfiguration configuration = JetTestUtils.compilerConfigurationForTests(
                 ConfigurationKind.JDK_ONLY, TestJdkKind.MOCK_JDK);
         JetCoreEnvironment tmpEnvironment = new JetCoreEnvironment(getTestRootDisposable(), configuration);
-        GenerationState state = generateCommon(ClassBuilderFactories.TEST, tmpEnvironment,
+        ClassFileFactory factory = generateFiles(tmpEnvironment,
                 CodegenTestFiles.create(tmpEnvironment.getProject(), new String[] {"notNullAssertions/noAssertionsForKotlin.kt"}));
         File compiledDirectory = new File(FileUtil.getTempDirectory(), "kotlin-classes");
-        CompileEnvironmentUtil.writeToOutputDirectory(state.getFactory(), compiledDirectory);
+        CompileEnvironmentUtil.writeToOutputDirectory(factory, compiledDirectory);
 
         setUpEnvironment(true, false, compiledDirectory);
 

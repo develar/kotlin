@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,8 @@ import org.jetbrains.jet.codegen.AbstractCheckLocalVariablesTableTest;
 import org.jetbrains.jet.codegen.AbstractDataClassCodegenTest;
 import org.jetbrains.jet.codegen.defaultConstructor.AbstractDefaultConstructorCodegenTest;
 import org.jetbrains.jet.codegen.flags.AbstractWriteFlagsTest;
-import org.jetbrains.jet.codegen.generated.AbstractCodegenTest;
-import org.jetbrains.jet.jvm.compiler.AbstractCompileJavaAgainstKotlinTest;
-import org.jetbrains.jet.jvm.compiler.AbstractCompileKotlinAgainstKotlinTest;
-import org.jetbrains.jet.jvm.compiler.AbstractCompileKotlinAgainstCustomJavaTest;
-import org.jetbrains.jet.jvm.compiler.AbstractLoadCompiledKotlinTest;
-import org.jetbrains.jet.jvm.compiler.AbstractLoadJavaTest;
+import org.jetbrains.jet.codegen.generated.AbstractBlackBoxCodegenTest;
+import org.jetbrains.jet.jvm.compiler.*;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveDescriptorRendererTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveNamespaceComparingTest;
 import org.jetbrains.jet.plugin.highlighter.AbstractDeprecatedHighlightingTest;
@@ -69,6 +65,20 @@ public class GenerateTests {
 
         generateTest(
                 "compiler/tests/",
+                "BlackBoxCodegenTestGenerated",
+                AbstractBlackBoxCodegenTest.class,
+                testModel("compiler/testData/codegen/box", "blackBoxFileByFullPath")
+        );
+
+        generateTest(
+                "compiler/tests/",
+                "BlackBoxWithJavaCodegenTestGenerated",
+                AbstractBlackBoxCodegenTest.class,
+                testModel("compiler/testData/codegen/boxWithJava", "blackBoxFileWithJavaByFullPath")
+        );
+
+        generateTest(
+                "compiler/tests/",
                 "DataClassCodegenTestGenerated",
                 AbstractDataClassCodegenTest.class,
                 testModel("compiler/testData/codegen/dataClasses", "blackBoxFileByFullPath")
@@ -79,27 +89,6 @@ public class GenerateTests {
                 "CheckLocalVariablesTableTestGenerated",
                 AbstractCheckLocalVariablesTableTest.class,
                 testModel("compiler/testData/checkLocalVariablesTable", "doTest")
-        );
-
-        generateTest(
-                "compiler/tests/",
-                "IntrinsicsTestGenerated",
-                AbstractCodegenTest.class,
-                testModel("compiler/testData/codegen/intrinsics", "blackBoxFileByFullPath")
-        );
-
-        generateTest(
-                "compiler/tests/",
-                "MultiDeclTestGenerated",
-                AbstractCodegenTest.class,
-                testModel("compiler/testData/codegen/multiDecl", "blackBoxFileByFullPath")
-        );
-
-        generateTest(
-                "compiler/tests/",
-                "VisibilityGenWithJavaTestGenerated",
-                AbstractCodegenTest.class,
-                testModel("compiler/testData/codegen/visibility/withJava/protected_static", "blackBoxFileWithJavaByFullPath")
         );
 
         generateTest(
@@ -116,47 +105,6 @@ public class GenerateTests {
                 testModel("compiler/testData/codegen/defaultArguments/reflection")
         );
 
-        generateTest(
-                "compiler/tests/",
-                "DefaultArgumentsBlackBoxTestGenerated",
-                AbstractCodegenTest.class,
-                testModel("compiler/testData/codegen/defaultArguments/blackBox")
-        );
-
-        generateTest(
-                "compiler/tests/",
-                "LabelGenTestGenerated",
-                AbstractCodegenTest.class,
-                testModel("compiler/testData/codegen/label")
-        );
-
-        generateTest(
-                "compiler/tests/",
-                "InnerNestedGenTestGenerated",
-                AbstractCodegenTest.class,
-                testModel("compiler/testData/codegen/innerNested")
-        );
-
-        generateTest(
-                "compiler/tests/",
-                "InstructionsTestGenerated",
-                AbstractCodegenTest.class,
-                testModel("compiler/testData/codegen/instructions")
-        );
-
-        generateTest(
-                "compiler/tests/",
-                "OperatorConventionsTestGenerated",
-                AbstractCodegenTest.class,
-                testModel("compiler/testData/codegen/operatorConventions")
-        );
-
-        generateTest(
-                "compiler/tests/",
-                "ExtensionPropertiesTestGenerated",
-                AbstractCodegenTest.class,
-                testModel("compiler/testData/codegen/extensionProperties")
-        );
 
         generateTest(
                 "compiler/tests/",
@@ -164,7 +112,6 @@ public class GenerateTests {
                 AbstractLoadCompiledKotlinTest.class,
                 testModel("compiler/testData/loadKotlin")
         );
-
 
         generateTest(
                 "compiler/tests/",

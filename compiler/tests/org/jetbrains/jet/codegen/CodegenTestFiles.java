@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,10 +80,6 @@ public class CodegenTestFiles {
     @NotNull
     public List<JetFile> getPsiFiles() {
         return psiFiles;
-    }
-
-    public boolean isScript() {
-        return psiFiles.size() == 1 && psiFiles.get(0).isScript();
     }
 
     public static CodegenTestFiles create(Project project, String[] names) {

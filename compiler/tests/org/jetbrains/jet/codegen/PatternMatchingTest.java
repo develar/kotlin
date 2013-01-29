@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package org.jetbrains.jet.codegen;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.ConfigurationKind;
 
 import java.lang.reflect.Method;
+
+import static org.jetbrains.jet.codegen.CodegenTestUtil.assertThrows;
 
 public class PatternMatchingTest extends CodegenTestCase {
     @Override
@@ -27,6 +30,7 @@ public class PatternMatchingTest extends CodegenTestCase {
         createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
     }
 
+    @NotNull
     @Override
     protected String getPrefix() {
         return "patternMatching";
@@ -64,22 +68,6 @@ public class PatternMatchingTest extends CodegenTestCase {
         assertEquals("something", foo.invoke(null, 19));
     }
 
-    public void testIs() {
-        blackBoxFile("patternMatching/is.kt");
-    }
-
-    public void testRange() {
-        blackBoxFile("patternMatching/range.kt");
-    }
-
-    public void testLongInRange() {
-        blackBoxFile("patternMatching/longInRange.kt");
-    }
-
-    public void testWhenArgumentIsEvaluatedOnlyOnce() {
-        blackBoxFile("patternMatching/whenArgumentIsEvaluatedOnlyOnce.kt");
-    }
-
     public void testRangeChar() throws Exception {
         loadFile();
         Method foo = generateFunction();
@@ -106,31 +94,11 @@ public class PatternMatchingTest extends CodegenTestCase {
         assertEquals("something", foo.invoke(null, "C#"));
     }
 
-    public void testCallProperty() {
-        blackBoxFile("patternMatching/callProperty.kt");
-    }
-
     public void testMultipleConditions() throws Exception {
         loadText("fun foo(x: Any) = when(x) { 0, 1 -> \"bit\"; else -> \"something\" }");
         Method foo = generateFunction();
         assertEquals("bit", foo.invoke(null, 0));
         assertEquals("bit", foo.invoke(null, 1));
         assertEquals("something", foo.invoke(null, 2));
-    }
-
-    public void testNullableWhen() {
-        blackBoxFile("patternMatching/nullableWhen.kt");
-    }
-
-    public void testKt2466() {
-        blackBoxFile("patternMatching/kt2466.kt");
-    }
-
-    public void testMatchNotNullAgainstNullable() {
-        blackBoxFile("patternMatching/matchNotNullAgainstNullable.kt");
-    }
-
-    public void testKt2457() {
-        blackBoxFile("regressions/kt2457.kt");
     }
 }

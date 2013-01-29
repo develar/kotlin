@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
 
 package org.jetbrains.jet.codegen;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.asm4.Opcodes;
 import org.jetbrains.jet.ConfigurationKind;
 
 import java.lang.reflect.*;
+
+import static org.jetbrains.jet.codegen.CodegenTestUtil.assertIsCurrentTime;
+import static org.jetbrains.jet.codegen.CodegenTestUtil.findDeclaredMethodByName;
 
 public class PropertyGenTest extends CodegenTestCase {
     @Override
@@ -28,6 +32,7 @@ public class PropertyGenTest extends CodegenTestCase {
         createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
     }
 
+    @NotNull
     @Override
     protected String getPrefix() {
         return "properties";
@@ -35,7 +40,7 @@ public class PropertyGenTest extends CodegenTestCase {
 
     public void testPrivateVal() throws Exception {
         loadFile();
-        final Class aClass = loadImplementationClass(generateClassesInFile(), "PrivateVal");
+        final Class aClass = generateClass("PrivateVal");
         final Field[] fields = aClass.getDeclaredFields();
         assertEquals(1, fields.length);  // prop
         final Field field = fields[0];
@@ -44,29 +49,29 @@ public class PropertyGenTest extends CodegenTestCase {
 
     public void testPrivateVar() throws Exception {
         loadFile();
-        final Class aClass = loadImplementationClass(generateClassesInFile(), "PrivateVar");
+        final Class aClass = generateClass("PrivateVar");
         final Object instance = aClass.newInstance();
-        Method setter = findMethodByName(aClass, "setValueOfX");
+        Method setter = findDeclaredMethodByName(aClass, "setValueOfX");
         setter.invoke(instance, 239);
-        Method getter = findMethodByName(aClass, "getValueOfX");
+        Method getter = findDeclaredMethodByName(aClass, "getValueOfX");
         assertEquals(239, ((Integer) getter.invoke(instance)).intValue());
     }
 
     public void testPublicVar() throws Exception {
         loadText("class PublicVar() { public var foo : Int = 0; }");
-        final Class aClass = loadImplementationClass(generateClassesInFile(), "PublicVar");
+        final Class aClass = generateClass("PublicVar");
         final Object instance = aClass.newInstance();
-        Method setter = findMethodByName(aClass, "setFoo");
+        Method setter = findDeclaredMethodByName(aClass, "setFoo");
         setter.invoke(instance, 239);
-        Method getter = findMethodByName(aClass, "getFoo");
+        Method getter = findDeclaredMethodByName(aClass, "getFoo");
         assertEquals(239, ((Integer) getter.invoke(instance)).intValue());
     }
 
     public void testAccessorsInInterface() {
         loadText("class AccessorsInInterface() { public var foo : Int = 0; }");
-        final Class aClass = loadClass("AccessorsInInterface", generateClassesInFile());
-        assertNotNull(findMethodByName(aClass, "getFoo"));
-        assertNotNull(findMethodByName(aClass, "setFoo"));
+        final Class aClass = generateClass("AccessorsInInterface");
+        assertNotNull(findDeclaredMethodByName(aClass, "getFoo"));
+        assertNotNull(findDeclaredMethodByName(aClass, "setFoo"));
     }
 
     public void testPrivatePropertyInNamespace() throws Exception {
@@ -116,16 +121,16 @@ public class PropertyGenTest extends CodegenTestCase {
 
     public void testAccessorsWithoutBody() throws Exception {
         loadText("class AccessorsWithoutBody() { protected var foo: Int = 349\n get\n  private set\n fun setter() { foo = 610; } } ");
-        final Class aClass = loadImplementationClass(generateClassesInFile(), "AccessorsWithoutBody");
+        final Class aClass = generateClass("AccessorsWithoutBody");
         final Object instance = aClass.newInstance();
-        final Method getFoo = findMethodByName(aClass, "getFoo");
+        final Method getFoo = findDeclaredMethodByName(aClass, "getFoo");
         getFoo.setAccessible(true);
         assertTrue((getFoo.getModifiers() & Modifier.PROTECTED) != 0);
         assertEquals(349, getFoo.invoke(instance));
-        final Method setFoo = findMethodByName(aClass, "setFoo");
+        final Method setFoo = findDeclaredMethodByName(aClass, "setFoo");
         setFoo.setAccessible(true);
         assertTrue((setFoo.getModifiers() & Modifier.PRIVATE) != 0);
-        final Method setter = findMethodByName(aClass,  "setter");
+        final Method setter = findDeclaredMethodByName(aClass, "setter");
         setter.invoke(instance);
         assertEquals(610, getFoo.invoke(instance));
     }
@@ -139,7 +144,7 @@ public class PropertyGenTest extends CodegenTestCase {
 
     public void testPropertyReceiverOnStack() throws Exception {
         loadFile();
-        final Class aClass = loadImplementationClass(generateClassesInFile(), "Evaluator");
+        final Class aClass = generateClass("Evaluator");
         final Constructor constructor = aClass.getConstructor(StringBuilder.class);
         StringBuilder sb = new StringBuilder("xyzzy");
         final Object instance = constructor.newInstance(sb);
@@ -150,25 +155,15 @@ public class PropertyGenTest extends CodegenTestCase {
 
     public void testAbstractVal() throws Exception {
         loadText("abstract class Foo { public abstract val x: String }");
-        final ClassFileFactory codegens = generateClassesInFile();
-        final Class aClass = loadClass("Foo", codegens);
+        final Class aClass = generateClass("Foo");
         assertNotNull(aClass.getMethod("getX"));
     }
 
     public void testVolatileProperty() throws Exception {
         loadText("abstract class Foo { public volatile var x: String = \"\"; }");
-        final ClassFileFactory codegens = generateClassesInFile();
-        final Class aClass = loadClass("Foo", codegens);
+        final Class aClass = generateClass("Foo");
         Field x = aClass.getDeclaredField("x");
         assertTrue((x.getModifiers() & Modifier.VOLATILE) != 0);
-    }
-
-    public void testKt257() {
-        blackBoxFile("regressions/kt257.kt");
-    }
-
-    public void testKt613() {
-        blackBoxFile("regressions/kt613.kt");
     }
 
     public void testKt160() throws Exception {
@@ -178,41 +173,9 @@ public class PropertyGenTest extends CodegenTestCase {
         assertEquals(method.invoke(null), "1.0");
     }
 
-    public void testKt1165() {
-        blackBoxFile("regressions/kt1165.kt");
-    }
-
-    public void testKt1168() {
-        blackBoxFile("regressions/kt1168.kt");
-    }
-
-    public void testKt1170() {
-        blackBoxFile("regressions/kt1170.kt");
-    }
-
-    public void testKt1159() {
-        blackBoxFile("regressions/kt1159.kt");
-    }
-
-    public void testKt1417() {
-        blackBoxFile("regressions/kt1417.kt");
-    }
-
-    public void testKt1398() {
-        blackBoxFile("regressions/kt1398.kt");
-    }
-
-    public void testKt2331() {
-        blackBoxFile("regressions/kt2331.kt");
-    }
-
-    public void testKt1892() {
-        blackBoxFile("regressions/kt1892.kt");
-    }
-
     public void testKt1846() {
         loadFile("regressions/kt1846.kt");
-        final Class aClass = loadImplementationClass(generateClassesInFile(), "A");
+        final Class aClass = generateClass("A");
         try {
             Method v1 = aClass.getMethod("getV1");
             System.out.println(generateToText());
@@ -230,33 +193,13 @@ public class PropertyGenTest extends CodegenTestCase {
         }
     }
 
-    public void testKt1482_2279() {
-        blackBoxFile("regressions/kt1482_2279.kt");
-    }
-
-    public void testKt1714() {
-        blackBoxFile("regressions/kt1714.kt");
-    }
-
-    public void testKt1714_minimal() {
-        blackBoxFile("regressions/kt1714_minimal.kt");
-    }
-
-    public void testKt2786() {
-        blackBoxFile("regressions/kt2786.kt");
-    }
-
-    public void testKt2655() {
-        blackBoxFile("regressions/kt2655.kt");
-    }
-
     public void testKt1528() {
         blackBoxMultiFile("regressions/kt1528_1.kt", "regressions/kt1528_3.kt");
     }
 
     public void testKt2589() {
         loadFile("regressions/kt2589.kt");
-        final Class aClass = loadImplementationClass(generateClassesInFile(), "Foo");
+        final Class aClass = generateClass("Foo");
         assertTrue((aClass.getModifiers() & Opcodes.ACC_FINAL) == 0);
 
         try {
@@ -284,7 +227,7 @@ public class PropertyGenTest extends CodegenTestCase {
 
     public void testKt2677() {
         loadFile("regressions/kt2677.kt");
-        final Class aClass = loadImplementationClass(generateClassesInFile(), "DerivedWeatherReport");
+        final Class aClass = generateClass("DerivedWeatherReport");
         final Class bClass = aClass.getSuperclass();
 
         try {
@@ -319,18 +262,6 @@ public class PropertyGenTest extends CodegenTestCase {
             System.out.println(generateToText());
             throw new RuntimeException(e);
         }
-    }
-
-    public void testKt2892() {
-        blackBoxFile("properties/kt2892.kt");
-    }
-
-    public void testAccessToPrivateProperty() {
-        blackBoxFile("properties/accessToPrivateProperty.kt");
-    }
-
-    public void testAccessToPrivateSetter() {
-        blackBoxFile("properties/accessToPrivateSetter.kt");
     }
 
     public void testKt2202() {

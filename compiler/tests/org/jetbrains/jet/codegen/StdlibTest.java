@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.codegen;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.TestJdkKind;
@@ -49,8 +50,9 @@ public class StdlibTest extends CodegenTestCase {
                 ConfigurationKind.ALL, TestJdkKind.FULL_JDK, JetTestUtils.getAnnotationsJar(), junitJar));
     }
 
+    @NotNull
     @Override
-    protected GeneratedClassLoader createClassLoader(ClassFileFactory codegens) {
+    protected GeneratedClassLoader createClassLoader(@NotNull ClassFileFactory codegens) {
         try {
             return new GeneratedClassLoader(
                     codegens,
@@ -77,10 +79,6 @@ public class StdlibTest extends CodegenTestCase {
         blackBoxFile("regressions/kt789.kt");
     }
 
-    public void testKt828 () {
-        blackBoxFile("regressions/kt828.kt");
-    }
-
     public void testKt715 () {
         blackBoxFile("regressions/kt715.kt");
     }
@@ -93,10 +91,8 @@ public class StdlibTest extends CodegenTestCase {
         blackBoxFile("regressions/kt274.kt");
     }
 
-    //from ClassGenTest
-    public void testKt344 () throws Exception {
-        loadFile("regressions/kt344.kt");
-        blackBox();
+    public void testKt344 () {
+        blackBoxFile("regressions/kt344.kt");
     }
 
     //from ExtensionFunctionsTest
@@ -356,16 +352,8 @@ public class StdlibTest extends CodegenTestCase {
         blackBoxFile("regressions/kt2246.kt");
     }
 
-    public void testKt2596() {
-        blackBoxFile("regressions/kt2596.kt");
-    }
-
     public void testCollections() {
         blackBoxFile("jdk-annotations/collections.kt");
-    }
-
-    public void testNoClassObjectForJavaClass() throws Exception {
-        blackBoxFileWithJava("stdlib/noClassObjectForJavaClass.kt");
     }
 
     public void testKt1076() {
@@ -374,5 +362,9 @@ public class StdlibTest extends CodegenTestCase {
 
     public void testKt1515() {
         blackBoxMultiFile("/multi/kt1515/thisPackage.kt", "/multi/kt1515/otherPackage.kt");
+    }
+
+    public void testTypeCastException() {
+        blackBoxFile("typeCastException.kt");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -272,39 +272,6 @@ public class PrimitiveTypesTest extends CodegenTestCase {
         assertEquals(expected, main.invoke(null, arg1, arg2));
     }
 
-    public void testEa35963() {
-        blackBoxFile("regressions/ea35963.kt");
-    }
-
-    public void testKt242 () throws Exception {
-        blackBoxFile("regressions/kt242.kt");
-    }
-
-    public void testKt239 () throws Exception {
-        blackBoxFile("regressions/kt239.kt");
-    }
-
-    public void testKt243 () throws Exception {
-        blackBoxFile("regressions/kt243.kt");
-    }
-
-    public void testKt248 () throws Exception {
-        blackBoxFile("regressions/kt248.kt");
-    }
-
-    public void testKt446 () throws Exception {
-        blackBoxFile("regressions/kt446.kt");
-    }
-
-    public void testKt518 () throws Exception {
-        blackBoxFile("regressions/kt518.kt");
-    }
-
-    public void testKt711 () throws Exception {
-        loadText("fun box() = if ((1 ?: 0) == 1) \"OK\" else \"fail\"");
-        blackBox();
-    }
-
     public void testSureNonnull () throws Exception {
         loadText("fun box() = 10!!.toString()");
         assertFalse(generateToText().contains("IFNONNULL"));
@@ -323,130 +290,5 @@ public class PrimitiveTypesTest extends CodegenTestCase {
     public void testSafeNullable () throws Exception {
         loadText("val a : Int? = 10; fun box() = a?.toString()");
         assertTrue(generateToText().contains("IFNULL"));
-    }
-
-    public void testKt737() throws Exception {
-        loadText("fun box() = if(3.compareTo(2) != 1) \"fail\" else if(5.toByte().compareTo(10.toLong()) >= 0) \"fail\" else \"OK\"");
-        blackBox();
-    }
-
-    public void testKt665() throws Exception {
-        loadText("fun f(x: Long, zzz: Long = 1): Long\n" +
-                 "{\n" +
-                 "    return if (x <= 1) zzz\n" +
-                 "    else f(x-1, x*zzz)\n" +
-                 "}\n" +
-                 "\n" +
-                 "fun box() : String\n" +
-                 "{\n" +
-                 "    val six: Long = 6;\n" +
-                 "    System.out?.println(f(six))\n" +
-                 "    return \"OK\"" +
-                 "}");
-        blackBox();
-    }
-
-    public void testKt752 () {
-        blackBoxFile("regressions/kt752.kt");
-    }
-
-    public void testKt753 () {
-        blackBoxFile("regressions/kt753.kt");
-    }
-
-    public void testKt684 () {
-        blackBoxFile("regressions/kt684.kt");
-    }
-
-    public void testKt756 () {
-        blackBoxFile("regressions/kt756.kt");
-    }
-
-    public void testKt757 () {
-        blackBoxFile("regressions/kt757.kt");
-    }
-
-    public void testKt877 () {
-        blackBoxFile("regressions/kt877.kt");
-    }
-
-    public void testKt882 () {
-        blackBoxFile("regressions/kt882.kt");
-    }
-
-    public void testKt887 () {
-        blackBoxFile("regressions/kt887.kt");
-    }
-
-    public void testKt821 () {
-        blackBoxFile("regressions/kt821.kt");
-    }
-
-    public void testKt925 () {
-        blackBoxFile("regressions/kt925.kt");
-    }
-
-    public void testKt765 () {
-        blackBoxFile("regressions/kt765.kt");
-    }
-
-    public void testKt944 () {
-        blackBoxFile("regressions/kt944.kt");
-    }
-
-    public void testKt945 () {
-        blackBoxFile("regressions/kt945.kt");
-    }
-
-    public void testKt935 () {
-        blackBoxFile("regressions/kt935.kt");
-    }
-
-    public void testKt1055 () {
-        blackBoxFile("regressions/kt1055.kt");
-    }
-
-    public void testKt1054 () {
-        blackBoxFile("regressions/kt1054.kt");
-    }
-
-    public void testKt1093 () {
-        blackBoxFile("regressions/kt1093.kt");
-    }
-
-    public void testKt1508 () {
-        blackBoxFile("regressions/kt1508.kt");
-    }
-
-    public void testKt1634() {
-        blackBoxFile("regressions/kt1634.kt");
-    }
-
-    public void testKt2269() {
-        blackBoxFile("regressions/kt2269.kt");
-    }
-
-    public void testKt2275() {
-        blackBoxFile("regressions/kt2275.kt");
-    }
-
-    public void testEmptyRanges() throws Exception {
-        blackBoxFile("emptyRanges.kt");
-    }
-
-    public void test2251() throws Exception {
-        blackBoxFile("regressions/kt2251.kt");
-    }
-
-    public void test2794() throws Exception {
-        blackBoxFile("regressions/kt2794.kt");
-    }
-
-    public void testUnboxComparable() {
-        blackBoxFile("primitiveTypes/unboxComparable.kt");
-    }
-
-    public void testKt3078() {
-        blackBoxFile("regressions/kt3078.kt");
     }
 }

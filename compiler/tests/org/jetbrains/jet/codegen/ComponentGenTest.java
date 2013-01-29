@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.jetbrains.jet.ConfigurationKind;
 public class ComponentGenTest extends CodegenTestCase {
     public void testComponent() {
         createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
-        blackBoxFile("/multiDecl/component.kt");
+        blackBoxFile("componentEvaluatesOnlyOnce.kt");
 
         String asm = generateToText();
         //System.out.println(asm);

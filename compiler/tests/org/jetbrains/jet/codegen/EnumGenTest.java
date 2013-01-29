@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@ public class EnumGenTest extends CodegenTestCase {
 
     public void testSuperclassIsEnum() throws NoSuchFieldException, IllegalAccessException {
         loadFile("enum/simple.kt");
-        Class season = loadImplementationClass(generateClassesInFile(), "Season");
+        Class season = generateClass("Season");
         assertEquals("java.lang.Enum", season.getSuperclass().getName());
     }
 
     public void testEnumClassModifiers() throws NoSuchFieldException, IllegalAccessException {
         loadFile("enum/simple.kt");
-        Class season = loadImplementationClass(generateClassesInFile(), "Season");
+        Class season = generateClass("Season");
         int modifiers = season.getModifiers();
         assertTrue((modifiers & 0x4000) != 0); // ACC_ENUM
         assertTrue((modifiers & Modifier.FINAL) != 0);
@@ -47,7 +47,7 @@ public class EnumGenTest extends CodegenTestCase {
 
     public void testEnumFieldModifiers() throws NoSuchFieldException, IllegalAccessException {
         loadFile("enum/simple.kt");
-        Class season = loadImplementationClass(generateClassesInFile(), "Season");
+        Class season = generateClass("Season");
         Field summer = season.getField("SUMMER");
         int modifiers = summer.getModifiers();
         assertTrue((modifiers & 0x4000) != 0); // ACC_ENUM
@@ -65,62 +65,10 @@ public class EnumGenTest extends CodegenTestCase {
         assertEquals(0xFF0000, rgbMethod.invoke(redValue));
     }
 
-    public void testSimple() {
-        blackBoxFile("enum/simple.kt");
-    }
-
-    public void testSimpleEnumInPackage() {
-        blackBoxFile("enum/inPackage.kt");
-    }
-
-    public void testAsReturnExpression() {
-        blackBoxFile("enum/asReturnExpression.kt");
-    }
-
-    public void testToString() {
-        blackBoxFile("enum/toString.kt");
-    }
-
-    public void testName() {
-        blackBoxFile("enum/name.kt");
-    }
-
-    public void testOrdinal() {
-        blackBoxFile("enum/ordinal.kt");
-    }
-
-    public void testValues() {
-        blackBoxFile("enum/valueof.kt");
-    }
-
-    public void testInClassObj() {
-        blackBoxFile("enum/inclassobj.kt");
-    }
-
-    public void testAbstractMethod() {
-        blackBoxFile("enum/abstractmethod.kt");
-    }
-    
-    public void testSimpleJavaEnum() throws Exception {
-        blackBoxFileWithJava("enum/simpleJavaEnum.kt");
-    }
-
-    public void testSimpleJavaInnerEnum() throws Exception {
-        blackBoxFileWithJava("enum/simpleJavaInnerEnum.kt");
-    }
-    
-    public void testSimpleJavaEnumWithStaticImport() throws Exception {
-        blackBoxFileWithJava("enum/simpleJavaEnumWithStaticImport.kt");
-    } 
-    
-    public void testSimpleJavaEnumWithFunction() throws Exception {
-        blackBoxFileWithJava("enum/simpleJavaEnumWithFunction.kt");
-    }
-
     public void testNoClassForSimpleEnum()
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
         loadFile("enum/name.kt");
-        Class cls = loadImplementationClass(generateClassesInFile(), "State");
+        Class cls = generateClass("State");
         Field field = cls.getField("O");
         assertEquals("State", field.get(null).getClass().getName());
     }
@@ -128,7 +76,7 @@ public class EnumGenTest extends CodegenTestCase {
     public void testYesClassForComplexEnum()
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
         loadFile("enum/abstractmethod.kt");
-        Class cls = loadImplementationClass(generateClassesInFile(), "IssueState");
+        Class cls = generateClass("IssueState");
         Field field = cls.getField("DEFAULT");
         assertEquals("IssueState", field.get(null).getClass().getName());
         field = cls.getField("FIXED");
@@ -141,37 +89,5 @@ public class EnumGenTest extends CodegenTestCase {
         }
         catch (ClassNotFoundException e) {
         }
-    }
-
-    public void testKt1119() {
-        blackBoxFile("regressions/kt1119.kt");
-    }
-
-    public void testKt2350() {
-        blackBoxFile("regressions/kt2350.kt");
-    }
-
-    public void testEntryWithInner() {
-        blackBoxFile("enum/entrywithinner.kt");
-    }
-
-    public void testInner() {
-        blackBoxFile("enum/inner.kt");
-    }
-
-    public void testInFunction() {
-        blackBoxFile("enum/inFunction.kt");
-    }
-
-    public void testInnerWithExistingClassObject() {
-        blackBoxFile("enum/innerWithExistingClassObject.kt");
-    }
-
-    public void testAbstractMethodInEnum() {
-        blackBoxFile("enum/abstractMethodInEnum.kt");
-    }
-
-    public void testKt2673() {
-        blackBoxFile("regressions/kt2673.kt");
     }
 }

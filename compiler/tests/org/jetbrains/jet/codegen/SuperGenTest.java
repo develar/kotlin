@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,42 +25,6 @@ public class SuperGenTest extends CodegenTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
-    }
-
-    public void testBasicProperty () {
-        blackBoxFile("/super/basicproperty.kt");
-    }
-
-    public void testTraitProperty () {
-        blackBoxFile("/super/traitproperty.kt");
-    }
-
-    public void testBasicMethodSuperTrait () {
-        blackBoxFile("/super/basicmethodSuperTrait.kt");
-    }
-
-    public void testBasicMethodSuperClass () {
-        blackBoxFile("/super/basicmethodSuperClass.kt");
-    }
-
-    public void testInnerClassLabeledSuper() {
-        blackBoxFile("super/innerClassLabeledSuper.kt");
-    }
-
-    public void testInnerClassLabeledSuperProperty() {
-        blackBoxFile("super/innerClassLabeledSuperProperty.kt");
-    }
-
-    public void testMultipleSuperTraits() {
-        blackBoxFile("super/multipleSuperTraits.kt");
-    }
-
-    public void testEnclosedFun () {
-        blackBoxFile("/super/enclosedFun.kt");
-    }
-
-    public void testEnclosedVar () {
-        blackBoxFile("/super/enclosedVar.kt");
     }
 
     public void testKt2887() {

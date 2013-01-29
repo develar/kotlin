@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,22 @@
 package org.jetbrains.jet.codegen;
 
 import jet.IntRange;
+import org.jetbrains.jet.ConfigurationKind;
 
 import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import static org.jetbrains.jet.codegen.CodegenTestUtil.assertIsCurrentTime;
 
 public class NamespaceGenTest extends CodegenTestCase {
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        createEnvironmentWithMockJdkAndIdeaAnnotations();
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.JDK_ONLY);
     }
 
     public void testPSVM() throws Exception {
@@ -283,10 +287,11 @@ public class NamespaceGenTest extends CodegenTestCase {
         assertEquals(239, main.invoke(null, new Object[]{null}));
     }
 
-    public void _testVarargs() throws Exception {
+    public void testVarargs() throws Exception {
         loadText("fun foo() = java.util.Arrays.asList(\"IntelliJ\", \"IDEA\")");
         final Method main = generateFunction();
-        ArrayList arrayList = (ArrayList) main.invoke(null);
+        java.util.List<?> list = (java.util.List<?>) main.invoke(null);
+        assertEquals(Arrays.asList("IntelliJ", "IDEA"), list);
     }
 
     public void testFieldRead() throws Exception {
@@ -430,26 +435,10 @@ public class NamespaceGenTest extends CodegenTestCase {
         assertEquals('x', ((Character) main.invoke(null, sb)).charValue());
     }
 
-    public void testNamespaceQualifiedMethod() throws Exception {
-        blackBoxFile("namespaceQualifiedMethod.kt");
-    }
-
-    public void testCheckCast() throws Exception {
-        blackBoxFile("checkCast.kt");
-    }
-
-    public void testTypeCastException() throws Exception {
-        blackBoxFile("typeCastException.kt");
-    }
-
     public void testPutBooleanAsVoid() throws Exception {
         loadText("class C(val x: Int) { { x > 0 } } fun box() { val c = C(0) } ");
         final Method main = generateFunction();
         main.invoke(null);  // must not fail
-    }
-
-    public void testIncrementProperty() throws Exception {
-        blackBoxFile("incrementProperty.kt");
     }
 
     public void testJavaInterfaceMethod() throws Exception {
@@ -505,13 +494,5 @@ public class NamespaceGenTest extends CodegenTestCase {
         final String[] args = new String[] { "foo", "bar" };
         //noinspection ImplicitArrayToString
         assertEquals("s" + args.toString(), main.invoke(null, "s", args));
-    }
-
-    public void testPrivateTopLevelPropAndVarInInner() {
-        blackBoxFile("privateTopLevelPropAndVarInInner.kt");
-    }
-
-    public void testInvokeSpecial() {
-        blackBoxFile("invokespecial.kt");
     }
 }

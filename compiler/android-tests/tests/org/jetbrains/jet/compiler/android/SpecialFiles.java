@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ public class SpecialFiles {
         excludedFiles.add("kt2060_1.kt"); // MultiFileTest not supported yet
         excludedFiles.add("kt2257_1.kt"); // MultiFileTest not supported yet
         excludedFiles.add("kt1528_1.kt"); // MultiFileTest not supported yet
+        excludedFiles.add("kt1845_1.kt"); // MultiFileTest not supported yet
         excludedFiles.add("thisPackage.kt"); // MultiFileTest not supported yet
 
         excludedFiles.add("kt684.kt"); // StackOverflow with StringBuilder (escape())
