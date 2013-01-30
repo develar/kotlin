@@ -1,123 +1,189 @@
 package jet
 
-public trait Range<in T : Comparable<T>> {
-  public fun contains(item : T) : Boolean
+public trait Range<in T: Comparable<T>> {
+    public val start: T
+    public val end: T
+    public fun contains(item : T): Boolean
 }
 
-public class IntRange(public val start : Int, public val size : Int) : Range<Int>, IntIterable {
-    public override fun iterator () : IntIterator
+public class IntRange(
+    public override val start: Int,
+    public override val end : Int
+) : Range<Int>, Progression<Int> {
 
-    public override fun contains (elem: Int) : Boolean
+    public override fun iterator() : IntIterator
 
-    public val end : Int
+    public override fun contains(elem: Int): Boolean
 
-    public val iteratorStart : Int
-
-    public fun step(step: Int) : IntIterator
-
-    public val isReversed : Boolean
+    public override val increment: Int
 
     public class object {
         public val EMPTY: IntRange
     }
 }
 
-public class LongRange(public val start : Long, public val size : Long) : Range<Long>, LongIterable {
-    public override fun iterator () : LongIterator
+public class LongRange(
+    public override val start: Long,
+    public override val end: Long
+) : Range<Long>, Progression<Long> {
 
-    public override fun contains (elem: Long) : Boolean
+    public override fun iterator(): LongIterator
 
-    public val iteratorStart : Long
+    public override fun contains(elem: Long): Boolean
 
-    public val end : Long
-
-    public fun step(step: Long) : LongIterator
-
-    public val isReversed : Boolean
+    public override val increment: Long
 
     public class object {
         public val EMPTY: LongRange
     }
 }
 
-public class ByteRange(public val start : Byte, public val size : Int) : Range<Byte>, ByteIterable {
-    public override fun iterator () : ByteIterator
+public class ByteRange(
+    public override val start: Byte,
+    public override val end : Byte
+): Range<Byte>, Progression<Byte> {
 
-    public override fun contains (elem: Byte) : Boolean
+    public override fun iterator(): ByteIterator
 
-    public val end : Byte
+    public override fun contains(elem: Byte): Boolean
 
-    public val iteratorStart : Byte
-
-    public fun step(step: Int) : ByteIterator
-
-    public val isReversed : Boolean
+    public override val increment: Int
 
     public class object {
         public val EMPTY: ByteRange
     }
 }
 
-public class ShortRange(public val start : Short, public val size : Int) : Range<Short>, ShortIterable {
-    public override fun iterator () : ShortIterator
+public class ShortRange(
+    public override val start: Short,
+    public override val end: Short
+) : Range<Short>, Progression<Short> {
 
-    public override fun contains (elem: Short) : Boolean
+    public override fun iterator(): ShortIterator
 
-    public val iteratorStart : Short
+    public override fun contains(elem: Short): Boolean
 
-    public val end : Short
-
-    public fun step(step: Int) : ShortIterator
-
-    public val isReversed : Boolean
+    public override val increment: Int
 
     public class object {
         public val EMPTY: ShortRange
     }
 }
 
-public class CharRange(public val start : Char, public val size : Int) : Range<Char>, CharIterable {
-    public override fun iterator () : CharIterator
+public class CharRange(
+    public override val start: Char,
+    public override val end: Char
+) : Range<Char>, Progression<Char> {
 
-    public override fun contains (elem: Char) : Boolean
+    public override fun iterator(): CharIterator
 
-    public val iteratorStart : Char
+    public override fun contains(elem: Char) : Boolean
 
-    public val end : Char
-
-    public fun step(step: Int) : CharIterator
-
-    public val isReversed : Boolean
+    public override val increment: Int
 
     public class object {
         public val EMPTY: CharRange
     }
 }
 
-public class FloatRange(public val start : Float, public val size : Float) : Range<Float> {
-    public override fun contains (elem: Float) : Boolean
+public class FloatRange(
+    public override val start: Float,
+    public override val end: Float
+) : Range<Float>, Progression<Float> {
 
-    public val end : Float
+    public override fun iterator(): FloatIterator
 
-    public fun step(step: Float) : FloatIterator
+    public override fun contains(elem: Float): Boolean
 
-    public val isReversed : Boolean
+    public override val increment: Float
 
     public class object {
         public val EMPTY: FloatRange
     }
 }
 
-public class DoubleRange(public val start : Double, public val size : Double) : Range<Double> {
-    public override fun contains (elem: Double) : Boolean
+public class DoubleRange(
+    public override val start: Double,
+    public override val end: Double
+) : Range<Double>, Progression<Double> {
 
-    public val end : Double
+    public override fun iterator() : DoubleIterator
 
-    public fun step(step: Double) : DoubleIterator
+    public override fun contains(elem: Double): Boolean
 
-    public val isReversed : Boolean
+    public override val increment: Double
 
     public class object {
         public val EMPTY: DoubleRange
     }
+}
+
+
+public trait Progression<N: Any>: Iterable<N> {
+    public val start: N
+    public val end: N
+    public val increment: Number
+}
+
+public class IntProgression(
+    public override val start: Int,
+    public override val end: Int,
+    public override val increment: Int
+): Progression<Int> {
+
+    override fun iterator(): IntIterator
+}
+
+public class LongProgression(
+    public override val start: Long,
+    public override val end: Long,
+    public override val increment: Long
+): Progression<Long> {
+
+    override fun iterator(): LongIterator
+}
+
+public class ByteProgression(
+    public override val start: Byte,
+    public override val end: Byte,
+    public override val increment: Int
+): Progression<Byte> {
+
+    override fun iterator(): ByteIterator
+}
+
+public class ShortProgression(
+    public override val start: Short,
+    public override val end: Short,
+    public override val increment: Int
+): Progression<Short> {
+
+    override fun iterator(): ShortIterator
+}
+
+public class CharProgression(
+    public override val start: Char,
+    public override val end: Char,
+    public override val increment: Int
+): Progression<Char> {
+
+    override fun iterator(): CharIterator
+}
+
+public class FloatProgression(
+    public override val start: Float,
+    public override val end: Float,
+    public override val increment: Float
+): Progression<Float> {
+
+    override fun iterator(): FloatIterator
+}
+
+public class DoubleProgression(
+    public override val start: Double,
+    public override val end: Double,
+    public override val increment: Double
+): Progression<Double> {
+
+    override fun iterator(): DoubleIterator
 }

@@ -41,6 +41,7 @@ public enum PrimitiveType {
     private final FqName className;
     private final FqName arrayClassName;
     private final FqName rangeClassName;
+    private final FqName progressionClassName;
 
     private PrimitiveType(String typeName) {
         this.typeName = Name.identifier(typeName);
@@ -50,6 +51,7 @@ public enum PrimitiveType {
         this.className = builtInsPackageFqName.child(this.typeName);
         this.arrayClassName = builtInsPackageFqName.child(this.arrayTypeName);
         this.rangeClassName = builtInsPackageFqName.child(this.rangeTypeName);
+        this.progressionClassName = builtInsPackageFqName.child(Name.identifier(typeName + "Progression"));
     }
 
     @NotNull
@@ -80,5 +82,10 @@ public enum PrimitiveType {
     @NotNull
     public FqName getRangeClassName() {
         return rangeClassName;
+    }
+
+    @NotNull
+    public FqName getProgressionClassName() {
+        return progressionClassName;
     }
 }

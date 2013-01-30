@@ -16,10 +16,26 @@
 
 package jet;
 
-import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
+class ByteProgressionIterator extends ByteIterator {
+    private byte next;
+    private final byte end;
+    private final int increment;
 
-@AssertInvisibleInResolver
-public interface ShortIterable extends Iterable<Short> {
+    public ByteProgressionIterator(byte start, byte end, int increment) {
+        this.next = start;
+        this.end = end;
+        this.increment = increment;
+    }
+
     @Override
-    ShortIterator iterator();
+    public boolean hasNext() {
+        return increment > 0 ? next <= end : next >= end;
+    }
+
+    @Override
+    public byte nextByte() {
+        byte value = next;
+        next += increment;
+        return value;
+    }
 }

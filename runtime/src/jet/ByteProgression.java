@@ -19,24 +19,18 @@ package jet;
 import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
 
 @AssertInvisibleInResolver
-public final class ByteRange implements Range<Byte>, Progression<Byte> {
-    public static final ByteRange EMPTY = new ByteRange((byte) 1, (byte) 0);
-
+public class ByteProgression implements Progression<Byte> {
     private final byte start;
     private final byte end;
+    private final int increment;
 
-    public ByteRange(byte start, byte end) {
+    public ByteProgression(byte start, byte end, int increment) {
+        if (increment == 0) {
+            throw new IllegalArgumentException("Increment must be non-zero: " + increment);
+        }
         this.start = start;
         this.end = end;
-    }
-
-    @Override
-    public boolean contains(Byte item) {
-        return start <= item && item <= end;
-    }
-
-    public boolean contains(byte item) {
-        return start <= item && item <= end;
+        this.increment = increment;
     }
 
     @Override
@@ -51,36 +45,43 @@ public final class ByteRange implements Range<Byte>, Progression<Byte> {
 
     @Override
     public Integer getIncrement() {
-        return 1;
+        return increment;
     }
 
     @Override
     public ByteIterator iterator() {
-        return new ByteProgressionIterator(start, end, 1);
+        return new ByteProgressionIterator(start, end, increment);
     }
 
     @Override
     public String toString() {
-        return start + ".." + end;
+        if (increment > 0) {
+            return start + ".." + end + " step " + increment;
+        }
+        else {
+            return start + " downTo " + end + " step " + -increment;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        ByteRange range = (ByteRange) o;
-        return end == range.end && start == range.start;
+        ByteProgression bytes = (ByteProgression) o;
+
+        if (end != bytes.end) return false;
+        if (increment != bytes.increment) return false;
+        if (start != bytes.start) return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = (int) start;
-        result = 31 * result + end;
+        result = 31 * result + (int) end;
+        result = 31 * result + increment;
         return result;
     }
 }

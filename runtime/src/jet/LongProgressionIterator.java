@@ -16,10 +16,26 @@
 
 package jet;
 
-import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
+class LongProgressionIterator extends LongIterator {
+    private long next;
+    private final long end;
+    private final long increment;
 
-@AssertInvisibleInResolver
-public interface LongIterable extends Iterable<Long> {
+    public LongProgressionIterator(long start, long end, long increment) {
+        this.next = start;
+        this.end = end;
+        this.increment = increment;
+    }
+
     @Override
-    LongIterator iterator();
+    public boolean hasNext() {
+        return increment > 0 ? next <= end : next >= end;
+    }
+
+    @Override
+    public long nextLong() {
+        long value = next;
+        next += increment;
+        return value;
+    }
 }

@@ -19,24 +19,18 @@ package jet;
 import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
 
 @AssertInvisibleInResolver
-public final class IntRange implements Range<Integer>, Progression<Integer> {
-    public static final IntRange EMPTY = new IntRange(1, 0);
-
+public class IntProgression implements Progression<Integer> {
     private final int start;
     private final int end;
+    private final int increment;
 
-    public IntRange(int start, int end) {
+    public IntProgression(int start, int end, int increment) {
+        if (increment == 0) {
+            throw new IllegalArgumentException("Increment must be non-zero: " + increment);
+        }
         this.start = start;
         this.end = end;
-    }
-
-    @Override
-    public boolean contains(Integer item) {
-        return start <= item && item <= end;
-    }
-
-    public boolean contains(int item) {
-        return start <= item && item <= end;
+        this.increment = increment;
     }
 
     @Override
@@ -51,36 +45,43 @@ public final class IntRange implements Range<Integer>, Progression<Integer> {
 
     @Override
     public Integer getIncrement() {
-        return 1;
+        return increment;
     }
 
     @Override
     public IntIterator iterator() {
-        return new IntProgressionIterator(start, end, 1);
+        return new IntProgressionIterator(start, end, increment);
     }
 
     @Override
     public String toString() {
-        return start + ".." + end;
+        if (increment > 0) {
+            return start + ".." + end + " step " + increment;
+        }
+        else {
+            return start + " downTo " + end + " step " + -increment;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        IntRange range = (IntRange) o;
-        return end == range.end && start == range.start;
+        IntProgression sequence = (IntProgression) o;
+
+        if (end != sequence.end) return false;
+        if (increment != sequence.increment) return false;
+        if (start != sequence.start) return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = start;
         result = 31 * result + end;
+        result = 31 * result + increment;
         return result;
     }
 }

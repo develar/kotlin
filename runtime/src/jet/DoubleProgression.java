@@ -19,24 +19,18 @@ package jet;
 import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
 
 @AssertInvisibleInResolver
-public final class DoubleRange implements Range<Double>, Progression<Double> {
-    public static final DoubleRange EMPTY = new DoubleRange(1, 0);
-
+public class DoubleProgression implements Progression<Double> {
     private final double start;
     private final double end;
+    private final double increment;
 
-    public DoubleRange(double start, double end) {
+    public DoubleProgression(double start, double end, double increment) {
+        if (increment == 0.0 || increment == -0.0) {
+            throw new IllegalArgumentException("Increment must be non-zero: " + increment);
+        }
         this.start = start;
         this.end = end;
-    }
-
-    @Override
-    public boolean contains(Double item) {
-        return start <= item && item <= end;
-    }
-
-    public boolean contains(double item) {
-        return start <= item && item <= end;
+        this.increment = increment;
     }
 
     @Override
@@ -51,31 +45,36 @@ public final class DoubleRange implements Range<Double>, Progression<Double> {
 
     @Override
     public Double getIncrement() {
-        return 1.0;
+        return increment;
     }
 
     @Override
     public DoubleIterator iterator() {
-        return new DoubleProgressionIterator(start, end, 1.0);
+        return new DoubleProgressionIterator(start, end, increment);
     }
 
     @Override
     public String toString() {
-        return start + ".." + end;
+        if (increment > 0) {
+            return start + ".." + end + " step " + increment;
+        }
+        else {
+            return start + " downTo " + end + " step " + -increment;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        DoubleRange range = (DoubleRange) o;
+        DoubleProgression doubles = (DoubleProgression) o;
 
-        return Double.compare(range.end, end) == 0 && Double.compare(range.start, start) == 0;
+        if (Double.compare(doubles.end, end) != 0) return false;
+        if (Double.compare(doubles.increment, increment) != 0) return false;
+        if (Double.compare(doubles.start, start) != 0) return false;
+
+        return true;
     }
 
     @Override
@@ -85,6 +84,8 @@ public final class DoubleRange implements Range<Double>, Progression<Double> {
         temp = start != +0.0d ? Double.doubleToLongBits(start) : 0L;
         result = (int) (temp ^ (temp >>> 32));
         temp = end != +0.0d ? Double.doubleToLongBits(end) : 0L;
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = increment != +0.0d ? Double.doubleToLongBits(increment) : 0L;
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         return result;
     }

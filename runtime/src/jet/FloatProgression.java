@@ -19,24 +19,18 @@ package jet;
 import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
 
 @AssertInvisibleInResolver
-public final class FloatRange implements Range<Float>, Progression<Float> {
-    public static final FloatRange EMPTY = new FloatRange(1, 0);
-
+public class FloatProgression implements Progression<Float> {
     private final float start;
     private final float end;
+    private final float increment;
 
-    public FloatRange(float start, float end) {
+    public FloatProgression(float start, float end, float increment) {
+        if (increment == 0.0f || increment == -0.0f) {
+            throw new IllegalArgumentException("Increment must be non-zero: " + increment);
+        }
         this.start = start;
         this.end = end;
-    }
-
-    @Override
-    public boolean contains(Float item) {
-        return start <= item && item <= end;
-    }
-
-    public boolean contains(float item) {
-        return start <= item && item <= end;
+        this.increment = increment;
     }
 
     @Override
@@ -51,37 +45,43 @@ public final class FloatRange implements Range<Float>, Progression<Float> {
 
     @Override
     public Float getIncrement() {
-        return 1.0f;
+        return increment;
     }
 
     @Override
     public FloatIterator iterator() {
-        return new FloatProgressionIterator(start, end, 1);
+        return new FloatProgressionIterator(start, end, increment);
     }
 
     @Override
     public String toString() {
-        return start + ".." + end;
+        if (increment > 0) {
+            return start + ".." + end + " step " + increment;
+        }
+        else {
+            return start + " downTo " + end + " step " + -increment;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        FloatRange range = (FloatRange) o;
+        FloatProgression floats = (FloatProgression) o;
 
-        return Float.compare(range.end, end) == 0 && Float.compare(range.start, start) == 0;
+        if (Float.compare(floats.end, end) != 0) return false;
+        if (Float.compare(floats.increment, increment) != 0) return false;
+        if (Float.compare(floats.start, start) != 0) return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = (start != +0.0f ? Float.floatToIntBits(start) : 0);
         result = 31 * result + (end != +0.0f ? Float.floatToIntBits(end) : 0);
+        result = 31 * result + (increment != +0.0f ? Float.floatToIntBits(increment) : 0);
         return result;
     }
 }

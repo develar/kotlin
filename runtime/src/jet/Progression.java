@@ -19,7 +19,8 @@ package jet;
 import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
 
 @AssertInvisibleInResolver
-public interface DoubleIterable extends Iterable<Double> {
-    @Override
-    DoubleIterator iterator();
+public interface Progression<N> extends Iterable<N> {
+    N getStart();
+    N getEnd();
+    Number getIncrement();
 }

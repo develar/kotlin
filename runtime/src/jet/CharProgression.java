@@ -19,24 +19,18 @@ package jet;
 import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
 
 @AssertInvisibleInResolver
-public final class CharRange implements Range<Character>, Progression<Character> {
-    public static final CharRange EMPTY = new CharRange((char) 1, (char) 0);
-
+public class CharProgression implements Progression<Character> {
     private final char start;
     private final char end;
+    private final int increment;
 
-    public CharRange(char start, char end) {
+    public CharProgression(char start, char end, int increment) {
+        if (increment == 0) {
+            throw new IllegalArgumentException("Increment must be non-zero: " + increment);
+        }
         this.start = start;
         this.end = end;
-    }
-
-    @Override
-    public boolean contains(Character item) {
-        return start <= item && item <= end;
-    }
-
-    public boolean contains(char item) {
-        return start <= item && item <= end;
+        this.increment = increment;
     }
 
     @Override
@@ -51,36 +45,43 @@ public final class CharRange implements Range<Character>, Progression<Character>
 
     @Override
     public Integer getIncrement() {
-        return 1;
+        return increment;
     }
 
     @Override
     public CharIterator iterator() {
-        return new CharProgressionIterator(start, end, 1);
+        return new CharProgressionIterator(start, end, increment);
     }
 
     @Override
     public String toString() {
-        return start + ".." + end;
+        if (increment > 0) {
+            return start + ".." + end + " step " + increment;
+        }
+        else {
+            return start + " downTo " + end + " step " + -increment;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        CharRange range = (CharRange) o;
-        return end == range.end && start == range.start;
+        CharProgression that = (CharProgression) o;
+
+        if (end != that.end) return false;
+        if (increment != that.increment) return false;
+        if (start != that.start) return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = (int) start;
-        result = 31 * result + end;
+        result = 31 * result + (int) end;
+        result = 31 * result + increment;
         return result;
     }
 }

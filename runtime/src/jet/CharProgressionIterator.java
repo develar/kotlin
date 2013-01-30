@@ -16,10 +16,26 @@
 
 package jet;
 
-import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
+class CharProgressionIterator extends CharIterator {
+    private char next;
+    private final char end;
+    private final int increment;
 
-@AssertInvisibleInResolver
-public interface CharIterable extends Iterable<Character> {
+    public CharProgressionIterator(char start, char end, int increment) {
+        this.next = start;
+        this.end = end;
+        this.increment = increment;
+    }
+
     @Override
-    CharIterator iterator();
+    public boolean hasNext() {
+        return increment > 0 ? next <= end : next >= end;
+    }
+
+    @Override
+    public char nextChar() {
+        char value = next;
+        next += increment;
+        return value;
+    }
 }

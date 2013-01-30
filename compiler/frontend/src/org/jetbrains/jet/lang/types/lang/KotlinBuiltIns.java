@@ -37,10 +37,7 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetImportDirective;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
-import org.jetbrains.jet.lang.resolve.BindingTrace;
-import org.jetbrains.jet.lang.resolve.BindingTraceContext;
-import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.resolve.ImportPath;
+import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.lazy.FileBasedDeclarationProviderFactory;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.name.FqName;
@@ -72,7 +69,6 @@ public class KotlinBuiltIns {
             BUILT_INS_DIR + "/Library.jet",
             BUILT_INS_DIR + "/Numbers.jet",
             BUILT_INS_DIR + "/Ranges.jet",
-            BUILT_INS_DIR + "/Iterables.jet",
             BUILT_INS_DIR + "/Iterators.jet",
             BUILT_INS_DIR + "/Arrays.jet",
             BUILT_INS_DIR + "/Enum.jet",
@@ -219,6 +215,8 @@ public class KotlinBuiltIns {
         nonPhysicalClasses = computeNonPhysicalClasses();
 
         resolveSession.forceResolveAll();
+
+        AnalyzingUtils.throwExceptionOnErrors(resolveSession.getBindingContext());
     }
 
     @NotNull

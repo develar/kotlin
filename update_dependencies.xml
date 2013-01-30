@@ -3,7 +3,7 @@
 
     <target name="update" depends="fetch-third-party">
         <execute_update
-            base.url="http://teamcity.jetbrains.com/guestAuth/repository/download/bt410/74941:id"
+            base.url="http://teamcity.jetbrains.com/guestAuth/repository/download/bt410/75902:id"
             build.zip="ideaIC-123.SNAPSHOT.win.zip"
         />
     </target>
@@ -219,6 +219,9 @@
             <copy file="ideaSDK/lib/xstream-1.4.3.jar" todir="${core}"/>
             <copy file="ideaSDK/lib/xpp3-1.1.4-min.jar" todir="${core}"/>
             <copy file="ideaSDK/lib/asm4-all.jar" todir="${core}"/>
+
+            <!-- TODO temporary workaround since util-rt is not packaged into intellij-core.jar -->
+            <copy file="ideaSDK/lib/util.jar" todir="${core}"/>
 
             <!--
                  This one needs to be deleted because otherwise it gets onto the classpath

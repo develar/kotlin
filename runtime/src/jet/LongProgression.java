@@ -19,24 +19,18 @@ package jet;
 import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
 
 @AssertInvisibleInResolver
-public final class LongRange implements Range<Long>, Progression<Long> {
-    public static final LongRange EMPTY = new LongRange(1, 0);
-
+public class LongProgression implements Progression<Long> {
     private final long start;
     private final long end;
+    private final long increment;
 
-    public LongRange(long start, long end) {
+    public LongProgression(long start, long end, long increment) {
+        if (increment == 0) {
+            throw new IllegalArgumentException("Increment must be non-zero: " + increment);
+        }
         this.start = start;
         this.end = end;
-    }
-
-    @Override
-    public boolean contains(Long item) {
-        return start <= item && item <= end;
-    }
-
-    public boolean contains(long item) {
-        return start <= item && item <= end;
+        this.increment = increment;
     }
 
     @Override
@@ -51,36 +45,43 @@ public final class LongRange implements Range<Long>, Progression<Long> {
 
     @Override
     public Long getIncrement() {
-        return 1L;
+        return increment;
     }
 
     @Override
     public LongIterator iterator() {
-        return new LongProgressionIterator(start, end, 1);
+        return new LongProgressionIterator(start, end, increment);
     }
 
     @Override
     public String toString() {
-        return start + ".." + end;
+        if (increment > 0) {
+            return start + ".." + end + " step " + increment;
+        }
+        else {
+            return start + " downTo " + end + " step " + -increment;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        LongRange range = (LongRange) o;
-        return end == range.end && start == range.start;
+        LongProgression longs = (LongProgression) o;
+
+        if (end != longs.end) return false;
+        if (increment != longs.increment) return false;
+        if (start != longs.start) return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = (int) (start ^ (start >>> 32));
         result = 31 * result + (int) (end ^ (end >>> 32));
+        result = 31 * result + (int) (increment ^ (increment >>> 32));
         return result;
     }
 }

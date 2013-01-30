@@ -20,15 +20,28 @@ import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.asm4.Type;
 import org.jetbrains.asm4.commons.InstructionAdapter;
-import org.jetbrains.jet.lang.resolve.java.AsmTypeConstants;
 import org.jetbrains.jet.codegen.ExpressionCodegen;
+import org.jetbrains.jet.codegen.PropertyCodegen;
 import org.jetbrains.jet.codegen.StackValue;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.lang.psi.JetExpression;
+import org.jetbrains.jet.lang.resolve.java.AsmTypeConstants;
+import org.jetbrains.jet.lang.resolve.java.JvmClassName;
+import org.jetbrains.jet.lang.resolve.java.JvmPrimitiveType;
+import org.jetbrains.jet.lang.resolve.name.FqName;
+import org.jetbrains.jet.lang.resolve.name.Name;
 
 import java.util.List;
 
-public class ArrayIndices implements IntrinsicMethod {
+public class PropertyOfProgressionOrRange implements IntrinsicMethod {
+    private final FqName ownerClass;
+    private final Name propertyName;
+
+    public PropertyOfProgressionOrRange(@NotNull FqName ownerClass, @NotNull Name propertyName) {
+        this.ownerClass = ownerClass;
+        this.propertyName = propertyName;
+    }
+
     @Override
     public StackValue generate(
             ExpressionCodegen codegen,
@@ -39,9 +52,18 @@ public class ArrayIndices implements IntrinsicMethod {
             StackValue receiver,
             @NotNull GenerationState state
     ) {
-        receiver.put(receiver.type, v);
-        v.arraylength();
-        v.invokestatic("jet/runtime/Ranges", "arrayIndices", "(I)Ljet/IntRange;");
-        return StackValue.onStack(AsmTypeConstants.JET_INT_RANGE_TYPE);
+        String ownerInternalName = JvmClassName.byFqNameWithoutInnerClasses(this.ownerClass).getInternalName();
+        JvmClassName wrapperClass = JvmPrimitiveType.getByAsmType(expectedType).getWrapper();
+        String getterName = PropertyCodegen.getterName(propertyName);
+
+        receiver.put(AsmTypeConstants.OBJECT_TYPE, v);
+        v.invokevirtual(ownerInternalName, getterName, "()" + wrapperClass.getDescriptor());
+        StackValue.coerce(wrapperClass.getAsmType(), expectedType, v);
+        return StackValue.onStack(expectedType);
+    }
+
+    public enum OwnerKind {
+        SEQUENCE,
+        RANGE
     }
 }

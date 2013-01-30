@@ -888,6 +888,7 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
     }
     
     @TestMetadata("compiler/testData/codegen/box/closures")
+    @InnerTestClasses({Closures.ClosureInsideClosure.class})
     public static class Closures extends AbstractBlackBoxCodegenTest {
         public void testAllFilesPresentInClosures() throws Exception {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/codegen/box/closures"), "kt", true);
@@ -943,6 +944,45 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             blackBoxFileByFullPath("compiler/testData/codegen/box/closures/simplestClosureAndBoxing.kt");
         }
         
+        @TestMetadata("compiler/testData/codegen/box/closures/closureInsideClosure")
+        public static class ClosureInsideClosure extends AbstractBlackBoxCodegenTest {
+            public void testAllFilesPresentInClosureInsideClosure() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/codegen/box/closures/closureInsideClosure"), "kt", true);
+            }
+            
+            @TestMetadata("localFunInsideLocalFun.kt")
+            public void testLocalFunInsideLocalFun() throws Exception {
+                blackBoxFileByFullPath("compiler/testData/codegen/box/closures/closureInsideClosure/localFunInsideLocalFun.kt");
+            }
+            
+            @TestMetadata("localFunInsideLocalFunDifferentSignatures.kt")
+            public void testLocalFunInsideLocalFunDifferentSignatures() throws Exception {
+                blackBoxFileByFullPath("compiler/testData/codegen/box/closures/closureInsideClosure/localFunInsideLocalFunDifferentSignatures.kt");
+            }
+            
+            @TestMetadata("threeLevels.kt")
+            public void testThreeLevels() throws Exception {
+                blackBoxFileByFullPath("compiler/testData/codegen/box/closures/closureInsideClosure/threeLevels.kt");
+            }
+            
+            @TestMetadata("threeLevelsDifferentSignatures.kt")
+            public void testThreeLevelsDifferentSignatures() throws Exception {
+                blackBoxFileByFullPath("compiler/testData/codegen/box/closures/closureInsideClosure/threeLevelsDifferentSignatures.kt");
+            }
+            
+            @TestMetadata("varAsFunInsideLocalFun.kt")
+            public void testVarAsFunInsideLocalFun() throws Exception {
+                blackBoxFileByFullPath("compiler/testData/codegen/box/closures/closureInsideClosure/varAsFunInsideLocalFun.kt");
+            }
+            
+        }
+        
+        public static Test innerSuite() {
+            TestSuite suite = new TestSuite("Closures");
+            suite.addTestSuite(Closures.class);
+            suite.addTestSuite(ClosureInsideClosure.class);
+            return suite;
+        }
     }
     
     @TestMetadata("compiler/testData/codegen/box/controlStructures")
@@ -2797,11 +2837,6 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             blackBoxFileByFullPath("compiler/testData/codegen/box/primitiveTypes/kt757.kt");
         }
         
-        @TestMetadata("kt765.kt")
-        public void testKt765() throws Exception {
-            blackBoxFileByFullPath("compiler/testData/codegen/box/primitiveTypes/kt765.kt");
-        }
-        
         @TestMetadata("kt821.kt")
         public void testKt821() throws Exception {
             blackBoxFileByFullPath("compiler/testData/codegen/box/primitiveTypes/kt821.kt");
@@ -2825,11 +2860,6 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         @TestMetadata("kt887.kt")
         public void testKt887() throws Exception {
             blackBoxFileByFullPath("compiler/testData/codegen/box/primitiveTypes/kt887.kt");
-        }
-        
-        @TestMetadata("kt925.kt")
-        public void testKt925() throws Exception {
-            blackBoxFileByFullPath("compiler/testData/codegen/box/primitiveTypes/kt925.kt");
         }
         
         @TestMetadata("kt935.kt")
@@ -3306,7 +3336,7 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         suite.addTestSuite(Bridges.class);
         suite.addTestSuite(Casts.class);
         suite.addTestSuite(Classes.class);
-        suite.addTestSuite(Closures.class);
+        suite.addTest(Closures.innerSuite());
         suite.addTestSuite(ControlStructures.class);
         suite.addTest(DefaultArguments.innerSuite());
         suite.addTestSuite(Enum.class);

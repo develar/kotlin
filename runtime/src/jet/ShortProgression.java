@@ -19,24 +19,18 @@ package jet;
 import org.jetbrains.jet.rt.annotation.AssertInvisibleInResolver;
 
 @AssertInvisibleInResolver
-public final class ShortRange implements Range<Short>, Progression<Short> {
-    public static final ShortRange EMPTY = new ShortRange((short) 1, (short) 0);
-
+public class ShortProgression implements Progression<Short> {
     private final short start;
     private final short end;
+    private final int increment;
 
-    public ShortRange(short start, short end) {
+    public ShortProgression(short start, short end, int increment) {
+        if (increment == 0) {
+            throw new IllegalArgumentException("Increment must be non-zero: " + increment);
+        }
         this.start = start;
         this.end = end;
-    }
-
-    @Override
-    public boolean contains(Short item) {
-        return start <= item && item <= end;
-    }
-
-    public boolean contains(short item) {
-        return start <= item && item <= end;
+        this.increment = increment;
     }
 
     @Override
@@ -51,36 +45,43 @@ public final class ShortRange implements Range<Short>, Progression<Short> {
 
     @Override
     public Integer getIncrement() {
-        return 1;
+        return increment;
     }
 
     @Override
     public ShortIterator iterator() {
-        return new ShortProgressionIterator(start, end, 1);
+        return new ShortProgressionIterator(start, end, increment);
     }
 
     @Override
     public String toString() {
-        return start + ".." + end;
+        if (increment > 0) {
+            return start + ".." + end + " step " + increment;
+        }
+        else {
+            return start + " downTo " + end + " step " + -increment;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        ShortRange range = (ShortRange) o;
-        return end == range.end && start == range.start;
+        ShortProgression shorts = (ShortProgression) o;
+
+        if (end != shorts.end) return false;
+        if (increment != shorts.increment) return false;
+        if (start != shorts.start) return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = (int) start;
-        result = 31 * result + end;
+        result = 31 * result + (int) end;
+        result = 31 * result + increment;
         return result;
     }
 }
