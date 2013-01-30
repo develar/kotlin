@@ -130,7 +130,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         configuration.put(JsCompilerConfigurationKeys.OUTPUT_FILE, outputFile);
         configuration.put(JsCompilerConfigurationKeys.MAIN, arguments.main);
         try {
-            new ToJsSubCompiler().compile(configuration, moduleInfo, environmentForJS.getSourceFiles());
+            new ToJsSubCompiler().compile(configuration, moduleInfo, environmentForJS.getSourceFiles(), null);
         }
         catch (Throwable e) {
             messageCollector.report(CompilerMessageSeverity.EXCEPTION, MessageRenderer.PLAIN.renderException(e),

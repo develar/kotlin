@@ -16,13 +16,15 @@
 
 package org.jetbrains.kotlin.compiler;
 
+import com.intellij.util.Consumer;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.psi.JetFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
 public abstract class SubCompiler {
-    public abstract void compile(CompilerConfiguration configuration, ModuleInfo moduleInfo, List<JetFile> files)
+    public abstract void compile(CompilerConfiguration configuration, ModuleInfo moduleInfo, List<JetFile> files, Consumer<File> outputFileConsumer)
             throws IOException;
 }

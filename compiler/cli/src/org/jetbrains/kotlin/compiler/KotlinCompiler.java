@@ -26,6 +26,7 @@ import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.util.Consumer;
 import com.intellij.util.Processor;
 import com.intellij.util.SmartList;
 import com.intellij.util.containers.StripedLockConcurrentHashMap;
@@ -112,7 +113,7 @@ public class KotlinCompiler {
         }
     }
 
-    public void compile(@NotNull CompilerConfiguration configuration) throws IOException {
+    public void compile(@NotNull CompilerConfiguration configuration, Consumer<File> outputFileConsumer) throws IOException {
         String name = configuration.getNotNull(CompilerConfigurationKeys.MODULE_NAME);
         List<JetFile> sources = collectSourceFiles(name, null, false);
         final ModuleInfo moduleInfo = analyzeProjectModule(name, sources, true);
@@ -125,7 +126,7 @@ public class KotlinCompiler {
 
         if (!configuration.get(CompilerConfigurationKeys.ANALYZE_ONLY, false)) {
             try {
-                subCompiler.compile(configuration, moduleInfo, sources);
+                subCompiler.compile(configuration, moduleInfo, sources, outputFileConsumer);
             }
             catch (TranslationException e) {
                 messageCollector.report(CompilerMessageSeverity.ERROR, e.getMessage(), e.getLocation());

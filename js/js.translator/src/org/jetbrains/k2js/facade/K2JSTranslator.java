@@ -19,7 +19,9 @@ package org.jetbrains.k2js.facade;
 import com.google.dart.compiler.backend.js.ast.JsProgram;
 import com.google.dart.compiler.util.TextOutputImpl;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.util.Consumer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
@@ -57,7 +59,8 @@ public final class K2JSTranslator {
             @NotNull List<JetFile> files,
             @NotNull String outputPath,
             @NotNull Config config,
-            @NotNull BindingContext bindingContext
+            @NotNull BindingContext bindingContext,
+            @Nullable Consumer<File> outputFileConsumer
     ) throws IOException {
         File outFile = new File(outputPath);
         TextOutputImpl output = new TextOutputImpl();
@@ -66,7 +69,15 @@ public final class K2JSTranslator {
         String programCode = toSource(output, sourceMapBuilder, Translation.generateAst(bindingContext, files, mainCallParameters, config));
         FileUtil.writeToFile(outFile, programCode);
         if (sourceMapBuilder != null) {
-            FileUtil.writeToFile(sourceMapBuilder.getOutFile(), sourceMapBuilder.build());
+            File sourcemapFile = sourceMapBuilder.getOutFile();
+            FileUtil.writeToFile(sourcemapFile, sourceMapBuilder.build());
+            if (outputFileConsumer != null) {
+                outputFileConsumer.consume(sourcemapFile);
+            }
+        }
+
+        if (outputFileConsumer != null) {
+            outputFileConsumer.consume(outFile);
         }
     }
 

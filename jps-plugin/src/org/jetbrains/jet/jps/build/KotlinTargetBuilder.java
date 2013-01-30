@@ -19,6 +19,7 @@ package org.jetbrains.jet.jps.build;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
+import com.intellij.util.Consumer;
 import com.intellij.util.containers.ConcurrentHashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
@@ -112,7 +113,6 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
             }
         });
 
-
         Set<JpsModule> dirtyModules = DIRTY_MODULES.get(context);
         assert dirtyModules != null;
         boolean analyzeOnly = false;
@@ -149,11 +149,31 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
             compilerConfiguration.put(CompilerConfigurationKeys.ANALYZE_ONLY, true);
         }
 
+        compile(outputConsumer, context, compilerConfiguration);
+        context.checkCanceled();
+
+        // we must reanalyze all dependents if something was changed
+        // todo don't reanalyze if public API was not changed (i.e. changes affect only internal code)
+        dirtyModules.add(module);
+    }
+
+    private void compile(final BuildOutputConsumer outputConsumer, CompileContext context, CompilerConfiguration compilerConfiguration)
+            throws ProjectBuildException, IOException {
         final Ref<IOException> ioExceptionRef = Ref.create();
         Pair<Object, Method> kotlinContext;
         try {
             kotlinContext = getKotlinContext(context);
-            kotlinContext.second.invoke(kotlinContext.first, compilerConfiguration);
+            kotlinContext.second.invoke(kotlinContext.first, compilerConfiguration, new Consumer<File>() {
+                @Override
+                public void consume(File file) {
+                    try {
+                        outputConsumer.registerOutputFile(file, Collections.<String>emptyList());
+                    }
+                    catch (IOException e) {
+                        ioExceptionRef.set(e);
+                    }
+                }
+            });
         }
         catch (InvocationTargetException e) {
             // hide InvocationTargetException
@@ -169,12 +189,6 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         if (!ioExceptionRef.isNull()) {
             throw ioExceptionRef.get();
         }
-
-        context.checkCanceled();
-
-        // we must reanalyze all dependents if something was changed
-        // todo don't reanalyze if public API was not changed (i.e. changes affect only internal code)
-        dirtyModules.add(module);
     }
 
     @NotNull
@@ -208,7 +222,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         constructor.setAccessible(true);
         Object compiler = constructor.newInstance(Class.forName(subCompilerClassName, false, loader), moduleInfoProvider, messageCollector);
 
-        Method compile = compilerClass.getMethod("compile", CompilerConfiguration.class);
+        Method compile = compilerClass.getMethod("compile", CompilerConfiguration.class, Consumer.class);
         compile.setAccessible(true);
 
         Pair<Object, Method> result = Pair.create(compiler, compile);

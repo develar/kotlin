@@ -113,7 +113,7 @@ public final class TranslationUtils {
         XAnalyzerFacade.checkForErrors(psiFiles);
         TestConfig config = configFactory.create(moduleInfo, version);
         K2JSTranslator.translateAndSaveToFile(mainCallParameters, psiFiles, outputFile, config,
-                                              moduleInfo.getBindingContext());
+                                              moduleInfo.getBindingContext(), null);
     }
 
     @NotNull

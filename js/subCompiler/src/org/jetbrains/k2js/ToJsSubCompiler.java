@@ -16,6 +16,7 @@
 
 package org.jetbrains.k2js;
 
+import com.intellij.util.Consumer;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.k2js.config.Config;
@@ -33,7 +34,7 @@ import java.util.List;
 
 public class ToJsSubCompiler extends SubCompiler {
     @Override
-    public void compile(CompilerConfiguration configuration, ModuleInfo moduleInfo, List<JetFile> files) throws IOException {
+    public void compile(CompilerConfiguration configuration, ModuleInfo moduleInfo, List<JetFile> files, Consumer<File> outputFileConsumer) throws IOException {
         MainCallParameters mainCallParameters = createMainCallParameters(configuration.get(JsCompilerConfigurationKeys.MAIN));
 
         EcmaVersion ecmaVersion = EcmaVersion.fromString(configuration.get(JsCompilerConfigurationKeys.TARGET));
@@ -45,7 +46,7 @@ public class ToJsSubCompiler extends SubCompiler {
         K2JSTranslator.translateAndSaveToFile(mainCallParameters, files, outputFile,
                                               new Config(moduleInfo, ecmaVersion,
                                                          configuration.get(JsCompilerConfigurationKeys.SOURCEMAP, false)),
-                                              moduleInfo.getBindingContext());
+                                              moduleInfo.getBindingContext(), outputFileConsumer);
     }
 
 
