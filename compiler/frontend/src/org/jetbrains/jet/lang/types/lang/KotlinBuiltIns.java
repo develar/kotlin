@@ -39,6 +39,7 @@ import org.jetbrains.jet.lang.psi.JetImportDirective;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.lazy.FileBasedDeclarationProviderFactory;
+import org.jetbrains.jet.lang.resolve.lazy.LockBasedStorageManager;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
@@ -69,6 +70,7 @@ public class KotlinBuiltIns {
             BUILT_INS_DIR + "/Library.jet",
             BUILT_INS_DIR + "/Numbers.jet",
             BUILT_INS_DIR + "/Ranges.jet",
+            BUILT_INS_DIR + "/Progressions.jet",
             BUILT_INS_DIR + "/Iterators.jet",
             BUILT_INS_DIR + "/Arrays.jet",
             BUILT_INS_DIR + "/Enum.jet",
@@ -222,11 +224,13 @@ public class KotlinBuiltIns {
     @NotNull
     private ResolveSession createLazyResolveSession(@NotNull Project project) throws IOException {
         List<JetFile> files = loadResourcesAsJetFiles(project, LIBRARY_FILES);
+        LockBasedStorageManager storageManager = new LockBasedStorageManager();
         return new ResolveSession(
                 project,
+                storageManager,
                 builtInsModule,
                 new SpecialModuleConfiguration(project),
-                new FileBasedDeclarationProviderFactory(files),
+                new FileBasedDeclarationProviderFactory(storageManager, files),
                 new Function<FqName, Name>() {
                     @Override
                     public Name fun(FqName name) {

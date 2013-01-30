@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.util.lazy;
+package org.jetbrains.jet.codegen.generated;
 
-public abstract class LazyValueWithDefault<T> extends LazyValue<T> {
-    private final T defaultValue;
+import org.jetbrains.jet.ConfigurationKind;
+import org.jetbrains.jet.codegen.CodegenTestCase;
 
-    protected LazyValueWithDefault(T defaultValue) {
-        this.defaultValue = defaultValue;
-    }
-
+public abstract class AbstractRangesCodegenTest extends CodegenTestCase {
     @Override
-    protected T getValueOnErrorReentry() {
-        return defaultValue;
+    public void setUp() throws Exception {
+        super.setUp();
+        createEnvironmentWithMockJdkAndIdeaAnnotations(ConfigurationKind.ALL);
     }
 }

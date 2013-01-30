@@ -16,24 +16,33 @@
 
 package org.jetbrains.jet.plugin.stubindex.resolve;
 
+import com.intellij.openapi.project.Project;
+import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.resolve.lazy.ClassMemberDeclarationProvider;
-import org.jetbrains.jet.lang.resolve.lazy.DeclarationProviderFactory;
-import org.jetbrains.jet.lang.resolve.lazy.PackageMemberDeclarationProvider;
+import org.jetbrains.jet.lang.resolve.lazy.*;
 import org.jetbrains.jet.lang.resolve.lazy.data.JetClassLikeInfo;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 
 public class StubDeclarationProviderFactory implements DeclarationProviderFactory {
+
+    private final Project project;
+    private final GlobalSearchScope searchScope;
+    private final StorageManager storageManager;
+
+    public StubDeclarationProviderFactory(@NotNull Project project, @NotNull GlobalSearchScope scope, @NotNull StorageManager manager) {
+        this.project = project;
+        searchScope = scope;
+        storageManager = manager;
+    }
+
     @NotNull
     @Override
     public ClassMemberDeclarationProvider getClassMemberDeclarationProvider(@NotNull JetClassLikeInfo classLikeInfo) {
-        // TODO:
-        return null;
+        return new PsiBasedClassMemberDeclarationProvider(storageManager, classLikeInfo);
     }
 
     @Override
     public PackageMemberDeclarationProvider getPackageMemberDeclarationProvider(@NotNull FqName packageFqName) {
-        // TODO:
-        return null;
+        return new StubPackageMemberDeclarationProvider(packageFqName, project, searchScope);
     }
 }

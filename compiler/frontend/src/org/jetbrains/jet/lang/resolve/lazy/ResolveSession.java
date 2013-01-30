@@ -51,6 +51,8 @@ public class ResolveSession {
         }
     };
 
+    private final StorageManager storageManager;
+
     private final ModuleDescriptor module;
     private final LazyPackageDescriptor rootPackage;
 
@@ -67,23 +69,26 @@ public class ResolveSession {
 
     public ResolveSession(
         @NotNull Project project,
+        @NotNull StorageManager storageManager,
         @NotNull ModuleDescriptor rootDescriptor,
         @NotNull ModuleConfiguration moduleConfiguration,
         @NotNull DeclarationProviderFactory declarationProviderFactory
     ) {
-        this(project, rootDescriptor, moduleConfiguration, declarationProviderFactory, NO_ALIASES,
+        this(project, storageManager, rootDescriptor, moduleConfiguration, declarationProviderFactory, NO_ALIASES,
              Predicates.<FqNameUnsafe>alwaysFalse(),
              new BindingTraceContext());
     }
 
     public ResolveSession(
             @NotNull Project project,
+            @NotNull StorageManager storageManager,
             @NotNull ModuleDescriptor rootDescriptor,
             @NotNull ModuleConfiguration moduleConfiguration,
             @NotNull DeclarationProviderFactory declarationProviderFactory,
             @NotNull BindingTrace delegationTrace
     ) {
         this(project,
+             storageManager,
              rootDescriptor,
              moduleConfiguration,
              declarationProviderFactory,
@@ -95,6 +100,7 @@ public class ResolveSession {
     @Deprecated // Internal use only
     public ResolveSession(
             @NotNull Project project,
+            @NotNull StorageManager storageManager,
             @NotNull ModuleDescriptor rootDescriptor,
             @NotNull ModuleConfiguration moduleConfiguration,
             @NotNull DeclarationProviderFactory declarationProviderFactory,
@@ -102,9 +108,10 @@ public class ResolveSession {
             @NotNull Predicate<FqNameUnsafe> specialClasses,
             @NotNull BindingTrace delegationTrace
     ) {
+        this.storageManager = storageManager;
         this.classifierAliases = classifierAliases;
         this.specialClasses = specialClasses;
-        this.trace = new ObservableBindingTrace(delegationTrace);
+        this.trace = storageManager.createSafeTrace(delegationTrace);
         this.injector = new InjectorForLazyResolve(project, this, trace, moduleConfiguration);
         this.module = rootDescriptor;
         this.moduleConfiguration = moduleConfiguration;
@@ -123,6 +130,11 @@ public class ResolveSession {
 
     /*package*/ boolean isClassSpecial(@NotNull FqNameUnsafe fqName) {
         return specialClasses.apply(fqName);
+    }
+
+    @NotNull
+    /*package*/ StorageManager getStorageManager() {
+        return storageManager;
     }
 
     @NotNull
