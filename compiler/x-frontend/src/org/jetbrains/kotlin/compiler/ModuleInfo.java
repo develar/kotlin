@@ -96,10 +96,14 @@ public final class ModuleInfo implements ModuleConfiguration {
 
     public String getName() {
         if (normalName == null) {
-            String specialName = moduleDescriptor.getName().getName();
-            normalName = specialName.substring(1, specialName.length() - 1);
+            normalName = getNormalName(moduleDescriptor);
         }
         return normalName;
+    }
+
+    public static String getNormalName(ModuleDescriptor moduleDescriptor) {
+        String specialName = moduleDescriptor.getName().getName();
+        return specialName.substring(1, specialName.length() - 1);
     }
 
     public BindingContext getBindingContext() {

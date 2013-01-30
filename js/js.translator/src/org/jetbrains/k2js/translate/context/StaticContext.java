@@ -35,15 +35,16 @@ import org.jetbrains.k2js.config.EcmaVersion;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
-import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
-import org.jetbrains.kotlin.compiler.PredefinedAnnotation;
+import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.kotlin.compiler.PredefinedAnnotation;
+import org.jetbrains.kotlin.compiler.TranslationException;
 
 import java.util.Map;
 
-import static org.jetbrains.kotlin.compiler.AnnotationsUtils.*;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
+import static org.jetbrains.kotlin.compiler.AnnotationsUtils.*;
 
 /**
  * Aggregates all the static parts of the context.
@@ -270,13 +271,15 @@ public final class StaticContext {
                 }
                 else {
                     ModuleInfo dependency = configuration.getModule().findDependency(moduleDescriptor);
-                    assert dependency != null;
+                    if (dependency == null) {
+                        throw new TranslationException("Missed module dependency " + ModuleInfo.getNormalName(moduleDescriptor));
+                    }
                     result = new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(dependency.getName()));
                 }
             }
             else {
-                result = new JsNameRef(namespace.getName().getName(), getPackageQualifier(
-                        (NamespaceDescriptor) namespace.getContainingDeclaration(), moduleDescriptor));
+                result = new JsNameRef(namespace.getName().getName(),
+                                       getPackageQualifier((NamespaceDescriptor) namespace.getContainingDeclaration(), moduleDescriptor));
             }
             //noinspection ConstantConditions
             qualifierMap.put(namespace, result);

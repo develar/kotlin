@@ -17,10 +17,14 @@
 package org.jetbrains.k2js.translate.general;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.psi.FileViewProvider;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
+import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils.LineAndColumn;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetNamedFunction;
@@ -39,6 +43,7 @@ import org.jetbrains.k2js.translate.test.JSTester;
 import org.jetbrains.k2js.translate.utils.dangerous.DangerousData;
 import org.jetbrains.k2js.translate.utils.dangerous.DangerousTranslator;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.kotlin.compiler.TranslationException;
 
 import java.util.Collection;
 import java.util.List;
@@ -75,10 +80,21 @@ public final class Translation {
         return doTranslateExpression(expression, context);
     }
 
-    //NOTE: use with care
     @NotNull
     public static JsNode doTranslateExpression(JetExpression expression, TranslationContext context) {
-        return expression.accept(new ExpressionVisitor(), context);
+        try {
+            return expression.accept(new ExpressionVisitor(), context);
+        }
+        catch (TranslationException e) {
+            if (e.getLocation() == null) {
+                FileViewProvider viewProvider = expression.getContainingFile().getViewProvider();
+                LineAndColumn location = DiagnosticUtils.offsetToLineAndColumn(viewProvider.getDocument(),
+                                                                               expression.getNode().getStartOffset());
+                e.setLocation(CompilerMessageLocation.create(viewProvider.getVirtualFile().getPath(),
+                                                             location.getLine(), location.getColumn()));
+            }
+            throw e;
+        }
     }
 
     @NotNull

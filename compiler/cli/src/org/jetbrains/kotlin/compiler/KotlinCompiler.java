@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport;
+import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
@@ -123,7 +124,12 @@ public class KotlinCompiler {
         assert prev == null;
 
         if (!configuration.get(CompilerConfigurationKeys.ANALYZE_ONLY, false)) {
-            subCompiler.compile(configuration, moduleInfo, sources);
+            try {
+                subCompiler.compile(configuration, moduleInfo, sources);
+            }
+            catch (TranslationException e) {
+                messageCollector.report(CompilerMessageSeverity.ERROR, e.getMessage(), e.getLocation());
+            }
         }
     }
 
