@@ -16,26 +16,23 @@
 
 package org.jetbrains.k2js.translate.expression.foreach;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
+import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetForExpression;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 
-import java.util.List;
-
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorForType;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.addAssign;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.lessThanEq;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopRange;
-import static org.jetbrains.k2js.translate.utils.TemporariesUtils.temporariesInitialization;
 
 public final class RangeForTranslator extends ForTranslator {
-
     @NotNull
     public static JsStatement doTranslate(@NotNull JetForExpression expression,
                                           @NotNull TranslationContext context) {
@@ -52,58 +49,25 @@ public final class RangeForTranslator extends ForTranslator {
     }
 
     @NotNull
-    private final TemporaryVariable rangeExpression;
-    @NotNull
-    private final TemporaryVariable incrVar;
-    @NotNull
-    private final TemporaryVariable start;
-    @NotNull
-    private final TemporaryVariable end;
+    private final Pair<JsVar, JsExpression> rangeExpression;
 
     private RangeForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
         super(forExpression, context);
-        rangeExpression = context.declareTemporary(Translation.translateAsExpression(getLoopRange(expression), context));
-        JsExpression isReversed = callFunction("get_reversed");
-        JsConditional incrVarValue = new JsConditional(isReversed,
-                                                       program().getNumberLiteral(-1),
-                                                       program().getNumberLiteral(1));
-        incrVar = context().declareTemporary(incrVarValue);
-        start = context().declareTemporary(callFunction("get_start"));
-        end = context().declareTemporary(sum(callFunction("get_end"), incrVar.reference()));
+        rangeExpression = context().dynamicContext().createTemporary(Translation.translateAsExpression(getLoopRange(expression), context));
     }
 
     @NotNull
-    private JsBlock translate() {
-        List<JsStatement> blockStatements = Lists.newArrayList();
-        blockStatements.add(temporariesInitialization(rangeExpression, incrVar, start, end).makeStmt());
-        blockStatements.add(generateForExpression());
-        return new JsBlock(blockStatements);
-    }
-
-    @NotNull
-    private JsFor generateForExpression() {
-        JsFor result = new JsFor(initExpression(), getCondition(), getIncrExpression());
-        result.setBody(translateOriginalBodyExpression());
-        return result;
-    }
-
-    @NotNull
-    private JsVars initExpression() {
-        return newVar(parameterName, start.reference());
-    }
-
-    @NotNull
-    private JsExpression getCondition() {
-        return inequality(new JsNameRef(parameterName), end.reference());
-    }
-
-    @NotNull
-    private JsExpression getIncrExpression() {
-        return addAssign(new JsNameRef(parameterName), incrVar.reference());
+    private JsStatement translate() {
+        Pair<JsVar, JsExpression> increment = context().dynamicContext().createTemporary(callFunction("get_increment"));
+        Pair<JsVar, JsExpression> end = context().dynamicContext().createTemporary(callFunction("get_end"));
+        return new JsFor(new JsVars(rangeExpression.first, new JsVar(parameterName, callFunction("get_start")), end.first, increment.first),
+                         lessThanEq(new JsNameRef(parameterName), end.second),
+                         addAssign(new JsNameRef(parameterName), increment.second),
+                         translateOriginalBodyExpression());
     }
 
     @NotNull
     private JsExpression callFunction(@NotNull String funName) {
-        return new JsInvocation(new JsNameRef(funName, rangeExpression.reference()));
+        return new JsInvocation(new JsNameRef(funName, rangeExpression.second));
     }
 }

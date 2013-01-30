@@ -221,6 +221,9 @@ public final class StaticContext {
                 if (type.getRangeTypeName().equals(name)) {
                     return "NumberRange";
                 }
+                else if (type.getProgressionClassName().shortName().equals(name)) {
+                    return "NumberProgression";
+                }
             }
             return name.getName();
         }

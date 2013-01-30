@@ -71,7 +71,7 @@ public final class ArrayForTranslator extends ForTranslator {
 
     @NotNull
     private JsFor translate() {
-        return new JsFor(getInitExpression(), getCondition(), getIncrementExpression(), getBody());
+        return new JsFor(createInitExpression(), getCondition(), getIncrementExpression(), getBody());
     }
 
     @NotNull
@@ -80,7 +80,7 @@ public final class ArrayForTranslator extends ForTranslator {
     }
 
     @NotNull
-    private JsVars getInitExpression() {
+    private JsVars createInitExpression() {
         JsVars vars = new JsVars();
         if (loopRange.first != null) {
             vars.add(loopRange.first);

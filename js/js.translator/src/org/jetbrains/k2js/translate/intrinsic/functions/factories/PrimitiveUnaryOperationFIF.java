@@ -40,9 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.subtract;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.sum;
-
 public class PrimitiveUnaryOperationFIF extends CompositeFIF {
     private static final FunctionIntrinsic RANGE_TO_INTRINSIC = new FunctionIntrinsic() {
         @NotNull
@@ -52,10 +49,9 @@ public class PrimitiveUnaryOperationFIF extends CompositeFIF {
             assert arguments.size() == 1 : "RangeTo must have one argument.";
             assert rangeStart != null;
             JsExpression rangeEnd = arguments.get(0);
-            JsBinaryOperation rangeSize = sum(subtract(rangeEnd, rangeStart), context.program().getNumberLiteral(1));
             JsExpression nameRef = Namer.kotlin("NumberRange");
             //TODO: add tests and correct expression for reversed ranges.
-            List<JsExpression> args = Arrays.asList(rangeStart, rangeSize, /*range is not reversed*/JsLiteral.FALSE);
+            List<JsExpression> args = Arrays.asList(rangeStart, rangeEnd);
             return context.isEcma5() ? new JsInvocation(nameRef, args) : new JsNew(nameRef, args);
         }
     };
