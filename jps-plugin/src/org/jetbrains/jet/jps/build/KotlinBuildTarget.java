@@ -26,7 +26,10 @@ import org.jetbrains.jps.builders.storage.BuildDataPaths;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.indices.IgnoredFileIndex;
 import org.jetbrains.jps.indices.ModuleExcludeIndex;
-import org.jetbrains.jps.model.*;
+import org.jetbrains.jps.model.JpsDummyElement;
+import org.jetbrains.jps.model.JpsElementChildRole;
+import org.jetbrains.jps.model.JpsModel;
+import org.jetbrains.jps.model.JpsSimpleElement;
 import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
@@ -45,7 +48,6 @@ import java.util.List;
 public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
     private final JpsModule module;
 
-    // todo find normal solution
     public static final JpsElementChildRole<JpsDummyElement> X_COMPILER_FLAG = JpsElementChildRoleBase.create("kotlinXCompilerFlag");
 
     KotlinBuildTarget(@NotNull JpsModule module, @NotNull BuildTargetType<?> targetType) {
@@ -64,16 +66,15 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
 
     @Override
     public Collection<BuildTarget<?>> computeDependencies(BuildTargetRegistry targetRegistry, TargetOutputIndex outputIndex) {
-        module.getContainer().setChild(X_COMPILER_FLAG, JpsElementFactory.getInstance().createDummyElement());
-
         JpsJavaDependenciesEnumerator enumerator = JpsJavaExtensionService.dependencies(module).compileOnly().productionOnly();
         final List<BuildTarget<?>> dependencies = new SmartList<BuildTarget<?>>();
         enumerator.processModules(new Consumer<JpsModule>() {
             @Override
             public void consume(JpsModule dependency) {
-                dependency.getContainer().setChild(X_COMPILER_FLAG, JpsElementFactory.getInstance().createDummyElement());
-                // we must compile module even if it is not included in any artifact — module will be compiled, but not copied to some artifact output directory
-                dependencies.add(JsBuildTargetType.createTarget(dependency));
+                if (JsBuildTargetType.isJsModule(module)) {
+                    // we must compile module even if it is not included in any artifact — module will be compiled, but not copied to some artifact output directory
+                    dependencies.add(JsBuildTargetType.createTarget(dependency));
+                }
             }
         });
         return dependencies;

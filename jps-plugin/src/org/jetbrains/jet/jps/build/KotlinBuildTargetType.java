@@ -16,7 +16,6 @@
 
 package org.jetbrains.jet.jps.build;
 
-import com.intellij.util.PairConsumer;
 import gnu.trove.THashMap;
 import gnu.trove.THashSet;
 import gnu.trove.TObjectHashingStrategy;
@@ -43,51 +42,38 @@ public abstract class KotlinBuildTargetType extends BuildTargetType<KotlinBuildT
 
     public abstract String getSubCompilerClassName();
 
-    protected static void collectTargets(
-            JpsModel model,
-            KotlinBuildTargetType targetType,
-            PairConsumer<JpsModule, KotlinBuildTarget> consumer
-    ) {
-        THashSet<JpsModuleReference> visited = new THashSet<JpsModuleReference>(new TObjectHashingStrategy<JpsModuleReference>() {
-            @Override
-            public int computeHashCode(JpsModuleReference reference) {
-                return reference.getModuleName().hashCode();
-            }
-
-            @Override
-            public boolean equals(
-                    JpsModuleReference reference, JpsModuleReference reference2
-            ) {
-                return reference.getModuleName().equals(reference2.getModuleName());
-            }
-        });
-
-        for (JpsArtifact artifact : JpsArtifactService.getInstance().getArtifacts(model.getProject())) {
-            for (JpsPackagingElement element : artifact.getRootElement().getChildren()) {
-                if (element instanceof JpsKotlinCompilerOutputPackagingElement) {
-                    JpsModuleReference reference = ((JpsKotlinCompilerOutputPackagingElement) element).getModuleReference();
-                    if (visited.add(reference)) {
-                        JpsModule module = reference.resolve();
-                        if (module != null) {
-                            consumer.consume(module, new KotlinBuildTarget(module, targetType));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     protected static class Loader extends BuildTargetLoader<KotlinBuildTarget> {
         private final Map<String, KotlinBuildTarget> targets;
 
         public Loader(JpsModel model, KotlinBuildTargetType targetType) {
             targets = new THashMap<String, KotlinBuildTarget>();
-            collectTargets(model, targetType, new PairConsumer<JpsModule, KotlinBuildTarget>() {
+            THashSet<JpsModuleReference> visited = new THashSet<JpsModuleReference>(new TObjectHashingStrategy<JpsModuleReference>() {
                 @Override
-                public void consume(JpsModule module, KotlinBuildTarget target) {
-                    targets.put(module.getName(), target);
+                public int computeHashCode(JpsModuleReference reference) {
+                    return reference.getModuleName().hashCode();
+                }
+
+                @Override
+                public boolean equals(
+                        JpsModuleReference reference, JpsModuleReference reference2
+                ) {
+                    return reference.getModuleName().equals(reference2.getModuleName());
                 }
             });
+
+            for (JpsArtifact artifact : JpsArtifactService.getInstance().getArtifacts(model.getProject())) {
+                for (JpsPackagingElement element : artifact.getRootElement().getChildren()) {
+                    if (element instanceof JpsKotlinCompilerOutputPackagingElement) {
+                        JpsModuleReference reference = ((JpsKotlinCompilerOutputPackagingElement) element).getModuleReference();
+                        if (visited.add(reference)) {
+                            JpsModule module = reference.resolve();
+                            if (module != null) {
+                                targets.put(module.getName(), new KotlinBuildTarget(module, targetType));
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         @Nullable

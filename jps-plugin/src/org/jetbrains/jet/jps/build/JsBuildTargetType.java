@@ -18,9 +18,14 @@ package org.jetbrains.jet.jps.build;
 
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jps.builders.BuildTargetLoader;
+import org.jetbrains.jps.model.JpsElementFactory;
 import org.jetbrains.jps.model.JpsModel;
 import org.jetbrains.jps.model.java.JpsJavaModuleType;
+import org.jetbrains.jps.model.library.JpsLibrary;
+import org.jetbrains.jps.model.module.JpsDependencyElement;
+import org.jetbrains.jps.model.module.JpsLibraryDependency;
 import org.jetbrains.jps.model.module.JpsModule;
 
 import java.util.List;
@@ -52,12 +57,24 @@ public class JsBuildTargetType extends KotlinBuildTargetType {
     @Override
     public List<KotlinBuildTarget> computeAllTargets(@NotNull JpsModel model) {
         List<KotlinBuildTarget> targets = new SmartList<KotlinBuildTarget>();
-        // nik note - don't be smart, it is JPS responsibility to filter
         for (JpsModule module : model.getProject().getModules(JpsJavaModuleType.INSTANCE)) {
-            //module.getContainer().setChild(X_COMPILER_FLAG, X_COMPILER_FLAG_VALUE);
-            targets.add(new KotlinBuildTarget(module, this));
+            if (isJsModule(module)) {
+                module.getContainer().setChild(KotlinBuildTarget.X_COMPILER_FLAG, JpsElementFactory.getInstance().createDummyElement());
+                targets.add(new KotlinBuildTarget(module, this));
+            }
         }
         return targets;
+    }
+
+    public static boolean isJsModule(JpsModule module) {
+        for (JpsDependencyElement dependency : module.getDependenciesList().getDependencies()) {
+            if (!(dependency instanceof JpsLibraryDependency)) {
+                continue;
+            }
+            JpsLibrary library = ((JpsLibraryDependency) dependency).getLibrary();
+            return library != null && library.getName().equals(JsExternalizationConstants.JS_LIBRARY_NAME);
+        }
+        return false;
     }
 
     @NotNull
