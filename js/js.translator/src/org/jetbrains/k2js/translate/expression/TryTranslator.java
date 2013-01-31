@@ -32,8 +32,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.jetbrains.k2js.translate.general.Translation.translateAsBlock;
 import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToBlock;
 
 public final class TryTranslator {
     private TryTranslator() {
@@ -41,7 +41,7 @@ public final class TryTranslator {
 
     @NotNull
     public static JsTry translate(@NotNull JetTryExpression expression, @NotNull TranslationContext context) {
-        return new JsTry(translateTryBlock(expression, context),
+        return new JsTry(translateAsBlock(expression.getTryBlock(), context),
                          translateCatches(expression, context),
                          translateFinallyBlock(expression, context));
     }
@@ -50,12 +50,7 @@ public final class TryTranslator {
     @Nullable
     private static JsBlock translateFinallyBlock(JetTryExpression expression, TranslationContext context) {
         JetFinallySection finallyBlock = expression.getFinallyBlock();
-        return finallyBlock != null ? convertToBlock(translateAsStatement(finallyBlock.getFinalExpression(), context)) : null;
-    }
-
-    @NotNull
-    private static JsBlock translateTryBlock(JetTryExpression expression, TranslationContext context) {
-        return convertToBlock(translateAsStatement(expression.getTryBlock(), context));
+        return finallyBlock != null ? translateAsBlock(finallyBlock.getFinalExpression(), context) : null;
     }
 
     private static VariableDescriptor getCatchParameterDescriptor(JetCatchClause clause, TranslationContext context) {
@@ -80,7 +75,7 @@ public final class TryTranslator {
                     Collections.<DeclarationDescriptor, JsExpression>singletonMap(getCatchParameterDescriptor(clause, outerContext), catchIdentRef));
             JetExpression catchBody = clause.getCatchBody();
             assert catchBody != null;
-            jsCatch.setBody(new JsBlock(translateAsStatement(catchBody, context)));
+            jsCatch.setBody(translateAsBlock(catchBody, context));
         }
         else if (clauses.size() > 1) {
             JsIf prevIf = null;

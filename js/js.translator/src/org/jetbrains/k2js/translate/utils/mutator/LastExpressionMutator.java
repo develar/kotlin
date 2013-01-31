@@ -21,11 +21,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToStatement;
-
 public final class LastExpressionMutator {
     public static JsStatement mutateLastExpression(@NotNull JsNode node, @NotNull Mutator mutator) {
-        return convertToStatement(new LastExpressionMutator(mutator).apply(node));
+        return new LastExpressionMutator(mutator).apply(node).asStatement();
     }
 
     @NotNull
@@ -53,15 +51,15 @@ public final class LastExpressionMutator {
 
     @NotNull
     private JsNode applyToStatement(@NotNull JsExpressionStatement node) {
-        return convertToStatement(apply(node.getExpression()));
+        return apply(node.getExpression()).asStatement();
     }
 
     @NotNull
     private JsNode applyToIf(@NotNull JsIf node) {
-        node.setThenStatement(convertToStatement(apply(node.getThenStatement())));
+        node.setThenStatement(apply(node.getThenStatement()).asStatement());
         JsStatement elseStmt = node.getElseStatement();
         if (elseStmt != null) {
-            node.setElseStatement(convertToStatement(apply(elseStmt)));
+            node.setElseStatement(apply(elseStmt).asStatement());
         }
         return node;
     }
@@ -73,7 +71,7 @@ public final class LastExpressionMutator {
         if (statements.isEmpty()) return node;
 
         int size = statements.size();
-        statements.set(size - 1, convertToStatement(apply(statements.get(size - 1))));
+        statements.set(size - 1, apply(statements.get(size - 1)).asStatement());
         return node;
     }
 }

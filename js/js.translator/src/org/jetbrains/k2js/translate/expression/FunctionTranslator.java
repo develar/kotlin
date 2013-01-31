@@ -37,7 +37,6 @@ import org.jetbrains.k2js.translate.context.AliasingContext;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 import org.jetbrains.k2js.translate.utils.mutator.Mutator;
 
@@ -113,7 +112,7 @@ public final class FunctionTranslator {
             statements.addAll(((JsBlock) node).getStatements());
         }
         else {
-            statements.add(JsAstUtils.convertToStatement(node));
+            statements.add(node.asStatement());
         }
     }
 

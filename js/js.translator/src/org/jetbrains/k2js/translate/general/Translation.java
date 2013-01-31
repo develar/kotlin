@@ -106,7 +106,13 @@ public final class Translation {
     @NotNull
     public static JsStatement translateAsStatement(@NotNull JetExpression expression,
             @NotNull TranslationContext context) {
-        return convertToStatement(translateExpression(expression, context));
+        return translateExpression(expression, context).asStatement();
+    }
+
+    @NotNull
+    public static JsBlock translateAsBlock(@NotNull JetExpression expression, @NotNull TranslationContext context) {
+        JsNode result = translateExpression(expression, context);
+        return result instanceof JsBlock ? (JsBlock) result : new JsBlock(result.asStatement());
     }
 
     @NotNull
@@ -118,7 +124,7 @@ public final class Translation {
         StaticContext staticContext = new StaticContext(bindingContext, config);
         JsFunction definitionFunction = generateDefinitionFunction(staticContext, files, config, mainCallParameters);
         JsProgram program = staticContext.getProgram();
-        program.getGlobalBlock().getStatements().add(generateDefineModuleInvocation(config, definitionFunction, program).makeStmt());
+        program.getStatements().add(generateDefineModuleInvocation(config, definitionFunction, program).makeStmt());
         return program;
     }
 

@@ -50,21 +50,11 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsStatement convertToStatement(@NotNull JsNode jsNode) {
-        assert (jsNode instanceof JsExpression) || (jsNode instanceof JsStatement)
-                : "Unexpected node of type: " + jsNode.getClass().toString();
-        if (jsNode instanceof JsExpression) {
-            return ((JsExpression) jsNode).makeStmt();
-        }
-        return (JsStatement) jsNode;
-    }
-
-    @NotNull
     public static JsBlock convertToBlock(@NotNull JsNode jsNode) {
         if (jsNode instanceof JsBlock) {
             return (JsBlock) jsNode;
         }
-        return new JsBlock(convertToStatement(jsNode));
+        return new JsBlock(jsNode.asStatement());
     }
 
     @NotNull

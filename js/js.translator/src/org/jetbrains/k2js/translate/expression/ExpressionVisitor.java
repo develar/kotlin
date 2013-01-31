@@ -117,7 +117,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
                 assert statement instanceof JetExpression : "Elements in JetBlockExpression " +
                                                             "should be of type JetExpression";
                 JsNode jsNode = statement.accept(this, blockContext);
-                jsBlock.getStatements().add(convertToStatement(jsNode));
+                jsBlock.getStatements().add(jsNode.asStatement());
             }
         }
         return jsBlock;
@@ -185,7 +185,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
             return new JsConditional(testExpression, convertToExpression(thenNode), convertToExpression(elseNode)).source(expression);
         }
         else {
-            JsIf ifStatement = new JsIf(testExpression, convertToStatement(thenNode), elseNode == null ? null : convertToStatement(elseNode));
+            JsIf ifStatement = new JsIf(testExpression, thenNode.asStatement(), elseNode == null ? null : elseNode.asStatement());
             ifStatement.setSource(expression);
             if (isKotlinStatement) {
                 return ifStatement;
@@ -211,7 +211,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         if (nullableExpression == null) {
             return JsStatement.EMPTY;
         }
-        return convertToStatement(nullableExpression.accept(this, context));
+        return nullableExpression.accept(this, context).asStatement();
     }
 
     @NotNull
@@ -297,7 +297,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
             JetExpression baseExpression = expression.getBaseExpression();
             assert baseExpression != null;
             return new JsLabel(context.scope().declareName(getReferencedName(operationReference)),
-                                          convertToStatement(baseExpression.accept(this, context))).source(expression);
+                               baseExpression.accept(this, context).asStatement()).source(expression);
         }
         else {
             return UnaryOperationTranslator.translate(expression, operationToken, context).source(expression);
