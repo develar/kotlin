@@ -267,6 +267,8 @@ public trait Window {
 	public fun addEventListener(`type`: String, listener: ()->Unit, useCapture: Boolean? = null): Unit
 	public fun removeEventListener(`type`: String, listener: ()->Unit, useCapture: Boolean? = null): Unit
 
+	public fun ActiveXObject(sName: String? = null): XMLHttpRequest
+
 	public val localStorage: Storage
 	public val sessionStorage: Storage
 
@@ -282,9 +284,9 @@ public trait Window {
 	public fun cancelRequestAnimationFrame(callback: ()->Unit): Unit
 	public fun importScripts(vararg urls: String?): Unit
 	public fun openDatabase(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: DatabaseCallback? = null): Database
-	public fun openDatabase(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: (()->Unit)? = null): Database
+	public fun openDatabase(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: ()->Unit): Database
 	public fun openDatabaseSync(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: DatabaseCallback? = null): Database
-	public fun openDatabaseSync(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: (()->Unit)? = null): Database
+	public fun openDatabaseSync(name: String, version: String, displayName: String, estimatedSize: Number, creationCallback: ()->Unit): Database
 }
 
 public val window: Window
@@ -946,6 +948,46 @@ public trait HTMLIFrameElement : HTMLElement {
 	public val contentWindow: Window
 }
 
+public class XMLHttpRequest(vararg options: Any?) {
+	public class object {
+		public val UNSENT: Int = 0
+		public val OPENED: Int = 1
+		public val HEADERS_RECEIVED: Int = 2
+		public val LOADING: Int = 3
+		public val DONE: Int = 4
+	}
+
+	public var onreadystatechange: (()->Unit)?
+	public var readyState: Int
+	public val responseText: String?
+	public val statusText: String
+	public val status: Int
+	public var responseXML: Document
+	public var responseType: String
+	public var response: Any?
+	public var withCredentials: Boolean
+	public val upload: XMLHttpRequestEventTarget
+
+	public fun abort(): Unit
+	public fun getAllResponseHeaders(): String?
+	public fun getResponseHeader(headerName: String): String
+	public fun overrideMimeType(mimeType: String): Unit
+	public fun open(method: String, url: String, async: Boolean? = null, user: String? = null, password: String? = null): Unit
+	public fun send(data: String? = null): Unit
+	public fun send(data: ArrayBuffer): Unit
+	public fun send(data: Blob): Unit
+	public fun send(data: Document): Unit
+	public fun send(data: FormData): Unit
+	public fun setRequestHeader(header: String, value: String): Unit
+}
+
+public trait XMLHttpRequestException {
+	public class object {
+		public val NETWORK_ERR: Int = 101
+		public val ABORT_ERR: Int = 102
+	}
+}
+
 public trait Blob {
 	public val size: Long
 	public val `type`: String
@@ -1145,13 +1187,13 @@ public trait Database {
 	public val version: String
 
 	public fun transaction(callback: SQLTransactionCallback, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
-	public fun transaction(callback: SQLTransactionSyncCallback, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
-	public fun transaction(callback: ()->Unit, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun transaction(callback: SQLTransactionSyncCallback, errorCallback: SQLTransactionErrorCallback, successCallback: SQLVoidCallback): Unit
+	public fun transaction(callback: ()->Unit, errorCallback: SQLTransactionErrorCallback, successCallback: SQLVoidCallback): Unit
 	public fun readTransaction(callback: SQLTransactionCallback, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
-	public fun readTransaction(callback: SQLTransactionSyncCallback, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
-	public fun readTransaction(callback: ()->Unit, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun readTransaction(callback: SQLTransactionSyncCallback, errorCallback: SQLTransactionErrorCallback, successCallback: SQLVoidCallback): Unit
+	public fun readTransaction(callback: ()->Unit, errorCallback: SQLTransactionErrorCallback, successCallback: SQLVoidCallback): Unit
 	public fun changeVersion(oldVersion: String, newVersion: String, callback: SQLTransactionCallback? = null, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
-	public fun changeVersion(oldVersion: String, newVersion: String, callback: (()->Unit)? = null, errorCallback: SQLTransactionErrorCallback? = null, successCallback: SQLVoidCallback? = null): Unit
+	public fun changeVersion(oldVersion: String, newVersion: String, callback: ()->Unit, errorCallback: SQLTransactionErrorCallback, successCallback: SQLVoidCallback): Unit
 }
 
 public trait SQLVoidCallback {
@@ -1287,7 +1329,7 @@ public trait CanvasRenderingContext2D {
 	public fun measureText(text: String): TextMetrics
 	public fun drawImage(img_elem: Element, dx_or_sx: Number, dy_or_sy: Number, dw_or_sw: Number? = null, dh_or_sh: Number? = null, dx: Number? = null, dy: Number? = null, dw: Number? = null, dh: Number? = null): Unit
 	public fun createImageData(imagedata_or_sw: ImageData, sh: Number? = null): ImageData
-	public fun createImageData(imagedata_or_sw: Number, sh: Number? = null): ImageData
+	public fun createImageData(imagedata_or_sw: Number, sh: Number): ImageData
 	public fun getImageData(sx: Number, sy: Number, sw: Number, sh: Number): ImageData
 	public fun putImageData(image_data: ImageData, dx: Number, dy: Number, dirtyX: Number? = null, dirtyY: Number? = null, dirtyWidth: Number? = null, dirtyHeight: Number? = null): Unit
 }
@@ -1531,37 +1573,6 @@ public trait XMLHttpRequestEventTarget : EventTarget {
 }
 
 public trait XMLHttpRequestUpload : XMLHttpRequestEventTarget {
-}
-
-public class XMLHttpRequest(vararg options: Any) {
-	public class object {
-		public val UNSENT: Int = 0
-		public val OPENED: Int = 1
-		public val HEADERS_RECEIVED: Int = 2
-		public val LOADING: Int = 3
-		public val DONE: Int = 4
-	}
-
-	public var responseType: String
-	public var response: Any?
-	public val responseText: String?
-	public val readyState: Int
-	public val status: Int
-	public val statusText: String
-	public var withCredentials: Boolean
-	public var onreadystatechange: (()->Unit)?
-	public val upload: XMLHttpRequestEventTarget
-
-	public fun abort(): Unit
-	public fun getAllResponseHeaders(): String?
-	public fun send(data: ArrayBuffer): Unit
-	public fun send(data: Blob): Unit
-	public fun send(data: Document): Unit
-	public fun send(data: FormData): Unit
-	public fun send(data: String? = null): Unit
-	public fun open(method: String, url: String, async: Boolean? = null, user: String? = null, password: String? = null): Unit
-	public fun setRequestHeader(header: String, value: String): Unit
-	public fun overrideMimeType(mime: String): Unit
 }
 
 public trait FormData {

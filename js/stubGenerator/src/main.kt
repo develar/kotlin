@@ -37,6 +37,7 @@ private fun generateJs(stubDir: File) {
     val htmlGenerator = JavaScriptStubGenerator("html")
     htmlGenerator.append("\n\nimport org.w3c.dom.*")
     htmlGenerator.generate(File(stubDir, "DHTML.xml"), ignoredEsClasses)
+    htmlGenerator.generate(File(stubDir, "AJAX.xml"))
     htmlGenerator.generate(File(stubDir, "HTML5.xml"))
     htmlGenerator.writeTo(File(jsGeneratedDir, "html5.kt"))
 }

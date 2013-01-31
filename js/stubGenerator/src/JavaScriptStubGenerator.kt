@@ -60,7 +60,7 @@ class JavaScriptStubGenerator(packageName: String) {
             }
 
             val element = node as Element
-            processParameter(element, getType(element), builder)
+            processParameter(element, getType(element), builder, isOptional(element))
         }
         builder.append(')')
     }
@@ -339,7 +339,9 @@ class JavaScriptStubGenerator(packageName: String) {
                             typeName = typeName.substring(0, typeName.indexOf('|'))
                         }
                     }
-                    processParameter(parameterElement, typeName, builder)
+                    // <param name="data" type="String|ArrayBuffer|Blob|Document|FormData" optional="true"/>, see XMLHttpRequest.send
+                    val optional = multiParameterIndex <= 1 && isOptional(parameterElement)
+                    processParameter(parameterElement, typeName, builder, optional)
                 }
 
                 builder.append(')').appendType(element, "returnType")
@@ -348,13 +350,14 @@ class JavaScriptStubGenerator(packageName: String) {
         }
     }
 
-    private fun processParameter(element: Element, typeName: String, builder: StringBuilder) {
+    private fun isOptional(element: Element) = if (methodParamMandatoryByDefault) element.getAttribute("optional") == "true" else element.getAttribute("mandatory") != "true"
+
+    private fun processParameter(element: Element, typeName: String, builder: StringBuilder, optional: Boolean) {
         val rest = element.attribute("rest") == "true"
         if (rest) {
             builder.append("vararg ")
         }
         builder.appendName(element).append(": ")
-        val optional = if (methodParamMandatoryByDefault) element.getAttribute("optional") == "true" else element.getAttribute("mandatory") != "true"
         val enclose = optional && typeName.indexOf('(') != -1
         if (enclose) {
             builder.append('(')
