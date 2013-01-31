@@ -84,7 +84,7 @@ class JavaScriptStubGenerator(packageName: String) {
             val builder: StringBuilder
             val genericOffset: Int?
             if (endOffset == null) {
-                val extends = element.attribute("extends")
+                var extends = element.attribute("extends")
                 if (extends == "Error") {
                     // don't translate js errors classes
                     continue
@@ -106,12 +106,17 @@ class JavaScriptStubGenerator(packageName: String) {
                 if (constructor != null) {
                     processConstructor(constructor, builder)
                 }
+
+                if (extends == null && currentClassName!!.endsWith("Exception")) {
+                    extends = "jet.Throwable"
+                }
                 if (extends != null) {
                     builder.append(" : ").append(getType(extends))
                     if (!isTrait) {
                         append("()")
                     }
                 }
+
                 val implements = element.attribute("implements")
                 if (implements != null) {
                     builder.append(if (extends == null) " : " else ", ")

@@ -7,22 +7,22 @@ public trait DOMImplementationRegistry {
 	public fun getDOMImplementationList(features: String): Unit
 }
 
-public trait DOMException {
-	public var code: Number
+public trait DOMException : jet.Throwable {
+	public var code: Int
 }
 
 public trait DOMStringList {
-	public val length: Number
+	public val length: Int
 
-	public fun item(index: Number): String
+	public fun item(index: Int): String
 	public fun contains(str: String): Boolean
 }
 
 public trait NameList {
-	public val length: Number
+	public val length: Int
 
-	public fun getName(index: Number): String
-	public fun getNamespaceURI(index: Number): String
+	public fun getName(index: Int): String
+	public fun getNamespaceURI(index: Int): String
 	public fun contains(str: String): Boolean
 	public fun containsNS(namespaceURI: String, name: String): Boolean
 }
@@ -339,7 +339,7 @@ public trait EventListener {
 	public fun handleEvent(event: Event): Unit
 }
 
-public trait EventException {
+public trait EventException : jet.Throwable {
 	public var code: Number
 }
 
@@ -486,6 +486,6 @@ public trait DocumentRange {
 	public fun createRange(): org.w3c.dom.Range
 }
 
-public trait RangeException {
+public trait RangeException : jet.Throwable {
 	public var code: Int
 }

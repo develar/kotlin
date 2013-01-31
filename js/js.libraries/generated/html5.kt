@@ -981,11 +981,12 @@ public class XMLHttpRequest(vararg options: Any?) {
 	public fun setRequestHeader(header: String, value: String): Unit
 }
 
-public trait XMLHttpRequestException {
+public trait XMLHttpRequestException : jet.Throwable {
 	public class object {
 		public val NETWORK_ERR: Int = 101
 		public val ABORT_ERR: Int = 102
 	}
+	public val code: Int
 }
 
 public trait Blob {
