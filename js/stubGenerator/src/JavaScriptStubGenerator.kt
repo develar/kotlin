@@ -1,4 +1,4 @@
-package org.jetbrains.kotlin.tools
+package org.jetbrains.kotlin.js.stubGenerator
 
 import java.io.File
 import org.w3c.dom.Element
@@ -36,7 +36,7 @@ class JavaScriptStubGenerator(packageName: String) {
     private var genericType: String? = null
 
     private fun findConstructor(classElement: Element): Element? {
-        for (val node in classElement.getChildNodes()!!) {
+        for (val node in classElement.getChildNodes()) {
             if (node is Element && node.getTagName() == "method" && node.getAttribute("name") == "__constructor__") {
                 return node
             }
@@ -91,7 +91,7 @@ class JavaScriptStubGenerator(packageName: String) {
                     isTrait = true
                 }
 
-                builder.append("\n\npublic native ")
+                builder.append("\n\npublic ")
                 if (element.attribute("open") == "true") {
                     builder.append("open ")
                 }
@@ -123,15 +123,15 @@ class JavaScriptStubGenerator(packageName: String) {
             }
 
             val static = element.iterator().filter { it is Element && it.getTagName() == "static" }
-            val hasStaticMemebers = static.hasNext()
-            if (hasStaticMemebers) {
-                builder.append("\n\tpublic native class object {")
-                processMembers(static.next() as Element, true, false, "\t\t", builder)
+            val hasStaticMembers = static.hasNext()
+            if (hasStaticMembers) {
+                builder.append("\n\tpublic class object {")
+                processMembers(static.next() as Element, true, "\t\t", builder)
                 builder.append("\n\t}")
 
                 assert(!static.hasNext())
             }
-            processMembers(element, !isTrait, hasStaticMemebers, "\t", builder)
+            processMembers(element, !isTrait, "\t", builder)
 
             if (genericType != null) {
                 builder.insert(genericOffset!!, "<$genericType>")
@@ -143,7 +143,7 @@ class JavaScriptStubGenerator(packageName: String) {
                 builder.append("\n}")
                 val exposeAsProperty = element.attribute("exposeAsProperty")
                 if (exposeAsProperty != null && exposeAsProperty != "false") {
-                    builder.append("\n\npublic native val ")
+                    builder.append("\n\npublic val ")
                     if (exposeAsProperty == "true") {
                         builder.append(Character.toLowerCase(currentClassName!![0]))
                         builder.append(currentClassName!!, 1, currentClassName!!.length())
@@ -152,7 +152,6 @@ class JavaScriptStubGenerator(packageName: String) {
                         builder.append(exposeAsProperty)
                     }
                     builder.append(": ").append(currentClassName)
-                            //.append(" = noImpl")
                 }
             }
             else {
@@ -183,8 +182,8 @@ class JavaScriptStubGenerator(packageName: String) {
 
     private fun checkElement(element: Node, tagName: String) = element is Element && element.getTagName() == tagName && element.attribute("deprecated") == null && element.attribute("browser") != "IE"
 
-    fun processMembers(element: Element, bodyRequired: Boolean, hasMembersBefore: Boolean, indent: String, builder: StringBuilder) {
-        val nodes = element.getChildNodes()!!
+    fun processMembers(element: Element, hasMembersBefore: Boolean, indent: String, builder: StringBuilder) {
+        val nodes = element.getChildNodes()
         val properties = nodes.iterator().filter { checkElement(it, "property") && propertyDuplicateGuard.add(currentClassName + "." + (it as Element).attribute("name")!!) }
         val methods = nodes.iterator().filter { checkElement(it, "method") }
         val insertNewLineSeparator = properties.hasNext() && methods.hasNext()
@@ -193,11 +192,11 @@ class JavaScriptStubGenerator(packageName: String) {
             builder.append('\n')
         }
 
-        processProperties(properties, bodyRequired, indent, builder)
+        processProperties(properties, indent, builder)
         if (insertNewLineSeparator) {
             builder.append('\n')
         }
-        processMethods(methods, bodyRequired, indent, builder)
+        processMethods(methods, indent, builder)
     }
 
     private fun StringBuilder.appendGeneratedEventName(propertyName: String, firstChar: Char): StringBuilder {
@@ -215,7 +214,7 @@ class JavaScriptStubGenerator(packageName: String) {
         }
     }
 
-    private fun processProperties(nodes: Iterator<Node>, bodyRequired: Boolean, indent: String, builder: StringBuilder) {
+    private fun processProperties(nodes: Iterator<Node>, indent: String, builder: StringBuilder) {
         for (val node in nodes) {
             val element = node as Element
 
@@ -227,10 +226,10 @@ class JavaScriptStubGenerator(packageName: String) {
 
             if (typeName.startsWith("function(")) {
                 val simple = typeName["function(".length] != '{'
-                val matcher = (if (simple) FUN_TYPE_SIMPLE_PATTERN else FUN_TYPE_PATTERN).matcher(typeName)!!
+                val matcher = (if (simple) FUN_TYPE_SIMPLE_PATTERN else FUN_TYPE_PATTERN).matcher(typeName)
                 if (!simple) {
                     val firstChar = Character.toUpperCase(name[2])
-                    builder.append("\n\n${indent}public native trait ").appendGeneratedEventName(name, firstChar).append(" : org.w3c.dom.Event {")
+                    builder.append("\n\n${indent}public abstract inner class ").appendGeneratedEventName(name, firstChar).append(" : org.w3c.dom.Event {")
                     processTypeExpression(matcher) {propertyName, propertyType ->
                         val effectiveType: String
                         if (propertyType.contains("|")) {
@@ -277,7 +276,6 @@ class JavaScriptStubGenerator(packageName: String) {
             builder.append(' ').appendName(element).append(": ")
             typeNameAppender()
 
-            //val value = element.attribute("value") ?: (if (bodyRequired) "noImpl" else null)
             val value = element.attribute("value")
             if (value != null) {
                 builder.append(" = ").append(value)
@@ -285,7 +283,7 @@ class JavaScriptStubGenerator(packageName: String) {
         }
     }
 
-    private fun processMethods(nodes: Iterator<Node>, bodyRequired: Boolean, indent: String, builder: StringBuilder) {
+    private fun processMethods(nodes: Iterator<Node>, indent: String, builder: StringBuilder) {
         for (val node in nodes) {
             val element = node as Element
             val name = getName(element)
@@ -304,7 +302,7 @@ class JavaScriptStubGenerator(packageName: String) {
 
                 if (typeName.indexOf('|') != -1) {
                     multiTypeParameterName = getName(parameter as Element)
-                    multiTypeParameterTypes = typeName.split('|') as Array<String>
+                    multiTypeParameterTypes = typeName.split('|')
                     break
                 }
             }
@@ -340,9 +338,6 @@ class JavaScriptStubGenerator(packageName: String) {
                 }
 
                 builder.append(')').appendType(element, "returnType")
-                //if (bodyRequired) {
-                //    builder.append(" = ").append("noImpl")
-                //}
             }
             while (!stopProcessParameters)
         }
