@@ -33,6 +33,7 @@ import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.BodiesResolveContext;
 import org.jetbrains.jet.lang.resolve.lazy.FileBasedDeclarationProviderFactory;
+import org.jetbrains.jet.lang.resolve.lazy.LockBasedStorageManager;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -97,11 +98,12 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             allFiles = files;
         }
 
-        FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(allFiles, Predicates.<FqName>alwaysFalse());
+        LockBasedStorageManager storageManager = new LockBasedStorageManager();
+        FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(storageManager, allFiles, Predicates.<FqName>alwaysFalse());
         ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
         ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
         XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
-        return new ResolveSession(project, lazyModule, createModuleInfo(project, libraryModuleConfiguration), declarationProviderFactory);
+        return new ResolveSession(project, storageManager, lazyModule, createModuleInfo(project, libraryModuleConfiguration), declarationProviderFactory);
     }
 
     private static List<JetFile> getLibraryFiles(Project project) {

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.jetbrains.kotlin.di;
 
 import org.jetbrains.jet.lang.resolve.TopDownAnalyzer;
