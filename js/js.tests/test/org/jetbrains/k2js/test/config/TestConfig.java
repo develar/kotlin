@@ -86,7 +86,6 @@ public class TestConfig extends Config {
             "src/core/javautil.kt",
             "src/json.kt",
             "src/core/kotlin.kt",
-            "src/core/math.kt",
             "src/string.kt",
             "generated/html5.kt",
             "src/jquery/common.kt",

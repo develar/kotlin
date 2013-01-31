@@ -16,7 +16,17 @@ private fun generateJs(stubDir: File) {
     ignoredEsClasses.add("Function")
     ignoredEsClasses.add("JSON")
     ignoredEsClasses.add("document")
-    generateApi("js", File(stubDir, "EcmaScript5.xml"), File(jsGeneratedDir, "ecmaScript5.kt"), ignoredEsClasses)
+    ignoredEsClasses.add("Global")
+    ignoredEsClasses.add("Boolean")
+    ignoredEsClasses.add("Arguments")
+    ignoredEsClasses.add("Number")
+    ignoredEsClasses.add("RegExp")
+    ignoredEsClasses.add("Error")
+
+    val ecma5Generator = JavaScriptStubGenerator("js")
+    ecma5Generator.generate(File(stubDir, "EcmaScript.xml"), ignoredEsClasses)
+    ecma5Generator.generate(File(stubDir, "EcmaScript5.xml"), ignoredEsClasses)
+    ecma5Generator.writeTo(File(jsGeneratedDir, "ecmaScript5.kt"))
 
     val domGenerator = JavaScriptStubGenerator("org.w3c.dom")
     domGenerator.generate(File(stubDir, "DOMCore.xml"), ignoredEsClasses)

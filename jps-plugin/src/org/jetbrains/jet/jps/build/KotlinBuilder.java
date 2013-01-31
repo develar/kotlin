@@ -60,6 +60,10 @@ public class KotlinBuilder extends ModuleLevelBuilder {
             DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
             OutputConsumer outputConsumer
     ) throws ProjectBuildException, IOException {
+        if (Boolean.valueOf(System.getProperty(GlobalOptions.SKIP_K2JVM))) {
+            return ExitCode.NOTHING_DONE;
+        }
+
         for (JpsModule module : chunk.getModules()) {
             if (module.getContainer().getChild(KotlinBuildTarget.X_COMPILER_FLAG) != null) {
                 return ExitCode.NOTHING_DONE;
