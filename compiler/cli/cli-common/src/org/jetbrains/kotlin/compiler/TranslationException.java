@@ -10,6 +10,11 @@ public class TranslationException extends RuntimeException {
         super(message);
     }
 
+    public TranslationException(@NotNull Throwable cause, @NotNull CompilerMessageLocation location) {
+        super(cause);
+        this.location = location;
+    }
+
     public CompilerMessageLocation getLocation() {
         return location;
     }
@@ -17,5 +22,15 @@ public class TranslationException extends RuntimeException {
     public void setLocation(@NotNull CompilerMessageLocation value) {
         assert location == null;
         location = value;
+    }
+
+    @NotNull
+    @Override
+    public String toString() {
+        String result = super.toString();
+        if (location == null) {
+            return result;
+        }
+        return location.getPath() + ":" + location.getLine() + ":" + location.getColumn() + " " + result;
     }
 }

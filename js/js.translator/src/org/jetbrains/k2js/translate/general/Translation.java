@@ -87,14 +87,19 @@ public final class Translation {
         }
         catch (TranslationException e) {
             if (e.getLocation() == null) {
-                FileViewProvider viewProvider = expression.getContainingFile().getViewProvider();
-                LineAndColumn location = DiagnosticUtils.offsetToLineAndColumn(viewProvider.getDocument(),
-                                                                               expression.getNode().getStartOffset());
-                e.setLocation(CompilerMessageLocation.create(viewProvider.getVirtualFile().getPath(),
-                                                             location.getLine(), location.getColumn()));
+                e.setLocation(getCompilerMessageLocation(expression));
             }
             throw e;
         }
+        catch (RuntimeException e) {
+            throw new TranslationException(e, getCompilerMessageLocation(expression));
+        }
+    }
+
+    public static CompilerMessageLocation getCompilerMessageLocation(JetExpression expression) {
+        FileViewProvider viewProvider = expression.getContainingFile().getViewProvider();
+        LineAndColumn location = DiagnosticUtils.offsetToLineAndColumn(viewProvider.getDocument(), expression.getNode().getStartOffset());
+        return CompilerMessageLocation.create(viewProvider.getVirtualFile().getPath(), location.getLine(), location.getColumn());
     }
 
     @NotNull

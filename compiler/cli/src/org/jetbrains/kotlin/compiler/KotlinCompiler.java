@@ -37,6 +37,7 @@ import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.cli.common.messages.AnalyzerWithCompilerReport;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
+import org.jetbrains.jet.cli.common.messages.MessageRenderer;
 import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.diagnostics.Diagnostic;
@@ -116,7 +117,7 @@ public class KotlinCompiler {
     public void compile(@NotNull CompilerConfiguration configuration, Consumer<File> outputFileConsumer) throws IOException {
         String name = configuration.getNotNull(CompilerConfigurationKeys.MODULE_NAME);
         List<JetFile> sources = collectSourceFiles(name, null, false);
-        final ModuleInfo moduleInfo = analyzeProjectModule(name, sources, true);
+        ModuleInfo moduleInfo = analyzeProjectModule(name, sources, true);
         if (moduleInfo == null) {
             return;
         }
@@ -129,7 +130,12 @@ public class KotlinCompiler {
                 subCompiler.compile(configuration, moduleInfo, sources, outputFileConsumer);
             }
             catch (TranslationException e) {
-                messageCollector.report(CompilerMessageSeverity.ERROR, e.getMessage(), e.getLocation());
+                if (e.getCause() == null) {
+                    messageCollector.report(CompilerMessageSeverity.ERROR, e.getMessage(), e.getLocation());
+                }
+                else {
+                    messageCollector.report(CompilerMessageSeverity.EXCEPTION, MessageRenderer.PLAIN.renderException(e.getCause()), e.getLocation());
+                }
             }
         }
     }
