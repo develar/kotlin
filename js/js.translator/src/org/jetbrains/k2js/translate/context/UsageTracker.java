@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,13 @@
  */
 package org.jetbrains.k2js.translate.context;
 
-import com.intellij.util.Consumer;
 import com.intellij.util.SmartList;
 import com.intellij.util.containers.OrderedSet;
-import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isAncestor;
 
@@ -41,7 +38,7 @@ public final class UsageTracker {
 
     private boolean used;
     @Nullable
-    private Set<CallableDescriptor> capturedVariables;
+    private OrderedSet<CallableDescriptor> capturedVariables;
     private ClassDescriptor outerClassDescriptor;
 
     public UsageTracker(@NotNull MemberDescriptor memberDescriptor, @Nullable UsageTracker parent, @Nullable ClassDescriptor trackedClassDescriptor) {
@@ -69,7 +66,6 @@ public final class UsageTracker {
                 return childOuterClassDescriptor;
             }
         }
-
         return null;
     }
 
@@ -84,7 +80,18 @@ public final class UsageTracker {
         if (capturedVariables == null) {
             capturedVariables = new OrderedSet<CallableDescriptor>();
         }
-        capturedVariables.add(descriptor);
+        if (capturedVariables.add(descriptor)) {
+            UsageTracker p = parent;
+            while (p != null) {
+                // track
+                boolean isLocalNamedFun = p.memberDescriptor instanceof SimpleFunctionDescriptor && p.memberDescriptor.getName().isSpecial();
+                if (isAncestor(p.memberDescriptor, descriptor, !isLocalNamedFun, true)) {
+                    break;
+                }
+                p.addCapturedMember(descriptor);
+                p = p.parent;
+            }
+        }
     }
 
     public void triggerUsed(DeclarationDescriptor descriptor) {
@@ -145,38 +152,8 @@ public final class UsageTracker {
         }
     }
 
-    public void forEachCaptured(Consumer<CallableDescriptor> consumer) {
-        forEachCaptured(consumer, memberDescriptor, children == null ? null : new THashSet<CallableDescriptor>());
-    }
-
-    private void forEachCaptured(Consumer<CallableDescriptor> consumer, MemberDescriptor requestorDescriptor, @Nullable THashSet<CallableDescriptor> visited) {
-        if (capturedVariables != null) {
-            for (CallableDescriptor callableDescriptor : capturedVariables) {
-                if (!isAncestor(requestorDescriptor, callableDescriptor, true, true) && (visited == null || visited.add(callableDescriptor))) {
-                    consumer.consume(callableDescriptor);
-                }
-            }
-        }
-        if (children != null) {
-            for (UsageTracker child : children) {
-                child.forEachCaptured(consumer, requestorDescriptor, visited);
-            }
-        }
-    }
-
-    public boolean hasCaptured() {
-        if (capturedVariables != null) {
-            assert !capturedVariables.isEmpty();
-            return true;
-        }
-
-        if (children != null) {
-            for (UsageTracker child : children) {
-                if (child.hasCaptured()) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    @Nullable
+    public OrderedSet<CallableDescriptor> getCapturedVariables() {
+        return capturedVariables;
     }
 }

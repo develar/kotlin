@@ -38,7 +38,6 @@ public final class JsDescriptorUtils {
         return (functionDescriptor.getName().equals(OperatorConventions.COMPARE_TO));
     }
 
-    //TODO: why callable descriptor
     @Nullable
     public static DeclarationDescriptor getExpectedThisDescriptor(@NotNull CallableDescriptor callableDescriptor) {
         ReceiverParameterDescriptor expectedThisObject = callableDescriptor.getExpectedThisObject();

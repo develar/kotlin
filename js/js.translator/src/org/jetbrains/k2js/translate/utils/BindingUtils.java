@@ -60,9 +60,8 @@ public final class BindingUtils {
     }
 
     @NotNull
-    public static FunctionDescriptor getFunctionDescriptor(@NotNull BindingContext context,
-            @NotNull JetDeclarationWithBody declaration) {
-        return getDescriptorForExpression(context, declaration, FunctionDescriptor.class);
+    public static FunctionDescriptor getFunctionDescriptor(@NotNull BindingContext context, @NotNull JetDeclarationWithBody declaration) {
+        return BindingContextUtils.getNotNull(context, BindingContext.FUNCTION, declaration);
     }
 
     @NotNull

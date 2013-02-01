@@ -196,6 +196,11 @@ public class TranslationContext {
     }
 
     @NotNull
+    public StaticContext getStatic() {
+        return staticContext;
+    }
+
+    @NotNull
     public LiteralFunctionTranslator literalFunctionTranslator() {
         return staticContext.getLiteralFunctionTranslator();
     }

@@ -17,7 +17,7 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.intellij.util.Consumer;
+import com.intellij.util.containers.OrderedSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
@@ -38,32 +38,34 @@ abstract class InnerDeclarationTranslator {
         this.fun = fun;
     }
 
-    public JsExpression translate(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
+    public JsExpression translate(@NotNull JsNameRef nameRef, @Nullable JsExpression self, @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper) {
         //noinspection ConstantConditions
-        boolean hasCaptured = context.usageTracker().hasCaptured();
-        if (!hasCaptured && self == JsLiteral.NULL) {
+        OrderedSet<CallableDescriptor> captured = context.usageTracker().getCapturedVariables();
+        if (captured == null && self == JsLiteral.NULL) {
             return createExpression(nameRef, self);
         }
 
         JsInvocation invocation = createInvocation(nameRef, self);
-        if (hasCaptured) {
-            final List<JsExpression> expressions = invocation.getArguments();
-            context.usageTracker().forEachCaptured(new Consumer<CallableDescriptor>() {
-                @Override
-                public void consume(CallableDescriptor descriptor) {
-                    String name;
-                    if (descriptor instanceof VariableDescriptor) {
-                        name = context.getNameForDescriptor((VariableDescriptor) descriptor);
-                    }
-                    else {
-                        //noinspection ConstantConditions
-                        name = ((JsNameRef) context.getAliasForDescriptor(descriptor)).getName();
-                        assert name != null;
-                    }
-                    fun.getParameters().add(new JsParameter(name));
-                    expressions.add(new JsNameRef(name));
+        if (captured != null) {
+            List<JsExpression> expressions = invocation.getArguments();
+            for (CallableDescriptor descriptor : captured) {
+                String name;
+                JsExpression expression = null;
+                if (descriptor instanceof VariableDescriptor) {
+                    name = context.getNameForDescriptor((VariableDescriptor) descriptor);
                 }
-            });
+                else {
+                    JsNameRef aliasForDescriptor = (JsNameRef) context.getAliasForDescriptor(descriptor);
+                    assert aliasForDescriptor != null;
+                    name = aliasForDescriptor.getQualifier() instanceof JsNameRef ? ((JsNameRef) aliasForDescriptor.getQualifier())
+                            .getName() : aliasForDescriptor.getName();
+                    if (namedFunctionTranslatorHelper != null) {
+                        expression = namedFunctionTranslatorHelper.transform(descriptor);
+                    }
+                }
+                fun.getParameters().add(new JsParameter(name));
+                expressions.add(expression == null ? new JsNameRef(name) : expression);
+            }
         }
         return invocation;
     }

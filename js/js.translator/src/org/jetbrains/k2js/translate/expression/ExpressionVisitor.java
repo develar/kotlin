@@ -47,7 +47,8 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.*;
 import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToExpression;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getBaseExpression;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getObjectDeclarationName;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.sure;
@@ -381,17 +382,16 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitFunctionLiteralExpression(@NotNull JetFunctionLiteralExpression expression, @NotNull TranslationContext context) {
         FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
-        return context.literalFunctionTranslator().translateFunction(expression, descriptor, context);
+        return context.literalFunctionTranslator().translateFunction(expression, descriptor, context, null);
     }
 
     @Override
     @NotNull
     public JsNode visitNamedFunction(@NotNull JetNamedFunction expression, @NotNull TranslationContext context) {
         FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
-        JsExpression alias = context.literalFunctionTranslator().translateFunction(expression, descriptor, context);
-        String name = context.scope().declareFreshName(descriptor.getName().getName());
-        context.aliasingContext().registerAlias(descriptor, new JsNameRef(name));
-        return new JsVars(new JsVars.JsVar(name, alias)).source(expression);
+        LocalNamedFunctionTranslatorHelper translatorHelper = new LocalNamedFunctionTranslatorHelper(descriptor, context);
+        JsExpression alias = context.literalFunctionTranslator().translateFunction(expression, descriptor, context, translatorHelper);
+        return translatorHelper.createResult(expression, alias);
     }
 
     @Override

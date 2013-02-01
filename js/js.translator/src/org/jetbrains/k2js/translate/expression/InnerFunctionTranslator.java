@@ -37,8 +37,8 @@ class InnerFunctionTranslator extends InnerDeclarationTranslator {
     }
 
     @SuppressWarnings("MethodOverloadsMethodOfSuperclass")
-    public JsExpression translate(@NotNull JsNameRef nameRef, @NotNull TranslationContext outerContext) {
-        return translate(nameRef, getThis(outerContext));
+    public JsExpression translate(@NotNull JsNameRef nameRef, @NotNull TranslationContext outerContext, @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper) {
+        return translate(nameRef, getThis(outerContext), namedFunctionTranslatorHelper);
     }
 
     @Override

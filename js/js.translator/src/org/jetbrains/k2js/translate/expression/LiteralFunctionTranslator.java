@@ -68,10 +68,12 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         }
     }
 
-    public JsExpression translateFunction(@NotNull JetDeclarationWithBody declaration, @NotNull FunctionDescriptor descriptor, @NotNull TranslationContext outerContext) {
+    public JsExpression translateFunction(
+            @NotNull JetDeclarationWithBody declaration,
+            @NotNull FunctionDescriptor descriptor,
+            @NotNull TranslationContext outerContext,
+            @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper) {
         JsFunction fun = createFunction();
-        final boolean asInner;
-        ClassDescriptor outerClass;
         AliasingContext aliasingContext;
         DeclarationDescriptor receiverDescriptor = getExpectedReceiverDescriptor(descriptor);
         String receiverName;
@@ -84,6 +86,8 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
             aliasingContext = outerContext.aliasingContext().inner(receiverDescriptor, new JsNameRef(receiverName));
         }
 
+        final boolean asInner;
+        ClassDescriptor outerClass;
         if (descriptor.getContainingDeclaration() instanceof ConstructorDescriptor) {
             // KT-2388
             asInner = true;
@@ -91,16 +95,22 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
             outerClass = (ClassDescriptor) descriptor.getContainingDeclaration().getContainingDeclaration();
             assert outerClass != null;
             if (receiverDescriptor == null) {
-                aliasingContext = outerContext.aliasingContext().notShareableThisAliased(outerClass, new JsNameRef("o", new JsNameRef(fun.getName())));
+                aliasingContext = outerContext.aliasingContext().notShareableThisAliased(outerClass,
+                                                                                         new JsNameRef("o", new JsNameRef(fun.getName())));
             }
         }
         else {
             outerClass = null;
             asInner = DescriptorUtils.isTopLevelDeclaration(descriptor);
+
+            if (aliasingContext == null && namedFunctionTranslatorHelper != null) {
+                aliasingContext = namedFunctionTranslatorHelper.createAliasingContext(fun.getScope());
+            }
         }
 
         TranslationContext funContext = outerContext.newFunctionBody(fun, aliasingContext,
                                                                      new UsageTracker(descriptor, outerContext.usageTracker(), outerClass));
+        JsNameRef absoluteFunReference = asInner ? null : createReference(fun);
         FunctionTranslator.translateBodyAndAdd(fun, descriptor, declaration, funContext);
         if (asInner) {
             addRegularParameters(descriptor, fun.getParameters(), funContext, receiverName);
@@ -114,11 +124,10 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
                     fun.setName(null);
                 }
             }
-
             return fun;
         }
         else {
-            JsExpression result = new InnerFunctionTranslator(descriptor, funContext, fun).translate(createReference(fun), outerContext);
+            JsExpression result = new InnerFunctionTranslator(descriptor, funContext, fun).translate(absoluteFunReference, outerContext, namedFunctionTranslatorHelper);
             addRegularParameters(descriptor, fun.getParameters(), funContext, receiverName);
             return result;
         }
@@ -151,6 +160,6 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         fun.getBody().getStatements().add(new JsReturn(classTranslator.translate(funContext)));
         JetClassBody body = declaration.getBody();
         assert body != null;
-        return new InnerObjectTranslator(funContext, fun).translate(createReference(fun), usageTracker.isUsed() ? outerClassRef : null);
+        return new InnerObjectTranslator(funContext, fun).translate(createReference(fun), usageTracker.isUsed() ? outerClassRef : null, null);
     }
 }
