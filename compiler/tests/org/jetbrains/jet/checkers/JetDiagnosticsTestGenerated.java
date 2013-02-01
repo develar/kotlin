@@ -2294,6 +2294,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                     doTest("compiler/testData/diagnostics/tests/inference/regressions/kt3174.kt");
                 }
                 
+                @TestMetadata("kt3301.kt")
+                public void testKt3301() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/regressions/kt3301.kt");
+                }
+                
                 @TestMetadata("kt702.kt")
                 public void testKt702() throws Exception {
                     doTest("compiler/testData/diagnostics/tests/inference/regressions/kt702.kt");
@@ -4254,6 +4259,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("UnaryVsVararg.kt")
             public void testUnaryVsVararg() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/varargs/UnaryVsVararg.kt");
+            }
+            
+            @TestMetadata("varargsAndFunctionLiterals.kt")
+            public void testVarargsAndFunctionLiterals() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/varargs/varargsAndFunctionLiterals.kt");
             }
             
         }

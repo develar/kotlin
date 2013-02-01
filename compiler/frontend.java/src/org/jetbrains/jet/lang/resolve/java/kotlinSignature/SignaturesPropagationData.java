@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.resolve.java.kotlinSignature;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.intellij.openapi.application.ApplicationManager;
@@ -200,6 +201,9 @@ public class SignaturesPropagationData {
             @NotNull ClassDescriptor containingClass
     ) {
         List<FunctionDescriptor> superFunctions = Lists.newArrayList();
+
+        Map<ClassDescriptor, JetType> superclassToSupertype = getSuperclassToSupertypeMap(containingClass);
+
         for (HierarchicalMethodSignature superSignature : method.getPsiMethod().getHierarchicalMethodSignature().getSuperSignatures()) {
             PsiMethod superMethod = superSignature.getMethod();
 
@@ -216,24 +220,24 @@ public class SignaturesPropagationData {
 
             PsiElement superDeclaration = superMethod instanceof JetClsMethod ? ((JetClsMethod) superMethod).getOrigin() : superMethod;
             DeclarationDescriptor superFun = trace.get(BindingContext.DECLARATION_TO_DESCRIPTOR, superDeclaration);
-            if (superFun instanceof FunctionDescriptor) {
-                superFunctions.add(((FunctionDescriptor) superFun));
+            if (superFun == null) {
+                reportCantFindSuperFunction(method);
+                continue;
             }
-            else {
-                String errorMessage = "Can't find super function for " + method.getPsiMethod() +
-                                      " defined in " + method.getPsiMethod().getContainingClass();
-                if (ApplicationManager.getApplication().isUnitTestMode()) {
-                    throw new IllegalStateException(errorMessage);
-                }
-                else {
-                    if (SystemInfo.isMac) {
-                        LOG.error("Remove duplicates from your JDK definition\n" + errorMessage);
-                    }
-                    else {
-                        LOG.error(errorMessage);
-                    }
-                }
-            }
+
+            assert superFun instanceof FunctionDescriptor : superFun.getClass().getName();
+
+            DeclarationDescriptor superFunContainer = superFun.getContainingDeclaration();
+            assert superFunContainer instanceof ClassDescriptor: superFunContainer;
+
+            JetType supertype = superclassToSupertype.get(superFunContainer);
+            assert supertype != null : "Couldn't find super type for super function: " + superFun;
+            TypeSubstitutor supertypeSubstitutor = TypeSubstitutor.create(supertype);
+
+            FunctionDescriptor substitutedSuperFun = ((FunctionDescriptor) superFun).substitute(supertypeSubstitutor);
+            assert substitutedSuperFun != null;
+
+            superFunctions.add(substitutedSuperFun);
         }
 
         // sorting for diagnostic stability
@@ -571,9 +575,35 @@ public class SignaturesPropagationData {
         return classifier;
     }
 
+    private static Map<ClassDescriptor, JetType> getSuperclassToSupertypeMap(ClassDescriptor containingClass) {
+        Map<ClassDescriptor, JetType> superclassToSupertype = Maps.newHashMap();
+        for (JetType supertype : TypeUtils.getAllSupertypes(containingClass.getDefaultType())) {
+            ClassifierDescriptor superclass = supertype.getConstructor().getDeclarationDescriptor();
+            assert superclass instanceof ClassDescriptor;
+            superclassToSupertype.put((ClassDescriptor) superclass, supertype);
+        }
+        return superclassToSupertype;
+    }
+
     private static boolean isArrayType(@NotNull JetType type) {
         KotlinBuiltIns builtIns = KotlinBuiltIns.getInstance();
         return builtIns.isArray(type) || builtIns.isPrimitiveArray(type);
+    }
+
+    private static void reportCantFindSuperFunction(PsiMethodWrapper method) {
+        String errorMessage = "Can't find super function for " + method.getPsiMethod() +
+                              " defined in " + method.getPsiMethod().getContainingClass();
+        if (ApplicationManager.getApplication().isUnitTestMode()) {
+            throw new IllegalStateException(errorMessage);
+        }
+        else {
+            if (SystemInfo.isMac) {
+                LOG.error("Remove duplicates from your JDK definition\n" + errorMessage);
+            }
+            else {
+                LOG.error(errorMessage);
+            }
+        }
     }
 
     private static class VarargCheckResult {

@@ -1345,6 +1345,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
                 blackBoxFileByFullPath("compiler/testData/codegen/box/defaultArguments/function/innerExtentionFunctionDoubleTwoArgs.kt");
             }
             
+            @TestMetadata("mixingNamedAndPositioned.kt")
+            public void testMixingNamedAndPositioned() throws Exception {
+                blackBoxFileByFullPath("compiler/testData/codegen/box/defaultArguments/function/mixingNamedAndPositioned.kt");
+            }
+            
         }
         
         public static Test innerSuite() {
@@ -1787,6 +1792,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         @TestMetadata("innerSimple.kt")
         public void testInnerSimple() throws Exception {
             blackBoxFileByFullPath("compiler/testData/codegen/box/innerNested/innerSimple.kt");
+        }
+        
+        @TestMetadata("kt3132.kt")
+        public void testKt3132() throws Exception {
+            blackBoxFileByFullPath("compiler/testData/codegen/box/innerNested/kt3132.kt");
         }
         
         @TestMetadata("nestedClassObject.kt")
@@ -3245,6 +3255,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         @TestMetadata("kt796_797.kt")
         public void testKt796_797() throws Exception {
             blackBoxFileByFullPath("compiler/testData/codegen/box/vararg/kt796_797.kt");
+        }
+        
+        @TestMetadata("varargsAndFunctionLiterals.kt")
+        public void testVarargsAndFunctionLiterals() throws Exception {
+            blackBoxFileByFullPath("compiler/testData/codegen/box/vararg/varargsAndFunctionLiterals.kt");
         }
         
     }
