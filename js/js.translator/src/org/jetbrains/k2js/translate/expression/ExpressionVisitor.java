@@ -118,7 +118,9 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
                 assert statement instanceof JetExpression : "Elements in JetBlockExpression " +
                                                             "should be of type JetExpression";
                 JsNode jsNode = statement.accept(this, blockContext);
-                jsBlock.getStatements().add(jsNode.asStatement());
+                if (jsNode != null) {
+                    jsBlock.getStatements().add(jsNode.asStatement());
+                }
             }
         }
         return jsBlock;
@@ -386,12 +388,12 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     }
 
     @Override
-    @NotNull
     public JsNode visitNamedFunction(@NotNull JetNamedFunction expression, @NotNull TranslationContext context) {
         FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
         LocalNamedFunctionTranslatorHelper translatorHelper = new LocalNamedFunctionTranslatorHelper(descriptor, context);
         JsExpression alias = context.literalFunctionTranslator().translateFunction(expression, descriptor, context, translatorHelper);
-        return translatorHelper.createResult(expression, alias);
+        translatorHelper.createResult(expression, alias);
+        return null;
     }
 
     @Override

@@ -62,15 +62,15 @@ class LocalNamedFunctionTranslatorHelper {
         return context.aliasingContext().inner(descriptor, new JsNameRef("r", createReferenceName(funScope)));
     }
 
-    public JsNode createResult(JetNamedFunction expression, JsExpression funValue) {
+    public void createResult(JetNamedFunction expression, JsExpression funValue) {
         JsVar funVar = new JsVar(name, funValue);
         funVar.source(expression);
         if (referenceName == null) {
-            return new JsVars(funVar);
+            context.addStatementToCurrentBlock(new JsVars(funVar));
         }
         else {
-            JsVars vars = new JsVars(new JsVar(referenceName), funVar);
-            return new JsBlock(vars, assignment(referenceNameRef, new JsNameRef(name)).makeStmt());
+            context.addStatementToCurrentBlock(new JsVars(new JsVar(referenceName), funVar));
+            context.addStatementToCurrentBlock(assignment(referenceNameRef, new JsNameRef(name)).asStatement());
         }
     }
 }

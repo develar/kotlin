@@ -5,8 +5,11 @@ fun setTimeout(callback: ()->Unit) = callback()
 fun box(): Boolean {
     fun send() {
         setTimeout {
-            send()
+            if (false) {
+                send()
+            }
         }
+        return true
     }
     return true
 }
