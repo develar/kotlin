@@ -9,7 +9,6 @@ fun box(): Boolean {
                 send()
             }
         }
-        return true
     }
     return true
 }
