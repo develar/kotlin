@@ -201,7 +201,6 @@ public final class StaticContext {
             if (name != null) {
                 return new JsNameRef(name);
             }
-            //return localFunRefMap.get(descriptor);
         }
         else if (descriptor instanceof PropertyDescriptor) {
             return new JsNameRef(JsAstUtils.createNameForProperty((PropertyDescriptor) descriptor, isEcma5()));
