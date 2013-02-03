@@ -255,7 +255,7 @@ public final class StaticContext {
         if (isNativeModule(module) || AnnotationsUtils.isNativeByAnnotation(descriptor)) {
             return null;
         }
-        return getPackageQualifier((NamespaceDescriptor) namespace, module);
+        return getPackageQualifiedName((NamespaceDescriptor) namespace, module);
     }
 
     private boolean isNativeModule(ModuleDescriptor descriptor) {
@@ -267,38 +267,44 @@ public final class StaticContext {
     }
 
     @NotNull
-    public JsExpression getPackageQualifier(NamespaceDescriptor namespace, @Nullable ModuleDescriptor moduleDescriptor) {
+    public JsExpression getPackageQualifiedName(NamespaceDescriptor namespace, @Nullable ModuleDescriptor moduleDescriptor) {
         JsExpression result = qualifierMap.get(namespace);
-        if (result == null) {
-            if (DescriptorUtils.isRootNamespace(namespace)) {
-                if (moduleDescriptor == null || moduleDescriptor == configuration.getModule().getModuleDescriptor()) {
-                    result = Namer.ROOT_PACKAGE_NAME_REF;
-                }
-                else {
-                    ModuleInfo dependency = configuration.getModule().findDependency(moduleDescriptor);
-                    if (dependency == null) {
-                        throw new TranslationException("Missed module dependency " + ModuleInfo.getNormalName(moduleDescriptor));
-                    }
-                    result = new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(dependency.getName()));
-                }
-            }
-            else {
-                List<String> names = new ArrayList<String>();
-                NamespaceDescriptor p = namespace;
-                do {
-                    names.add(p.getName().getName());
-                    p = p.getContainingDeclaration() instanceof NamespaceDescriptor ? (NamespaceDescriptor) p.getContainingDeclaration() : null;
-                }
-                while (p != null && !DescriptorUtils.isRootNamespace(p));
-
-                StringBuilder builder = new StringBuilder();
-                for (int i = names.size() - 1; i >= 0; i--) {
-                    builder.append(names.get(i)).append('_');
-                }
-                result = new JsNameRef(builder.substring(0, builder.length() - 1), Namer.ROOT_PACKAGE_NAME_REF);
-            }
-            qualifierMap.put(namespace, result);
+        if (result != null) {
+            return result;
         }
+
+        if (DescriptorUtils.isRootNamespace(namespace)) {
+            result = getRootPackageQualifiedName(moduleDescriptor);
+        }
+        else {
+            List<String> names = new ArrayList<String>();
+            NamespaceDescriptor p = namespace;
+            do {
+                names.add(p.getName().getName());
+                p = p.getContainingDeclaration() instanceof NamespaceDescriptor ? (NamespaceDescriptor) p.getContainingDeclaration() : null;
+            }
+            while (p != null && !DescriptorUtils.isRootNamespace(p));
+
+            StringBuilder builder = new StringBuilder();
+            for (int i = names.size() - 1; i >= 0; i--) {
+                builder.append(names.get(i)).append('_');
+            }
+            result = new JsNameRef(builder.substring(0, builder.length() - 1), getRootPackageQualifiedName(moduleDescriptor));
+        }
+        qualifierMap.put(namespace, result);
         return result;
+    }
+
+    private JsExpression getRootPackageQualifiedName(@Nullable ModuleDescriptor moduleDescriptor) {
+        if (moduleDescriptor == null || moduleDescriptor == configuration.getModule().getModuleDescriptor()) {
+            return Namer.ROOT_PACKAGE_NAME_REF;
+        }
+        else {
+            ModuleInfo dependency = configuration.getModule().findDependency(moduleDescriptor);
+            if (dependency == null) {
+                throw new TranslationException("Missed module dependency " + ModuleInfo.getNormalName(moduleDescriptor));
+            }
+            return new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(dependency.getName()));
+        }
     }
 }
