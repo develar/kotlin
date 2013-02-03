@@ -85,8 +85,19 @@ var Kotlin = {
         return result;
     };
 
-    Kotlin.definePackage = function (members) {
-        return members === null ? {} : members;
+    Kotlin.p = function (m, name, members) {
+        if (name === null) {
+            copyProperties(m, members);
+            return;
+        }
+
+        var current = m[name];
+        if (current === undefined) {
+            m[name] = members;
+        }
+        else {
+            copyProperties(current, members);
+        }
     };
 
     Kotlin.createClass = (function () {

@@ -34,7 +34,7 @@ import org.jetbrains.k2js.facade.MainCallParameters;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.StaticContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.declaration.NamespaceDeclarationTranslator;
+import org.jetbrains.k2js.translate.declaration.NamespaceTranslator;
 import org.jetbrains.k2js.translate.expression.ExpressionVisitor;
 import org.jetbrains.k2js.translate.expression.PatternTranslator;
 import org.jetbrains.k2js.translate.reference.CallBuilder;
@@ -50,7 +50,8 @@ import java.util.List;
 
 import static org.jetbrains.jet.plugin.JetMainDetector.getMainFunction;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToExpression;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.toStringLiteralList;
 import static org.jetbrains.k2js.translate.utils.dangerous.DangerousData.collect;
 
 /**
@@ -159,7 +160,7 @@ public final class Translation {
 
         TranslationContext context = TranslationContext.rootContext(staticContext, definitionFunction);
         staticContext.initTranslators(context);
-        new NamespaceDeclarationTranslator(context).translate(files, statements);
+        NamespaceTranslator.translateFiles(files, statements, context);
 
         if (mainCallParameters.shouldBeGenerated()) {
             JsStatement statement = generateCallToMain(context, files, mainCallParameters.arguments());

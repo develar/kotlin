@@ -129,27 +129,91 @@ var Kotlin = Object.create(null, {
         return constructor;
     }
 
-    Kotlin.definePackage = function (initializer, members) {
-        var definition = Object.create(null, members === null ? undefined : members);
-        if (initializer === null) {
-            return {value: definition};
+    Kotlin.p = function (m, name, initializer, members) {
+        var current = name === null ? m : m[name];
+        if (current === undefined) {
+            // m can contains members for root namespace, so, we need to track registered package name
+            var packageNames = m.$packageNames$;
+            if (packageNames == null) {
+                packageNames = [name];
+                m.$packageNames$ = packageNames;
+            }
+            else {
+                packageNames.push(name);
+            }
+
+            m[name] = {
+                $members$: Object.create(null, members === null ? undefined : members),
+                $initializers$: initializer === null ? null : initializer
+            };
         }
         else {
-            var getter = createPackageGetter(definition, initializer);
-            Object.freeze(getter);
-            return {get: getter};
+            if (members !== null) {
+                Object.defineProperties(name === null ? m  : current.$members$, members);
+            }
+            if (initializer !== null) {
+                var currentInitializers = current.$initializers$;
+                if (currentInitializers === null) {
+                    current.$initializers$ = initializer;
+                }
+                else if (Array.isArray(currentInitializers)) {
+                    currentInitializers.push(initializer);
+                }
+                else {
+                    current.$initializers$ = [currentInitializers, initializer];
+                }
+            }
         }
     };
 
-    function createPackageGetter(instance, initializer) {
-        return function () {
-            if (initializer !== null) {
-                var tmp = initializer;
-                initializer = null;
-                tmp.call(instance);
-                Object.seal(instance);
+    Kotlin.finalize = function(m) {
+        var packageNames = m.$packageNames$;
+        if (packageNames === undefined) {
+            return;
+        }
+
+        for (var i = 0, n = packageNames.length; i < n; i++) {
+            var name = packageNames[i];
+            var p = m[name];
+            // pending initialization is not supported for root package
+            if (name === "$initializers$") {
+                invokeInitializers(p, m);
+                continue;
             }
 
+            var initializers = p.$initializers$;
+            if (initializers == null) {
+                m[name] = p.$members$;
+            }
+            else {
+                var getter = createPackageGetter(p.$members$, initializers);
+                Object.freeze(getter);
+                Object.defineProperty(m, name, {get: getter});
+            }
+        }
+
+        delete m.$packageNames$;
+    };
+
+    function invokeInitializers(tmp, instance) {
+        if (Array.isArray(tmp)) {
+            for (var i = 0, n = tmp.length; i < n; i++) {
+                tmp[i].call(instance);
+            }
+        }
+        else {
+            tmp.call(instance);
+        }
+    }
+
+    function createPackageGetter(instance, initializers) {
+        return function () {
+            if (initializers !== null) {
+                var tmp = initializers;
+                initializers = null;
+                invokeInitializers(tmp, instance);
+                Object.seal(instance);
+            }
             return instance;
         };
     }

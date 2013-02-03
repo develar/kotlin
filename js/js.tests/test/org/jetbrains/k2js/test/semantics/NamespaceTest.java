@@ -24,25 +24,25 @@ public final class NamespaceTest extends SingleFileTranslationTest {
     }
 
     public void testNestedNamespace() throws Exception {
-        runFunctionOutputTest("nestedNamespace.kt", "foo.bar", "box", true);
+        runFunctionOutputTest("nestedNamespace.kt", "foo_bar", "box", true);
     }
 
     public void testDeeplyNestedNamespace() throws Exception {
-        runFunctionOutputTest("deeplyNestedNamespace.kt", "foo1.foo2.foo3.foo5.foo6.foo7.foo8", "box", true);
+        runFunctionOutputTest("deeplyNestedNamespace.kt", "foo1_foo2_foo3_foo5_foo6_foo7_foo8", "box", true);
     }
 
     public void testDeeplyNestedNamespaceFunctionCalled() throws Exception {
-        runFunctionOutputTest("deeplyNestedNamespaceFunctionCalled.kt", "foo1.foo2.foo3.foo5.foo6.foo7.foo8", "box", true
+        runFunctionOutputTest("deeplyNestedNamespaceFunctionCalled.kt", "foo1_foo2_foo3_foo5_foo6_foo7_foo8", "box", true
         );
     }
 
     public void testClassCreatedInDeeplyNestedNamespace() throws Exception {
-        runFunctionOutputTest("classCreatedInDeeplyNestedNamespace.kt", "foo1.foo2.foo3.foo5.foo6.foo7.foo8", "box", true
+        runFunctionOutputTest("classCreatedInDeeplyNestedNamespace.kt", "foo1_foo2_foo3_foo5_foo6_foo7_foo8", "box", true
         );
     }
 
     public void testInitializersOfNestedNamespacesExecute() throws Exception {
-        runFunctionOutputTest("initializersOfNestedNamespacesExecute.kt", "foo1.foo2.foo3.foo5.foo6.foo7.foo8", "box", true
+        runFunctionOutputTest("initializersOfNestedNamespacesExecute.kt", "foo1_foo2_foo3_foo5_foo6_foo7_foo8", "box", true
         );
     }
 }

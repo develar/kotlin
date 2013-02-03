@@ -39,23 +39,23 @@ public class MultiNamespaceTest extends MultipleFilesTranslationTest {
     }
 
     public void testNestedNamespaceFunctionCalledFromOtherNamespace() throws Exception {
-        runMultiFileTest("nestedNamespaceFunctionCalledFromOtherNamespace", "a.foo", "box", true);
+        runMultiFileTest("nestedNamespaceFunctionCalledFromOtherNamespace", "a_foo", "box", true);
     }
 
     public void testSubnamespacesWithClashingNames() throws Exception {
-        runMultiFileTest("subnamespacesWithClashingNames", "a.foo", "box", true);
+        runMultiFileTest("subnamespacesWithClashingNames", "a_foo", "box", true);
     }
 
     public void testSubnamespacesWithClashingNamesUsingImport() throws Exception {
-        runMultiFileTest("subnamespacesWithClashingNamesUsingImport", "a.foo", "box", true);
+        runMultiFileTest("subnamespacesWithClashingNamesUsingImport", "a_foo", "box", true);
     }
 
     public void testCreateClassFromOtherNamespace() throws Exception {
-        runMultiFileTest("createClassFromOtherNamespace", "a.foo", "box", true);
+        runMultiFileTest("createClassFromOtherNamespace", "a_foo", "box", true);
     }
 
     public void testCreateClassFromOtherNamespaceUsingImport() throws Exception {
-        runMultiFileTest("createClassFromOtherNamespaceUsingImport", "a.foo", "box", true);
+        runMultiFileTest("createClassFromOtherNamespaceUsingImport", "a_foo", "box", true);
     }
 }
 

@@ -46,6 +46,7 @@ public class TranslationContext {
     protected AliasingContext aliasingContext;
     @Nullable
     private final UsageTracker usageTracker;
+    private JsExpression sst;
 
     @NotNull
     public static TranslationContext rootContext(@NotNull StaticContext staticContext, JsFunction rootFunction) {
@@ -243,5 +244,10 @@ public class TranslationContext {
 
     public boolean isNative(DeclarationDescriptor descriptor) {
         return staticContext.isFromNativeModule(descriptor) || AnnotationsUtils.isNativeByAnnotation(descriptor);
+    }
+
+    @NotNull
+    public StaticContext getStatic() {
+        return staticContext;
     }
 }

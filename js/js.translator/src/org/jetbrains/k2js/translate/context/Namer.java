@@ -40,13 +40,13 @@ public final class Namer {
     private static final String SUPER_METHOD_NAME = "super_init";
 
     public static final JsNameRef KOTLIN_OBJECT_NAME_REF = new JsNameRef("Kotlin");
-
-    private static final String ROOT_NAMESPACE = "_";
     private static final String RECEIVER_PARAMETER_NAME = "$receiver";
     private static final String CLASSES_OBJECT_NAME = "_c";
     public static final JsNameRef THROW_NPE_FUN_NAME_REF = new JsNameRef("throwNPE", KOTLIN_OBJECT_NAME_REF);
     public static final JsNameRef NEW_EXCEPTION_FUN_NAME_REF = new JsNameRef("newException", KOTLIN_OBJECT_NAME_REF);
-    public static final JsNameRef ROOT_PACKAGE_NAME_REF = new JsNameRef(ROOT_NAMESPACE);
+
+    public static final String ROOT_PACKAGE_NAME = "_";
+    public static final JsNameRef ROOT_PACKAGE_NAME_REF = new JsNameRef(ROOT_PACKAGE_NAME);
 
     @NotNull
     public static String getReceiverParameterName() {
@@ -55,7 +55,7 @@ public final class Namer {
 
     @NotNull
     public static String getRootNamespaceName() {
-        return ROOT_NAMESPACE;
+        return ROOT_PACKAGE_NAME;
     }
 
     @NotNull
@@ -97,7 +97,7 @@ public final class Namer {
     @NotNull
     private final String traitName;
     @NotNull
-    private final JsExpression definePackage;
+    private final JsNameRef definePackage;
     @NotNull
     private final String objectName;
 
@@ -109,7 +109,7 @@ public final class Namer {
         JsScope kotlinScope = new JsScope(rootScope, "Kotlin standard object");
         traitName = kotlinScope.declareName(TRAIT_OBJECT_NAME);
 
-        definePackage = kotlin("definePackage");
+        definePackage = kotlin("p");
 
         className = kotlinScope.declareName(CLASS_OBJECT_NAME);
         objectName = kotlinScope.declareName(OBJECT_OBJECT_NAME);
@@ -138,7 +138,7 @@ public final class Namer {
     }
 
     @NotNull
-    public static JsExpression kotlin(@NotNull String name) {
+    public static JsNameRef kotlin(@NotNull String name) {
         return new JsNameRef(name, KOTLIN_OBJECT_NAME_REF);
     }
 

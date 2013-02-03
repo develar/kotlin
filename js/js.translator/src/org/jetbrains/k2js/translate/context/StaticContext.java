@@ -41,6 +41,8 @@ import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.kotlin.compiler.PredefinedAnnotation;
 import org.jetbrains.kotlin.compiler.TranslationException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
@@ -265,11 +267,11 @@ public final class StaticContext {
     }
 
     @NotNull
-    private JsExpression getPackageQualifier(NamespaceDescriptor namespace, ModuleDescriptor moduleDescriptor) {
+    public JsExpression getPackageQualifier(NamespaceDescriptor namespace, @Nullable ModuleDescriptor moduleDescriptor) {
         JsExpression result = qualifierMap.get(namespace);
         if (result == null) {
             if (DescriptorUtils.isRootNamespace(namespace)) {
-                if (moduleDescriptor == configuration.getModule().getModuleDescriptor()) {
+                if (moduleDescriptor == null || moduleDescriptor == configuration.getModule().getModuleDescriptor()) {
                     result = Namer.ROOT_PACKAGE_NAME_REF;
                 }
                 else {
@@ -281,10 +283,20 @@ public final class StaticContext {
                 }
             }
             else {
-                result = new JsNameRef(namespace.getName().getName(),
-                                       getPackageQualifier((NamespaceDescriptor) namespace.getContainingDeclaration(), moduleDescriptor));
+                List<String> names = new ArrayList<String>();
+                NamespaceDescriptor p = namespace;
+                do {
+                    names.add(p.getName().getName());
+                    p = p.getContainingDeclaration() instanceof NamespaceDescriptor ? (NamespaceDescriptor) p.getContainingDeclaration() : null;
+                }
+                while (p != null && !DescriptorUtils.isRootNamespace(p));
+
+                StringBuilder builder = new StringBuilder();
+                for (int i = names.size() - 1; i >= 0; i--) {
+                    builder.append(names.get(i)).append('_');
+                }
+                result = new JsNameRef(builder.substring(0, builder.length() - 1), Namer.ROOT_PACKAGE_NAME_REF);
             }
-            //noinspection ConstantConditions
             qualifierMap.put(namespace, result);
         }
         return result;
