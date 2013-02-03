@@ -1,3 +1,13 @@
 package foo.bar
 
-fun box() = true
+fun registerExtension(callback: ()->Unit) {
+
+}
+
+private val doInit = {
+    registerExtension() {
+    }
+    true
+}()
+
+fun box() = doInit

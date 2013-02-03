@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsInvocation;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
@@ -111,7 +110,7 @@ public final class PatternTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private JsNameRef getClassNameReference(@NotNull JetTypeReference typeReference) {
+    private JsExpression getClassNameReference(@NotNull JetTypeReference typeReference) {
         ClassDescriptor referencedClass = BindingUtils.getClassDescriptorForTypeReference
             (bindingContext(), typeReference);
         return context().getQualifiedReference(referencedClass);

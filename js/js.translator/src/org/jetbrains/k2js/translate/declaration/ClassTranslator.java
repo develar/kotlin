@@ -123,7 +123,7 @@ public final class ClassTranslator extends AbstractTranslator {
 
         final List<JsPropertyInitializer> staticProperties;
         boolean isTopLevelDeclaration = context() == declarationContext;
-        final JsNameRef qualifiedReference;
+        final JsExpression qualifiedReference;
         if (!isTopLevelDeclaration) {
             staticProperties = null;
             qualifiedReference = null;
@@ -253,7 +253,7 @@ public final class ClassTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    private JsNameRef getClassReference(@NotNull ClassDescriptor superClassDescriptor) {
+    private JsExpression getClassReference(@NotNull ClassDescriptor superClassDescriptor) {
         // aliasing here is needed for the declaration generation step
         if (aliasingMap != null) {
             JsNameRef name = aliasingMap.get(superClassDescriptor, descriptor);

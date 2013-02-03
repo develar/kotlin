@@ -75,7 +75,7 @@ public final class StaticContext {
     final Config configuration;
 
     public StaticContext(@NotNull BindingContext bindingContext, @NotNull Config configuration) {
-        this.program = new JsProgram("main");
+        this.program = new JsProgram();
         this.bindingContext = bindingContext;
         this.namer = Namer.newInstance(program.getRootScope());
         this.intrinsics = new Intrinsics();
@@ -122,7 +122,7 @@ public final class StaticContext {
     }
 
     @NotNull
-    public JsNameRef getQualifiedReference(@NotNull DeclarationDescriptor descriptor, @NotNull TranslationContext context) {
+    public JsExpression getQualifiedReference(@NotNull DeclarationDescriptor descriptor, @NotNull TranslationContext context) {
         ClassDescriptor classDescriptor;
         if (descriptor instanceof ConstructorDescriptor) {
             classDescriptor = ((ConstructorDescriptor) descriptor).getContainingDeclaration();
@@ -140,6 +140,10 @@ public final class StaticContext {
                 return reference;
             }
         }
+        if (descriptor instanceof NamespaceDescriptor) {
+            return getPackageQualifiedName((NamespaceDescriptor) descriptor, null);
+        }
+
         JsNameRef ref = getNameRefForDescriptor(descriptor, context);
         ref.setQualifier(getQualifierForDescriptor(descriptor));
         return ref;
