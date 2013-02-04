@@ -1312,6 +1312,11 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                     JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/kotlinSignature/error"), "kt", true);
                 }
                 
+                @TestMetadata("ConflictingProjectionKind.kt")
+                public void testConflictingProjectionKind() throws Exception {
+                    doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/error/ConflictingProjectionKind.kt");
+                }
+                
                 @TestMetadata("ExplicitFieldGettersAndSetters.kt")
                 public void testExplicitFieldGettersAndSetters() throws Exception {
                     doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/error/ExplicitFieldGettersAndSetters.kt");
@@ -1335,6 +1340,11 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                 @TestMetadata("NotVarargReplacedWithVararg.kt")
                 public void testNotVarargReplacedWithVararg() throws Exception {
                     doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/error/NotVarargReplacedWithVararg.kt");
+                }
+                
+                @TestMetadata("RedundantProjectionKind.kt")
+                public void testRedundantProjectionKind() throws Exception {
+                    doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/error/RedundantProjectionKind.kt");
                 }
                 
                 @TestMetadata("ReturnTypeMissing.kt")
@@ -1952,6 +1962,16 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
             doTestCheckingPrimaryConstructors("compiler/testData/lazyResolve/namespaceComparator/genericFunction.kt");
         }
         
+        @TestMetadata("importFunctionWithAllUnderImport.kt")
+        public void testImportFunctionWithAllUnderImport() throws Exception {
+            doTestCheckingPrimaryConstructors("compiler/testData/lazyResolve/namespaceComparator/importFunctionWithAllUnderImport.kt");
+        }
+        
+        @TestMetadata("importFunctionWithAllUnderImportAfterNamedImport.kt")
+        public void testImportFunctionWithAllUnderImportAfterNamedImport() throws Exception {
+            doTestCheckingPrimaryConstructors("compiler/testData/lazyResolve/namespaceComparator/importFunctionWithAllUnderImportAfterNamedImport.kt");
+        }
+        
         @TestMetadata("InnerClassNameClash.kt")
         public void testInnerClassNameClash() throws Exception {
             doTestCheckingPrimaryConstructors("compiler/testData/lazyResolve/namespaceComparator/InnerClassNameClash.kt");
@@ -1975,6 +1995,11 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
         @TestMetadata("packageLevelObject.kt")
         public void testPackageLevelObject() throws Exception {
             doTestCheckingPrimaryConstructors("compiler/testData/lazyResolve/namespaceComparator/packageLevelObject.kt");
+        }
+        
+        @TestMetadata("propertyClassFileDependencyRecursion.kt")
+        public void testPropertyClassFileDependencyRecursion() throws Exception {
+            doTestCheckingPrimaryConstructors("compiler/testData/lazyResolve/namespaceComparator/propertyClassFileDependencyRecursion.kt");
         }
         
         @TestMetadata("simpleClass.kt")

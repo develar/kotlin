@@ -132,6 +132,10 @@ public class ResolveSession {
         return specialClasses.apply(fqName);
     }
 
+    public ModuleDescriptor getRootModuleDescriptor() {
+        return module;
+    }
+
     @NotNull
     /*package*/ StorageManager getStorageManager() {
         return storageManager;

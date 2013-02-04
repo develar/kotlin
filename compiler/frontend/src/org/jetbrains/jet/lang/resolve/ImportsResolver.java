@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
+import static org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver.LookupMode;
 
 public class ImportsResolver {
     @NotNull
@@ -47,6 +48,8 @@ public class ImportsResolver {
     private QualifiedExpressionResolver qualifiedExpressionResolver;
     @NotNull
     private BindingTrace trace;
+    @NotNull
+    private JetImportsFactory importsFactory;
 
     @Inject
     public void setContext(@NotNull TopDownAnalysisContext context) {
@@ -68,69 +71,77 @@ public class ImportsResolver {
         this.qualifiedExpressionResolver = qualifiedExpressionResolver;
     }
 
+    @Inject
+    public void setImportsFactory(@NotNull JetImportsFactory importsFactory) {
+        this.importsFactory = importsFactory;
+    }
+
     public void processTypeImports(@NotNull JetScope rootScope) {
-        processImports(true, rootScope);
+        processImports(LookupMode.ONLY_CLASSES, rootScope);
     }
 
     public void processMembersImports(@NotNull JetScope rootScope) {
-        processImports(false, rootScope);
+        processImports(LookupMode.EVERYTHING, rootScope);
     }
 
-    private void processImports(boolean onlyClasses, @NotNull JetScope rootScope) {
+    private void processImports(@NotNull LookupMode lookupMode, @NotNull JetScope rootScope) {
         for (JetFile file : context.getNamespaceDescriptors().keySet()) {
             WritableScope namespaceScope = context.getNamespaceScopes().get(file);
-            processImportsInFile(onlyClasses, namespaceScope, Lists.newArrayList(file.getImportDirectives()), rootScope);
+            processImportsInFile(lookupMode, namespaceScope, Lists.newArrayList(file.getImportDirectives()), rootScope);
         }
         for (JetScript script : context.getScripts().keySet()) {
             WritableScope scriptScope = context.getScriptScopes().get(script);
-            processImportsInFile(onlyClasses, scriptScope, script.getImportDirectives(), rootScope);
+            processImportsInFile(lookupMode, scriptScope, script.getImportDirectives(), rootScope);
         }
     }
 
-    private void processImportsInFile(boolean classes, WritableScope scope, List<JetImportDirective> directives, JetScope rootScope) {
-        processImportsInFile(classes, scope, directives, rootScope, configuration, trace, qualifiedExpressionResolver);
+    private void processImportsInFile(@NotNull LookupMode lookupMode, WritableScope scope, List<JetImportDirective> directives, JetScope rootScope) {
+        processImportsInFile(lookupMode, scope, directives, rootScope, configuration, trace, qualifiedExpressionResolver, importsFactory);
     }
 
     public static void processImportsInFile(
-            boolean onlyClasses,
+            LookupMode lookupMode,
             @NotNull WritableScope namespaceScope,
             @NotNull List<JetImportDirective> importDirectives,
             @NotNull JetScope rootScope,
             @NotNull ModuleConfiguration configuration,
             @NotNull BindingTrace trace,
-            @NotNull QualifiedExpressionResolver qualifiedExpressionResolver
+            @NotNull QualifiedExpressionResolver qualifiedExpressionResolver,
+            @NotNull JetImportsFactory importsFactory
     ) {
 
         Importer.DelayedImporter delayedImporter = new Importer.DelayedImporter(namespaceScope);
-        if (!onlyClasses) {
+        if (lookupMode == LookupMode.EVERYTHING) {
             namespaceScope.clearImports();
         }
-        Map<JetImportDirective, DeclarationDescriptor> resolvedDirectives = Maps.newHashMap();
-        Collection<JetImportDirective> defaultImportDirectives = Lists.newArrayList();
-        configuration.addDefaultImports(defaultImportDirectives);
-        for (JetImportDirective defaultImportDirective : defaultImportDirectives) {
+
+        for (ImportPath defaultImportPath : configuration.getDefaultImports()) {
             TemporaryBindingTrace temporaryTrace = TemporaryBindingTrace.create(
                     trace, "transient trace to resolve default imports"); //not to trace errors of default imports
+
+            JetImportDirective defaultImportDirective = importsFactory.createImportDirective(defaultImportPath);
             qualifiedExpressionResolver.processImportReference(defaultImportDirective, rootScope, namespaceScope, delayedImporter,
-                                                               temporaryTrace, configuration, onlyClasses);
+                                                               temporaryTrace, configuration, lookupMode);
         }
+
+        Map<JetImportDirective, DeclarationDescriptor> resolvedDirectives = Maps.newHashMap();
 
         for (JetImportDirective importDirective : importDirectives) {
             Collection<? extends DeclarationDescriptor> descriptors =
                 qualifiedExpressionResolver.processImportReference(importDirective, rootScope, namespaceScope, delayedImporter,
-                                                                   trace, configuration, onlyClasses);
+                                                                   trace, configuration, lookupMode);
             if (descriptors.size() == 1) {
                 resolvedDirectives.put(importDirective, descriptors.iterator().next());
             }
             for (DeclarationDescriptor descriptor : descriptors) {
                 JetExpression importedReference = importDirective.getImportedReference();
-                if (onlyClasses || importedReference == null) continue;
+                if (lookupMode == LookupMode.ONLY_CLASSES || importedReference == null) continue;
                 reportPlatformClassMappedToKotlin(configuration, trace, importedReference, descriptor);
             }
         }
         delayedImporter.processImports();
 
-        if (!onlyClasses) {
+        if (lookupMode == LookupMode.EVERYTHING) {
             for (JetImportDirective importDirective : importDirectives) {
                 reportUselessImport(importDirective, namespaceScope, resolvedDirectives, trace);
             }
