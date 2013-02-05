@@ -1,5 +1,6 @@
 package org.jetbrains.kotlin.compiler;
 
+import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -8,8 +9,6 @@ import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.psi.JetImportDirective;
-import org.jetbrains.jet.lang.psi.JetPsiFactory;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
@@ -19,10 +18,19 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public final class ModuleInfo implements ModuleConfiguration {
     public static final Name STUBS_MODULE_NAME = Name.special('<' + "stubs" + '>');
+
+    @NotNull
+    private static final List<ImportPath> DEFAULT_IMPORT_PATHS = ImmutableList.of(
+            new ImportPath("js.*"),
+            new ImportPath("java.lang.*"),
+            new ImportPath(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), true),
+            new ImportPath("kotlin.*"));
 
     private final Project project;
 
@@ -37,13 +45,6 @@ public final class ModuleInfo implements ModuleConfiguration {
     private String normalName;
 
     private final Set<ModuleInfo> providedDependencies;
-
-    @NotNull
-    private static final List<ImportPath> DEFAULT_IMPORT_PATHS = Arrays.asList(
-            new ImportPath("js.*"),
-            new ImportPath("java.lang.*"),
-            new ImportPath(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName(), true),
-            new ImportPath("kotlin.*"));
 
     public ModuleInfo(@NotNull Project project) {
         this(new ModuleDescriptor(Name.special("<module>")), project, null, null);
@@ -72,12 +73,17 @@ public final class ModuleInfo implements ModuleConfiguration {
         this.providedDependencies = providedDependencies == null ? Collections.<ModuleInfo>emptySet() : providedDependencies;
         if (dependencies == null || dependencies.isEmpty()) {
             this.dependencies = null;
-            delegateConfiguration = DefaultModuleConfiguration.createStandardConfiguration(project);
+            delegateConfiguration = DefaultModuleConfiguration.createStandardConfiguration();
         }
         else {
             this.dependencies = dependencies;
             delegateConfiguration = null;
         }
+    }
+
+    @Override
+    public List<ImportPath> getDefaultImports() {
+        return DEFAULT_IMPORT_PATHS;
     }
 
     public boolean isDependencyProvided(ModuleInfo dependency) {
@@ -121,16 +127,6 @@ public final class ModuleInfo implements ModuleConfiguration {
 
     public ModuleDescriptor getModuleDescriptor() {
         return moduleDescriptor;
-    }
-
-    @Override
-    public void addDefaultImports(@NotNull Collection<JetImportDirective> directives) {
-        for (ImportPath path : DEFAULT_IMPORT_PATHS) {
-            directives.add(JetPsiFactory.createImportDirective(project, path));
-        }
-        if (delegateConfiguration != null) {
-            delegateConfiguration.addDefaultImports(directives);
-        }
     }
 
     @Override

@@ -56,7 +56,7 @@ public class FilteringScope implements JetScope {
 
     @Override
     public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull final P processor) {
-        return super.processNamespaces(name, new Processor<NamespaceDescriptor>() {
+        return workerScope.processNamespaces(name, new Processor<NamespaceDescriptor>() {
             @Override
             public boolean process(NamespaceDescriptor descriptor) {
                 if (predicate.apply(descriptor)) {

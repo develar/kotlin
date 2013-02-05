@@ -19,6 +19,7 @@ package org.jetbrains.jet.lang.resolve.lazy;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -201,10 +202,19 @@ public class LazyImportScope implements JetScope {
         return collectFromImports(LookupMode.ONLY_CLASSES, JetScopeSelectorUtil.OBJECTS_SCOPE_SELECTOR);
     }
 
-    @Nullable
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
-        return selectFirstFromImports(name, LookupMode.ONLY_CLASSES, JetScopeSelectorUtil.NAMESPACE_SCOPE_SELECTOR);
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
+        for (JetImportDirective directive : importsProvider.getImports(name)) {
+            if (directive == directiveUnderResolve) {
+                // This is the recursion in imports analysis
+                return true;
+            }
+
+            if (!getImportScope(directive, LookupMode.ONLY_CLASSES).processNamespaces(name, processor)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @NotNull

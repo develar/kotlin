@@ -84,14 +84,14 @@ public class JetScopeSelectorUtil {
                 }
             };
 
-    public static final ScopeByNameSelector<NamespaceDescriptor> NAMESPACE_SCOPE_SELECTOR =
-            new ScopeByNameSelector<NamespaceDescriptor>() {
-                @Nullable
-                @Override
-                public NamespaceDescriptor get(@NotNull JetScope scope, @NotNull Name name) {
-                    return scope.getNamespace(name);
-                }
-            };
+    //public static final ScopeByNameSelector<NamespaceDescriptor> NAMESPACE_SCOPE_SELECTOR =
+    //        new ScopeByNameSelector<NamespaceDescriptor>() {
+    //            @Nullable
+    //            @Override
+    //            public NamespaceDescriptor get(@NotNull JetScope scope, @NotNull Name name) {
+    //                return scope.getNamespace(name);
+    //            }
+    //        };
 
     public static final ScopeByNameMultiSelector<FunctionDescriptor> NAMED_FUNCTION_SCOPE_SELECTOR =
             new ScopeByNameMultiSelector<FunctionDescriptor>() {

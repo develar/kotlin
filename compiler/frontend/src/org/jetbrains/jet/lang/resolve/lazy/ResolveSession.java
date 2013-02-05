@@ -32,11 +32,11 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.BindingTraceContext;
-import org.jetbrains.jet.lang.resolve.ObservableBindingTrace;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
+import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 
 import java.util.List;
 
@@ -144,6 +144,11 @@ public class ResolveSession {
     @NotNull
     public ModuleConfiguration getModuleConfiguration() {
         return moduleConfiguration;
+    }
+
+    @Nullable
+    public NamespaceDescriptor getPackageDescriptor(@NotNull Name shortName) {
+        return JetScopeUtils.findFirst(rootPackage.getMemberScope(), shortName);
     }
 
     @Nullable
