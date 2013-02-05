@@ -23,6 +23,7 @@ import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
+import com.intellij.openapi.vfs.local.CoreLocalVirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
@@ -161,20 +162,11 @@ public class KotlinCompiler {
         moduleInfoProvider.processSourceFiles(name, object, new Processor<File>() {
             @Override
             public boolean process(File file) {
-                VirtualFile virtualFile = localFileSystem.findFileByIoFile(file);
-                if (virtualFile == null) {
-                    throw new IllegalArgumentException("Cannot find " + file.getPath());
-                }
-
                 // root from library
-                VirtualFile jarFile = collectFromJar ? StandardFileSystems.getJarRootForLocalFile(virtualFile) : null;
-                if (jarFile == null) {
-                    PsiFile psiFile = psiManager.findFile(virtualFile);
-                    assert psiFile instanceof JetFile : virtualFile.getPath() + " is not Kotlin PSI file";
-                    result.add((JetFile) psiFile);
-                }
-                else {
-                    VfsUtilCore.visitChildrenRecursively(jarFile, new VirtualFileVisitor() {
+                if (collectFromJar && file.getPath().endsWith(".zip")) {
+                    VirtualFile zipFile = compileContext.getJarFileSystem().findFileByPath(file.getPath() + StandardFileSystems.JAR_SEPARATOR);
+                    assert zipFile != null : file.getPath() + " is not correct zipped library";
+                    VfsUtilCore.visitChildrenRecursively(zipFile, new VirtualFileVisitor() {
                         @Override
                         public boolean visitFile(@NotNull VirtualFile file) {
                             if (file.getName().endsWith(".kt")) {
@@ -184,7 +176,13 @@ public class KotlinCompiler {
                             return true;
                         }
                     });
+                    return true;
                 }
+
+                VirtualFile virtualFile = new CoreLocalVirtualFile(localFileSystem, file);
+                PsiFile psiFile = psiManager.findFile(virtualFile);
+                assert psiFile instanceof JetFile : virtualFile.getPath() + " is not Kotlin PSI file";
+                result.add((JetFile) psiFile);
                 return true;
             }
         });
