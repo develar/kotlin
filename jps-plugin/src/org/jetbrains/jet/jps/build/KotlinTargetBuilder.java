@@ -28,6 +28,7 @@ import org.jetbrains.jet.config.CompilerConfiguration;
 import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.builders.*;
 import org.jetbrains.jps.incremental.CompileContext;
+import org.jetbrains.jps.incremental.GlobalContextKey;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
 import org.jetbrains.jps.incremental.messages.ProgressMessage;
@@ -48,9 +49,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, KotlinBuildTarget> {
-    private static final Key<AtomicReference<Pair<Object, Method>>> CONTEXT = Key.create("kotlinBuildContext");
+    private static final Key<AtomicReference<Pair<Object, Method>>> CONTEXT = GlobalContextKey.create("kotlinBuildContext");
     // dirty because some dependencies was changed, but not because some source file was changed
-    private static final Key<Set<JpsModule>> DIRTY_MODULES = Key.create("kotlinDirtyModules");
+    private static final Key<Set<JpsModule>> DIRTY_MODULES = GlobalContextKey.create("kotlinDirtyModules");
 
     private final String outputLanguageName;
     private final String subCompilerClassName;
