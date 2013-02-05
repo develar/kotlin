@@ -68,7 +68,7 @@ public class JetCoreEnvironment {
 
         Project project = context.getProject();
         JetScriptDefinitionProvider.getInstance(project).addScriptDefinitions(configuration.getList(CommonConfigurationKeys.SCRIPT_DEFINITIONS_KEY));
-        context.doInitializeKotlinBuiltIns();
+        context.initializeKotlinBuiltIns();
         initialized = true;
     }
 

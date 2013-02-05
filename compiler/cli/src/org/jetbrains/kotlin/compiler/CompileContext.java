@@ -16,58 +16,26 @@
 
 package org.jetbrains.kotlin.compiler;
 
-import com.intellij.core.JavaCoreApplicationEnvironment;
-import com.intellij.core.JavaCoreProjectEnvironment;
-import com.intellij.mock.MockApplication;
-import com.intellij.mock.MockProject;
+import com.intellij.core.CoreApplicationEnvironment;
+import com.intellij.core.CoreProjectEnvironment;
+import com.intellij.ide.highlighter.ArchiveFileType;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFileSystem;
-import com.intellij.openapi.vfs.local.CoreLocalFileSystem;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.parsing.JetParserDefinition;
-import org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
-import org.jetbrains.jet.plugin.JetFileType;
 
-public class CompileContext {
-    protected final JavaCoreApplicationEnvironment applicationEnvironment;
-    protected final JavaCoreProjectEnvironment projectEnvironment;
-
+public class CompileContext extends CompilerContextBase<CoreProjectEnvironment> {
     public CompileContext(@NotNull Disposable parentDisposable) {
-        this.applicationEnvironment = new JavaCoreApplicationEnvironment(parentDisposable);
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "kt");
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "kts");
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "ktm");
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, JetParserDefinition.KTSCRIPT_FILE_SUFFIX); // should be renamed to kts
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "jet");
-        applicationEnvironment.registerParserDefinition(new JetParserDefinition());
+        super(new CoreApplicationEnvironment(parentDisposable));
 
-        projectEnvironment = new JavaCoreProjectEnvironment(parentDisposable, applicationEnvironment);
-
-        MockProject project = projectEnvironment.getProject();
-        project.registerService(JetScriptDefinitionProvider.class, new JetScriptDefinitionProvider());
-
-        initializeKotlinBuiltIns();
-    }
-
-    protected void initializeKotlinBuiltIns() {
+        projectEnvironment = new CoreProjectEnvironment(parentDisposable, applicationEnvironment);
+        registerFileTypes();
         KotlinBuiltIns.initialize(getProject());
     }
 
-    public Project getProject() {
-        return projectEnvironment.getProject();
-    }
+    @Override
+    protected void registerFileTypes() {
+        super.registerFileTypes();
 
-    public MockApplication getApplication() {
-        return applicationEnvironment.getApplication();
-    }
-
-    public CoreLocalFileSystem getLocalFileSystem() {
-        return applicationEnvironment.getLocalFileSystem();
-    }
-
-    public VirtualFileSystem getJarFileSystem() {
-        return applicationEnvironment.getJarFileSystem();
+        applicationEnvironment.registerFileType(ArchiveFileType.INSTANCE, "zip");
     }
 }
