@@ -112,7 +112,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
             call = new JsInvocation(new JsNameRef(superMethodName, JsLiteral.THIS));
         }
         translateArgumentList(context(), superCall.getValueArguments(), call.getArguments());
-        initializerStatements.add(call.makeStmt());
+        initializerStatements.add(call.asStatement());
     }
 
     @Nullable

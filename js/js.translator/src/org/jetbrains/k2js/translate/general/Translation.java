@@ -130,7 +130,7 @@ public final class Translation {
         StaticContext staticContext = new StaticContext(bindingContext, config);
         JsFunction definitionFunction = generateDefinitionFunction(staticContext, files, config, mainCallParameters);
         JsProgram program = staticContext.getProgram();
-        program.getStatements().add(generateDefineModuleInvocation(config, definitionFunction, program).makeStmt());
+        program.getStatements().add(generateDefineModuleInvocation(config, definitionFunction, program).asStatement());
         return program;
     }
 
@@ -156,7 +156,7 @@ public final class Translation {
     ) {
         JsFunction definitionFunction = new JsFunction(staticContext.getProgram().getScope(), new JsBlock());
         List<JsStatement> statements = definitionFunction.getBody().getStatements();
-        statements.add(staticContext.getProgram().getStringLiteral("use strict").makeStmt());
+        statements.add(staticContext.getProgram().getStringLiteral("use strict").asStatement());
 
         TranslationContext context = TranslationContext.rootContext(staticContext, definitionFunction);
         staticContext.initTranslators(context);
@@ -192,6 +192,6 @@ public final class Translation {
         }
         FunctionDescriptor functionDescriptor = getFunctionDescriptor(context.bindingContext(), mainFunction);
         return CallBuilder.build(context).args(new JsArrayLiteral(toStringLiteralList(arguments, context.program()))).
-                descriptor(functionDescriptor).translate().makeStmt();
+                descriptor(functionDescriptor).translate().asStatement();
     }
 }

@@ -151,7 +151,7 @@ public final class FunctionTranslator {
             JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
             assert parameter != null;
             statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
-                                    assignment(parameterRef, translateAsExpression(parameter, context)).makeStmt()));
+                                    assignment(parameterRef, translateAsExpression(parameter, context)).asStatement()));
         }
     }
 

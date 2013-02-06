@@ -39,10 +39,10 @@ public final class InitializerUtils {
             @NotNull PropertyDescriptor descriptor,
             @NotNull JsExpression value) {
         if (context.isEcma5()) {
-            return JsAstUtils.definePropertyDataDescriptor(descriptor, value, context).makeStmt();
+            return JsAstUtils.definePropertyDataDescriptor(descriptor, value, context).asStatement();
         }
         else {
-            return assignmentToBackingField(context, descriptor, value).makeStmt();
+            return assignmentToBackingField(context, descriptor, value).asStatement();
         }
     }
 
@@ -64,7 +64,7 @@ public final class InitializerUtils {
         else {
             expression = assignment(new JsNameRef(descriptor.getName().getName(), JsLiteral.THIS), value);
         }
-        return expression.makeStmt();
+        return expression.asStatement();
     }
 
 

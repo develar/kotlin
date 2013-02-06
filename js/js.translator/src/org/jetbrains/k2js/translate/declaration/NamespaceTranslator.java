@@ -56,8 +56,7 @@ public final class NamespaceTranslator {
         vars.add(context.classDeclarationTranslator().getDeclaration());
         vars.add(new JsVars.JsVar(Namer.ROOT_PACKAGE_NAME, moduleRootMembers));
         for (JetFile file : files) {
-            NamespaceDescriptor descriptor = context.bindingContext().get(BindingContext.FILE_TO_NAMESPACE, file);
-            assert descriptor != null;
+            NamespaceDescriptor descriptor = BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.FILE_TO_NAMESPACE, file);
             translate(descriptor, file, result, initializers, context);
         }
         context.classDeclarationTranslator().generateDeclarations();
@@ -71,19 +70,21 @@ public final class NamespaceTranslator {
     }
 
     private static void translate(
-            final NamespaceDescriptor descriptor,
-            JetFile file,
-            List<JsStatement> result,
+            @NotNull final NamespaceDescriptor descriptor,
+            @NotNull JetFile file,
+            @NotNull List<JsStatement> result,
             @Nullable List<JsStatement> ecma3Initializers,
-            final TranslationContext context
+            @NotNull TranslationContext context
     ) {
         final FileDeclarationVisitor visitor = new FileDeclarationVisitor(context);
+        // own package always JsNameRef (only inter-module references may be JsInvocation)
+        final JsNameRef packageQualifiedName = (JsNameRef) context.getQualifiedReference(descriptor);
         context.literalFunctionTranslator().setDefinitionPlace(
                 new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
                     @Override
                     @NotNull
                     public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
-                        return createPlace(visitor.getResult(), context.getQualifiedReference(descriptor));
+                        return createPlace(visitor.getResult(), packageQualifiedName);
                     }
                 });
 
@@ -103,7 +104,7 @@ public final class NamespaceTranslator {
             initializer = visitor.initializer;
             if (ecma3Initializers != null) {
                 ecma3Initializers.add(
-                        new JsInvocation(new JsNameRef("call", initializer), context.getQualifiedReference(descriptor)).asStatement());
+                        new JsInvocation(new JsNameRef("call", initializer), packageQualifiedName).asStatement());
             }
         }
 
@@ -113,14 +114,14 @@ public final class NamespaceTranslator {
             defineArguments.add(JsLiteral.NULL);
         }
         else {
-            defineArguments.add(context.program().getStringLiteral(((JsNameRef) context.getQualifiedReference(descriptor)).getName()));
+            defineArguments.add(context.program().getStringLiteral(packageQualifiedName.getName()));
         }
         if (context.isEcma5()) {
             defineArguments.add(initializer == null ? JsLiteral.NULL : initializer);
-            defineArguments.add(new JsDocComment(JsAstUtils.LENDS_JS_DOC_TAG, context.getQualifiedReference(descriptor)));
-
+            defineArguments.add(new JsDocComment(JsAstUtils.LENDS_JS_DOC_TAG, packageQualifiedName));
         }
         defineArguments.add(new JsObjectLiteral(visitor.getResult(), true));
+        result.add(new JsDocComment("name", packageQualifiedName));
         result.add(new JsInvocation(context.namer().packageDefinitionMethodReference(), defineArguments).asStatement());
     }
 

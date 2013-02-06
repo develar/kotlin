@@ -133,7 +133,7 @@ public final class InlinedCallExpressionTranslator extends AbstractCallExpressio
         assert descriptorToAlias != null;
         TranslationContext newContext =
                 contextWithAliasForThisExpression.innerContextWithThisAliased(descriptorToAlias, aliasForReceiver.reference());
-        newContext.addStatementToCurrentBlock(aliasForReceiver.assignmentExpression().makeStmt());
+        newContext.addStatementToCurrentBlock(aliasForReceiver.assignmentExpression().asStatement());
         return newContext;
     }
 
@@ -145,7 +145,7 @@ public final class InlinedCallExpressionTranslator extends AbstractCallExpressio
         assert result.size() == 1 : "We always wrap varargs in kotlin calls.";
         JsExpression translatedArgument = result.get(0);
         TemporaryVariable aliasForArgument = context().declareTemporary(translatedArgument);
-        context().addStatementToCurrentBlock(aliasForArgument.assignmentExpression().makeStmt());
+        context().addStatementToCurrentBlock(aliasForArgument.assignmentExpression().asStatement());
         return aliasForArgument;
     }
 
