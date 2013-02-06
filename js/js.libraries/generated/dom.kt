@@ -73,7 +73,7 @@ public trait Document : Node {
 	public fun createElementNS(namespaceURI: String, qualifiedName: String): Element
 	public fun createAttributeNS(namespaceURI: String, qualifiedName: String): Attr
 	public fun getElementsByTagNameNS(namespaceURI: String, localName: String): NodeList
-	public fun getElementById(elementId: String): Element
+	public fun getElementById(elementId: String): Element?
 	public fun adoptNode(source: Node): Node
 	public fun normalizeDocument(): Unit
 	public fun renameNode(n: Node, namespaceURI: String, qualifiedName: String): Node
