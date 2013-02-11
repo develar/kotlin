@@ -22,10 +22,8 @@ import com.intellij.testFramework.UsefulTestCase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.ConfigurationKind;
 import org.jetbrains.jet.JetTestUtils;
-import org.jetbrains.jet.TestJdkKind;
 import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
-import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.java.JvmClassName;
 import org.jetbrains.jet.parsing.JetParsingTest;
@@ -36,7 +34,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.List;
 
 import static org.jetbrains.jet.codegen.CodegenTestUtil.*;
@@ -84,7 +81,7 @@ public abstract class CodegenTestCase extends UsefulTestCase {
     protected String loadFileByFullPath(@NotNull String fullPath) {
         try {
             File file = new File(fullPath);
-            final String content = FileUtil.loadFile(file, true);
+            String content = FileUtil.loadFile(file, true);
             myFiles = CodegenTestFiles.create(file.getName(), content, myEnvironment.getProject());
             return content;
         } catch (IOException e) {
@@ -105,60 +102,13 @@ public abstract class CodegenTestCase extends UsefulTestCase {
         throw new UnsupportedOperationException();
     }
 
-    protected void blackBoxFile(@NotNull String filename) {
-        blackBoxMultiFile(filename);
-    }
-
-    protected void blackBoxFileByFullPath(@NotNull String filename) {
-        loadFileByFullPath(filename);
-        blackBox();
-    }
-
-    protected void blackBoxMultiFile(@NotNull String... filenames) {
-        loadFiles(filenames);
-        blackBox();
-    }
-
-    private void blackBox() {
-        ClassFileFactory factory = generateClassesInFile();
-        GeneratedClassLoader loader = createClassLoader(factory);
-
-        JetFile firstFile = myFiles.getPsiFiles().get(0);
-        String fqName = NamespaceCodegen.getJVMClassNameForKotlinNs(JetPsiUtil.getFQName(firstFile)).getFqName().getFqName();
-
-        try {
-            Class<?> namespaceClass = loader.loadClass(fqName);
-            Method method = namespaceClass.getMethod("box");
-
-            String r = (String) method.invoke(null);
-            assertEquals("OK", r);
-        } catch (Throwable e) {
-            System.out.println(generateToText());
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    protected void blackBoxFileWithJavaByFullPath(@NotNull String ktFile) {
-        blackBoxFileWithJava(ktFile.substring("compiler/testData/codegen/".length()));
-    }
-
-    protected void blackBoxFileWithJava(@NotNull String ktFile) {
-        File javaClassesTempDirectory = CodegenTestUtil.compileJava(ktFile.replaceFirst("\\.kt$", ".java"));
-
-        myEnvironment = new JetCoreEnvironment(getTestRootDisposable(), JetTestUtils.compilerConfigurationForTests(
-                ConfigurationKind.JDK_ONLY, TestJdkKind.MOCK_JDK, JetTestUtils.getAnnotationsJar(), javaClassesTempDirectory));
-
-        blackBoxFile(ktFile);
-    }
-
     @NotNull
     protected GeneratedClassLoader createClassLoader(@NotNull ClassFileFactory factory) {
         if (initializedClassLoader != null) {
             fail("Double initialization of class loader in same test");
         }
 
-        ClassLoader parentClassLoader = new URLClassLoader(getClassPathURLs(), CodegenTestCase.class.getClassLoader());
-        initializedClassLoader = new GeneratedClassLoader(factory, parentClassLoader);
+        initializedClassLoader = new GeneratedClassLoader(factory, CodegenTestCase.class.getClassLoader(), getClassPathURLs());
         return initializedClassLoader;
     }
 

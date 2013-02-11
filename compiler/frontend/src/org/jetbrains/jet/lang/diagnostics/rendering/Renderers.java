@@ -266,7 +266,7 @@ public class Renderers {
     public static TabledDescriptorRenderer renderUpperBoundViolatedInferenceError(InferenceErrorData inferenceErrorData, TabledDescriptorRenderer result) {
         TypeParameterDescriptor typeParameterDescriptor = null;
         for (TypeParameterDescriptor typeParameter : inferenceErrorData.descriptor.getTypeParameters()) {
-            if (!ConstraintsUtil.checkUpperBoundIsSatisfied(inferenceErrorData.constraintSystem, typeParameter)) {
+            if (!ConstraintsUtil.checkUpperBoundIsSatisfied(inferenceErrorData.constraintSystem, typeParameter, true)) {
                 typeParameterDescriptor = typeParameter;
                 break;
             }
@@ -277,15 +277,18 @@ public class Renderers {
                 .table(newTable().
                         descriptor(inferenceErrorData.descriptor));
 
-        JetType type = ConstraintsUtil.getValue(inferenceErrorData.constraintSystem.getTypeConstraints(typeParameterDescriptor));
+        JetType inferredValueForTypeParameter = ConstraintsUtil.getValue(inferenceErrorData.constraintSystem.getTypeConstraints(typeParameterDescriptor));
+        assert inferredValueForTypeParameter != null;
         JetType upperBound = typeParameterDescriptor.getUpperBoundsAsType();
-        JetType substitute = inferenceErrorData.constraintSystem.getResultingSubstitutor().substitute(upperBound, Variance.INVARIANT);
+        JetType upperBoundWithSubstitutedInferredTypes = inferenceErrorData.constraintSystem.getResultingSubstitutor().substitute(upperBound, Variance.INVARIANT);
+        assert upperBoundWithSubstitutedInferredTypes != null;
 
+        Renderer<JetType> typeRenderer = result.getTypeRenderer();
         result.text(newText()
                             .normal(" is not satisfied: inferred type ")
-                            .error(type)
+                            .error(typeRenderer.render(inferredValueForTypeParameter))
                             .normal(" is not a subtype of ")
-                            .strong(substitute));
+                            .strong(typeRenderer.render(upperBoundWithSubstitutedInferredTypes)));
         return result;
     }
 

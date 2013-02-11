@@ -24,16 +24,17 @@ import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.diagnostics.Errors;
 import org.jetbrains.jet.lang.psi.*;
-import org.jetbrains.jet.lang.resolve.BindingTrace;
-import org.jetbrains.jet.lang.resolve.TemporaryBindingTrace;
-import org.jetbrains.jet.lang.resolve.TypeResolver;
-import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
+import org.jetbrains.jet.lang.resolve.*;
+import org.jetbrains.jet.lang.resolve.calls.context.CallResolutionContext;
+import org.jetbrains.jet.lang.resolve.calls.context.ResolveMode;
+import org.jetbrains.jet.lang.resolve.calls.context.TypeInfoForCall;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCallImpl;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedValueArgument;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
+import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.ErrorUtils;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.JetTypeInfo;
+import org.jetbrains.jet.lang.types.TypeUtils;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
@@ -44,9 +45,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jetbrains.jet.lang.resolve.BindingContextUtils.getRecordedTypeInfoForCall;
+import static org.jetbrains.jet.lang.resolve.BindingContextUtils.recordContextForExpressionCall;
+import static org.jetbrains.jet.lang.resolve.BindingContextUtils.recordExpressionType;
 import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.*;
-import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveMode.RESOLVE_FUNCTION_ARGUMENTS;
-import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveMode.SKIP_FUNCTION_ARGUMENTS;
+import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveArgumentsMode.RESOLVE_FUNCTION_ARGUMENTS;
+import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveArgumentsMode.SKIP_FUNCTION_ARGUMENTS;
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
 
 public class ArgumentTypeResolver {
@@ -82,11 +86,11 @@ public class ArgumentTypeResolver {
         return KotlinBuiltIns.getInstance().isFunctionOrExtensionFunctionType(supertype) || ErrorUtils.isErrorType(supertype);
     }
 
-    public void checkTypesWithNoCallee(@NotNull ResolutionContext context) {
+    public void checkTypesWithNoCallee(@NotNull CallResolutionContext context) {
         checkTypesWithNoCallee(context, SKIP_FUNCTION_ARGUMENTS);
     }
 
-    public void checkTypesWithNoCallee(@NotNull ResolutionContext context, @NotNull ResolveMode resolveFunctionArgumentBodies) {
+    public void checkTypesWithNoCallee(@NotNull CallResolutionContext context, @NotNull ResolveArgumentsMode resolveFunctionArgumentBodies) {
         for (ValueArgument valueArgument : context.call.getValueArguments()) {
             JetExpression argumentExpression = valueArgument.getArgumentExpression();
             if (argumentExpression != null && !(argumentExpression instanceof JetFunctionLiteralExpression)) {
@@ -109,7 +113,7 @@ public class ArgumentTypeResolver {
         }
     }
 
-    public void checkTypesForFunctionArgumentsWithNoCallee(@NotNull ResolutionContext context) {
+    public void checkTypesForFunctionArgumentsWithNoCallee(@NotNull CallResolutionContext context) {
         for (ValueArgument valueArgument : context.call.getValueArguments()) {
             JetExpression argumentExpression = valueArgument.getArgumentExpression();
             if (argumentExpression != null && (argumentExpression instanceof JetFunctionLiteralExpression)) {
@@ -122,7 +126,7 @@ public class ArgumentTypeResolver {
         }
     }
 
-    public void checkUnmappedArgumentTypes(ResolutionContext context, Set<ValueArgument> unmappedArguments) {
+    public void checkUnmappedArgumentTypes(CallResolutionContext context, Set<ValueArgument> unmappedArguments) {
         for (ValueArgument valueArgument : unmappedArguments) {
             JetExpression argumentExpression = valueArgument.getArgumentExpression();
             if (argumentExpression != null) {
@@ -131,7 +135,7 @@ public class ArgumentTypeResolver {
         }
     }
 
-    public <D extends CallableDescriptor> void checkTypesForFunctionArguments(ResolutionContext context, ResolvedCallImpl<D> resolvedCall) {
+    public <D extends CallableDescriptor> void checkTypesForFunctionArguments(CallResolutionContext context, ResolvedCallImpl<D> resolvedCall) {
         Map<ValueParameterDescriptor, ResolvedValueArgument> arguments = resolvedCall.getValueArguments();
         for (Map.Entry<ValueParameterDescriptor, ResolvedValueArgument> entry : arguments.entrySet()) {
             ValueParameterDescriptor valueParameterDescriptor = entry.getKey();
@@ -155,22 +159,41 @@ public class ArgumentTypeResolver {
     }
 
     @NotNull
-    public JetTypeInfo getArgumentTypeInfo(
+    public TypeInfoForCall getArgumentTypeInfo(
             @Nullable JetExpression expression,
-            @NotNull BindingTrace trace,
-            @NotNull JetScope scope,
-            @NotNull DataFlowInfo dataFlowInfo,
-            @NotNull JetType expectedType,
-            @NotNull ResolveMode resolveFunctionArgumentBodies
+            @NotNull CallResolutionContext context,
+            @NotNull ResolveArgumentsMode resolveFunctionArgumentBodies
     ) {
         if (expression == null) {
-            return JetTypeInfo.create(null, dataFlowInfo);
+            return TypeInfoForCall.create(null, context.dataFlowInfo);
         }
         if (expression instanceof JetFunctionLiteralExpression && resolveFunctionArgumentBodies == SKIP_FUNCTION_ARGUMENTS) {
-            JetType type = getFunctionLiteralType((JetFunctionLiteralExpression) expression, scope, trace);
-            return JetTypeInfo.create(type, dataFlowInfo);
+            JetType type = getFunctionLiteralType((JetFunctionLiteralExpression) expression, context.scope, context.trace);
+            return TypeInfoForCall.create(type, context.dataFlowInfo);
         }
-        return expressionTypingServices.getTypeInfo(scope, expression, expectedType, dataFlowInfo, trace);
+        TypeInfoForCall cachedTypeInfo = getRecordedTypeInfoForCall(expression, context);
+        if (cachedTypeInfo != null) {
+            return cachedTypeInfo;
+        }
+        //todo deparenthesize
+        CallExpressionResolver callExpressionResolver = expressionTypingServices.getCallExpressionResolver();
+        TypeInfoForCall result = null;
+        if (expression instanceof JetCallExpression) {
+            result = callExpressionResolver.getCallExpressionTypeInfoForCall(
+                    (JetCallExpression) expression, ReceiverValue.NO_RECEIVER, null,
+                    context.replaceExpectedType(TypeUtils.NO_EXPECTED_TYPE), ResolveMode.NESTED_CALL);
+        }
+        if (expression instanceof JetQualifiedExpression) {
+            result = callExpressionResolver.getQualifiedExpressionExtendedTypeInfo(
+                    (JetQualifiedExpression) expression, context.replaceExpectedType(TypeUtils.NO_EXPECTED_TYPE), ResolveMode.NESTED_CALL);
+        }
+        if (result != null) {
+            recordExpressionType(expression, context, result.getTypeInfo());
+            recordContextForExpressionCall(expression, context.trace, result.getCallCandidateResolutionContext());
+            return result;
+        }
+        return TypeInfoForCall.create(
+                expressionTypingServices.getTypeInfo(context.scope, expression, context.expectedType, context.dataFlowInfo, context.trace));
     }
 
     @Nullable

@@ -41,10 +41,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
     public static Visibility PACKAGE_VISIBILITY = new Visibility("package", false) {
         @Override
         protected boolean isVisible(@NotNull DeclarationDescriptorWithVisibility what, @NotNull DeclarationDescriptor from) {
-            NamespaceDescriptor parentPackage = DescriptorUtils.getParentOfType(what, NamespaceDescriptor.class);
-            NamespaceDescriptor fromPackage = DescriptorUtils.getParentOfType(from, NamespaceDescriptor.class, false);
-            assert parentPackage != null;
-            return parentPackage.equals(fromPackage);
+            return DescriptorUtils.isInSameNamespace(what, from);
         }
 
         @Override
@@ -52,6 +49,17 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
             if (this == visibility) return 0;
             if (visibility == Visibilities.PRIVATE) return 1;
             return -1;
+        }
+
+        @Override
+        public String toString() {
+            return "public/*package*/";
+        }
+
+        @NotNull
+        @Override
+        public Visibility normalize() {
+            return Visibilities.INTERNAL;
         }
     };
 
@@ -81,6 +89,56 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
                 return true;
             }
             return isVisible(what, fromClass.getContainingDeclaration());
+        }
+
+        @Override
+        public String toString() {
+            return "protected/*protected static*/";
+        }
+
+        @NotNull
+        @Override
+        public Visibility normalize() {
+            return Visibilities.PROTECTED;
+        }
+    };
+
+    public static final Visibility PROTECTED_AND_PACKAGE = new Visibility("protected_and_package", false) {
+        @Override
+        protected boolean isVisible(@NotNull DeclarationDescriptorWithVisibility what, @NotNull DeclarationDescriptor from) {
+            if (DescriptorUtils.isInSameNamespace(what, from)) {
+                return true;
+            }
+
+            ClassDescriptor whatClass = DescriptorUtils.getParentOfType(what, ClassDescriptor.class, false);
+            if (whatClass == null) return false;
+
+            ClassDescriptor fromClass = DescriptorUtils.getParentOfType(from, ClassDescriptor.class, false);
+            if (fromClass == null) return false;
+
+            if (DescriptorUtils.isSubclass(fromClass, whatClass)) {
+                return true;
+            }
+            return isVisible(what, fromClass.getContainingDeclaration());
+        }
+
+        @Override
+        protected Integer compareTo(@NotNull Visibility visibility) {
+            if (this == visibility) return 0;
+            if (visibility == Visibilities.INTERNAL) return null;
+            if (visibility == Visibilities.PRIVATE) return 1;
+            return -1;
+        }
+
+        @Override
+        public String toString() {
+            return "protected/*protected and package*/";
+        }
+
+        @NotNull
+        @Override
+        public Visibility normalize() {
+            return Visibilities.PROTECTED;
         }
     };
 

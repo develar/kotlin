@@ -23,16 +23,20 @@ import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.utils.Printer;
 
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SimpleTestMethodModel implements TestMethodModel {
     private final File rootDir;
     private final File file;
     private final String doTestMethodName;
+    private final Pattern filenamePattern;
 
-    public SimpleTestMethodModel(File rootDir, File file, String doTestMethodName) {
+    public SimpleTestMethodModel(File rootDir, File file, String doTestMethodName, Pattern filenamePattern) {
         this.rootDir = rootDir;
         this.file = file;
         this.doTestMethodName = doTestMethodName;
+        this.filenamePattern = filenamePattern;
     }
 
     @Override
@@ -47,14 +51,19 @@ public class SimpleTestMethodModel implements TestMethodModel {
 
     @Override
     public String getName() {
-        String fileName = FileUtil.getNameWithoutExtension(file.getName());
+        Matcher matcher = filenamePattern.matcher(file.getName());
+        boolean found = matcher.find();
+        assert found : file.getName() + " isn't matched by regex " + filenamePattern.pattern();
+        assert matcher.groupCount() == 2 : filenamePattern.pattern();
+        String extractedName = matcher.group(1);
+
         String unescapedName;
         if (rootDir.equals(file.getParentFile())) {
-            unescapedName = fileName;
+            unescapedName = extractedName;
         }
         else {
             String relativePath = FileUtil.getRelativePath(rootDir, file.getParentFile());
-            unescapedName = relativePath + "-" + StringUtil.capitalize(fileName);
+            unescapedName = relativePath + "-" + StringUtil.capitalize(extractedName);
         }
         return "test" + StringUtil.capitalize(TestGeneratorUtil.escapeForJavaIdentifier(unescapedName));
     }

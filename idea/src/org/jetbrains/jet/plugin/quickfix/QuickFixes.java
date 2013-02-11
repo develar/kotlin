@@ -120,6 +120,8 @@ public class QuickFixes {
         JetIntentionActionFactory unresolvedReferenceFactory = ImportClassAndFunFix.createFactory();
         factories.put(UNRESOLVED_REFERENCE, unresolvedReferenceFactory);
 
+        factories.put(USELESS_SIMPLE_IMPORT, RemoveImportFix.createFactory());
+
         factories.put(SUPERTYPE_NOT_INITIALIZED_DEFAULT, ChangeToConstructorInvocationFix.createFactory());
         factories.put(FUNCTION_CALL_EXPECTED, ChangeToFunctionInvocationFix.createFactory());
         
@@ -129,6 +131,8 @@ public class QuickFixes {
         factories.put(TUPLES_ARE_NOT_SUPPORTED, MigrateTuplesInProjectFix.createFactory());
 
         factories.put(UNRESOLVED_REFERENCE, MigrateSureInProjectFix.createFactory());
+
+        factories.put(REDUNDANT_NULLABLE, RemoveRedundantNullableFix.createFactory());
 
         ImplementMethodsHandler implementMethodsHandler = new ImplementMethodsHandler();
         actions.put(ABSTRACT_MEMBER_NOT_IMPLEMENTED, implementMethodsHandler);
@@ -153,5 +157,9 @@ public class QuickFixes {
         factories.put(WRONG_NUMBER_OF_TYPE_ARGUMENTS, AddStarProjectionsFix.createFactoryForJavaClass());
 
         factories.put(INACCESSIBLE_OUTER_CLASS_EXPRESSION, AddModifierFix.createFactory(INNER_KEYWORD, JetClass.class));
+        
+        factories.put(FINAL_SUPERTYPE, FinalSupertypeFix.createFactory());
+
+        factories.put(PARAMETER_NAME_CHANGED_ON_OVERRIDE, RenameParameterToMatchOverriddenMethodFix.createFactory());
     }
 }

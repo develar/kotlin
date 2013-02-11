@@ -24,7 +24,7 @@ import org.jetbrains.jet.lang.types.JetType;
 
 import java.util.Collections;
 
-public class AccessorForPropertyDescriptor extends PropertyDescriptor {
+public class AccessorForPropertyDescriptor extends PropertyDescriptorImpl {
     public AccessorForPropertyDescriptor(PropertyDescriptor pd, DeclarationDescriptor containingDeclaration, int index) {
         super(containingDeclaration, Collections.<AnnotationDescriptor>emptyList(), Modality.FINAL, Visibilities.PUBLIC,
               pd.isVar(), Name.identifier(pd.getName() + "$b$" + index),
@@ -35,7 +35,7 @@ public class AccessorForPropertyDescriptor extends PropertyDescriptor {
         initialize(new Getter(this), new Setter(this));
     }
 
-    public static class Getter extends PropertyGetterDescriptor {
+    public static class Getter extends PropertyGetterDescriptorImpl {
         public Getter(AccessorForPropertyDescriptor property) {
             super(property, Collections.<AnnotationDescriptor>emptyList(), Modality.FINAL, Visibilities.PUBLIC,
                   false,
@@ -44,7 +44,7 @@ public class AccessorForPropertyDescriptor extends PropertyDescriptor {
         }
     }
 
-    public static class Setter extends PropertySetterDescriptor {
+    public static class Setter extends PropertySetterDescriptorImpl {
         public Setter(AccessorForPropertyDescriptor property) {
             super(property, Collections.<AnnotationDescriptor>emptyList(), Modality.FINAL, Visibilities.PUBLIC,
                   false,

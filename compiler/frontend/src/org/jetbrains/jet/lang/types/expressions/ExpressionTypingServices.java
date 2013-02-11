@@ -21,16 +21,15 @@ import com.google.common.collect.Lists;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
-import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptorUtil;
 import org.jetbrains.jet.lang.descriptors.ScriptDescriptor;
-import org.jetbrains.jet.lang.diagnostics.Diagnostic;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.*;
+import org.jetbrains.jet.lang.resolve.calls.CallExpressionResolver;
 import org.jetbrains.jet.lang.resolve.calls.CallResolver;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
@@ -46,11 +45,10 @@ import org.jetbrains.jet.lexer.JetTokens;
 import javax.inject.Inject;
 import java.util.*;
 
-import static org.jetbrains.jet.lang.diagnostics.Errors.TYPE_INFERENCE_ERRORS;
-import static org.jetbrains.jet.lang.diagnostics.Errors.TYPE_MISMATCH;
 import static org.jetbrains.jet.lang.resolve.BindingContext.LABEL_TARGET;
 import static org.jetbrains.jet.lang.resolve.BindingContext.STATEMENT;
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
+import static org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils.makeTraceInterceptingTypeMismatch;
 
 public class ExpressionTypingServices {
 
@@ -60,6 +58,8 @@ public class ExpressionTypingServices {
     private Project project;
     @NotNull
     private CallResolver callResolver;
+    @NotNull
+    private CallExpressionResolver callExpressionResolver;
     @NotNull
     private DescriptorResolver descriptorResolver;
     @NotNull
@@ -85,6 +85,16 @@ public class ExpressionTypingServices {
     @Inject
     public void setCallResolver(@NotNull CallResolver callResolver) {
         this.callResolver = callResolver;
+    }
+
+    @NotNull
+    public CallExpressionResolver getCallExpressionResolver() {
+        return callExpressionResolver;
+    }
+
+    @Inject
+    public void setCallExpressionResolver(@NotNull CallExpressionResolver callExpressionResolver) {
+        this.callExpressionResolver = callExpressionResolver;
     }
 
     @NotNull
@@ -128,11 +138,10 @@ public class ExpressionTypingServices {
         return getTypeInfo(scope, expression, expectedType, dataFlowInfo, trace).getType();
     }
 
-    public JetType getTypeWithNamespaces(@NotNull final JetScope scope, @NotNull JetExpression expression, @NotNull BindingTrace trace) {
+    public JetTypeInfo getTypeInfoWithNamespaces(@NotNull JetExpression expression, @NotNull JetScope scope, @NotNull JetType expectedType, @NotNull DataFlowInfo dataFlowInfo, @NotNull BindingTrace trace) {
         ExpressionTypingContext context = ExpressionTypingContext.newContext(
-                this, trace, scope, DataFlowInfo.EMPTY, NO_EXPECTED_TYPE, true);
-        return expressionTypingFacade.getTypeInfo(expression, context).getType();
-//        return ((ExpressionTypingContext) ExpressionTyperVisitorWithNamespaces).INSTANCE.getType(expression, ExpressionTypingContext.newRootContext(semanticServices, trace, scope, DataFlowInfo.getEmpty(), TypeUtils.NO_EXPECTED_TYPE, TypeUtils.NO_EXPECTED_TYPE));
+                this, trace, scope, dataFlowInfo, expectedType, true);
+        return expressionTypingFacade.getTypeInfo(expression, context);
     }
 
     @NotNull
@@ -354,23 +363,6 @@ public class ExpressionTypingServices {
     private ExpressionTypingContext createContext(ExpressionTypingContext oldContext, BindingTrace trace, WritableScope scope, DataFlowInfo dataFlowInfo, JetType expectedType) {
         return ExpressionTypingContext.newContext(
                 this, oldContext.labelResolver, trace, scope, dataFlowInfo, expectedType, oldContext.namespacesAllowed);
-    }
-
-    private ObservableBindingTrace makeTraceInterceptingTypeMismatch(final BindingTrace trace, final JetExpression expressionToWatch, final boolean[] mismatchFound) {
-        return new ObservableBindingTrace(trace) {
-
-            @Override
-            public void report(@NotNull Diagnostic diagnostic) {
-                if (diagnostic.getFactory() == TYPE_MISMATCH && diagnostic.getPsiElement() == expressionToWatch) {
-                    mismatchFound[0] = true;
-                }
-                if (TYPE_INFERENCE_ERRORS.contains(diagnostic.getFactory()) &&
-                    PsiTreeUtil.isAncestor(expressionToWatch, diagnostic.getPsiElement(), false)) {
-                    mismatchFound[0] = true;
-                }
-                super.report(diagnostic);
-            }
-        };
     }
 
     @Nullable

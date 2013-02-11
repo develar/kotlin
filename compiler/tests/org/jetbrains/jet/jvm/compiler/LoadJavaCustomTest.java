@@ -83,7 +83,7 @@ public final class LoadJavaCustomTest extends KotlinTestWithEnvironment {
     }
 
     public void testPackageLocalVisibility() throws Exception {
-        String dir = PATH + "/packageLocalVisibility";
+        String dir = PATH + "/packageLocalVisibility/simple/";
         String javaDir = dir + "/java";
         doTest(dir + "/expected.txt",
                javaDir + "/test/JFrame.java",
@@ -98,6 +98,24 @@ public final class LoadJavaCustomTest extends KotlinTestWithEnvironment {
         String dir = PATH + "/protectedStaticVisibility/constructor/";
         doTest(dir + "ConstructorInProtectedStaticNestedClass.txt",
                dir + "ConstructorInProtectedStaticNestedClass.java");
+    }
+
+    public void testProtectedPackageFun() throws Exception {
+        String dir = PATH + "/protectedPackageVisibility/";
+        doTest(dir + "ProtectedPackageFun.txt",
+               dir + "ProtectedPackageFun.java");
+    }
+
+    public void testProtectedPackageConstructor() throws Exception {
+        String dir = PATH + "/protectedPackageVisibility/";
+        doTest(dir + "ProtectedPackageConstructor.txt",
+               dir + "ProtectedPackageConstructor.java");
+    }
+
+    public void testProtectedPackageProperty() throws Exception {
+        String dir = PATH + "/protectedPackageVisibility/";
+        doTest(dir + "ProtectedPackageProperty.txt",
+               dir + "ProtectedPackageProperty.java");
     }
 
     public void testStaticFinal() throws Exception {
@@ -143,17 +161,31 @@ public final class LoadJavaCustomTest extends KotlinTestWithEnvironment {
                dir + "SubclassWithRawType.java");
     }
 
+    public void testMethodTypeParameterErased() throws Exception {
+        String dir = PATH + "/methodTypeParameterErased/";
+        doTest(dir + "MethodTypeParameterErased.txt",
+               dir + "MethodTypeParameterErased.java");
+    }
+
     public static class SubclassingKotlinInJavaTest extends KotlinTestWithEnvironmentManagement {
         public void testSubclassingKotlinInJava() throws Exception {
-            doTest();
+            doTest(PATH + "/" + getTestName(true));
         }
 
         public void testDeepSubclassingKotlinInJava() throws Exception {
-            doTest();
+            doTest(PATH + "/" + getTestName(true));
         }
 
-        public void doTest() throws Exception {
-            File dir = new File(PATH + "/" + getTestName(true));
+        public void testPackageInheritance() throws Exception {
+            doTest(PATH + "/packageLocalVisibility/inheritance");
+        }
+
+        public void testProtectedPackageInheritance() throws Exception {
+            doTest(PATH + "/protectedPackageVisibility/inheritance");
+        }
+
+        public void doTest(String path) throws Exception {
+            File dir = new File(path);
 
             CompilerConfiguration configuration = JetTestUtils.compilerConfigurationForTests(
                     ConfigurationKind.JDK_ONLY, TestJdkKind.MOCK_JDK, new File(dir, "java"));

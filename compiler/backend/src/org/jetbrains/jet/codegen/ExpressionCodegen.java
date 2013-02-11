@@ -2228,11 +2228,9 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
     @Override
     public StackValue visitSafeQualifiedExpression(JetSafeQualifiedExpression expression, StackValue receiver) {
         JetExpression expr = expression.getReceiverExpression();
-        JetType receiverJetType = bindingContext.get(BindingContext.EXPRESSION_TYPE, expression.getReceiverExpression());
-        assert receiverJetType != null;
-        Type receiverType = asmType(receiverJetType);
+        Type receiverType = expressionType(expr);
         gen(expr, receiverType);
-        if (!receiverJetType.isNullable()) {
+        if (isPrimitive(receiverType)) {
             StackValue propValue = genQualified(StackValue.onStack(receiverType), expression.getSelectorExpression());
             Type type = boxType(propValue.type);
             propValue.put(type, v);
@@ -2385,17 +2383,14 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
     }
 
     private StackValue generateEquals(JetExpression left, JetExpression right, IElementType opToken) {
-        JetType leftJetType = bindingContext.get(BindingContext.EXPRESSION_TYPE, left);
-        assert leftJetType != null;
-        Type leftType = asmType(leftJetType);
-        JetType rightJetType = bindingContext.get(BindingContext.EXPRESSION_TYPE, right);
-        assert rightJetType != null;
-        Type rightType = asmType(rightJetType);
-        if (leftType.equals(JET_NOTHING_TYPE)) {
+        Type leftType = expressionType(left);
+        Type rightType = expressionType(right);
+
+        if (JetPsiUtil.isNullConstant(left)) {
             return genCmpWithNull(right, rightType, opToken);
         }
 
-        if (rightType.equals(JET_NOTHING_TYPE)) {
+        if (JetPsiUtil.isNullConstant(right)) {
             return genCmpWithNull(left, leftType, opToken);
         }
 
@@ -2418,13 +2413,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
             gen(right, rightType);
         }
 
-        if (isPrimitive(leftType)) // both are primitive
-        {
-            return genEqualsForExpressionsOnStack(v, opToken, leftType, rightType, false, false);
-        }
-
-        return
-                genEqualsForExpressionsOnStack(v, opToken, leftType, rightType, leftJetType.isNullable(), rightJetType.isNullable());
+        return genEqualsForExpressionsOnStack(v, opToken, leftType, rightType);
     }
 
     private boolean isIntZero(JetExpression expr, Type exprType) {
@@ -2465,27 +2454,26 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
     }
 
     private StackValue generateElvis(JetBinaryExpression expression) {
-        final Type exprType = expressionType(expression);
-        JetType type = bindingContext.get(BindingContext.EXPRESSION_TYPE, expression.getLeft());
-        assert type != null;
-        final Type leftType = asmType(type);
-        if (type.isNullable()) {
-            gen(expression.getLeft(), leftType);
-            v.dup();
-            Label end = new Label();
-            Label ifNull = new Label();
-            v.ifnull(ifNull);
-            StackValue.onStack(leftType).put(exprType, v);
-            v.goTo(end);
-            v.mark(ifNull);
-            v.pop();
-            gen(expression.getRight(), exprType);
-            v.mark(end);
+        Type exprType = expressionType(expression);
+        Type leftType = expressionType(expression.getLeft());
+
+        gen(expression.getLeft(), leftType);
+
+        if (isPrimitive(leftType)) {
+            return StackValue.onStack(leftType);
         }
-        else {
-            gen(expression.getLeft(), leftType);
-            StackValue.onStack(leftType).put(exprType, v);
-        }
+
+        v.dup();
+        Label ifNull = new Label();
+        v.ifnull(ifNull);
+        StackValue.onStack(leftType).put(exprType, v);
+        Label end = new Label();
+        v.goTo(end);
+        v.mark(ifNull);
+        v.pop();
+        gen(expression.getRight(), exprType);
+        v.mark(end);
+
         return StackValue.onStack(exprType);
     }
 
@@ -2679,21 +2667,17 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
     @Override
     public StackValue visitPostfixExpression(JetPostfixExpression expression, StackValue receiver) {
         if (expression.getOperationReference().getReferencedNameElementType() == JetTokens.EXCLEXCL) {
-            JetExpression baseExpression = expression.getBaseExpression();
-            JetType type = bindingContext.get(BindingContext.EXPRESSION_TYPE, baseExpression);
-            StackValue base = genQualified(receiver, baseExpression);
-            if (type != null && type.isNullable()) {
-                base.put(base.type, v);
-                v.dup();
-                Label ok = new Label();
-                v.ifnonnull(ok);
-                v.invokestatic("jet/runtime/Intrinsics", "throwNpe", "()V");
-                v.mark(ok);
-                return StackValue.onStack(base.type);
-            }
-            else {
+            StackValue base = genQualified(receiver, expression.getBaseExpression());
+            if (isPrimitive(base.type)) {
                 return base;
             }
+            base.put(base.type, v);
+            v.dup();
+            Label ok = new Label();
+            v.ifnonnull(ok);
+            v.invokestatic("jet/runtime/Intrinsics", "throwNpe", "()V");
+            v.mark(ok);
+            return StackValue.onStack(base.type);
         }
         DeclarationDescriptor op = bindingContext.get(BindingContext.REFERENCE_TARGET, expression.getOperationReference());
         if (op instanceof FunctionDescriptor) {
@@ -3247,24 +3231,22 @@ The "returned" value of try expression with no finally is either the last expres
             assert rightType != null;
             Type rightTypeAsm = boxType(asmType(rightType));
             JetExpression left = expression.getLeft();
-            JetType leftType = bindingContext.get(BindingContext.EXPRESSION_TYPE, left);
             DeclarationDescriptor descriptor = rightType.getConstructor().getDeclarationDescriptor();
             if (descriptor instanceof ClassDescriptor || descriptor instanceof TypeParameterDescriptor) {
                 StackValue value = genQualified(receiver, left);
                 value.put(boxType(value.type), v);
-                assert leftType != null;
 
                 if (opToken != JetTokens.AS_SAFE) {
-                    if (leftType.isNullable()) {
-                        if (!rightType.isNullable()) {
-                            v.dup();
-                            Label nonnull = new Label();
-                            v.ifnonnull(nonnull);
-                            throwNewException(CLASS_TYPE_CAST_EXCEPTION, DescriptorRenderer.TEXT.renderType(leftType) +
-                                                                         " cannot be cast to " +
-                                                                         DescriptorRenderer.TEXT.renderType(rightType));
-                            v.mark(nonnull);
-                        }
+                    if (!rightType.isNullable()) {
+                        v.dup();
+                        Label nonnull = new Label();
+                        v.ifnonnull(nonnull);
+                        JetType leftType = bindingContext.get(BindingContext.EXPRESSION_TYPE, left);
+                        assert leftType != null;
+                        throwNewException(CLASS_TYPE_CAST_EXCEPTION, DescriptorRenderer.TEXT.renderType(leftType) +
+                                                                     " cannot be cast to " +
+                                                                     DescriptorRenderer.TEXT.renderType(rightType));
+                        v.mark(nonnull);
                     }
                 }
                 else {
@@ -3281,7 +3263,7 @@ The "returned" value of try expression with no finally is either the last expres
                 return StackValue.onStack(rightTypeAsm);
             }
             else {
-                throw new UnsupportedOperationException("don't know how to handle non-class types in as/as?");
+                throw new UnsupportedOperationException("Don't know how to handle non-class types in as/as? : " + descriptor);
             }
         }
     }
@@ -3292,16 +3274,11 @@ The "returned" value of try expression with no finally is either the last expres
         return generateIsCheck(match, expression.getTypeRef(), expression.isNegated());
     }
 
-    private StackValue generateExpressionMatch(
-            StackValue expressionToMatch,
-            JetExpression patternExpression,
-            boolean expressionToMatchIsNullable
-    ) {
+    private StackValue generateExpressionMatch(StackValue expressionToMatch, JetExpression patternExpression) {
         if (expressionToMatch != null) {
             Type subjectType = expressionToMatch.type;
             expressionToMatch.dupReceiver(v);
             expressionToMatch.put(subjectType, v);
-            boolean patternIsNullable = false;
             JetType condJetType = bindingContext.get(BindingContext.EXPRESSION_TYPE, patternExpression);
             Type condType;
             if (isNumberPrimitive(subjectType) || subjectType.getSort() == Type.BOOLEAN) {
@@ -3314,11 +3291,9 @@ The "returned" value of try expression with no finally is either the last expres
             }
             else {
                 condType = OBJECT_TYPE;
-                patternIsNullable = condJetType != null && condJetType.isNullable();
             }
             gen(patternExpression, condType);
-            return genEqualsForExpressionsOnStack(v, JetTokens.EQEQ, subjectType, condType, expressionToMatchIsNullable,
-                                                  patternIsNullable);
+            return genEqualsForExpressionsOnStack(v, JetTokens.EQEQ, subjectType, condType);
         }
         else {
             return gen(patternExpression);
@@ -3394,9 +3369,7 @@ The "returned" value of try expression with no finally is either the last expres
             if (!whenEntry.isElse()) {
                 final JetWhenCondition[] conditions = whenEntry.getConditions();
                 for (int i = 0; i < conditions.length; i++) {
-                    StackValue conditionValue = generateWhenCondition(subjectType, subjectLocal,
-                                                                      subjectJetType != null && subjectJetType.isNullable(),
-                                                                      conditions[i], nextCondition);
+                    StackValue conditionValue = generateWhenCondition(subjectType, subjectLocal, conditions[i]);
                     conditionValue.condJump(nextCondition, true, v);
                     if (i < conditions.length - 1) {
                         v.goTo(thisEntry);
@@ -3426,10 +3399,7 @@ The "returned" value of try expression with no finally is either the last expres
         return StackValue.onStack(resultType);
     }
 
-    private StackValue generateWhenCondition(
-            Type subjectType, int subjectLocal, boolean subjectIsNullable,
-            JetWhenCondition condition, @Nullable Label nextEntry
-    ) {
+    private StackValue generateWhenCondition(Type subjectType, int subjectLocal, JetWhenCondition condition) {
         if (condition instanceof JetWhenConditionInRange) {
             JetWhenConditionInRange conditionInRange = (JetWhenConditionInRange) condition;
             JetExpression rangeExpression = conditionInRange.getRangeExpression();
@@ -3461,7 +3431,7 @@ The "returned" value of try expression with no finally is either the last expres
         }
         else if (condition instanceof JetWhenConditionWithExpression) {
             JetExpression patternExpression = ((JetWhenConditionWithExpression) condition).getExpression();
-            return generateExpressionMatch(match, patternExpression, subjectIsNullable);
+            return generateExpressionMatch(match, patternExpression);
         }
         else {
             throw new UnsupportedOperationException("unsupported kind of when condition");

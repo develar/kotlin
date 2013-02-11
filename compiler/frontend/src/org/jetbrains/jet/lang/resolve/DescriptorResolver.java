@@ -718,7 +718,7 @@ public class DescriptorResolver {
             BindingTrace trace
     ) {
         if (JetPsiUtil.isScriptDeclaration(variable)) {
-            PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
+            PropertyDescriptorImpl propertyDescriptor = new PropertyDescriptorImpl(
                     containingDeclaration,
                     annotationResolver.getResolvedAnnotations(variable.getModifierList(), trace),
                     Modality.FINAL,
@@ -787,7 +787,7 @@ public class DescriptorResolver {
             @NotNull ClassDescriptor classDescriptor, BindingTrace trace
     ) {
         JetModifierList modifierList = objectDeclaration.getModifierList();
-        PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
+        PropertyDescriptorImpl propertyDescriptor = new PropertyDescriptorImpl(
                 containingDeclaration,
                 annotationResolver.getResolvedAnnotations(modifierList, trace),
                 Modality.FINAL,
@@ -899,7 +899,7 @@ public class DescriptorResolver {
                             ? resolveModalityFromModifiers(property, getDefaultModality(containingDeclaration, hasBody))
                             : Modality.FINAL;
         Visibility visibility = resolveVisibilityFromModifiers(property, getDefaultVisibility(property, containingDeclaration));
-        PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
+        PropertyDescriptorImpl propertyDescriptor = new PropertyDescriptorImpl(
                 containingDeclaration,
                 annotationResolver.resolveAnnotations(scope, modifierList, trace),
                 modality,
@@ -946,7 +946,7 @@ public class DescriptorResolver {
         propertyDescriptor.setType(type, typeParameterDescriptors, getExpectedThisObjectIfNeeded(containingDeclaration),
                                    receiverDescriptor);
 
-        PropertyGetterDescriptor getter = resolvePropertyGetterDescriptor(scopeWithTypeParameters, property, propertyDescriptor, trace);
+        PropertyGetterDescriptorImpl getter = resolvePropertyGetterDescriptor(scopeWithTypeParameters, property, propertyDescriptor, trace);
         PropertySetterDescriptor setter = resolvePropertySetterDescriptor(scopeWithTypeParameters, property, propertyDescriptor, trace);
 
         propertyDescriptor.initialize(getter, setter);
@@ -1017,12 +1017,12 @@ public class DescriptorResolver {
             BindingTrace trace
     ) {
         JetPropertyAccessor setter = property.getSetter();
-        PropertySetterDescriptor setterDescriptor = null;
+        PropertySetterDescriptorImpl setterDescriptor = null;
         if (setter != null) {
             List<AnnotationDescriptor> annotations = annotationResolver.resolveAnnotations(scope, setter.getModifierList(), trace);
             JetParameter parameter = setter.getParameter();
 
-            setterDescriptor = new PropertySetterDescriptor(
+            setterDescriptor = new PropertySetterDescriptorImpl(
                     propertyDescriptor, annotations,
                     resolveModalityFromModifiers(setter, propertyDescriptor.getModality()),
                     resolveVisibilityFromModifiers(setter, propertyDescriptor.getVisibility()),
@@ -1076,9 +1076,9 @@ public class DescriptorResolver {
         return setterDescriptor;
     }
 
-    public static PropertySetterDescriptor createDefaultSetter(PropertyDescriptor propertyDescriptor) {
-        PropertySetterDescriptor setterDescriptor;
-        setterDescriptor = new PropertySetterDescriptor(
+    public static PropertySetterDescriptorImpl createDefaultSetter(PropertyDescriptor propertyDescriptor) {
+        PropertySetterDescriptorImpl setterDescriptor;
+        setterDescriptor = new PropertySetterDescriptorImpl(
                 propertyDescriptor, Collections.<AnnotationDescriptor>emptyList(), propertyDescriptor.getModality(),
                 propertyDescriptor.getVisibility(),
                 false, true, CallableMemberDescriptor.Kind.DECLARATION);
@@ -1087,13 +1087,13 @@ public class DescriptorResolver {
     }
 
     @Nullable
-    private PropertyGetterDescriptor resolvePropertyGetterDescriptor(
+    private PropertyGetterDescriptorImpl resolvePropertyGetterDescriptor(
             @NotNull JetScope scope,
             @NotNull JetProperty property,
             @NotNull PropertyDescriptor propertyDescriptor,
             BindingTrace trace
     ) {
-        PropertyGetterDescriptor getterDescriptor;
+        PropertyGetterDescriptorImpl getterDescriptor;
         JetPropertyAccessor getter = property.getGetter();
         if (getter != null) {
             List<AnnotationDescriptor> annotations = annotationResolver.resolveAnnotations(scope, getter.getModifierList(), trace);
@@ -1108,7 +1108,7 @@ public class DescriptorResolver {
                 }
             }
 
-            getterDescriptor = new PropertyGetterDescriptor(
+            getterDescriptor = new PropertyGetterDescriptorImpl(
                     propertyDescriptor, annotations,
                     resolveModalityFromModifiers(getter, propertyDescriptor.getModality()),
                     resolveVisibilityFromModifiers(getter, propertyDescriptor.getVisibility()),
@@ -1123,9 +1123,9 @@ public class DescriptorResolver {
         return getterDescriptor;
     }
 
-    public static PropertyGetterDescriptor createDefaultGetter(PropertyDescriptor propertyDescriptor) {
-        PropertyGetterDescriptor getterDescriptor;
-        getterDescriptor = new PropertyGetterDescriptor(
+    public static PropertyGetterDescriptorImpl createDefaultGetter(PropertyDescriptor propertyDescriptor) {
+        PropertyGetterDescriptorImpl getterDescriptor;
+        getterDescriptor = new PropertyGetterDescriptorImpl(
                 propertyDescriptor, Collections.<AnnotationDescriptor>emptyList(), propertyDescriptor.getModality(),
                 propertyDescriptor.getVisibility(),
                 false, true, CallableMemberDescriptor.Kind.DECLARATION);
@@ -1196,7 +1196,7 @@ public class DescriptorResolver {
             }
         }
 
-        PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
+        PropertyDescriptorImpl propertyDescriptor = new PropertyDescriptorImpl(
                 classDescriptor,
                 valueParameter.getAnnotations(),
                 resolveModalityFromModifiers(parameter, Modality.FINAL),
@@ -1208,7 +1208,7 @@ public class DescriptorResolver {
         propertyDescriptor.setType(type, Collections.<TypeParameterDescriptor>emptyList(),
                                    getExpectedThisObjectIfNeeded(classDescriptor), NO_RECEIVER_PARAMETER);
 
-        PropertyGetterDescriptor getter = createDefaultGetter(propertyDescriptor);
+        PropertyGetterDescriptorImpl getter = createDefaultGetter(propertyDescriptor);
         PropertySetterDescriptor setter = propertyDescriptor.isVar() ? createDefaultSetter(propertyDescriptor) : null;
 
         propertyDescriptor.initialize(getter, setter);

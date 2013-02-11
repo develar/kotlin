@@ -880,18 +880,18 @@ public class OverrideResolver {
             visibility = Visibilities.PUBLIC;
         }
 
-        if (memberDescriptor instanceof PropertyDescriptor) {
-            ((PropertyDescriptor)memberDescriptor).setVisibility(visibility);
+        if (memberDescriptor instanceof PropertyDescriptorImpl) {
+            ((PropertyDescriptorImpl)memberDescriptor).setVisibility(visibility.normalize());
             for (PropertyAccessorDescriptor accessor : ((PropertyDescriptor) memberDescriptor).getAccessors()) {
                 resolveUnknownVisibilityForMember(null, accessor, trace);
             }
         }
         else if (memberDescriptor instanceof FunctionDescriptorImpl) {
-            ((FunctionDescriptorImpl)memberDescriptor).setVisibility(visibility);
+            ((FunctionDescriptorImpl)memberDescriptor).setVisibility(visibility.normalize());
         }
         else {
-            assert memberDescriptor instanceof PropertyAccessorDescriptor;
-            ((PropertyAccessorDescriptor) memberDescriptor).setVisibility(visibility);
+            assert memberDescriptor instanceof PropertyAccessorDescriptorImpl;
+            ((PropertyAccessorDescriptorImpl) memberDescriptor).setVisibility(visibility.normalize());
         }
     }
 

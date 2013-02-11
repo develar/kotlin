@@ -181,7 +181,7 @@ public final class JavaPropertyResolver {
         }
 
         boolean isEnumEntry = DescriptorUtils.isEnumClassObject(owner);
-        PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
+        PropertyDescriptorImpl propertyDescriptor = new PropertyDescriptorImpl(
                 owner,
                 annotationResolver.resolveAnnotations(psiData.getCharacteristicPsi()),
                 DescriptorResolverUtils.resolveModality(characteristicMember.getMember(),
@@ -206,8 +206,8 @@ public final class JavaPropertyResolver {
             trace.record(BindingContext.OBJECT_DECLARATION_CLASS, propertyDescriptor, dummyClassDescriptorForEnumEntryObject);
         }
 
-        PropertyGetterDescriptor getterDescriptor = resolveGetter(visibility, kind, getter, propertyDescriptor);
-        PropertySetterDescriptor setterDescriptor = resolveSetter(psiData, kind, propertyDescriptor);
+        PropertyGetterDescriptorImpl getterDescriptor = resolveGetter(visibility, kind, getter, propertyDescriptor);
+        PropertySetterDescriptorImpl setterDescriptor = resolveSetter(psiData, kind, propertyDescriptor);
 
         propertyDescriptor.initialize(getterDescriptor, setterDescriptor);
 
@@ -268,8 +268,8 @@ public final class JavaPropertyResolver {
 
     private static void initializeSetterAndGetter(
             PropertyDescriptor propertyDescriptor,
-            PropertyGetterDescriptor getterDescriptor,
-            PropertySetterDescriptor setterDescriptor,
+            PropertyGetterDescriptorImpl getterDescriptor,
+            PropertySetterDescriptorImpl setterDescriptor,
             JetType propertyType
     ) {
         if (getterDescriptor != null) {
@@ -307,7 +307,7 @@ public final class JavaPropertyResolver {
     }
 
     @Nullable
-    private PropertyGetterDescriptor resolveGetter(
+    private PropertyGetterDescriptorImpl resolveGetter(
             Visibility visibility,
             CallableMemberDescriptor.Kind kind,
             PropertyPsiDataElement getter,
@@ -316,7 +316,7 @@ public final class JavaPropertyResolver {
         if (getter == null) {
             return null;
         }
-        return new PropertyGetterDescriptor(
+        return new PropertyGetterDescriptorImpl(
                 propertyDescriptor,
                 annotationResolver.resolveAnnotations(getter.getMember().getPsiMember()),
                 Modality.OPEN,
@@ -327,7 +327,7 @@ public final class JavaPropertyResolver {
     }
 
     @Nullable
-    private PropertySetterDescriptor resolveSetter(
+    private PropertySetterDescriptorImpl resolveSetter(
             PropertyPsiData psiData,
             CallableMemberDescriptor.Kind kind,
             PropertyDescriptor propertyDescriptor
@@ -343,7 +343,7 @@ public final class JavaPropertyResolver {
                     ((PsiMethodWrapper) setter.getMember())
                             .getJetMethodAnnotation());
         }
-        return new PropertySetterDescriptor(
+        return new PropertySetterDescriptorImpl(
                 propertyDescriptor,
                 annotationResolver.resolveAnnotations(setter.getMember().getPsiMember()),
                 Modality.OPEN,

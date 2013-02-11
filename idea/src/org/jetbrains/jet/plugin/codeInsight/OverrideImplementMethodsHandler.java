@@ -33,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.plugin.project.WholeProjectAnalyzerFacade;
@@ -263,7 +264,7 @@ public abstract class OverrideImplementMethodsHandler implements LanguageCodeIns
     }
 
     private static String displayableVisibility(MemberDescriptor descriptor) {
-        Visibility visibility = descriptor.getVisibility();
+        Visibility visibility = descriptor.getVisibility().normalize();
         return visibility != Visibilities.INTERNAL ? visibility.toString() + " " : "";
     }
 

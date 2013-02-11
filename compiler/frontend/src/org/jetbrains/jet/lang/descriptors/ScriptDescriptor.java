@@ -85,7 +85,7 @@ public class ScriptDescriptor extends DeclarationDescriptorNonRootImpl {
         this.returnType = returnType;
         scriptCodeDescriptor.initialize(implicitReceiver, valueParameters, returnType);
 
-        PropertyDescriptor propertyDescriptor = new PropertyDescriptor(classDescriptor,
+        PropertyDescriptorImpl propertyDescriptor = new PropertyDescriptorImpl(classDescriptor,
                                                                Collections.<AnnotationDescriptor>emptyList(),
                                                                Modality.FINAL,
                                                                Visibilities.PUBLIC,
@@ -104,7 +104,7 @@ public class ScriptDescriptor extends DeclarationDescriptorNonRootImpl {
             if(jetDeclaration instanceof JetProperty) {
                 VariableDescriptor descriptor = bindingContext.get(BindingContext.VARIABLE, jetDeclaration);
                 assert descriptor != null;
-                initializeWithDefaultGetterSetter((PropertyDescriptor) descriptor);
+                initializeWithDefaultGetterSetter((PropertyDescriptorImpl) descriptor);
                 classScope.addPropertyDescriptor(descriptor);
             }
             else if(jetDeclaration instanceof JetNamedFunction) {
@@ -117,8 +117,8 @@ public class ScriptDescriptor extends DeclarationDescriptorNonRootImpl {
         }
     }
 
-    public static void initializeWithDefaultGetterSetter(PropertyDescriptor propertyDescriptor) {
-        PropertyGetterDescriptor getter = propertyDescriptor.getGetter();
+    public static void initializeWithDefaultGetterSetter(PropertyDescriptorImpl propertyDescriptor) {
+        PropertyGetterDescriptorImpl getter = propertyDescriptor.getGetter();
         if(getter == null) {
             getter = propertyDescriptor.getVisibility() != Visibilities.PRIVATE ? DescriptorResolver.createDefaultGetter(propertyDescriptor) : null;
             if(getter != null)
@@ -157,7 +157,7 @@ public class ScriptDescriptor extends DeclarationDescriptorNonRootImpl {
     }
 
     @Override
-    public DeclarationDescriptor substitute(TypeSubstitutor substitutor) {
+    public DeclarationDescriptor substitute(@NotNull TypeSubstitutor substitutor) {
         throw new IllegalStateException("nothing to substitute in script");
     }
 
@@ -177,7 +177,7 @@ public class ScriptDescriptor extends DeclarationDescriptorNonRootImpl {
         classDescriptor.setPrimaryConstructor(constructorDescriptor);
 
         for (ValueParameterDescriptor parameter : valueParameters) {
-            PropertyDescriptor propertyDescriptor = new PropertyDescriptor(classDescriptor,
+            PropertyDescriptorImpl propertyDescriptor = new PropertyDescriptorImpl(classDescriptor,
                                                                    Collections.<AnnotationDescriptor>emptyList(),
                                                                    Modality.FINAL,
                                                                    Visibilities.PUBLIC,

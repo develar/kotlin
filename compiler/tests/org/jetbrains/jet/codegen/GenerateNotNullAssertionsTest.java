@@ -17,6 +17,8 @@
 package org.jetbrains.jet.codegen;
 
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
+import jet.runtime.Intrinsics;
 import org.jetbrains.asm4.ClassReader;
 import org.jetbrains.asm4.ClassVisitor;
 import org.jetbrains.asm4.MethodVisitor;
@@ -28,13 +30,13 @@ import org.jetbrains.jet.cli.jvm.JVMConfigurationKeys;
 import org.jetbrains.jet.cli.jvm.compiler.CompileEnvironmentUtil;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.config.CompilerConfiguration;
+import org.jetbrains.jet.lang.resolve.java.JvmClassName;
 import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 
 import java.io.File;
 
 import static org.jetbrains.jet.codegen.CodegenTestUtil.compileJava;
-import static org.jetbrains.jet.codegen.CodegenTestUtil.generateFiles;
 
 public class GenerateNotNullAssertionsTest extends CodegenTestCase {
     @Override
@@ -52,20 +54,21 @@ public class GenerateNotNullAssertionsTest extends CodegenTestCase {
         myEnvironment = new JetCoreEnvironment(getTestRootDisposable(), configuration);
     }
 
-    private void doTestGenerateAssertions(boolean generateAssertions, String ktFile) throws Exception {
+    private void doTestGenerateAssertions(boolean generateAssertions) throws Exception {
         File javaClassesTempDirectory = compileJava("notNullAssertions/A.java");
 
         setUpEnvironment(generateAssertions, false, javaClassesTempDirectory);
 
-        blackBoxMultiFile("notNullAssertions/AssertionChecker.kt", ktFile);
+        loadFile("notNullAssertions/AssertionChecker.kt");
+        generateFunction("checkAssertions").invoke(null, generateAssertions);
     }
 
     public void testGenerateAssertions() throws Exception {
-        doTestGenerateAssertions(true, "notNullAssertions/doGenerateAssertions.kt");
+        doTestGenerateAssertions(true);
     }
 
     public void testDoNotGenerateAssertions() throws Exception {
-        doTestGenerateAssertions(false, "notNullAssertions/doNotGenerateAssertions.kt");
+        doTestGenerateAssertions(false);
     }
 
     public void testNoAssertionsForKotlinFromSource() throws Exception {
@@ -77,16 +80,13 @@ public class GenerateNotNullAssertionsTest extends CodegenTestCase {
     }
 
     public void testNoAssertionsForKotlinFromBinary() throws Exception {
-        CompilerConfiguration configuration = JetTestUtils.compilerConfigurationForTests(
-                ConfigurationKind.JDK_ONLY, TestJdkKind.MOCK_JDK);
-        JetCoreEnvironment tmpEnvironment = new JetCoreEnvironment(getTestRootDisposable(), configuration);
-        ClassFileFactory factory = generateFiles(tmpEnvironment,
-                CodegenTestFiles.create(tmpEnvironment.getProject(), new String[] {"notNullAssertions/noAssertionsForKotlin.kt"}));
+        setUpEnvironment(true, false);
+        loadFile("notNullAssertions/noAssertionsForKotlin.kt");
+        ClassFileFactory factory = generateClassesInFile();
         File compiledDirectory = new File(FileUtil.getTempDirectory(), "kotlin-classes");
         CompileEnvironmentUtil.writeToOutputDirectory(factory, compiledDirectory);
 
         setUpEnvironment(true, false, compiledDirectory);
-
         loadFile("notNullAssertions/noAssertionsForKotlinMain.kt");
 
         assertNoIntrinsicsMethodIsCalled(PackageClassUtils.getPackageClassName(FqName.ROOT));
@@ -97,7 +97,8 @@ public class GenerateNotNullAssertionsTest extends CodegenTestCase {
 
         setUpEnvironment(false, true, javaClassesTempDirectory);
 
-        blackBoxFile("notNullAssertions/doGenerateParamAssertions.kt");
+        loadFile("notNullAssertions/doGenerateParamAssertions.kt");
+        generateFunction().invoke(null);
     }
 
     public void testDoNotGenerateParamAssertions() throws Exception {
@@ -116,9 +117,48 @@ public class GenerateNotNullAssertionsTest extends CodegenTestCase {
         assertNoIntrinsicsMethodIsCalled("A");
     }
 
+    public void testArrayListGet() {
+        setUpEnvironment(true, true);
+
+        loadFile("notNullAssertions/arrayListGet.kt");
+        String text = generateToText();
+
+        assertTrue(text.contains("checkReturnedValueIsNotNull"));
+        assertTrue(text.contains("checkParameterIsNotNull"));
+    }
+
+    public void testJavaMultipleSubstitutions() {
+        File javaClassesTempDirectory = compileJava("notNullAssertions/javaMultipleSubstitutions.java");
+        setUpEnvironment(true, true, javaClassesTempDirectory);
+
+        loadFile("notNullAssertions/javaMultipleSubstitutions.kt");
+        String text = generateToText();
+
+        assertEquals(3, StringUtil.getOccurrenceCount(text, "checkReturnedValueIsNotNull"));
+        assertEquals(3, StringUtil.getOccurrenceCount(text, "checkParameterIsNotNull"));
+    }
+
+    public void testAssertionForNotNullTypeParam() {
+        setUpEnvironment(true, true);
+
+        loadFile("notNullAssertions/assertionForNotNullTypeParam.kt");
+
+        assertTrue(generateToText().contains("checkParameterIsNotNull"));
+    }
+
+    public void testNoAssertionForNullableGenericMethod() {
+        setUpEnvironment(true, false);
+
+        loadFile("notNullAssertions/noAssertionForNullableGenericMethod.kt");
+
+        assertNoIntrinsicsMethodIsCalled(PackageClassUtils.getPackageClassName(FqName.ROOT));
+    }
+
     private void assertNoIntrinsicsMethodIsCalled(String className) {
         ClassFileFactory classes = generateClassesInFile();
         ClassReader reader = new ClassReader(classes.asBytes(className + ".class"));
+
+        final String intrinsics = JvmClassName.byFqNameWithoutInnerClasses(Intrinsics.class.getName()).getInternalName();
 
         reader.accept(new ClassVisitor(Opcodes.ASM4) {
             @Override
@@ -129,8 +169,8 @@ public class GenerateNotNullAssertionsTest extends CodegenTestCase {
                     @Override
                     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
                         assertFalse(
-                                "jet/Intrinsics method is called: " + name + desc + "  Caller: " + callerName + callerDesc,
-                                "jet/Intrinsics".equals(owner)
+                                "Intrinsics method is called: " + name + desc + "  Caller: " + callerName + callerDesc,
+                                intrinsics.equals(owner)
                         );
                     }
                 };

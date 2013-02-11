@@ -458,8 +458,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         iv.store(2, AsmTypeConstants.OBJECT_TYPE);
 
         for (PropertyDescriptor propertyDescriptor : properties) {
-            final JetType type = propertyDescriptor.getType();
-            final Type asmType = typeMapper.mapType(type);
+            Type asmType = typeMapper.mapType(propertyDescriptor.getType());
 
             genPropertyOnStack(iv, propertyDescriptor, 0);
             genPropertyOnStack(iv, propertyDescriptor, 2);
@@ -474,8 +473,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                 }
             }
             else {
-                final StackValue value =
-                        genEqualsForExpressionsOnStack(iv, JetTokens.EQEQ, asmType, asmType, type.isNullable(), type.isNullable());
+                StackValue value = genEqualsForExpressionsOnStack(iv, JetTokens.EQEQ, asmType, asmType);
                 value.put(Type.BOOLEAN_TYPE, iv);
             }
 
@@ -508,14 +506,14 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
             genPropertyOnStack(iv, propertyDescriptor, 0);
 
             Label ifNull = null;
-            if (propertyDescriptor.getType().isNullable()) {
+            Type asmType = typeMapper.mapType(propertyDescriptor.getType());
+            if (!isPrimitive(asmType)) {
                 ifNull = new Label();
-
                 iv.dup();
                 iv.ifnull(ifNull);
             }
 
-            genHashCode(mv, iv, typeMapper.mapType(propertyDescriptor.getType()));
+            genHashCode(mv, iv, asmType);
 
             if (ifNull != null) {
                 Label end = new Label();

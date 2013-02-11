@@ -47,6 +47,7 @@ import java.util.Set;
 
 import static org.jetbrains.asm4.Opcodes.*;
 import static org.jetbrains.jet.codegen.CodegenUtil.isInterface;
+import static org.jetbrains.jet.codegen.CodegenUtil.isNullableType;
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isClassObject;
 import static org.jetbrains.jet.lang.resolve.java.AsmTypeConstants.JAVA_STRING_TYPE;
 
@@ -69,6 +70,7 @@ public class AsmUtil {
             .put(Visibilities.PRIVATE, ACC_PRIVATE)
             .put(Visibilities.PROTECTED, ACC_PROTECTED)
             .put(JavaDescriptorResolver.PROTECTED_STATIC_VISIBILITY, ACC_PROTECTED)
+            .put(JavaDescriptorResolver.PROTECTED_AND_PACKAGE, ACC_PROTECTED)
             .put(Visibilities.PUBLIC, ACC_PUBLIC)
             .put(Visibilities.INTERNAL, ACC_PUBLIC)
             .put(Visibilities.LOCAL, NO_FLAG_LOCAL)
@@ -378,66 +380,6 @@ public class AsmUtil {
         mv.visitInsn(L2I);
     }
 
-    static StackValue genNullSafeEquals(
-            InstructionAdapter v,
-            IElementType opToken,
-            boolean leftNullable,
-            boolean rightNullable
-    ) {
-        if (!leftNullable) {
-            v.invokevirtual("java/lang/Object", "equals", "(Ljava/lang/Object;)Z");
-            if (opToken == JetTokens.EXCLEQ) {
-                genInvertBoolean(v);
-            }
-        }
-        else {
-            if (rightNullable) {
-                v.dup2();   // left right left right
-                Label rightNull = new Label();
-                v.ifnull(rightNull);
-                Label leftNull = new Label();
-                v.ifnull(leftNull);
-                v.invokevirtual("java/lang/Object", "equals", "(Ljava/lang/Object;)Z");
-                if (opToken == JetTokens.EXCLEQ || opToken == JetTokens.EXCLEQEQEQ) {
-                    genInvertBoolean(v);
-                }
-                Label end = new Label();
-                v.goTo(end);
-                v.mark(rightNull);
-                // left right left
-                Label bothNull = new Label();
-                v.ifnull(bothNull);
-                v.mark(leftNull);
-                v.pop2();
-                v.iconst(opToken == JetTokens.EXCLEQ || opToken == JetTokens.EXCLEQEQEQ ? 1 : 0);
-                v.goTo(end);
-                v.mark(bothNull);
-                v.pop2();
-                v.iconst(opToken == JetTokens.EXCLEQ || opToken == JetTokens.EXCLEQEQEQ ? 0 : 1);
-                v.mark(end);
-            }
-            else {
-                v.dup2();   // left right left right
-                v.pop();
-                Label leftNull = new Label();
-                v.ifnull(leftNull);
-                v.invokevirtual("java/lang/Object", "equals", "(Ljava/lang/Object;)Z");
-                if (opToken == JetTokens.EXCLEQ || opToken == JetTokens.EXCLEQEQEQ) {
-                    genInvertBoolean(v);
-                }
-                Label end = new Label();
-                v.goTo(end);
-                // left right
-                v.mark(leftNull);
-                v.pop2();
-                v.iconst(opToken == JetTokens.EXCLEQ ? 1 : 0);
-                v.mark(end);
-            }
-        }
-
-        return StackValue.onStack(Type.BOOLEAN_TYPE);
-    }
-
     static void genInvertBoolean(InstructionAdapter v) {
         v.iconst(1);
         v.xor(Type.INT_TYPE);
@@ -447,9 +389,7 @@ public class AsmUtil {
             InstructionAdapter v,
             IElementType opToken,
             Type leftType,
-            Type rightType,
-            boolean leftNullable,
-            boolean rightNullable
+            Type rightType
     ) {
         if ((isNumberPrimitive(leftType) || leftType.getSort() == Type.BOOLEAN) && leftType == rightType) {
             return StackValue.cmp(opToken, leftType);
@@ -459,7 +399,13 @@ public class AsmUtil {
                 return StackValue.cmp(opToken, leftType);
             }
             else {
-                return genNullSafeEquals(v, opToken, leftNullable, rightNullable);
+                v.invokestatic("jet/runtime/Intrinsics", "areEqual", "(Ljava/lang/Object;Ljava/lang/Object;)Z");
+
+                if (opToken == JetTokens.EXCLEQ || opToken == JetTokens.EXCLEQEQEQ) {
+                    genInvertBoolean(v);
+                }
+
+                return StackValue.onStack(Type.BOOLEAN_TYPE);
             }
         }
     }
@@ -532,7 +478,7 @@ public class AsmUtil {
 
         for (ValueParameterDescriptor parameter : descriptor.getValueParameters()) {
             JetType type = parameter.getReturnType();
-            if (type == null || type.isNullable()) continue;
+            if (type == null || isNullableType(type)) continue;
 
             int index = frameMap.getIndex(parameter);
             Type asmType = state.getTypeMapper().mapReturnType(type);
@@ -571,10 +517,10 @@ public class AsmUtil {
     ) {
         if (!state.isGenerateNotNullAssertions()) return;
 
-        if (!Boolean.TRUE.equals(state.getBindingContext().get(BindingContext.IS_DECLARED_IN_JAVA, descriptor))) return;
+        if (!isDeclaredInJava(descriptor, state.getBindingContext())) return;
 
         JetType type = descriptor.getReturnType();
-        if (type == null || type.isNullable()) return;
+        if (type == null || isNullableType(type)) return;
 
         Type asmType = state.getTypeMapper().mapReturnType(type);
         if (asmType.getSort() == Type.OBJECT || asmType.getSort() == Type.ARRAY) {
@@ -583,6 +529,19 @@ public class AsmUtil {
             v.visitLdcInsn(descriptor.getName().getName());
             v.invokestatic("jet/runtime/Intrinsics", assertMethodToCall, "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V");
         }
+    }
+
+    private static boolean isDeclaredInJava(@NotNull CallableDescriptor callableDescriptor, @NotNull BindingContext context) {
+        CallableDescriptor descriptor = callableDescriptor;
+        while (true) {
+            if (Boolean.TRUE.equals(context.get(BindingContext.IS_DECLARED_IN_JAVA, descriptor))) {
+                return true;
+            }
+            CallableDescriptor original = descriptor.getOriginal();
+            if (descriptor == original) break;
+            descriptor = original;
+        }
+        return false;
     }
 
     public static void pushDefaultValueOnStack(@NotNull Type type, @NotNull InstructionAdapter v) {

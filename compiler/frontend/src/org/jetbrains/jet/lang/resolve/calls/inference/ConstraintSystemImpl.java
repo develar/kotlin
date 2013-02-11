@@ -32,9 +32,7 @@ import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.*;
 
-import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.CANT_INFER;
-import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.DONT_CARE;
-import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.PLACEHOLDER_FUNCTION_TYPE;
+import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.*;
 import static org.jetbrains.jet.lang.resolve.calls.inference.TypeConstraintsImpl.ConstraintKind.*;
 import static org.jetbrains.jet.lang.types.Variance.*;
 
@@ -140,8 +138,8 @@ public class ConstraintSystemImpl implements ConstraintSystem {
 
     @Override
     public void addSupertypeConstraint(
-            @NotNull JetType subjectType,
             @Nullable JetType constrainingType,
+            @NotNull JetType subjectType,
             @NotNull ConstraintPosition constraintPosition
     ) {
         addConstraint(SUPER_TYPE, subjectType, constrainingType, constraintPosition);
@@ -149,8 +147,8 @@ public class ConstraintSystemImpl implements ConstraintSystem {
 
     @Override
     public void addSubtypeConstraint(
-            @NotNull JetType subjectType,
             @Nullable JetType constrainingType,
+            @NotNull JetType subjectType,
             @NotNull ConstraintPosition constraintPosition
     ) {
         addConstraint(SUB_TYPE, subjectType, constrainingType, constraintPosition);
@@ -346,6 +344,19 @@ public class ConstraintSystemImpl implements ConstraintSystem {
             return SUB_TYPE;
         }
         return SUPER_TYPE;
+    }
+
+    public void processDeclaredBoundConstraints() {
+        for (Map.Entry<TypeParameterDescriptor, TypeConstraintsImpl> entry : typeParameterConstraints.entrySet()) {
+            TypeParameterDescriptor typeParameterDescriptor = entry.getKey();
+            TypeConstraintsImpl typeConstraints = entry.getValue();
+            for (JetType declaredUpperBound : typeParameterDescriptor.getUpperBounds()) {
+                //todo order matters here
+                for (JetType lowerOrExactBound : Sets.union(typeConstraints.getLowerBounds(), typeConstraints.getExactBounds())) {
+                    addSubtypeConstraint(lowerOrExactBound, declaredUpperBound, ConstraintPosition.BOUND_CONSTRAINT_POSITION);
+                }
+            }
+        }
     }
 
     @NotNull

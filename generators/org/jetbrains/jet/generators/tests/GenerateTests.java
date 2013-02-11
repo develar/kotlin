@@ -20,17 +20,18 @@ import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.checkers.AbstractDiagnosticsTestWithEagerResolve;
 import org.jetbrains.jet.checkers.AbstractJetPsiCheckerTest;
+import org.jetbrains.jet.codegen.AbstractBytecodeTextTest;
 import org.jetbrains.jet.codegen.AbstractCheckLocalVariablesTableTest;
-import org.jetbrains.jet.codegen.AbstractDataClassCodegenTest;
 import org.jetbrains.jet.codegen.defaultConstructor.AbstractDefaultConstructorCodegenTest;
 import org.jetbrains.jet.codegen.flags.AbstractWriteFlagsTest;
 import org.jetbrains.jet.codegen.generated.AbstractBlackBoxCodegenTest;
-import org.jetbrains.jet.codegen.generated.AbstractRangesCodegenTest;
 import org.jetbrains.jet.jvm.compiler.*;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveDescriptorRendererTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveNamespaceComparingTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveTest;
 import org.jetbrains.jet.plugin.highlighter.AbstractDeprecatedHighlightingTest;
+import org.jetbrains.jet.plugin.quickfix.AbstractQuickFixMultiFileTest;
+import org.jetbrains.jet.plugin.quickfix.AbstractQuickFixTest;
 import org.jetbrains.jet.test.generator.SimpleTestClassModel;
 import org.jetbrains.jet.test.generator.TestClassModel;
 import org.jetbrains.jet.test.generator.TestGenerator;
@@ -38,6 +39,7 @@ import org.jetbrains.jet.test.generator.TestGenerator;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 public class GenerateTests {
     private static void generateTest(
@@ -65,34 +67,41 @@ public class GenerateTests {
                 testModel("compiler/testData/diagnostics/tests/script", true, "ktscript", "doTest")
         );
 
-        generateTest(
-                "compiler/tests/",
-                "BlackBoxCodegenTestGenerated",
-                AbstractBlackBoxCodegenTest.class,
-                testModel("compiler/testData/codegen/box", "blackBoxFileByFullPath")
-        );
-
         GenerateRangesCodegenTestData.main(args);
 
         generateTest(
                 "compiler/tests/",
-                "RangesCodegenTestGenerated",
-                AbstractRangesCodegenTest.class,
-                testModel("compiler/testData/codegen/ranges", "blackBoxFileByFullPath")
+                "BlackBoxCodegenTestGenerated",
+                AbstractBlackBoxCodegenTest.class,
+                testModel("compiler/testData/codegen/box", "doTest")
+        );
+
+        generateTest(
+                "compiler/tests/",
+                "BlackBoxMultiFileCodegenTestGenerated",
+                AbstractBlackBoxCodegenTest.class,
+                new SimpleTestClassModel(new File("compiler/testData/codegen/boxMultiFile"), false, Pattern.compile("^(.+)$"), "doTestMultiFile")
         );
 
         generateTest(
                 "compiler/tests/",
                 "BlackBoxWithJavaCodegenTestGenerated",
                 AbstractBlackBoxCodegenTest.class,
-                testModel("compiler/testData/codegen/boxWithJava", "blackBoxFileWithJavaByFullPath")
+                testModel("compiler/testData/codegen/boxWithJava", "doTestWithJava")
         );
 
         generateTest(
                 "compiler/tests/",
-                "DataClassCodegenTestGenerated",
-                AbstractDataClassCodegenTest.class,
-                testModel("compiler/testData/codegen/dataClasses", "blackBoxFileByFullPath")
+                "BlackBoxWithStdlibCodegenTestGenerated",
+                AbstractBlackBoxCodegenTest.class,
+                testModel("compiler/testData/codegen/boxWithStdlib", "doTestWithStdlib")
+        );
+
+        generateTest(
+                "compiler/tests/",
+                "BytecodeTextTestGenerated",
+                AbstractBytecodeTextTest.class,
+                testModel("compiler/testData/codegen/bytecodeText")
         );
 
         generateTest(
@@ -194,6 +203,20 @@ public class GenerateTests {
 
         generateTest(
                 "idea/tests/",
+                "QuickFixTestGenerated",
+                AbstractQuickFixTest.class,
+                new SimpleTestClassModel(new File("idea/testData/quickfix"), true, Pattern.compile("^before(\\w+)\\.kt$"), "doTest")
+        );
+
+        generateTest(
+                "idea/tests/",
+                "QuickFixMultiFileTestGenerated",
+                AbstractQuickFixMultiFileTest.class,
+                new SimpleTestClassModel(new File("idea/testData/quickfix"), true, Pattern.compile("^(\\w+)\\.before\\.Main\\.kt$"), "doTestWithExtraFile")
+        );
+
+        generateTest(
+                "idea/tests/",
                 "DeprecatedHighlightingTestGenerated",
                 AbstractDeprecatedHighlightingTest.class,
                 testModel("idea/testData/highlighter/deprecated")
@@ -214,7 +237,7 @@ public class GenerateTests {
             @NotNull String extension,
             @NotNull String doTestMethodName
     ) {
-        return new SimpleTestClassModel(new File(rootPath), recursive, extension, doTestMethodName);
+        return new SimpleTestClassModel(new File(rootPath), recursive, Pattern.compile("^(.+)\\." + extension + "$"), doTestMethodName);
     }
 
     private GenerateTests() {

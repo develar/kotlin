@@ -25,11 +25,11 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.Annotated;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.resolve.calls.CallResolverUtil;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.*;
+import org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lexer.JetKeywordToken;
 import org.jetbrains.jet.lexer.JetTokens;
@@ -194,11 +194,8 @@ public class DescriptorRendererImpl implements DescriptorRenderer {
     }
 
     private String renderTypeWithoutEscape(@NotNull JetType type) {
-        if (type == CallResolverUtil.DONT_CARE || type == CallResolverUtil.CANT_INFER) {
+        if (type == ExpressionTypingUtils.CANNOT_BE_INFERRED) {
             return "???";
-        }
-        else if (type == CallResolverUtil.PLACEHOLDER_FUNCTION_TYPE) {
-            return "??? " + arrow() + " ???";
         }
         else if (ErrorUtils.isErrorType(type)) {
             return type.toString();
@@ -311,12 +308,7 @@ public class DescriptorRendererImpl implements DescriptorRenderer {
 
     private void renderVisibility(@NotNull Visibility visibility, @NotNull StringBuilder builder) {
         if (!modifiers) return;
-        if ("package".equals(visibility.toString())) {
-            builder.append("public/*package*/ ");
-        }
-        else {
-            builder.append(renderKeyword(visibility.toString())).append(" ");
-        }
+        builder.append(renderKeyword(visibility.toString())).append(" ");
     }
 
     private void renderModality(@NotNull Modality modality, @NotNull StringBuilder builder) {

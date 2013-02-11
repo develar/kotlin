@@ -57,9 +57,7 @@ public class SpecifyTypeExplicitlyAction extends PsiElementBaseIntentionAction {
         }
         PsiElement parent = element.getParent();
         JetType type = getTypeForDeclaration((JetNamedDeclaration) parent);
-        if (ErrorUtils.isErrorType(type)) {
-            return;
-        }
+        assert !ErrorUtils.isErrorType(type) : "Unexpected error type: " + element.getText();
         if (parent instanceof JetProperty) {
             JetProperty property = (JetProperty) parent;
             if (property.getTypeRef() == null) {
@@ -144,7 +142,7 @@ public class SpecifyTypeExplicitlyAction extends PsiElementBaseIntentionAction {
     }
 
     @NotNull
-    protected static JetType getTypeForDeclaration(@NotNull JetNamedDeclaration declaration) {
+    public static JetType getTypeForDeclaration(@NotNull JetNamedDeclaration declaration) {
         BindingContext bindingContext = AnalyzeSingleFileUtil.getContextForSingleFile((JetFile) declaration.getContainingFile());
         DeclarationDescriptor descriptor = bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, declaration);
 
