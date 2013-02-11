@@ -26,8 +26,9 @@ import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.TemporaryBindingTrace;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
 import org.jetbrains.jet.lang.resolve.calls.context.BasicCallResolutionContext;
-import org.jetbrains.jet.lang.resolve.calls.context.TypeInfoForCall;
 import org.jetbrains.jet.lang.resolve.calls.context.ResolutionContext;
+import org.jetbrains.jet.lang.resolve.calls.context.ResolveMode;
+import org.jetbrains.jet.lang.resolve.calls.context.TypeInfoForCall;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResults;
 import org.jetbrains.jet.lang.resolve.calls.util.CallMaker;
@@ -35,6 +36,7 @@ import org.jetbrains.jet.lang.resolve.constants.ConstantUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.ChainedScope;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
+import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.*;
@@ -49,8 +51,6 @@ import java.util.Collections;
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
 import static org.jetbrains.jet.lang.resolve.BindingContext.*;
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getStaticNestedClassesScope;
-
-import org.jetbrains.jet.lang.resolve.calls.context.ResolveMode;
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
 
 public class CallExpressionResolver {
@@ -129,7 +129,7 @@ public class CallExpressionResolver {
     @Nullable
     private NamespaceType lookupNamespaceType(@NotNull JetSimpleNameExpression expression, @NotNull ResolutionContext context) {
         Name name = expression.getReferencedNameAsName();
-        NamespaceDescriptor namespace = context.scope.getNamespace(name);
+        NamespaceDescriptor namespace = JetScopeUtils.findFirst(context.scope, name);
         if (namespace == null) {
             return null;
         }
