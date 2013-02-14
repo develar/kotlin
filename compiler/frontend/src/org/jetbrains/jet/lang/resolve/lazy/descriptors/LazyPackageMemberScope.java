@@ -55,7 +55,8 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
 
     @Override
     public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
-        return processor.process(packageDescriptors.fun(name));
+        NamespaceDescriptor namespaceDescriptor = packageDescriptors.fun(name);
+        return namespaceDescriptor == null || processor.process(namespaceDescriptor);
     }
 
     @Nullable
