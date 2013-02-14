@@ -68,7 +68,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
 
     @NotNull
     @Override
-    protected ExitCode doExecute(K2JSCompilerArguments arguments, PrintingMessageCollector messageCollector, Disposable rootDisposable) {
+    protected ExitCode doExecute(K2JSCompilerArguments arguments, MessageCollector messageCollector, Disposable rootDisposable) {
         if (arguments.sourceFiles == null) {
             messageCollector.report(CompilerMessageSeverity.ERROR, "Specify sources location via -sourceFiles", NO_LOCATION);
             return ExitCode.INTERNAL_ERROR;
@@ -141,7 +141,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
     }
 
     private static boolean analyze(
-            @NotNull PrintingMessageCollector messageCollector,
+            @NotNull MessageCollector messageCollector,
             @NotNull final ModuleInfo moduleConfiguration,
             @NotNull final List<JetFile> sources,
             final boolean analyzeCompletely
@@ -160,7 +160,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         return true;
     }
 
-    private static void reportCompiledSourcesList(@NotNull PrintingMessageCollector messageCollector,
+    private static void reportCompiledSourcesList(@NotNull MessageCollector messageCollector,
             @NotNull JetCoreEnvironment environmentForJS) {
         List<JetFile> files = environmentForJS.getSourceFiles();
         Iterable<String> fileNames = Iterables.transform(files, new Function<JetFile, String>() {

@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.resolve.lazy.descriptors;
 
 import com.intellij.util.Function;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -53,8 +54,8 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
     }
 
     @Override
-    public NamespaceDescriptor getNamespace(@NotNull Name name) {
-        return packageDescriptors.fun(name);
+    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
+        return processor.process(packageDescriptors.fun(name));
     }
 
     @Nullable
@@ -99,7 +100,7 @@ public class LazyPackageMemberScope extends AbstractLazyMemberScope<NamespaceDes
     @Override
     protected void addExtraDescriptors(@NotNull Collection<DeclarationDescriptor> result) {
         for (FqName packageFqName : declarationProvider.getAllDeclaredPackages()) {
-            result.add(getNamespace(packageFqName.shortName()));
+            result.add(packageDescriptors.fun(packageFqName.shortName()));
         }
     }
 

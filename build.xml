@@ -12,9 +12,6 @@
     <property name="output.name" value="kotlin-compiler-${build.number}"/>
     <property name="idea.sdk" value="${basedir}/ideaSDK"/>
 
-    <property name="ant.build.javac.target" value="1.6"/>
-    <property name="ant.build.javac.source" value="1.6"/>
-
     <path id="classpath">
         <fileset dir="${idea.sdk}" includes="core/*.jar"/>
 
@@ -456,6 +453,7 @@
         <rule pattern="org.apache.log4j.**" result="org.jetbrains.jet.internal.org.apache.log4j.@1"/>
         <rule pattern="org.jdom.**" result="org.jetbrains.jet.internal.org.jdom.@1"/>
         <rule pattern="JDOMAbout**" result="org.jetbrains.jet.internal.org.jdom.JDOMAbout@1"/>
+        <rule pattern="org.intellij.lang.annotations.**" result="org.jetbrains.jet.internal.org.intellij.lang.annotations.@1"/>
         <rule pattern="com.google.**" result="org.jetbrains.jet.internal.com.google.@1"/>
         <rule pattern="org.objectweb.asm.**" result="org.jetbrains.jet.internal.org.objectweb.asm.@1"/>
         <rule pattern="com.sampullara.cli.**" result="org.jetbrains.jet.internal.com.sampullara.cli.@1"/>

@@ -19,6 +19,7 @@ package org.jetbrains.jet.cli.jvm.compiler;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.util.Processor;
 import jet.modules.AllModules;
 import jet.modules.Module;
@@ -209,7 +210,7 @@ public class CompileEnvironmentUtil {
                         if (e == null) {
                             break;
                         }
-                        if (FileUtil.getExtension(e.getName()).equals("class")) {
+                        if (FileUtilRt.getExtension(e.getName()).equals("class")) {
                             stream.putNextEntry(e);
                             FileUtil.copy(jis, stream);
                         }
