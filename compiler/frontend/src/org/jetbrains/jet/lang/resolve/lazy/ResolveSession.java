@@ -29,9 +29,12 @@ import org.jetbrains.jet.di.InjectorForLazyResolve;
 import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
-import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.BindingTrace;
-import org.jetbrains.jet.lang.resolve.BindingTraceContext;
+import org.jetbrains.jet.lang.resolve.*;
+import org.jetbrains.jet.lang.resolve.lazy.declarations.DeclarationProviderFactory;
+import org.jetbrains.jet.lang.resolve.lazy.declarations.PackageMemberDeclarationProvider;
+import org.jetbrains.jet.lang.resolve.lazy.descriptors.LazyClassDescriptor;
+import org.jetbrains.jet.lang.resolve.lazy.descriptors.LazyPackageDescriptor;
+import org.jetbrains.jet.lang.resolve.lazy.storage.StorageManager;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -42,7 +45,7 @@ import java.util.List;
 
 import static org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils.safeNameForLazyResolve;
 
-public class ResolveSession {
+public class ResolveSession implements KotlinCodeAnalyzer {
     private static final Function<FqName, Name> NO_ALIASES = new Function<FqName, Name>() {
 
         @Override
@@ -124,33 +127,37 @@ public class ResolveSession {
     }
 
     @NotNull
-    /*package*/ InjectorForLazyResolve getInjector() {
+    public InjectorForLazyResolve getInjector() {
         return injector;
     }
 
-    /*package*/ boolean isClassSpecial(@NotNull FqNameUnsafe fqName) {
+    public boolean isClassSpecial(@NotNull FqNameUnsafe fqName) {
         return specialClasses.apply(fqName);
     }
 
+    @Override
     public ModuleDescriptor getRootModuleDescriptor() {
         return module;
     }
 
     @NotNull
-    /*package*/ StorageManager getStorageManager() {
+    public StorageManager getStorageManager() {
         return storageManager;
     }
 
+    @Override
     @NotNull
     public ModuleConfiguration getModuleConfiguration() {
         return moduleConfiguration;
     }
 
+    @Override
     @Nullable
     public NamespaceDescriptor getPackageDescriptor(@NotNull Name shortName) {
         return JetScopeUtils.findFirst(rootPackage.getMemberScope(), shortName);
     }
 
+    @Override
     @Nullable
     public NamespaceDescriptor getPackageDescriptorByFqName(FqName fqName) {
         if (fqName.isRoot()) {
@@ -193,6 +200,7 @@ public class ResolveSession {
         }
     }
 
+    @Override
     @NotNull
     public ClassDescriptor getClassDescriptor(@NotNull JetClassOrObject classOrObject) {
         if (classOrObject.getParent() instanceof JetClassObject) {
@@ -203,7 +211,7 @@ public class ResolveSession {
 
         // Why not use the result here. Because it may be that there is a redeclaration:
         //     class A {} class A { fun foo(): A<completion here>}
-        // and if we find teh class by name only, we may b-not get the right one.
+        // and if we find the class by name only, we may b-not get the right one.
         // This call is only needed to make sure the classes are written to trace
         resolutionScope.getClassifier(name);
         DeclarationDescriptor declaration = getBindingContext().get(BindingContext.DECLARATION_TO_DESCRIPTOR, classOrObject);
@@ -226,13 +234,14 @@ public class ResolveSession {
         return classObjectDescriptor;
     }
 
+    @Override
     @NotNull
     public BindingContext getBindingContext() {
         return trace.getBindingContext();
     }
 
     @NotNull
-    /*package*/ BindingTrace getTrace() {
+    public BindingTrace getTrace() {
         return trace;
     }
 
@@ -241,6 +250,7 @@ public class ResolveSession {
         return declarationProviderFactory;
     }
 
+    @Override
     @NotNull
     public DeclarationDescriptor resolveToDescriptor(JetDeclaration declaration) {
         DeclarationDescriptor result = declaration.accept(new JetVisitor<DeclarationDescriptor, Void>() {
@@ -341,7 +351,7 @@ public class ResolveSession {
     }
 
     @NotNull
-    /*package*/ Name resolveClassifierAlias(@NotNull FqName packageName, @NotNull Name alias) {
+    public Name resolveClassifierAlias(@NotNull FqName packageName, @NotNull Name alias) {
         // TODO: creating a new FqName object every time...
         Name actualName = classifierAliases.fun(packageName.child(alias));
         if (actualName == null) {
@@ -350,11 +360,7 @@ public class ResolveSession {
         return actualName;
     }
 
-    /**
-     * Forces all descriptors to be resolved.
-     *
-     * Use this method when laziness plays against you, e.g. when lazy descriptors may be accessed in a multi-threaded setting
-     */
+    @Override
     public void forceResolveAll() {
         rootPackage.acceptVoid(new DeclarationDescriptorVisitorEmptyBodies<Void, Void>() {
 

@@ -58,7 +58,7 @@ public native abstract class AbstractList<E>(): AbstractCollection<E>(), Mutable
     override fun size(): Int
 }
 
-public class ArrayList<E>(): AbstractList<E>() {
+public class ArrayList<E>(capacity: Int = 0): AbstractList<E>() {
 }
 
 // JS array is sparse, so, there is no any difference between ArrayList and LinkedList

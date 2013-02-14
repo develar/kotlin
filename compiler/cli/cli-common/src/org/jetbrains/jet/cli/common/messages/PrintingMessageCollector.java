@@ -16,73 +16,38 @@
 
 package org.jetbrains.jet.cli.common.messages;
 
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Set;
+
+import static org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity.LOGGING;
+import static org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity.OUTPUT;
 
 public class PrintingMessageCollector implements MessageCollector {
 
-    private boolean verbose;
+    private final boolean verbose;
     private final PrintStream errStream;
     private final MessageRenderer messageRenderer;
 
-    // File path (nullable) -> error message
-    private final Multimap<String, String> groupedMessages = LinkedHashMultimap.create();
-
-    private final Set<CompilerMessageSeverity> reportedSeverities = Sets.newHashSet();
-
-    public PrintingMessageCollector(PrintStream errStream,
-            MessageRenderer messageRenderer,
-            boolean verbose) {
+    public PrintingMessageCollector(
+            @NotNull PrintStream errStream,
+            @NotNull MessageRenderer messageRenderer,
+            boolean verbose
+    ) {
         this.verbose = verbose;
         this.errStream = errStream;
         this.messageRenderer = messageRenderer;
     }
 
     @Override
-    public void report(@NotNull CompilerMessageSeverity severity,
+    public void report(
+            @NotNull CompilerMessageSeverity severity,
             @NotNull String message,
-            @NotNull CompilerMessageLocation location) {
-        reportedSeverities.add(severity);
+            @NotNull CompilerMessageLocation location
+    ) {
+        boolean verboseMessage = severity == LOGGING || severity == OUTPUT;
+        if (!verbose && verboseMessage) return;
 
-        String text = messageRenderer.render(severity, message, location);
-        if (severity == CompilerMessageSeverity.LOGGING || severity == CompilerMessageSeverity.OUTPUT) {
-            if (!verbose) {
-                return;
-            }
-            errStream.println(text);
-        }
-        else {
-            groupedMessages.put(location.getPath(), text);
-        }
-    }
-
-    public void printToErrStream() {
-        if (!groupedMessages.isEmpty()) {
-            for (String path : groupedMessages.keySet()) {
-                Collection<String> messageTexts = groupedMessages.get(path);
-                for (String text : messageTexts) {
-                    errStream.println(text);
-                }
-            }
-        }
-    }
-
-    public boolean isVerbose() {
-        return verbose;
-    }
-
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
-    }
-
-    public boolean anyReported(@NotNull CompilerMessageSeverity... severities) {
-        return reportedSeverities.containsAll(Arrays.asList(severities));
+        errStream.println(messageRenderer.render(severity, message, location));
     }
 }

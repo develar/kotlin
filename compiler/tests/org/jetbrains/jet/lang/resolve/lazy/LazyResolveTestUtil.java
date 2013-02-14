@@ -42,6 +42,8 @@ import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.java.JavaToKotlinClassMap;
 import org.jetbrains.jet.lang.resolve.java.PsiClassFinder;
+import org.jetbrains.jet.lang.resolve.lazy.declarations.FileBasedDeclarationProviderFactory;
+import org.jetbrains.jet.lang.resolve.lazy.storage.LockBasedStorageManager;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
@@ -82,7 +84,7 @@ public class LazyResolveTestUtil {
         return module;
     }
 
-    public static ResolveSession resolveLazilyWithSession(List<JetFile> files, JetCoreEnvironment environment) {
+    public static KotlinCodeAnalyzer resolveLazilyWithSession(List<JetFile> files, JetCoreEnvironment environment) {
         JetTestUtils.newTrace(environment);
 
         ModuleDescriptor javaModule = new ModuleDescriptor(Name.special("<java module>"));

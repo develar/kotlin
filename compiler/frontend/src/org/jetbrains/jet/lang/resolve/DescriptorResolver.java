@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
+import org.jetbrains.jet.lang.diagnostics.DiagnosticFactory1;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -38,6 +39,7 @@ import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
+import org.jetbrains.jet.lexer.JetKeywordToken;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.jet.util.lazy.RecursionIntolerantLazyValue;
 import org.jetbrains.jet.util.lazy.RecursionIntolerantLazyValueWithDefault;
@@ -440,7 +442,7 @@ public class DescriptorResolver {
             BindingTrace trace
     ) {
         List<ValueParameterDescriptor> result = new ArrayList<ValueParameterDescriptor>();
-        for (int i = 0, valueParametersSize = valueParameters.size(); i < valueParametersSize; i++) {
+        for (int i = 0; i < valueParameters.size(); i++) {
             JetParameter valueParameter = valueParameters.get(i);
             JetTypeReference typeReference = valueParameter.getTypeReference();
 
@@ -451,6 +453,10 @@ public class DescriptorResolver {
             }
             else {
                 type = typeResolver.resolveType(parameterScope, typeReference, trace, true);
+            }
+
+            if (!(functionDescriptor instanceof ConstructorDescriptor)) {
+                checkParameterHasNoValOrVar(trace, valueParameter, VAL_OR_VAR_ON_FUN_PARAMETER);
             }
 
             ValueParameterDescriptor valueParameterDescriptor =
@@ -477,7 +483,7 @@ public class DescriptorResolver {
                 index,
                 annotationResolver.resolveAnnotations(scope, valueParameter.getModifierList(), trace),
                 JetPsiUtil.safeName(valueParameter.getName()),
-                valueParameter.isMutable(),
+                false,
                 variableType,
                 valueParameter.getDefaultValue() != null,
                 varargElementType
@@ -704,7 +710,7 @@ public class DescriptorResolver {
                 annotationResolver.getResolvedAnnotations(parameter.getModifierList(), trace),
                 JetPsiUtil.safeName(parameter.getName()),
                 type,
-                parameter.isMutable());
+                false);
         trace.record(BindingContext.VALUE_PARAMETER, parameter, variableDescriptor);
         return variableDescriptor;
     }
@@ -1373,5 +1379,16 @@ public class DescriptorResolver {
             descriptor = descriptor.getContainingDeclaration();
         }
         return true;
+    }
+
+    public static void checkParameterHasNoValOrVar(
+            @NotNull BindingTrace trace,
+            @NotNull JetParameter parameter,
+            @NotNull DiagnosticFactory1<PsiElement, JetKeywordToken> diagnosticFactory
+    ) {
+        ASTNode valOrVarNode = parameter.getValOrVarNode();
+        if (valOrVarNode != null) {
+            trace.report(diagnosticFactory.on(valOrVarNode.getPsi(), ((JetKeywordToken) valOrVarNode.getElementType())));
+        }
     }
 }

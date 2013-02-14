@@ -55,6 +55,8 @@ import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.resolve.java.AsmTypeConstants;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.java.JvmClassName;
+import org.jetbrains.jet.lang.resolve.java.JvmPrimitiveType;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.*;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
@@ -463,11 +465,8 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
             assert resolvedCall != null;
 
             CallableDescriptor rangeTo = resolvedCall.getResultingDescriptor();
-            if (RangeCodegenUtil.isOptimizableRangeTo(rangeTo)
-                // todo: currently, only Int ranges are supported, but all primitives must be optimized
-                && RangeCodegenUtil.isIntRange(rangeTo.getReturnType())
-            ) {
-                generateForLoop(new ForInIntRangeLiteralLoopGenerator(forExpression, binaryCall, resolvedCall));
+            if (RangeCodegenUtil.isOptimizableRangeTo(rangeTo)) {
+                generateForLoop(new ForInRangeLiteralLoopGenerator(forExpression, binaryCall));
                 return StackValue.none();
             }
         }
@@ -481,9 +480,13 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
             return StackValue.none();
         }
         else {
-            // todo: Only IntRange optimized so far
-            if (RangeCodegenUtil.isIntRange(loopRangeType)) {
-                generateForLoop(new ForInIntRangeInstanceLoopGenerator(forExpression));
+            if (RangeCodegenUtil.isRange(loopRangeType)) {
+                generateForLoop(new ForInRangeInstanceLoopGenerator(forExpression));
+                return StackValue.none();
+            }
+
+            if (RangeCodegenUtil.isProgression(loopRangeType)) {
+                generateForLoop(new ForInProgressionExpressionLoopGenerator(forExpression));
                 return StackValue.none();
             }
 
@@ -528,10 +531,14 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
         private final List<Runnable> leaveVariableTasks = Lists.newArrayList();
 
         protected final JetType elementType;
+        protected final Type asmElementType;
+
+        protected int loopParameterVar;
 
         private AbstractForLoopGenerator(@NotNull JetForExpression forExpression) {
             this.forExpression = forExpression;
             this.elementType = getElementType(forExpression);
+            this.asmElementType = asmType(elementType);
         }
 
         @NotNull
@@ -545,59 +552,55 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
             return nextCall.getResultingDescriptor().getReturnType();
         }
 
-        public abstract void beforeLoop();
-
-        public abstract void conditionAndJump(@NotNull Label loopExit);
-
-        public void beforeBody() {
-            v.mark(bodyStart);
+        public void beforeLoop() {
             JetParameter loopParameter = forExpression.getLoopParameter();
             if (loopParameter != null) {
                 // E e = tmp<iterator>.next()
                 final VariableDescriptor parameterDescriptor = bindingContext.get(BindingContext.VALUE_PARAMETER, loopParameter);
                 @SuppressWarnings("ConstantConditions") final Type asmTypeForParameter = asmType(parameterDescriptor.getType());
-                final int parameterIndex = myFrameMap.enter(parameterDescriptor, asmTypeForParameter);
-                leaveVariableTasks.add(new Runnable() {
+                loopParameterVar = myFrameMap.enter(parameterDescriptor, asmTypeForParameter);
+                scheduleLeaveVariable(new Runnable() {
                     @Override
                     public void run() {
                         myFrameMap.leave(parameterDescriptor);
                         v.visitLocalVariable(parameterDescriptor.getName().getName(),
                                              asmTypeForParameter.getDescriptor(), null,
                                              bodyStart, bodyEnd,
-                                             parameterIndex);
+                                             loopParameterVar);
                     }
                 });
-                assignToLoopParameter(parameterIndex);
             }
             else {
                 JetMultiDeclaration multiParameter = forExpression.getMultiParameter();
                 assert multiParameter != null;
 
                 // E tmp<e> = tmp<iterator>.next()
-                final Type asmElementType = asmType(elementType);
-                int tmpParameterIndex = myFrameMap.enterTemp(asmElementType);
-                leaveVariableTasks.add(new Runnable() {
-                    @Override
-                    public void run() {
-                        myFrameMap.leaveTemp(asmElementType);
-                    }
-                });
-                assignToLoopParameter(tmpParameterIndex);
-
-                generateMultiVariables(tmpParameterIndex, multiParameter.getEntries());
+                loopParameterVar = createLoopTempVariable(asmElementType);
             }
         }
 
-        protected abstract void assignToLoopParameter(int parameterIndex);
+        public abstract void conditionAndJump(@NotNull Label loopExit);
 
-        private void generateMultiVariables(int tmpParameterIndex, List<JetMultiDeclarationEntry> entries) {
-            Type asmElementType = asmType(elementType);
+        public void beforeBody() {
+            v.mark(bodyStart);
+
+            assignToLoopParameter();
+
+            if (forExpression.getLoopParameter() == null) {
+                JetMultiDeclaration multiParameter = forExpression.getMultiParameter();
+                assert multiParameter != null;
+
+                generateMultiVariables(multiParameter.getEntries());
+            }
+        }
+
+        private void generateMultiVariables(List<JetMultiDeclarationEntry> entries) {
             for (JetMultiDeclarationEntry variableDeclaration : entries) {
                 final VariableDescriptor componentDescriptor = bindingContext.get(BindingContext.VARIABLE, variableDeclaration);
 
                 @SuppressWarnings("ConstantConditions") final Type componentAsmType = asmType(componentDescriptor.getReturnType());
                 final int componentVarIndex = myFrameMap.enter(componentDescriptor, componentAsmType);
-                leaveVariableTasks.add(new Runnable() {
+                scheduleLeaveVariable(new Runnable() {
                     @Override
                     public void run() {
                         myFrameMap.leave(componentDescriptor);
@@ -613,25 +616,58 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
                         bindingContext.get(BindingContext.COMPONENT_RESOLVED_CALL, variableDeclaration);
                 assert resolvedCall != null : "Resolved call is null for " + variableDeclaration.getText();
                 Call call = makeFakeCall(new TransientReceiver(elementType));
-                invokeFunction(call, StackValue.local(tmpParameterIndex, asmElementType), resolvedCall);
+                invokeFunction(call, StackValue.local(loopParameterVar, asmElementType), resolvedCall);
 
                 v.store(componentVarIndex, componentAsmType);
             }
         }
 
+        protected abstract void assignToLoopParameter();
+
+        protected abstract void increment();
+
         public void body() {
             gen(forExpression.getBody(), Type.VOID_TYPE);
         }
 
+        private void scheduleLeaveVariable(Runnable runnable) {
+            leaveVariableTasks.add(runnable);
+        }
+
+        protected int createLoopTempVariable(final Type type) {
+            int varIndex = myFrameMap.enterTemp(type);
+            scheduleLeaveVariable(new Runnable() {
+                @Override
+                public void run() {
+                    myFrameMap.leaveTemp(type);
+                }
+            });
+            return varIndex;
+        }
+
         public void afterBody() {
+            increment();
+
             v.mark(bodyEnd);
-            // e goes out of scope
+        }
+
+        public void afterLoop() {
             for (Runnable task : Lists.reverse(leaveVariableTasks)) {
                 task.run();
             }
         }
 
-        public abstract void afterLoop();
+        // This method consumes range/progression from stack
+        // The result is stored to local variable
+        protected void generateRangeOrProgressionProperty(Type loopRangeType, String getterName, Type elementType, int varToStore) {
+            JvmPrimitiveType primitiveType = JvmPrimitiveType.getByAsmType(elementType);
+            assert primitiveType != null : elementType;
+            Type asmWrapperType = primitiveType.getWrapper().getAsmType();
+
+            v.invokevirtual(loopRangeType.getInternalName(), getterName, "()" + asmWrapperType.getDescriptor());
+            StackValue.coerce(asmWrapperType, elementType, v);
+            v.store(varToStore, elementType);
+        }
     }
 
     private class IteratorForLoopGenerator extends AbstractForLoopGenerator {
@@ -661,9 +697,11 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
         @Override
         public void beforeLoop() {
+            super.beforeLoop();
+
             // Iterator<E> tmp<iterator> = c.iterator()
 
-            iteratorVarIndex = myFrameMap.enterTemp(asmTypeForIterator);
+            iteratorVarIndex = createLoopTempVariable(asmTypeForIterator);
 
             Call call = bindingContext.get(LOOP_RANGE_ITERATOR_CALL, forExpression.getLoopRange());
             invokeFunction(call, StackValue.none(), iteratorCall);
@@ -690,25 +728,22 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
         }
 
         @Override
-        protected void assignToLoopParameter(int parameterIndex) {
+        protected void assignToLoopParameter() {
             @SuppressWarnings("ConstantConditions") Call fakeCall =
                     makeFakeCall(new TransientReceiver(iteratorCall.getResultingDescriptor().getReturnType()));
             invokeFunction(fakeCall, StackValue.local(iteratorVarIndex, asmTypeForIterator), nextCall);
             //noinspection ConstantConditions
-            v.store(parameterIndex, asmType(nextCall.getResultingDescriptor().getReturnType()));
+            v.store(loopParameterVar, asmType(nextCall.getResultingDescriptor().getReturnType()));
         }
 
         @Override
-        public void afterLoop() {
-            // tmp<iterator> goes out of scope
-            myFrameMap.leaveTemp(asmTypeForIterator);
+        protected void increment() {
         }
     }
 
     private class ForInArrayLoopGenerator extends AbstractForLoopGenerator {
         private int indexVar;
         private int arrayVar;
-        private Runnable afterLoopAction;
         private final JetType loopRangeType;
 
         private ForInArrayLoopGenerator(@NotNull JetForExpression forExpression) {
@@ -718,7 +753,9 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
         @Override
         public void beforeLoop() {
-            indexVar = myFrameMap.enterTemp(Type.INT_TYPE);
+            super.beforeLoop();
+
+            indexVar = createLoopTempVariable(Type.INT_TYPE);
 
             JetExpression loopRange = forExpression.getLoopRange();
             StackValue value = gen(loopRange);
@@ -727,13 +764,7 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
                 arrayVar = ((StackValue.Local) value).index; // no need to copy local variable into another variable
             }
             else {
-                arrayVar = myFrameMap.enterTemp(OBJECT_TYPE);
-                afterLoopAction = new Runnable() {
-                    @Override
-                    public void run() {
-                        myFrameMap.leaveTemp(OBJECT_TYPE);
-                    }
-                };
+                arrayVar = createLoopTempVariable(OBJECT_TYPE);
                 value.put(asmLoopRangeType, v);
                 v.store(arrayVar, OBJECT_TYPE);
             }
@@ -751,9 +782,8 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
         }
 
         @Override
-        protected void assignToLoopParameter(int parameterIndex) {
+        protected void assignToLoopParameter() {
             Type arrayElParamType;
-            Type asmElementType = asmType(elementType);
             if (KotlinBuiltIns.getInstance().isArray(loopRangeType)) {
                 arrayElParamType = boxType(asmElementType);
             }
@@ -765,136 +795,278 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
             v.load(indexVar, Type.INT_TYPE);
             v.aload(arrayElParamType);
             StackValue.onStack(arrayElParamType).put(asmElementType, v);
-            v.store(parameterIndex, asmElementType);
+            v.store(loopParameterVar, asmElementType);
         }
 
         @Override
-        public void afterBody() {
+        protected void increment() {
             v.iinc(indexVar, 1);
-            super.afterBody();
-        }
-
-        @Override
-        public void afterLoop() {
-            if (afterLoopAction != null) {
-                afterLoopAction.run();
-            }
-            myFrameMap.leaveTemp(Type.INT_TYPE);
         }
     }
 
-    private class ForInIntRangeLiteralLoopGenerator extends AbstractForLoopGenerator {
-        private final RangeCodegenUtil.BinaryCall rangeCall;
-        private final ResolvedCall<? extends CallableDescriptor> resolvedCall;
-        private Type asmElementType;
-        private int indexVar;
-        private int lastVar;
+    private abstract class AbstractForInRangeLoopGenerator extends AbstractForLoopGenerator {
+        protected int endVar;
 
-        private ForInIntRangeLiteralLoopGenerator(
-                @NotNull JetForExpression forExpression,
-                @NotNull RangeCodegenUtil.BinaryCall rangeCall,
-                ResolvedCall<? extends CallableDescriptor> resolvedCall
-        ) {
+        private AbstractForInRangeLoopGenerator(@NotNull JetForExpression forExpression) {
             super(forExpression);
-            this.rangeCall = rangeCall;
-            this.resolvedCall = resolvedCall;
         }
 
         @Override
         public void beforeLoop() {
-            JetType elementType = RangeCodegenUtil.getPrimitiveRangeElementType(resolvedCall.getResultingDescriptor().getReturnType());
-            assert elementType != null;
-            asmElementType = asmType(elementType);
+            super.beforeLoop();
 
-            indexVar = myFrameMap.enterTemp(asmElementType);
-            gen(rangeCall.left, asmElementType);
-            v.store(indexVar, asmElementType);
-
-            lastVar = myFrameMap.enterTemp(asmElementType);
-            gen(rangeCall.right, asmElementType);
-            v.store(lastVar, asmElementType);
+            endVar = createLoopTempVariable(asmElementType);
+            storeRangeStartAndEnd();
         }
+
+        protected abstract void storeRangeStartAndEnd();
 
         @Override
         public void conditionAndJump(@NotNull Label loopExit) {
-            v.load(indexVar, asmElementType);
-            v.load(lastVar, asmElementType);
-            v.ificmpgt(loopExit);
+            v.load(loopParameterVar, asmElementType);
+            v.load(endVar, asmElementType);
+
+            int sort = asmElementType.getSort();
+            switch (sort) {
+                case Type.INT:
+                case Type.CHAR:
+                case Type.BYTE:
+                case Type.SHORT:
+                    v.ificmpgt(loopExit);
+                    break;
+
+                case Type.LONG:
+                    v.lcmp();
+                    v.ifgt(loopExit);
+                    break;
+
+                case Type.FLOAT:
+                case Type.DOUBLE:
+                    v.cmpg(asmElementType);
+                    v.ifgt(loopExit);
+                    break;
+
+                default:
+                    throw new IllegalStateException("Unexpected range element type: " + asmElementType);
+            }
         }
 
         @Override
-        protected void assignToLoopParameter(int parameterIndex) {
-            // todo: don't create a temp variable if this is not a multi-decl for
-            v.load(indexVar, asmElementType);
-            v.store(parameterIndex, asmElementType);
+        protected void assignToLoopParameter() {
         }
 
         @Override
-        public void afterBody() {
-            v.iinc(indexVar, 1);
-            super.afterBody();
-        }
+        protected void increment() {
+            int sort = asmElementType.getSort();
+            switch (sort) {
+                case Type.INT:
+                case Type.CHAR:
+                case Type.BYTE:
+                case Type.SHORT:
+                    v.iinc(loopParameterVar, 1);
+                    if (sort != Type.INT) {
+                        v.load(loopParameterVar, Type.INT_TYPE);
+                        StackValue.coerce(Type.INT_TYPE, asmElementType, v);
+                        v.store(loopParameterVar, asmElementType);
+                    }
+                    break;
 
-        @Override
-        public void afterLoop() {
-            myFrameMap.leaveTemp(asmElementType); // lastVar
-            myFrameMap.leaveTemp(asmElementType); // indexVar
+                case Type.LONG:
+                    v.load(loopParameterVar, asmElementType);
+                    v.lconst(1);
+                    v.add(asmElementType);
+                    v.store(loopParameterVar, asmElementType);
+                    break;
+
+                case Type.FLOAT:
+                case Type.DOUBLE:
+                    v.load(loopParameterVar, asmElementType);
+                    if (sort == Type.DOUBLE) {
+                        v.dconst(1.0);
+                    }
+                    else {
+                        v.fconst(1.0f);
+                    }
+                    v.add(asmElementType);
+                    v.store(loopParameterVar, asmElementType);
+                    break;
+
+                default:
+                    throw new IllegalStateException("Unexpected range element type: " + asmElementType);
+            }
         }
     }
 
-    private class ForInIntRangeInstanceLoopGenerator extends AbstractForLoopGenerator {
-        private int indexVar;
-        private int endVar;
+    private class ForInRangeLiteralLoopGenerator extends AbstractForInRangeLoopGenerator {
+        private final RangeCodegenUtil.BinaryCall rangeCall;
 
-        private ForInIntRangeInstanceLoopGenerator(
-                @NotNull JetForExpression forExpression
+        private ForInRangeLiteralLoopGenerator(
+                @NotNull JetForExpression forExpression,
+                @NotNull RangeCodegenUtil.BinaryCall rangeCall
         ) {
+            super(forExpression);
+            this.rangeCall = rangeCall;
+        }
+
+        @Override
+        protected void storeRangeStartAndEnd() {
+            gen(rangeCall.left, asmElementType);
+            v.store(loopParameterVar, asmElementType);
+
+            gen(rangeCall.right, asmElementType);
+            v.store(endVar, asmElementType);
+        }
+    }
+
+    private class ForInRangeInstanceLoopGenerator extends AbstractForInRangeLoopGenerator {
+        private ForInRangeInstanceLoopGenerator(@NotNull JetForExpression forExpression) {
             super(forExpression);
         }
 
         @Override
-        public void beforeLoop() {
+        protected void storeRangeStartAndEnd() {
             JetType loopRangeType = bindingContext.get(EXPRESSION_TYPE, forExpression.getLoopRange());
             assert loopRangeType != null;
             Type asmLoopRangeType = asmType(loopRangeType);
             gen(forExpression.getLoopRange(), asmLoopRangeType);
             v.dup();
 
-            indexVar = myFrameMap.enterTemp(Type.INT_TYPE);
-            v.invokevirtual(JET_INT_RANGE_TYPE.getInternalName(), "getStart", "()Ljava/lang/Integer;");
-            StackValue.coerce(Type.getType("Ljava/lang/Integer;"), Type.INT_TYPE, v);
-            v.store(indexVar, Type.INT_TYPE);
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getStart", asmElementType, loopParameterVar);
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getEnd", asmElementType, endVar);
+        }
+    }
 
-            endVar = myFrameMap.enterTemp(Type.INT_TYPE);
-            v.invokevirtual(JET_INT_RANGE_TYPE.getInternalName(), "getEnd", "()Ljava/lang/Integer;");
-            StackValue.coerce(Type.getType("Ljava/lang/Integer;"), Type.INT_TYPE, v);
-            v.store(endVar, Type.INT_TYPE);
+    private class ForInProgressionExpressionLoopGenerator extends AbstractForLoopGenerator {
+        private int endVar;
+        private int incrementVar;
+        private Type incrementType;
+
+        private ForInProgressionExpressionLoopGenerator(@NotNull JetForExpression forExpression) {
+            super(forExpression);
+        }
+
+        @Override
+        public void beforeLoop() {
+            super.beforeLoop();
+
+            endVar = createLoopTempVariable(asmElementType);
+            incrementVar = createLoopTempVariable(asmElementType);
+
+            JetType loopRangeType = bindingContext.get(EXPRESSION_TYPE, forExpression.getLoopRange());
+            assert loopRangeType != null;
+            Type asmLoopRangeType = asmType(loopRangeType);
+
+            Collection<VariableDescriptor> incrementProp = loopRangeType.getMemberScope().getProperties(Name.identifier("increment"));
+            assert incrementProp.size() == 1 : loopRangeType + " " + incrementProp.size();
+            incrementType = asmType(incrementProp.iterator().next().getType());
+
+            gen(forExpression.getLoopRange(), asmLoopRangeType);
+            v.dup();
+            v.dup();
+
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getStart", asmElementType, loopParameterVar);
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getEnd", asmElementType, endVar);
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getIncrement", incrementType, incrementVar);
         }
 
         @Override
         public void conditionAndJump(@NotNull Label loopExit) {
-            v.load(indexVar, Type.INT_TYPE);
-            v.load(endVar, Type.INT_TYPE);
-            v.ificmpgt(loopExit);
+            v.load(loopParameterVar, asmElementType);
+            v.load(incrementVar, asmElementType);
+
+            Label negativeIncrement = new Label();
+            Label afterIf = new Label();
+
+            int sort = asmElementType.getSort();
+            switch (sort) {
+                case Type.INT:
+                case Type.CHAR:
+                case Type.BYTE:
+                case Type.SHORT:
+                    v.ifle(negativeIncrement); // if increment < 0, jump
+
+                    // increment > 0
+                    v.load(endVar, asmElementType);
+                    v.ificmpgt(loopExit);
+                    v.goTo(afterIf);
+
+                    // increment < 0
+                    v.visitLabel(negativeIncrement);
+                    v.load(endVar, asmElementType);
+                    v.ificmplt(loopExit);
+                    v.visitLabel(afterIf);
+
+                    break;
+
+                case Type.LONG:
+                    v.lconst(0L);
+                    v.lcmp();
+                    v.ifle(negativeIncrement); // if increment < 0, jump
+
+                    // increment > 0
+                    v.load(endVar, asmElementType);
+                    v.lcmp();
+                    v.ifgt(loopExit);
+                    v.goTo(afterIf);
+
+                    // increment < 0
+                    v.visitLabel(negativeIncrement);
+                    v.load(endVar, asmElementType);
+                    v.lcmp();
+                    v.iflt(loopExit);
+                    v.visitLabel(afterIf);
+
+                    break;
+
+                case Type.DOUBLE:
+                case Type.FLOAT:
+                    if (sort == Type.DOUBLE) {
+                        v.dconst(0.0);
+                    }
+                    else {
+                        v.fconst(0.0f);
+                    }
+                    v.cmpl(incrementType);
+                    v.ifle(negativeIncrement); // if increment < 0, jump
+
+                    // increment > 0
+                    v.load(endVar, asmElementType);
+                    v.cmpg(asmElementType); // if loop parameter is NaN, exit from loop, as well
+                    v.ifgt(loopExit);
+                    v.goTo(afterIf);
+
+                    // increment < 0
+                    v.visitLabel(negativeIncrement);
+                    v.load(endVar, asmElementType);
+                    v.cmpl(asmElementType); // if loop parameter is NaN, exit from loop, as well
+                    v.iflt(loopExit);
+                    v.visitLabel(afterIf);
+
+                    break;
+
+                default:
+                    throw new IllegalStateException("Unexpected range element type: " + asmElementType);
+            }
+
         }
 
         @Override
-        protected void assignToLoopParameter(int parameterIndex) {
-            // todo: no temp var when this is not a multi-declaration for-loop
-            v.load(indexVar, Type.INT_TYPE);
-            v.store(parameterIndex, Type.INT_TYPE);
+        protected void assignToLoopParameter() {
         }
 
         @Override
-        public void afterBody() {
-            v.iinc(indexVar, 1);
-            super.afterBody();
-        }
+        protected void increment() {
 
-        @Override
-        public void afterLoop() {
-            myFrameMap.leaveTemp(Type.INT_TYPE); // endVar
-            myFrameMap.leaveTemp(Type.INT_TYPE); // indexVar
+            v.load(loopParameterVar, asmElementType);
+            v.load(incrementVar, asmElementType);
+            v.add(asmElementType);
+
+            int sort = asmElementType.getSort();
+            if (sort == Type.CHAR || sort == Type.BYTE || sort == Type.SHORT) {
+                StackValue.coerce(Type.INT_TYPE, asmElementType, v);
+            }
+
+            v.store(loopParameterVar, asmElementType);
         }
     }
 
@@ -2484,16 +2656,17 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
 
         JetExpression left = expression.getLeft();
         JetExpression right = expression.getRight();
-        StackValue receiver = gen(left);
         Callable callable = resolveToCallable(descriptor, false);
 
         Type type;
         if (callable instanceof IntrinsicMethod) {
             // Compare two primitive values
             type = comparisonOperandType(expressionType(left), expressionType(right));
+            StackValue receiver = gen(left);
             receiver.put(type, v);
             gen(right, type);
-        } else {
+        }
+        else {
             type = Type.INT_TYPE;
             StackValue result = invokeOperation(expression, descriptor, (CallableMethod) callable);
             result.put(type, v);

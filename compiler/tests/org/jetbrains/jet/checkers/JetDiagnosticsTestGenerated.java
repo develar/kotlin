@@ -1045,6 +1045,16 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/controlStructures/tryReturnType.kt");
             }
             
+            @TestMetadata("valVarCatchParameter.kt")
+            public void testValVarCatchParameter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlStructures/valVarCatchParameter.kt");
+            }
+            
+            @TestMetadata("valVarLoopParameter.kt")
+            public void testValVarLoopParameter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/controlStructures/valVarLoopParameter.kt");
+            }
+            
             @TestMetadata("when.kt234.kt973.kt")
             public void testWhen_kt234_kt973() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/controlStructures/when.kt234.kt973.kt");
@@ -1536,6 +1546,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("RedeclarationsInMultiDecl.kt")
             public void testRedeclarationsInMultiDecl() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/declarationChecks/RedeclarationsInMultiDecl.kt");
+            }
+            
+            @TestMetadata("valVarFunctionParameter.kt")
+            public void testValVarFunctionParameter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/declarationChecks/valVarFunctionParameter.kt");
             }
             
             @TestMetadata("VarianceOnFunctionAndPropertyTypeParameters.kt")
@@ -2604,6 +2619,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
         
         @TestMetadata("compiler/testData/diagnostics/tests/j+k")
         public static class J_k extends AbstractDiagnosticsTestWithEagerResolve {
+            @TestMetadata("accessClassObjectFromJava.kt")
+            public void testAccessClassObjectFromJava() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/j+k/accessClassObjectFromJava.kt");
+            }
+            
             public void testAllFilesPresentInJ_k() throws Exception {
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/j+k"), Pattern.compile("^(.+)\\.kt$"), true);
             }
@@ -3074,6 +3094,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/overload/FunNoConflictInDifferentPackages.kt");
             }
             
+            @TestMetadata("kt1998.kt")
+            public void testKt1998() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/overload/kt1998.kt");
+            }
+            
             @TestMetadata("OverloadFunRegularAndExt.kt")
             public void testOverloadFunRegularAndExt() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/overload/OverloadFunRegularAndExt.kt");
@@ -3215,6 +3240,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("kt1862.kt")
             public void testKt1862() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/override/kt1862.kt");
+            }
+            
+            @TestMetadata("kt880.kt")
+            public void testKt880() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/override/kt880.kt");
             }
             
             @TestMetadata("MultipleDefaultParametersInSupertypes.kt")

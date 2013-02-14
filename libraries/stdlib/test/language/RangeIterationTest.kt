@@ -2,6 +2,7 @@ package language
 
 import kotlin.test.assertEquals
 import org.junit.Test as test
+import java.lang as j
 
 // Test data for codegen is generated from this class. If you change it, rerun GenerateTests
 public class RangeIterationTest {
@@ -65,6 +66,20 @@ public class RangeIterationTest {
 
         doTest(3.0..9.0, 3.0, 9.0, 1.0, listOf(3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0))
         doTest(3.0.toFloat()..9.0.toFloat(), 3.0.toFloat(), 9.0.toFloat(), 1.toFloat(),
+                listOf<Float>(3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0))
+    }
+
+
+    test fun simpleRangeWithNonConstantEnds() {
+        doTest((1 + 2)..(10 - 1), 3, 9, 1, listOf(3, 4, 5, 6, 7, 8, 9))
+        doTest((1.toByte() + 2.toByte()).toByte()..(10.toByte() - 1.toByte()).toByte(), 3.toByte(), 9.toByte(), 1, listOf<Byte>(3, 4, 5, 6, 7, 8, 9))
+        doTest((1.toShort() + 2.toShort()).toShort()..(10.toShort() - 1.toShort()).toShort(), 3.toShort(), 9.toShort(), 1, listOf<Short>(3, 4, 5, 6, 7, 8, 9))
+        doTest((1.toLong() + 2.toLong())..(10.toLong() - 1.toLong()), 3.toLong(), 9.toLong(), 1.toLong(), listOf<Long>(3, 4, 5, 6, 7, 8, 9))
+
+        doTest(("ace"[1])..("age"[1]), 'c', 'g', 1, listOf('c', 'd', 'e', 'f', 'g'))
+
+        doTest((1.5 * 2)..(3.0 * 3.0), 3.0, 9.0, 1.0, listOf(3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0))
+        doTest((1.5.toFloat() * 2.toFloat())..(3.0.toFloat() * 3.0.toFloat()), 3.0.toFloat(), 9.0.toFloat(), 1.toFloat(),
                 listOf<Float>(3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0))
     }
 
@@ -238,5 +253,31 @@ public class RangeIterationTest {
         doTest((5.8 downTo 4.0 step 0.5).reversed(), 4.0, 5.8, 0.5, listOf(4.0, 4.5, 5.0, 5.5))
         doTest((5.8.toFloat() downTo 4.0.toFloat() step 0.5).reversed(), 4.0.toFloat(), 5.8.toFloat(), 0.5.toFloat(),
                 listOf<Float>(4.0, 4.5, 5.0, 5.5))
+    }
+
+    test fun infiniteSteps() {
+        doTest(0.0..5.0 step j.Double.POSITIVE_INFINITY, 0.0, 5.0, j.Double.POSITIVE_INFINITY, listOf(0.0))
+        doTest(0.0.toFloat()..5.0.toFloat() step j.Float.POSITIVE_INFINITY, 0.0.toFloat(), 5.0.toFloat(), j.Float.POSITIVE_INFINITY, 
+                listOf<Float>(0.0))
+        doTest(5.0 downTo 0.0 step j.Double.POSITIVE_INFINITY, 5.0, 0.0, j.Double.NEGATIVE_INFINITY, listOf(5.0))
+        doTest(5.0.toFloat() downTo 0.0.toFloat() step j.Float.POSITIVE_INFINITY, 5.0.toFloat(), 0.0.toFloat(), j.Float.NEGATIVE_INFINITY,
+                listOf<Float>(5.0))
+    }
+
+    test fun nanEnds() {
+        doTest(j.Double.NaN..5.0, j.Double.NaN, 5.0, 1.0, listOf())
+        doTest(j.Float.NaN.toFloat()..5.0.toFloat(), j.Float.NaN, 5.0.toFloat(), 1.0.toFloat(), listOf())
+        doTest(j.Double.NaN downTo 0.0, j.Double.NaN, 0.0, -1.0, listOf())
+        doTest(j.Float.NaN.toFloat() downTo 0.0.toFloat(), j.Float.NaN, 0.0.toFloat(), -1.0.toFloat(), listOf())
+
+        doTest(0.0..j.Double.NaN, 0.0, j.Double.NaN, 1.0, listOf())
+        doTest(0.0.toFloat()..j.Float.NaN, 0.0.toFloat(), j.Float.NaN, 1.0.toFloat(), listOf())
+        doTest(5.0 downTo j.Double.NaN, 5.0, j.Double.NaN, -1.0, listOf())
+        doTest(5.0.toFloat() downTo j.Float.NaN, 5.0.toFloat(), j.Float.NaN, -1.0.toFloat(), listOf())
+
+        doTest(j.Double.NaN..j.Double.NaN, j.Double.NaN, j.Double.NaN, 1.0, listOf())
+        doTest(j.Float.NaN..j.Float.NaN, j.Float.NaN, j.Float.NaN, 1.0.toFloat(), listOf())
+        doTest(j.Double.NaN downTo j.Double.NaN, j.Double.NaN, j.Double.NaN, -1.0, listOf())
+        doTest(j.Float.NaN downTo j.Float.NaN, j.Float.NaN, j.Float.NaN, -1.0.toFloat(), listOf())
     }
 }

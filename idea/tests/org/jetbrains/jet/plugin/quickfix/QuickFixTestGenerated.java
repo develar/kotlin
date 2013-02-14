@@ -408,6 +408,16 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             doTest("idea/testData/quickfix/modifiers/beforeFinalTrait.kt");
         }
         
+        @TestMetadata("beforeIllegalEnumAnnotation1.kt")
+        public void testIllegalEnumAnnotation1() throws Exception {
+            doTest("idea/testData/quickfix/modifiers/beforeIllegalEnumAnnotation1.kt");
+        }
+        
+        @TestMetadata("beforeIllegalEnumAnnotation2.kt")
+        public void testIllegalEnumAnnotation2() throws Exception {
+            doTest("idea/testData/quickfix/modifiers/beforeIllegalEnumAnnotation2.kt");
+        }
+        
         @TestMetadata("beforeOpenMemberInFinalClass1.kt")
         public void testOpenMemberInFinalClass1() throws Exception {
             doTest("idea/testData/quickfix/modifiers/beforeOpenMemberInFinalClass1.kt");
@@ -416,6 +426,21 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
         @TestMetadata("beforeOpenMemberInFinalClass2.kt")
         public void testOpenMemberInFinalClass2() throws Exception {
             doTest("idea/testData/quickfix/modifiers/beforeOpenMemberInFinalClass2.kt");
+        }
+        
+        @TestMetadata("beforeOpenModifierInEnum.kt")
+        public void testOpenModifierInEnum() throws Exception {
+            doTest("idea/testData/quickfix/modifiers/beforeOpenModifierInEnum.kt");
+        }
+        
+        @TestMetadata("beforePackageMemberCannotBeProtected.kt")
+        public void testPackageMemberCannotBeProtected() throws Exception {
+            doTest("idea/testData/quickfix/modifiers/beforePackageMemberCannotBeProtected.kt");
+        }
+        
+        @TestMetadata("beforeRemoveIncompatibleModifier.kt")
+        public void testRemoveIncompatibleModifier() throws Exception {
+            doTest("idea/testData/quickfix/modifiers/beforeRemoveIncompatibleModifier.kt");
         }
         
         @TestMetadata("beforeRemoveRedundantModifier1.kt")
@@ -481,7 +506,7 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             }
             
             @TestMetadata("idea/testData/quickfix/modifiers/finalSupertype/finalJavaSupertype")
-            @InnerTestClasses({FinalJavaSupertype.JavaCode.class, })
+            @InnerTestClasses({FinalJavaSupertype.JavaCode.class})
             public static class FinalJavaSupertype extends AbstractQuickFixTest {
                 public void testAllFilesPresentInFinalJavaSupertype() throws Exception {
                     JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/quickfix/modifiers/finalSupertype/finalJavaSupertype"), Pattern.compile("^before(\\w+)\\.kt$"), true);
@@ -534,6 +559,16 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
         @TestMetadata("beforeRemoveRedundantNullable.kt")
         public void testRemoveRedundantNullable() throws Exception {
             doTest("idea/testData/quickfix/nullables/beforeRemoveRedundantNullable.kt");
+        }
+        
+        @TestMetadata("beforeRemoveSupertypeNullable1.kt")
+        public void testRemoveSupertypeNullable1() throws Exception {
+            doTest("idea/testData/quickfix/nullables/beforeRemoveSupertypeNullable1.kt");
+        }
+        
+        @TestMetadata("beforeRemoveSupertypeNullable2.kt")
+        public void testRemoveSupertypeNullable2() throws Exception {
+            doTest("idea/testData/quickfix/nullables/beforeRemoveSupertypeNullable2.kt");
         }
         
     }
@@ -678,6 +713,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             doTest("idea/testData/quickfix/typeProjection/beforeRemoveRedundantProjection2.kt");
         }
         
+        @TestMetadata("beforeRemoveVariance.kt")
+        public void testRemoveVariance() throws Exception {
+            doTest("idea/testData/quickfix/typeProjection/beforeRemoveVariance.kt");
+        }
+        
     }
     
     @TestMetadata("idea/testData/quickfix/uselessImports")
@@ -704,6 +744,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
         public static class ChangeMutability extends AbstractQuickFixTest {
             public void testAllFilesPresentInChangeMutability() throws Exception {
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/quickfix/variables/changeMutability"), Pattern.compile("^before(\\w+)\\.kt$"), true);
+            }
+            
+            @TestMetadata("beforeValOverrideVar.kt")
+            public void testValOverrideVar() throws Exception {
+                doTest("idea/testData/quickfix/variables/changeMutability/beforeValOverrideVar.kt");
             }
             
             @TestMetadata("beforeValReassignmentLocal.kt")

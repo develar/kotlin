@@ -17,14 +17,18 @@
 package org.jetbrains.jet.lang.resolve.lazy;
 
 import com.google.common.collect.Lists;
-import com.intellij.openapi.util.NotNullLazyValue;
+import com.intellij.openapi.util.Computable;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.util.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.ImportPath;
 import org.jetbrains.jet.lang.resolve.TemporaryBindingTrace;
+import org.jetbrains.jet.lang.resolve.lazy.descriptors.LazyClassDescriptor;
+import org.jetbrains.jet.lang.resolve.lazy.storage.MemoizedFunctionToNotNull;
+import org.jetbrains.jet.lang.resolve.lazy.storage.NotNullLazyValue;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.scopes.ChainedScope;
 import org.jetbrains.jet.lang.resolve.scopes.InnerClassesScopeWrapper;
@@ -32,34 +36,37 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
+
+import static org.jetbrains.jet.lang.resolve.lazy.storage.StorageManager.ReferenceKind.WEAK;
 
 public class ScopeProvider {
     private final ResolveSession resolveSession;
 
-    private final Map<JetFile, JetScope> fileScopes = new WeakHashMap<JetFile, JetScope>();
+    private final MemoizedFunctionToNotNull<JetFile, JetScope> fileScopes;
 
-    private final NotNullLazyValue<JetScope> defaultImportsScope = new NotNullLazyValue<JetScope>() {
-        @NotNull
-        @Override
-        protected JetScope compute() {
-            return createScopeWithDefaultImports();
-        }
-    };
+    private final NotNullLazyValue<JetScope> defaultImportsScope;
 
     public ScopeProvider(@NotNull ResolveSession resolveSession) {
         this.resolveSession = resolveSession;
+
+        this.fileScopes = resolveSession.getStorageManager().createMemoizedFunction(new Function<JetFile, JetScope>() {
+            @Override
+            public JetScope fun(@NotNull JetFile file) {
+                return createFileScope(file);
+            }
+        }, WEAK);
+
+        this.defaultImportsScope = resolveSession.getStorageManager().createLazyValue(new Computable<JetScope>() {
+            @Override
+            public JetScope compute() {
+                return createScopeWithDefaultImports();
+            }
+        });
     }
 
     @NotNull
-    public JetScope getFileScope(JetFile file) {
-        JetScope scope = fileScopes.get(file);
-        if (scope == null) {
-            scope = createFileScope(file);
-            fileScopes.put(file, scope);
-        }
-        return scope;
+    public JetScope getFileScope(final JetFile file) {
+        return fileScopes.fun(file);
     }
 
     private JetScope createFileScope(JetFile file) {
@@ -82,7 +89,7 @@ public class ScopeProvider {
                                 rootPackageDescriptor.getMemberScope(),
                                 packageDescriptor.getMemberScope(),
                                 importsScope,
-                                defaultImportsScope.getValue());
+                                defaultImportsScope.compute());
     }
 
     private JetScope createScopeWithDefaultImports() {

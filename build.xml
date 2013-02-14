@@ -256,9 +256,8 @@
                     -injars '${output}/kotlin-compiler-before-proguard.jar'
                     -outjars '${kotlin-home}/lib/kotlin-compiler.jar'
 
-                    -dontwarn com.intellij.util.**
-                    -dontwarn com.intellij.codeInsight.**
-                    -dontwarn org.jetbrains.jet.internal.com.thoughtworks.xstream.**
+                    -dontwarn com.intellij.util.ui.IsRetina*
+                    -dontwarn com.intellij.util.RetinaImage*
                     -dontwarn org.fusesource.**
 
                     -libraryjars '${rtjar}'
@@ -268,10 +267,7 @@
                     -dontobfuscate
 
                     -keep class org.fusesource.** { *; }
-
-                    -keepclasseswithmembers public class * {
-                        public static void main(java.lang.String[]);
-                    }
+                    -keep class org.jdom.input.JAXPParserFactory { *; }
 
                     -keep class org.jetbrains.annotations.** {
                         public protected *;
@@ -289,27 +285,12 @@
                         public protected *;
                     }
 
-                    -keepclasseswithmembers class * { void start(); }
+                    -keep class com.intellij.psi.** {
+                        public protected *;
+                    }
 
-                    -keepclasseswithmembers class * { void stop(); }
-                    -keepclasseswithmembers class * { void dispose(); }
-
-                    -keepclasseswithmembers class * { ** getFileSystem(); }
-                    -keepclasseswithmembers class * { ** isVarArgs(); }
-                    -keepclasseswithmembers class * { ** getApplication(); }
-                    -keepclasseswithmembers class * { ** finalizeReferent(); }
-                    -keepclasseswithmembers class * { ** newBuilder(); }
-                    -keepclasseswithmembers class * { ** startFinalizer(java.lang.Class,java.lang.Object); }
-                    -keepclasseswithmembers class * { ** executeOnPooledThread(java.lang.Runnable); }
-                    -keepclasseswithmembers class * { ** getUserData(java.lang.String); }
-                    -keepclasseswithmembers class * { int getBooleanAttributes(java.io.File); }
-
-                    -keepclasseswithmembers class * { ** project(); }
-
-                    -keepclasseswithmembers class * { ** TYPE; }
-                    -keepclasseswithmembers class * { ** ourInstance; }
-
-                    -keepclasseswithmembers class * { <init>(com.intellij.lang.ASTNode); }
+                    # for kdoc
+                    -keep class com.intellij.openapi.util.TextRange { *; }
 
                     -keepclassmembers enum * {
                         public static **[] values();
@@ -319,6 +300,9 @@
                     -keepclassmembers class * {
                         ** toString();
                         ** hashCode();
+                        void start();
+                        void stop();
+                        void dispose();
                     }
                 ]]></proguard>
             </else>
@@ -422,9 +406,7 @@
     <javac destdir="${output}/classes/j2k" debug="true" debuglevel="lines,vars,source" includeAntRuntime="false">
       <src path="compiler/cli/cli-common/src"/>
       <src path="${basedir}/j2k/src"/>
-      <src path="${basedir}/compiler/frontend/src"/>
-      <src path="${basedir}/compiler/util/src"/>
-      <classpath refid="classpath"/>
+      <classpath path="${kotlin-home}/lib/kotlin-compiler.jar"/>
     </javac>
 
     <jar jarfile="${output}/j2k-before-jarjar.jar">
@@ -454,6 +436,10 @@
         <zap pattern="com.thoughtworks.xstream.io.xml.Dom4J*"/>
         <zap pattern="com.thoughtworks.xstream.io.xml.Xom*"/>
         <zap pattern="com.thoughtworks.xstream.mapper.CGLIBMapper*"/>
+        <zap pattern="com.thoughtworks.xstream.io.json.Jettison*"/>
+        <zap pattern="com.thoughtworks.xstream.io.xml.Wstx*"/>
+        <zap pattern="com.thoughtworks.xstream.io.xml.KXml2*"/>
+        <zap pattern="com.thoughtworks.xstream.io.xml.BEAStax*"/>
 
         <zap pattern="org.apache.log4j.jmx.Agent"/>
         <zap pattern="org.apache.log4j.net.JMS*"/>
@@ -464,6 +450,8 @@
 
         <zap pattern="org.mozilla.javascript.xml.impl.xmlbeans.**"/>
 
+        <!--
+        <rule pattern="com.intellij.**" result="org.jetbrains.jet.internal.com.intellij.@1"/>
         <rule pattern="com.sun.jna.**" result="org.jetbrains.jet.internal.com.sun.jna.@1"/>
         <rule pattern="org.apache.log4j.**" result="org.jetbrains.jet.internal.org.apache.log4j.@1"/>
         <rule pattern="org.jdom.**" result="org.jetbrains.jet.internal.org.jdom.@1"/>
@@ -479,6 +467,7 @@
         <rule pattern="org.mozilla.**" result="org.jetbrains.jet.internal.org.mozilla.@1"/>
         <rule pattern="org.xmlpull.**" result="org.jetbrains.jet.internal.org.xmlpull.@1"/>
         <rule pattern="org.kohsuke.args4j.**" result="org.jetbrains.jet.internal.org.kohsuke.args4j.@1"/>
+        -->
 
         <manifest>
           <attribute name="Built-By" value="JetBrains"/>

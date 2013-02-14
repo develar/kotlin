@@ -5,6 +5,7 @@ import org.jetbrains.jet.cli.common.CompilerPlugin
 import org.jetbrains.jet.cli.common.CompilerPluginContext
 import org.jetbrains.kotlin.doc.KDocArguments
 
+
 /** Base class for any compiler plugin which needs to process a KModel */
 abstract class KModelCompilerPlugin(
         // TODO: fix compiler and make protected

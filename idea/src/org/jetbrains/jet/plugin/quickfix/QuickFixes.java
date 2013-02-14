@@ -103,6 +103,8 @@ public class QuickFixes {
         factories.put(OPEN_MODIFIER_IN_TRAIT, RemoveModifierFix.createRemoveModifierFromListOwnerFactory(OPEN_KEYWORD, true));
         factories.put(TRAIT_CAN_NOT_BE_FINAL, removeFinalModifierFactory);
         factories.put(REDUNDANT_PROJECTION, RemoveModifierFix.createRemoveProjectionFactory());
+        factories.put(INCOMPATIBLE_MODIFIERS, RemoveModifierFix.createRemoveModifierFactory(false));
+        factories.put(VARIANCE_ON_TYPE_PARAMETER_OF_FUNCTION_OR_PROPERTY, RemoveModifierFix.createRemoveVarianceFactory());
 
         JetIntentionActionFactory removeOpenModifierFactory = RemoveModifierFix.createRemoveModifierFromListOwnerFactory(OPEN_KEYWORD);
         factories.put(NON_FINAL_MEMBER_IN_FINAL_CLASS, AddModifierFix.createFactory(OPEN_KEYWORD, JetClass.class));
@@ -132,7 +134,8 @@ public class QuickFixes {
 
         factories.put(UNRESOLVED_REFERENCE, MigrateSureInProjectFix.createFactory());
 
-        factories.put(REDUNDANT_NULLABLE, RemoveRedundantNullableFix.createFactory());
+        factories.put(REDUNDANT_NULLABLE, RemoveNullableFix.createFactory(false));
+        factories.put(NULLABLE_SUPERTYPE, RemoveNullableFix.createFactory(true));
 
         ImplementMethodsHandler implementMethodsHandler = new ImplementMethodsHandler();
         actions.put(ABSTRACT_MEMBER_NOT_IMPLEMENTED, implementMethodsHandler);
@@ -141,12 +144,16 @@ public class QuickFixes {
         ChangeVariableMutabilityFix changeVariableMutabilityFix = new ChangeVariableMutabilityFix();
         actions.put(VAL_WITH_SETTER, changeVariableMutabilityFix);
         actions.put(VAL_REASSIGNMENT, changeVariableMutabilityFix);
+        actions.put(VAR_OVERRIDDEN_BY_VAL, changeVariableMutabilityFix);
 
         actions.put(UNNECESSARY_SAFE_CALL, ReplaceCallFix.toDotCallFromSafeCall());
         actions.put(UNSAFE_CALL, ReplaceCallFix.toSafeCall());
 
         actions.put(UNSAFE_CALL, ExclExclCallFix.introduceExclExclCall());
         actions.put(UNNECESSARY_NOT_NULL_ASSERTION, ExclExclCallFix.removeExclExclCall());
+
+        JetIntentionActionFactory removeProtectedModifierFactory = RemoveModifierFix.createRemoveModifierFromListOwnerFactory(PROTECTED_KEYWORD);
+        factories.put(PACKAGE_MEMBER_CANNOT_BE_PROTECTED, removeProtectedModifierFactory);
 
         actions.put(PUBLIC_MEMBER_SHOULD_SPECIFY_TYPE, new SpecifyTypeExplicitlyFix());
 
@@ -161,5 +168,8 @@ public class QuickFixes {
         factories.put(FINAL_SUPERTYPE, FinalSupertypeFix.createFactory());
 
         factories.put(PARAMETER_NAME_CHANGED_ON_OVERRIDE, RenameParameterToMatchOverriddenMethodFix.createFactory());
+
+        factories.put(OPEN_MODIFIER_IN_ENUM, RemoveModifierFix.createRemoveModifierFromListOwnerFactory(OPEN_KEYWORD));
+        factories.put(ILLEGAL_ENUM_ANNOTATION, RemoveModifierFix.createRemoveModifierFromListOwnerFactory(ENUM_KEYWORD));
     }
 }
