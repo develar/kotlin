@@ -7,10 +7,10 @@
             build.zip="ideaIC-123.SNAPSHOT.win.zip"
         />
     </target>
-  
+
     <target name="jb_update" depends="fetch-third-party">
         <execute_update
-            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt662/1738443:id"
+            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt662/1748000:id"
             build.zip="ideaIC-126.SNAPSHOT.win.zip"
         />
     </target>
