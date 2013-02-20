@@ -244,6 +244,7 @@ public trait Window {
 
 	public fun getSelection(): Selection
 	public fun open(url: String? = null, windowName: String? = null, windowFeatures: String? = null, replace: Boolean? = null): Window
+	public fun close(): Unit
 	public fun print(): Unit
 	public fun alert(message: String): Unit
 	public fun alert(message: Any): Unit
@@ -383,7 +384,7 @@ public trait HTMLElement : Element {
 	public var scrollLeft: Int
 	public var stylesheet: Stylesheet
 	public var onblur: ()->Unit
-	public var onclick: ()->Unit
+	public var onclick: ()->Any
 	public var ondblclick: ()->Unit
 	public var onfocus: ()->Unit
 	public var onkeydown: ()->Unit
@@ -534,6 +535,8 @@ public trait HTMLFormElement : HTMLElement {
 	public var enctype: String
 	public var method: String
 	public var target: String
+	public var autocomplete: String
+	public var noValidate: Boolean
 
 	public fun submit(): Unit
 	public fun reset(): Unit
@@ -556,6 +559,18 @@ public trait HTMLSelectElement : HTMLElement {
 	public fun remove(index: Number): Unit
 	public fun blur(): Unit
 	public fun focus(): Unit
+
+	public var autofocus: Boolean
+	public var required: Boolean
+	public var selectedOptions: HTMLCollection
+	public var validationMessage: String
+	public var validity: ValidityState
+	public val willValidate: Boolean
+
+	public fun checkValidity(): Boolean
+	public fun item(index: Number): Element
+	public fun namedItem(name: String): Element
+	public fun setCustomValidity(error: String? = null): Unit
 }
 
 public trait HTMLOptGroupElement : HTMLElement {
@@ -1578,4 +1593,17 @@ public trait XMLHttpRequestUpload : XMLHttpRequestEventTarget {
 
 public trait FormData {
 	public fun append(name: String, value: Any): Unit
+}
+
+public trait ValidityState {
+	public val valueMissing: Boolean
+	public val typeMismatch: Boolean
+	public val patternMismatch: Boolean
+	public val tooLong: Boolean
+	public val rangeUnderflow: Boolean
+	public val rangeOverflow: Boolean
+	public val stepMismatch: Boolean
+	public val badInput: Boolean
+	public val customError: Boolean
+	public val valid: Boolean
 }
