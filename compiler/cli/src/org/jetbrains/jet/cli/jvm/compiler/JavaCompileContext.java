@@ -1,7 +1,10 @@
 package org.jetbrains.jet.cli.jvm.compiler;
 
 import com.intellij.codeInsight.ExternalAnnotationsManager;
-import com.intellij.core.*;
+import com.intellij.core.CoreApplicationEnvironment;
+import com.intellij.core.CoreJavaFileManager;
+import com.intellij.core.JavaCoreApplicationEnvironment;
+import com.intellij.core.JavaCoreProjectEnvironment;
 import com.intellij.lang.java.JavaParserDefinition;
 import com.intellij.mock.MockProject;
 import com.intellij.openapi.Disposable;
@@ -13,6 +16,8 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.compiled.ClsCustomNavigationPolicy;
 import com.intellij.psi.impl.file.impl.JavaFileManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.CompilerModeProvider;
+import org.jetbrains.jet.OperationModeProvider;
 import org.jetbrains.jet.asJava.JavaElementFinder;
 import org.jetbrains.jet.asJava.LightClassGenerationSupport;
 import org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider;
@@ -39,6 +44,8 @@ public class JavaCompileContext extends CompilerContextBase<JavaCoreProjectEnvir
         // ability to get text from annotations xml files
         applicationEnvironment.registerFileType(PlainTextFileType.INSTANCE, "xml");
         applicationEnvironment.registerParserDefinition(new JavaParserDefinition());
+
+        applicationEnvironment.getApplication().registerService(OperationModeProvider.class, new CompilerModeProvider());
 
         MockProject project = projectEnvironment.getProject();
         project.registerService(JetFilesProvider.class, new CliJetFilesProvider(sourceFiles));
