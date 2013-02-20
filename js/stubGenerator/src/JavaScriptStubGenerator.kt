@@ -8,7 +8,6 @@ import java.io.FileOutputStream
 import org.w3c.dom.Node
 import java.util.HashMap
 import java.util.HashSet
-import kotlin.nullable.groupBy
 import java.util.regex.Matcher
 
 private fun Element.attribute(name: String): String? {
@@ -36,7 +35,7 @@ class JavaScriptStubGenerator(packageName: String) {
     private var genericType: String? = null
 
     private fun findConstructor(classElement: Element): Element? {
-        for (val node in classElement.getChildNodes()) {
+        for ( node in classElement.getChildNodes()) {
             if (node is Element && node.getTagName() == "method" && node.getAttribute("name") == "__constructor__") {
                 return node
             }
@@ -51,7 +50,7 @@ class JavaScriptStubGenerator(packageName: String) {
     private fun processConstructor(parentElement: Element, builder: StringBuilder) {
         builder.append('(')
         var first = true
-        for (val node in parentElement.iterator().filter { checkElement(it, "param") }) {
+        for (node in parentElement.iterator().filter { checkElement(it, "param") }) {
             if (first) {
                 first = false
             }
@@ -67,7 +66,7 @@ class JavaScriptStubGenerator(packageName: String) {
 
     fun generate(idlFile: File, ignoredClasses: Set<String>? = null) {
         val document = parseXml(idlFile)
-        for (val node in document.getDocumentElement()!!.iterator().filter { it is Element && (it.getTagName() == "class" || it.getTagName() == "trait") }) {
+        for (node in document.getDocumentElement()!!.iterator().filter { it is Element && (it.getTagName() == "class" || it.getTagName() == "trait") }) {
             val element = node as Element
             currentClassName = element.attribute("name")!!
             if (ignoredClasses != null && ignoredClasses.contains(currentClassName)) {
@@ -225,7 +224,7 @@ class JavaScriptStubGenerator(packageName: String) {
     }
 
     private fun processProperties(nodes: Iterator<Node>, indent: String, builder: StringBuilder) {
-        for (val node in nodes) {
+        for (node in nodes) {
             val element = node as Element
 
             var typeName = getType(element)
@@ -294,7 +293,7 @@ class JavaScriptStubGenerator(packageName: String) {
     }
 
     private fun processMethods(nodes: Iterator<Node>, indent: String, builder: StringBuilder) {
-        for (val node in nodes) {
+        for (node in nodes) {
             val element = node as Element
             val name = getName(element)
             if (name == "__constructor__") {
@@ -304,7 +303,7 @@ class JavaScriptStubGenerator(packageName: String) {
             val parameters = element.iterator().filter { checkElement(it, "param") }.toList()
             var multiTypeParameterName: String? = null
             var multiTypeParameterTypes: Array<String>? = null
-            for (val parameter in parameters) {
+            for (parameter in parameters) {
                 val typeName = (parameter as Element).attribute("type")
                 if (typeName == null) {
                     throw RuntimeException("type attribute missed for $currentClassName.$name")
@@ -322,7 +321,7 @@ class JavaScriptStubGenerator(packageName: String) {
             do {
                 builder.append("\n${indent}public fun ").append(name).append('(')
                 var first = true
-                for (val parameterNode in parameters) {
+                for (parameterNode in parameters) {
                     if (first) {
                         first = false
                     }
