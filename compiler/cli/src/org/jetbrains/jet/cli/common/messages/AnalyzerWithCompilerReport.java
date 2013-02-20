@@ -196,7 +196,7 @@ public final class AnalyzerWithCompilerReport {
             return hasErrors;
         }
 
-        private <E extends PsiElement> void reportDiagnostic(E element, SimpleDiagnosticFactory<E> factory, String message) {
+        private <E extends PsiElement> void reportDiagnostic(E element, DiagnosticFactory0<E> factory, String message) {
             MyDiagnostic<?> diagnostic = new MyDiagnostic<E>(element, factory, message);
             AnalyzerWithCompilerReport.reportDiagnostic(diagnostic, collector);
             if (element.getTextRange().getStartOffset() == element.getContainingFile().getTextRange().getEndOffset()) {

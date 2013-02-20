@@ -134,7 +134,7 @@ public final class ModuleInfo implements ModuleConfiguration {
             @NotNull BindingTrace trace, @NotNull NamespaceDescriptor namespaceDescriptor, @NotNull WritableScope namespaceMemberScope
     ) {
         if (dependencies != null) {
-            FqName qualifiedName = namespaceDescriptor.getQualifiedName();
+            FqName qualifiedName = namespaceDescriptor.getFqName();
             for (ModuleInfo dependency : dependencies) {
                 NamespaceDescriptor namespaceDependency = dependency.bindingContext.get(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR,
                                                                                         qualifiedName);
