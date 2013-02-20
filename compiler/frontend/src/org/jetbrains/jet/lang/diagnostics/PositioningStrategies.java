@@ -28,6 +28,7 @@ import org.jetbrains.jet.lexer.JetKeywordToken;
 import org.jetbrains.jet.lexer.JetTokens;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class PositioningStrategies {
@@ -169,6 +170,40 @@ public class PositioningStrategies {
 
     public static final PositioningStrategy<JetModifierListOwner> VARIANCE_MODIFIER = modifierSetPosition(JetTokens.IN_KEYWORD,
                                                                                                           JetTokens.OUT_KEYWORD);
+    public static final PositioningStrategy<PsiElement> FOR_REDECLARATION = new PositioningStrategy<PsiElement>() {
+        @NotNull
+        @Override
+        public List<TextRange> mark(@NotNull PsiElement element) {
+            if (element instanceof JetNamedDeclaration) {
+                PsiElement nameIdentifier = ((JetNamedDeclaration) element).getNameIdentifier();
+                if (nameIdentifier != null) {
+                    return markElement(nameIdentifier);
+                }
+            }
+            else if (element instanceof JetFile) {
+                JetFile file = (JetFile) element;
+                PsiElement nameIdentifier = file.getNamespaceHeader().getNameIdentifier();
+                if (nameIdentifier != null) {
+                    return markElement(nameIdentifier);
+                }
+            }
+            return markElement(element);
+        }
+    };
+    public static final PositioningStrategy<JetReferenceExpression> FOR_UNRESOLVED_REFERENCE =
+            new PositioningStrategy<JetReferenceExpression>() {
+                @NotNull
+                @Override
+                public List<TextRange> mark(@NotNull JetReferenceExpression element) {
+                    if (element instanceof JetArrayAccessExpression) {
+                        List<TextRange> ranges = ((JetArrayAccessExpression) element).getBracketRanges();
+                        if (!ranges.isEmpty()) {
+                            return ranges;
+                        }
+                    }
+                    return Collections.singletonList(element.getTextRange());
+                }
+            };
 
     public static PositioningStrategy<JetModifierListOwner> modifierSetPosition(final JetKeywordToken... tokens) {
         return new PositioningStrategy<JetModifierListOwner>() {

@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
+import org.jetbrains.jet.lang.descriptors.impl.*;
 import org.jetbrains.jet.lang.diagnostics.DiagnosticFactory1;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
@@ -244,10 +245,10 @@ public class DescriptorResolver {
 
     @NotNull
     public SimpleFunctionDescriptor resolveFunctionDescriptor(
-            DeclarationDescriptor containingDescriptor,
-            final JetScope scope,
-            final JetNamedFunction function,
-            final BindingTrace trace
+            @NotNull DeclarationDescriptor containingDescriptor,
+            @NotNull final JetScope scope,
+            @NotNull final JetNamedFunction function,
+            @NotNull final BindingTrace trace
     ) {
         final SimpleFunctionDescriptorImpl functionDescriptor = new SimpleFunctionDescriptorImpl(
                 containingDescriptor,
@@ -295,7 +296,8 @@ public class DescriptorResolver {
                             @Override
                             protected JetType compute() {
                                 //JetFlowInformationProvider flowInformationProvider = computeFlowData(function, bodyExpression);
-                                return expressionTypingServices.inferFunctionReturnType(scope, function, functionDescriptor, trace);
+                                JetType type = expressionTypingServices.inferFunctionReturnType(scope, function, functionDescriptor, trace);
+                                return transformAnonymousTypeIfNeeded(functionDescriptor, function, type, trace);
                             }
                         });
             }
@@ -614,7 +616,7 @@ public class DescriptorResolver {
                     trace.record(BindingContext.REFERENCE_TARGET, subjectTypeParameterName, classifier);
                 }
                 else {
-                    trace.report(UNRESOLVED_REFERENCE.on(subjectTypeParameterName));
+                    trace.report(UNRESOLVED_REFERENCE.on(subjectTypeParameterName, subjectTypeParameterName));
                 }
             }
             else {
@@ -735,7 +737,7 @@ public class DescriptorResolver {
             );
 
             JetType type =
-                    getVariableType(scope, variable, dataFlowInfo, false, trace); // For a local variable the type must not be deferred
+                    getVariableType(propertyDescriptor, scope, variable, dataFlowInfo, false, trace); // For a local variable the type must not be deferred
 
             ReceiverParameterDescriptor receiverParameter = ((ScriptDescriptor) containingDeclaration).getThisAsReceiverParameter();
             propertyDescriptor.setType(type, Collections.<TypeParameterDescriptor>emptyList(), receiverParameter, (JetType) null);
@@ -747,7 +749,7 @@ public class DescriptorResolver {
                     resolveLocalVariableDescriptorWithType(containingDeclaration, variable, null, trace);
 
             JetType type =
-                    getVariableType(scope, variable, dataFlowInfo, false, trace); // For a local variable the type must not be deferred
+                    getVariableType(variableDescriptor, scope, variable, dataFlowInfo, false, trace); // For a local variable the type must not be deferred
             variableDescriptor.setOutType(type);
             return variableDescriptor;
         }
@@ -947,7 +949,7 @@ public class DescriptorResolver {
         JetScope propertyScope = getPropertyDeclarationInnerScope(propertyDescriptor, scope, typeParameterDescriptors,
                                                                   NO_RECEIVER_PARAMETER, trace);
 
-        JetType type = getVariableType(propertyScope, property, DataFlowInfo.EMPTY, true, trace);
+        JetType type = getVariableType(propertyDescriptor, propertyScope, property, DataFlowInfo.EMPTY, true, trace);
 
         propertyDescriptor.setType(type, typeParameterDescriptors, getExpectedThisObjectIfNeeded(containingDeclaration),
                                    receiverDescriptor);
@@ -979,6 +981,7 @@ public class DescriptorResolver {
 
     @NotNull
     private JetType getVariableType(
+            @NotNull final VariableDescriptor variableDescriptor,
             @NotNull final JetScope scope,
             @NotNull final JetVariableDeclaration variable,
             @NotNull final DataFlowInfo dataFlowInfo,
@@ -996,23 +999,64 @@ public class DescriptorResolver {
                 return ErrorUtils.createErrorType("No type, no body");
             }
             else {
-                RecursionIntolerantLazyValue<JetType> lazyValue = new RecursionIntolerantLazyValueWithDefault<JetType>(ErrorUtils.createErrorType("Recursive dependency")) {
-                    @Override
-                    protected JetType compute() {
-                        return expressionTypingServices.safeGetType(scope, initializer, TypeUtils.NO_EXPECTED_TYPE, dataFlowInfo, trace);
-                    }
-                };
                 if (notLocal) {
-                    return DeferredType.create(trace, lazyValue);
+                    return DeferredType.create(trace, new RecursionIntolerantLazyValueWithDefault<JetType>(ErrorUtils.createErrorType("Recursive dependency")) {
+                        @Override
+                        protected JetType compute() {
+                            JetType type = resolveInitializerType(scope, initializer, dataFlowInfo, trace);
+
+                            return transformAnonymousTypeIfNeeded(variableDescriptor, variable, type, trace);
+                        }
+                    });
                 }
                 else {
-                    return lazyValue.get();
+                    return resolveInitializerType(scope, initializer, dataFlowInfo, trace);
                 }
             }
         }
         else {
             return typeResolver.resolveType(scope, propertyTypeRef, trace, true);
         }
+    }
+
+    @Nullable
+    private JetType transformAnonymousTypeIfNeeded(
+            @NotNull DeclarationDescriptorWithVisibility descriptor,
+            @NotNull JetNamedDeclaration declaration,
+            @NotNull JetType type,
+            @NotNull final BindingTrace trace
+    ) {
+        ClassifierDescriptor classifierDescriptor = type.getConstructor().getDeclarationDescriptor();
+        boolean isAnonymous = classifierDescriptor != null && classifierDescriptor.getName().isSpecial() && !ErrorUtils.isErrorType(type);
+        if (!isAnonymous) {
+            return type;
+        }
+
+        boolean definedInClass = DescriptorUtils.getParentOfType(descriptor, ClassDescriptor.class) != null;
+        boolean isLocal = descriptor.getContainingDeclaration() instanceof CallableDescriptor;
+        Visibility visibility = descriptor.getVisibility();
+        boolean transformNeeded = !isLocal && !visibility.isPublicAPI()
+                                  && !(definedInClass && Visibilities.PRIVATE.equals(visibility));
+        if (transformNeeded) {
+            if (type.getConstructor().getSupertypes().size() == 1) {
+                assert type.getArguments().isEmpty() : "Object expression couldn't have any type parameters!";
+                return type.getConstructor().getSupertypes().iterator().next();
+            }
+            else {
+                trace.report(AMBIGUOUS_ANONYMOUS_TYPE_INFERRED.on(declaration, type.getConstructor().getSupertypes()));
+            }
+        }
+        return type;
+    }
+
+    @NotNull
+    private JetType resolveInitializerType(
+            @NotNull JetScope scope,
+            @NotNull JetExpression initializer,
+            @NotNull final DataFlowInfo dataFlowInfo,
+            @NotNull BindingTrace trace
+    ) {
+        return expressionTypingServices.safeGetType(scope, initializer, TypeUtils.NO_EXPECTED_TYPE, dataFlowInfo, trace);
     }
 
     @Nullable

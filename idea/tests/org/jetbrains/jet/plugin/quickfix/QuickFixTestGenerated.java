@@ -403,6 +403,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/quickfix/modifiers"), Pattern.compile("^before(\\w+)\\.kt$"), true);
         }
         
+        @TestMetadata("beforeCannotMakeClassAnnotation.kt")
+        public void testCannotMakeClassAnnotation() throws Exception {
+            doTest("idea/testData/quickfix/modifiers/beforeCannotMakeClassAnnotation.kt");
+        }
+        
         @TestMetadata("beforeFinalTrait.kt")
         public void testFinalTrait() throws Exception {
             doTest("idea/testData/quickfix/modifiers/beforeFinalTrait.kt");
@@ -416,6 +421,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
         @TestMetadata("beforeIllegalEnumAnnotation2.kt")
         public void testIllegalEnumAnnotation2() throws Exception {
             doTest("idea/testData/quickfix/modifiers/beforeIllegalEnumAnnotation2.kt");
+        }
+        
+        @TestMetadata("beforeNotAnAnnotationClass.kt")
+        public void testNotAnAnnotationClass() throws Exception {
+            doTest("idea/testData/quickfix/modifiers/beforeNotAnAnnotationClass.kt");
         }
         
         @TestMetadata("beforeOpenMemberInFinalClass1.kt")
@@ -551,6 +561,7 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
     }
     
     @TestMetadata("idea/testData/quickfix/nullables")
+    @InnerTestClasses({Nullables.UnsafeInfixCall.class})
     public static class Nullables extends AbstractQuickFixTest {
         public void testAllFilesPresentInNullables() throws Exception {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/quickfix/nullables"), Pattern.compile("^before(\\w+)\\.kt$"), true);
@@ -571,6 +582,25 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             doTest("idea/testData/quickfix/nullables/beforeRemoveSupertypeNullable2.kt");
         }
         
+        @TestMetadata("idea/testData/quickfix/nullables/unsafeInfixCall")
+        public static class UnsafeInfixCall extends AbstractQuickFixTest {
+            public void testAllFilesPresentInUnsafeInfixCall() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/quickfix/nullables/unsafeInfixCall"), Pattern.compile("^before(\\w+)\\.kt$"), true);
+            }
+            
+            @TestMetadata("beforeUnsafeInfixCall.kt")
+            public void testUnsafeInfixCall() throws Exception {
+                doTest("idea/testData/quickfix/nullables/unsafeInfixCall/beforeUnsafeInfixCall.kt");
+            }
+            
+        }
+        
+        public static Test innerSuite() {
+            TestSuite suite = new TestSuite("Nullables");
+            suite.addTestSuite(Nullables.class);
+            suite.addTestSuite(UnsafeInfixCall.class);
+            return suite;
+        }
     }
     
     @TestMetadata("idea/testData/quickfix/override")
@@ -726,6 +756,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/quickfix/uselessImports"), Pattern.compile("^before(\\w+)\\.kt$"), true);
         }
         
+        @TestMetadata("beforeRemoveUselessHiddenImport.kt")
+        public void testRemoveUselessHiddenImport() throws Exception {
+            doTest("idea/testData/quickfix/uselessImports/beforeRemoveUselessHiddenImport.kt");
+        }
+        
         @TestMetadata("beforeRemoveUselessImport.kt")
         public void testRemoveUselessImport() throws Exception {
             doTest("idea/testData/quickfix/uselessImports/beforeRemoveUselessImport.kt");
@@ -734,7 +769,7 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
     }
     
     @TestMetadata("idea/testData/quickfix/variables")
-    @InnerTestClasses({Variables.ChangeMutability.class, Variables.ChangeToBackingField.class, Variables.ChangeToFunctionInvocation.class})
+    @InnerTestClasses({Variables.ChangeMutability.class, Variables.ChangeToBackingField.class, Variables.ChangeToFunctionInvocation.class, Variables.ChangeToPropertyName.class})
     public static class Variables extends AbstractQuickFixTest {
         public void testAllFilesPresentInVariables() throws Exception {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/quickfix/variables"), Pattern.compile("^before(\\w+)\\.kt$"), true);
@@ -804,12 +839,46 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             
         }
         
+        @TestMetadata("idea/testData/quickfix/variables/changeToPropertyName")
+        public static class ChangeToPropertyName extends AbstractQuickFixTest {
+            @TestMetadata("beforeAbstractProperty.kt")
+            public void testAbstractProperty() throws Exception {
+                doTest("idea/testData/quickfix/variables/changeToPropertyName/beforeAbstractProperty.kt");
+            }
+            
+            @TestMetadata("beforeAbstractPropertyThis.kt")
+            public void testAbstractPropertyThis() throws Exception {
+                doTest("idea/testData/quickfix/variables/changeToPropertyName/beforeAbstractPropertyThis.kt");
+            }
+            
+            public void testAllFilesPresentInChangeToPropertyName() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/quickfix/variables/changeToPropertyName"), Pattern.compile("^before(\\w+)\\.kt$"), true);
+            }
+            
+            @TestMetadata("beforeCustomAccessors.kt")
+            public void testCustomAccessors() throws Exception {
+                doTest("idea/testData/quickfix/variables/changeToPropertyName/beforeCustomAccessors.kt");
+            }
+            
+            @TestMetadata("beforeInaccessibleBackingField.kt")
+            public void testInaccessibleBackingField() throws Exception {
+                doTest("idea/testData/quickfix/variables/changeToPropertyName/beforeInaccessibleBackingField.kt");
+            }
+            
+            @TestMetadata("beforeInaccessibleBackingFieldQualified.kt")
+            public void testInaccessibleBackingFieldQualified() throws Exception {
+                doTest("idea/testData/quickfix/variables/changeToPropertyName/beforeInaccessibleBackingFieldQualified.kt");
+            }
+            
+        }
+        
         public static Test innerSuite() {
             TestSuite suite = new TestSuite("Variables");
             suite.addTestSuite(Variables.class);
             suite.addTestSuite(ChangeMutability.class);
             suite.addTestSuite(ChangeToBackingField.class);
             suite.addTestSuite(ChangeToFunctionInvocation.class);
+            suite.addTestSuite(ChangeToPropertyName.class);
             return suite;
         }
     }
@@ -851,7 +920,7 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
         suite.addTestSuite(Expressions.class);
         suite.addTestSuite(Migration.class);
         suite.addTest(Modifiers.innerSuite());
-        suite.addTestSuite(Nullables.class);
+        suite.addTest(Nullables.innerSuite());
         suite.addTestSuite(Override.class);
         suite.addTestSuite(TypeAddition.class);
         suite.addTestSuite(TypeImports.class);

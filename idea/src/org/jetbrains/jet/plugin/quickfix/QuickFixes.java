@@ -119,10 +119,17 @@ public class QuickFixes {
         factories.put(INITIALIZATION_USING_BACKING_FIELD_CUSTOM_SETTER, changeToBackingFieldFactory);
         factories.put(INITIALIZATION_USING_BACKING_FIELD_OPEN_SETTER, changeToBackingFieldFactory);
 
+        JetIntentionActionFactory changeToPropertyNameFactory = ChangeToPropertyNameFix.createFactory();
+        factories.put(NO_BACKING_FIELD_ABSTRACT_PROPERTY, changeToPropertyNameFactory);
+        factories.put(NO_BACKING_FIELD_CUSTOM_ACCESSORS, changeToPropertyNameFactory);
+        factories.put(INACCESSIBLE_BACKING_FIELD, changeToPropertyNameFactory);
+
         JetIntentionActionFactory unresolvedReferenceFactory = ImportClassAndFunFix.createFactory();
         factories.put(UNRESOLVED_REFERENCE, unresolvedReferenceFactory);
 
-        factories.put(USELESS_SIMPLE_IMPORT, RemoveImportFix.createFactory());
+        JetIntentionActionFactory removeImportFixFactory = RemoveImportFix.createFactory();
+        factories.put(USELESS_SIMPLE_IMPORT, removeImportFixFactory);
+        factories.put(USELESS_HIDDEN_IMPORT, removeImportFixFactory);
 
         factories.put(SUPERTYPE_NOT_INITIALIZED_DEFAULT, ChangeToConstructorInvocationFix.createFactory());
         factories.put(FUNCTION_CALL_EXPECTED, ChangeToFunctionInvocationFix.createFactory());
@@ -151,6 +158,7 @@ public class QuickFixes {
 
         actions.put(UNSAFE_CALL, ExclExclCallFix.introduceExclExclCall());
         actions.put(UNNECESSARY_NOT_NULL_ASSERTION, ExclExclCallFix.removeExclExclCall());
+        factories.put(UNSAFE_INFIX_CALL, ReplaceInfixCallFix.createFactory());
 
         JetIntentionActionFactory removeProtectedModifierFactory = RemoveModifierFix.createRemoveModifierFromListOwnerFactory(PROTECTED_KEYWORD);
         factories.put(PACKAGE_MEMBER_CANNOT_BE_PROTECTED, removeProtectedModifierFactory);
@@ -171,5 +179,7 @@ public class QuickFixes {
 
         factories.put(OPEN_MODIFIER_IN_ENUM, RemoveModifierFix.createRemoveModifierFromListOwnerFactory(OPEN_KEYWORD));
         factories.put(ILLEGAL_ENUM_ANNOTATION, RemoveModifierFix.createRemoveModifierFromListOwnerFactory(ENUM_KEYWORD));
+
+        factories.put(NOT_AN_ANNOTATION_CLASS, MakeClassAnAnnotationClassFix.createFactory());
     }
 }

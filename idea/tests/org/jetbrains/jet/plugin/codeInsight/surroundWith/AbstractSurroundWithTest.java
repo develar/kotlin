@@ -17,9 +17,21 @@
 package org.jetbrains.jet.plugin.codeInsight.surroundWith;
 
 import com.intellij.codeInsight.generation.surroundWith.SurroundWithHandler;
+import com.intellij.lang.LanguageSurrounders;
+import com.intellij.lang.surroundWith.SurroundDescriptor;
 import com.intellij.lang.surroundWith.Surrounder;
+import com.intellij.openapi.editor.SelectionModel;
+import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.psi.PsiElement;
 import com.intellij.testFramework.LightCodeInsightTestCase;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.InTextDirectivesUtils;
+import org.jetbrains.jet.plugin.codeInsight.surroundWith.expression.*;
+import org.jetbrains.jet.plugin.codeInsight.surroundWith.statement.*;
+
+import java.io.File;
+import java.util.List;
 
 public abstract class AbstractSurroundWithTest extends LightCodeInsightTestCase {
 
@@ -35,10 +47,79 @@ public abstract class AbstractSurroundWithTest extends LightCodeInsightTestCase 
         doTest(path, new KotlinNotSurrounder());
     }
 
-    private void doTest(String path, Surrounder surrounder) throws Exception{
+    public void doTestWithParenthesesSurrounder(String path) throws Exception {
+        doTest(path, new KotlinParenthesesSurrounder());
+    }
+
+    public void doTestWithStringTemplateSurrounder(String path) throws Exception {
+        doTest(path, new KotlinStringTemplateSurrounder());
+    }
+
+    public void doTestWithWhenSurrounder(String path) throws Exception {
+        doTest(path, new KotlinWhenSurrounder());
+    }
+
+    public void doTestWithTryCatchSurrounder(String path) throws Exception {
+        doTest(path, new KotlinTryCatchSurrounder());
+    }
+
+    public void doTestWithTryCatchFinallySurrounder(String path) throws Exception {
+        doTest(path, new KotlinTryCatchFinallySurrounder());
+    }
+
+    public void doTestWithTryFinallySurrounder(String path) throws Exception {
+        doTest(path, new KotlinTryFinallySurrounder());
+    }
+
+    public void doTestWithFunctionLiteralSurrounder(String path) throws Exception {
+        doTest(path, new KotlinFunctionLiteralSurrounder());
+    }
+
+    private void doTest(String path, Surrounder surrounder) throws Exception {
         configureByFile(path);
+
+        String fileText = FileUtil.loadFile(new File(path));
+        String isApplicableString = InTextDirectivesUtils.findStringWithPrefix("// IS_APPLICABLE: ", fileText);
+
+        if (isApplicableString != null) {
+            boolean isApplicableExpected = toString().equals("true");
+            PsiElement[] elementsToSurround = getElementsToSurround(surrounder);
+            assert elementsToSurround != null : "Couldn't find elements to surround";
+            assert isApplicableExpected == surrounder.isApplicable(elementsToSurround)
+                    : "isApplicable() for " + surrounder.getClass() + " should return " + isApplicableExpected;
+            if (isApplicableExpected) {
+                invokeSurroundAndCheck(path, surrounder);
+            }
+        }
+        else {
+            invokeSurroundAndCheck(path, surrounder);
+        }
+    }
+
+    private void invokeSurroundAndCheck(@NotNull String path, @NotNull Surrounder surrounder) {
         SurroundWithHandler.invoke(getProject(), getEditor(), getFile(), surrounder);
         checkResultByFile(path + ".after");
+    }
+
+    @Nullable
+    private PsiElement[] getElementsToSurround(@NotNull Surrounder surrounder) {
+        List<SurroundDescriptor> surroundDescriptors =
+                LanguageSurrounders.INSTANCE.allForLanguage(getFile().getViewProvider().getBaseLanguage());
+
+        String surrounderDescription = surrounder.getTemplateDescription();
+        for (SurroundDescriptor descriptor : surroundDescriptors) {
+            Surrounder[] surrounders = descriptor.getSurrounders();
+            for (Surrounder surrounderInDescriptor : surrounders) {
+                if (surrounderInDescriptor.getTemplateDescription().equals(surrounderDescription)) {
+                    SelectionModel selection = getEditor().getSelectionModel();
+                    PsiElement[] elements = descriptor.getElementsToSurround(
+                            getFile(), selection.getSelectionStart(), selection.getSelectionEnd());
+                    return elements;
+                }
+            }
+        }
+
+        return null;
     }
 
     @NotNull

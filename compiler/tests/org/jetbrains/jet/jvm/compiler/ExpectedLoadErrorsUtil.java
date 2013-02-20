@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.jvm.compiler.annotation.ExpectLoadError;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
+import org.jetbrains.jet.lang.descriptors.impl.DeclarationDescriptorVisitorEmptyBodies;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
@@ -35,7 +36,6 @@ import static com.intellij.testFramework.UsefulTestCase.assertSameElements;
 
 public class ExpectedLoadErrorsUtil {
     public static final String ANNOTATION_CLASS_NAME = ExpectLoadError.class.getName();
-    public static final File ANNOTATION_SOURCE_FILE = new File("compiler/tests/" + ANNOTATION_CLASS_NAME.replace('.', '/') + ".java");
 
     public static void checkForLoadErrors(
             @NotNull NamespaceDescriptor namespaceFromJava,

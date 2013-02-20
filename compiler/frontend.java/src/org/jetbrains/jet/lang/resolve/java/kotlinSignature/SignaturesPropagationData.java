@@ -31,6 +31,8 @@ import com.intellij.util.Function;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.impl.TypeParameterDescriptorImpl;
+import org.jetbrains.jet.lang.descriptors.impl.ValueParameterDescriptorImpl;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.java.*;
@@ -57,6 +59,7 @@ public class SignaturesPropagationData {
     private final List<String> signatureErrors = Lists.newArrayList();
     private final List<FunctionDescriptor> superFunctions;
     private final Map<TypeParameterDescriptor, TypeParameterDescriptorImpl> autoTypeParameterToModified;
+    final ClassDescriptor containingClass;
 
     public SignaturesPropagationData(
             @NotNull ClassDescriptor containingClass,
@@ -66,6 +69,7 @@ public class SignaturesPropagationData {
             @NotNull PsiMethodWrapper method,
             @NotNull BindingTrace trace
     ) {
+        this.containingClass = containingClass;
         superFunctions = getSuperFunctionsForMethod(method, trace, containingClass);
 
         autoTypeParameterToModified = SignaturesUtil.recreateTypeParametersAndReturnMapping(autoTypeParameters);
@@ -95,7 +99,7 @@ public class SignaturesPropagationData {
         return superFunctions;
     }
 
-    private void reportError(String error) {
+    void reportError(String error) {
         signatureErrors.add(error);
     }
 
@@ -213,8 +217,9 @@ public class SignaturesPropagationData {
             assert classFqName != null;
 
             if (!JavaToKotlinClassMap.getInstance().mapPlatformClass(new FqName(classFqName)).isEmpty()) {
-                List<FunctionDescriptor> funsFromMap = JavaToKotlinMethodMap.INSTANCE.getFunctions(superMethod, containingClass);
-                superFunctions.addAll(funsFromMap);
+                for (FunctionDescriptor superFun : JavaToKotlinMethodMap.INSTANCE.getFunctions(superMethod, containingClass)) {
+                    superFunctions.add(substituteSuperFunction(superclassToSupertype, superFun));
+                }
                 continue;
             }
 
@@ -227,17 +232,7 @@ public class SignaturesPropagationData {
 
             assert superFun instanceof FunctionDescriptor : superFun.getClass().getName();
 
-            DeclarationDescriptor superFunContainer = superFun.getContainingDeclaration();
-            assert superFunContainer instanceof ClassDescriptor: superFunContainer;
-
-            JetType supertype = superclassToSupertype.get(superFunContainer);
-            assert supertype != null : "Couldn't find super type for super function: " + superFun;
-            TypeSubstitutor supertypeSubstitutor = TypeSubstitutor.create(supertype);
-
-            FunctionDescriptor substitutedSuperFun = ((FunctionDescriptor) superFun).substitute(supertypeSubstitutor);
-            assert substitutedSuperFun != null;
-
-            superFunctions.add(substitutedSuperFun);
+            superFunctions.add(substituteSuperFunction(superclassToSupertype, (FunctionDescriptor) superFun));
         }
 
         // sorting for diagnostic stability
@@ -327,11 +322,14 @@ public class SignaturesPropagationData {
             resultScope = autoType.getMemberScope();
         }
 
-        return new JetTypeImpl(autoType.getAnnotations(),
-                               resultClassifier.getTypeConstructor(),
-                               resultNullable,
-                               resultArguments,
-                               resultScope);
+        JetTypeImpl type = new JetTypeImpl(autoType.getAnnotations(),
+                                           resultClassifier.getTypeConstructor(),
+                                           resultNullable,
+                                           resultArguments,
+                                           resultScope);
+
+        PropagationHeuristics.checkArrayInReturnType(this, type, typesFromSuper);
+        return type;
     }
 
     @NotNull
@@ -348,7 +346,8 @@ public class SignaturesPropagationData {
             return autoArguments;
         }
 
-        List<List<TypeProjectionAndVariance>> typeArgumentsFromSuper = calculateTypeArgumentsFromSuper((ClassDescriptor) classifier, typesFromSuper);
+        List<List<TypeProjectionAndVariance>> typeArgumentsFromSuper = calculateTypeArgumentsFromSuper((ClassDescriptor) classifier,
+                                                                                                       typesFromSuper);
 
         // Modify type arguments using info from typesFromSuper
         List<TypeProjection> resultArguments = Lists.newArrayList();
@@ -572,7 +571,8 @@ public class SignaturesPropagationData {
             }
         }
 
-        return classifier;
+        ClassifierDescriptor fixed = PropagationHeuristics.tryToFixOverridingTWithRawType(this, typesFromSuper);
+        return fixed != null ? fixed : classifier;
     }
 
     private static Map<ClassDescriptor, JetType> getSuperclassToSupertypeMap(ClassDescriptor containingClass) {
@@ -583,6 +583,23 @@ public class SignaturesPropagationData {
             superclassToSupertype.put((ClassDescriptor) superclass, supertype);
         }
         return superclassToSupertype;
+    }
+
+    @NotNull
+    private static FunctionDescriptor substituteSuperFunction(
+            @NotNull Map<ClassDescriptor, JetType> superclassToSupertype,
+            @NotNull FunctionDescriptor superFun
+    ) {
+        DeclarationDescriptor superFunContainer = superFun.getContainingDeclaration();
+        assert superFunContainer instanceof ClassDescriptor: superFunContainer;
+
+        JetType supertype = superclassToSupertype.get(superFunContainer);
+        assert supertype != null : "Couldn't find super type for super function: " + superFun;
+        TypeSubstitutor supertypeSubstitutor = TypeSubstitutor.create(supertype);
+
+        FunctionDescriptor substitutedSuperFun = superFun.substitute(supertypeSubstitutor);
+        assert substitutedSuperFun != null;
+        return substitutedSuperFun;
     }
 
     private static boolean isArrayType(@NotNull JetType type) {
@@ -630,7 +647,7 @@ public class SignaturesPropagationData {
         }
     }
 
-    private static class TypeAndVariance {
+    static class TypeAndVariance {
         public final JetType type;
         public final Variance varianceOfPosition;
 

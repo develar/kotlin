@@ -21,7 +21,9 @@ import com.intellij.psi.stubs.StubElement;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.stubs.*;
 import org.jetbrains.jet.lang.psi.stubs.elements.StubIndexService;
+import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.name.FqName;
+import org.jetbrains.jet.lang.resolve.name.Name;
 
 public class StubIndexServiceImpl implements StubIndexService {
 
@@ -46,9 +48,9 @@ public class StubIndexServiceImpl implements StubIndexService {
             sink.occurrence(JetShortClassNameIndex.getInstance().getKey(), name);
         }
         
-        String fqn = stub.getQualifiedName();
+        FqName fqn = stub.getFqName();
         if (fqn != null) {
-            sink.occurrence(JetFullClassNameIndex.getInstance().getKey(), fqn);
+            sink.occurrence(JetFullClassNameIndex.getInstance().getKey(), fqn.getFqName());
         }
 
         for (String superName : stub.getSuperNames()) {
@@ -61,7 +63,22 @@ public class StubIndexServiceImpl implements StubIndexService {
     @Override
     public void indexObject(PsiJetObjectStub stub, IndexSink sink) {
         String name = stub.getName();
-        assert name != null;
+        FqName fqName = stub.getFqName();
+
+        if (stub.isClassObject()) {
+            StubElement parentStub = stub.getParentStub();
+            assert parentStub instanceof PsiJetStubWithFqName<?> : "Something but a class/object is a parent to class object stub: " + parentStub;
+
+            name = JvmAbi.CLASS_OBJECT_CLASS_NAME;
+
+            FqName parentFqName = ((PsiJetStubWithFqName<?>) parentStub).getFqName();
+            if (parentFqName != null) {
+                fqName = parentFqName.child(Name.identifier(name));
+            }
+        }
+        else {
+            assert name != null;
+        }
 
         sink.occurrence(JetShortClassNameIndex.getInstance().getKey(), name);
 
@@ -69,7 +86,6 @@ public class StubIndexServiceImpl implements StubIndexService {
             sink.occurrence(JetTopLevelShortObjectNameIndex.getInstance().getKey(), name);
         }
 
-        FqName fqName = stub.getFQName();
         if (fqName != null) {
             sink.occurrence(JetFullClassNameIndex.getInstance().getKey(), fqName.getFqName());
         }

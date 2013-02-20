@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.jet.jvm.compiler.LoadDescriptorUtil.compileJavaAndLoadTestNamespaceAndBindingContextFromBinary;
+import static org.jetbrains.jet.jvm.compiler.LoadDescriptorUtil.loadTestNamespaceAndBindingContextFromJavaRoot;
 import static org.jetbrains.jet.test.util.NamespaceComparator.compareNamespaceWithFile;
 
 /*
@@ -71,13 +72,21 @@ public final class LoadJavaCustomTest extends KotlinTestWithEnvironment {
                 return new File(s);
             }
         });
-        files.add(ExpectedLoadErrorsUtil.ANNOTATION_SOURCE_FILE);
         File expectedFile = new File(expectedFileName);
         File tmpDir = JetTestUtils.tmpDir(expectedFile.getName());
 
         Pair<NamespaceDescriptor, BindingContext> javaNamespaceAndBindingContext
                 = compileJavaAndLoadTestNamespaceAndBindingContextFromBinary(files, tmpDir, getTestRootDisposable(),
                                                                              ConfigurationKind.JDK_ONLY);
+
+        AbstractLoadJavaTest.checkJavaNamespace(expectedFile, javaNamespaceAndBindingContext);
+    }
+
+    private void doTestNoCompile(@NotNull String expectedFileName, @NotNull String javaRoot) throws Exception {
+        File expectedFile = new File(expectedFileName);
+
+        Pair<NamespaceDescriptor, BindingContext> javaNamespaceAndBindingContext
+                = loadTestNamespaceAndBindingContextFromJavaRoot(new File(javaRoot), getTestRootDisposable(), ConfigurationKind.JDK_ONLY);
 
         AbstractLoadJavaTest.checkJavaNamespace(expectedFile, javaNamespaceAndBindingContext);
     }
@@ -161,10 +170,21 @@ public final class LoadJavaCustomTest extends KotlinTestWithEnvironment {
                dir + "SubclassWithRawType.java");
     }
 
+    public void testArraysInSubtypes() throws Exception {
+        String dir = PATH + "/arraysInSubtypes/";
+        doTest(dir + "ArraysInSubtypes.txt",
+               dir + "ArraysInSubtypes.java");
+    }
+
     public void testMethodTypeParameterErased() throws Exception {
         String dir = PATH + "/methodTypeParameterErased/";
         doTest(dir + "MethodTypeParameterErased.txt",
                dir + "MethodTypeParameterErased.java");
+    }
+
+    public void testReturnNotSubtype() throws Exception {
+        String dir = PATH + "/returnNotSubtype/";
+        doTestNoCompile(dir + "ReturnNotSubtype.txt", dir);
     }
 
     public static class SubclassingKotlinInJavaTest extends KotlinTestWithEnvironmentManagement {

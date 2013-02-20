@@ -225,23 +225,18 @@ public class GenerateTests {
 
         generateTest(
                 "idea/tests/",
-                "SurroundWithIfTestGenerated",
+                "SurroundWithTestGenerated",
                 AbstractSurroundWithTest.class,
-                testModel("idea/testData/codeInsight/surroundWith/if", "doTestWithIfSurrounder")
-        );
-
-        generateTest(
-                "idea/tests/",
-                "SurroundWithIfElseTestGenerated",
-                AbstractSurroundWithTest.class,
-                testModel("idea/testData/codeInsight/surroundWith/ifElse", "doTestWithIfElseSurrounder")
-        );
-
-        generateTest(
-                "idea/tests/",
-                "SurroundWithNotTestGenerated",
-                AbstractSurroundWithTest.class,
-                testModel("idea/testData/codeInsight/surroundWith/not", "doTestWithNotSurrounder")
+                testModel("idea/testData/codeInsight/surroundWith/if", "doTestWithIfSurrounder"),
+                testModel("idea/testData/codeInsight/surroundWith/ifElse", "doTestWithIfElseSurrounder"),
+                testModel("idea/testData/codeInsight/surroundWith/not", "doTestWithNotSurrounder"),
+                testModel("idea/testData/codeInsight/surroundWith/parentheses", "doTestWithParenthesesSurrounder"),
+                testModel("idea/testData/codeInsight/surroundWith/stringTemplate", "doTestWithStringTemplateSurrounder"),
+                testModel("idea/testData/codeInsight/surroundWith/when", "doTestWithWhenSurrounder"),
+                testModel("idea/testData/codeInsight/surroundWith/tryCatch", "doTestWithTryCatchSurrounder"),
+                testModel("idea/testData/codeInsight/surroundWith/tryCatchFinally", "doTestWithTryCatchFinallySurrounder"),
+                testModel("idea/testData/codeInsight/surroundWith/tryFinally", "doTestWithTryFinallySurrounder"),
+                testModel("idea/testData/codeInsight/surroundWith/functionLiteral", "doTestWithFunctionLiteralSurrounder")
         );
     }
 

@@ -1252,9 +1252,9 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                 doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/ConstructorWithoutParams.kt");
             }
             
-            @TestMetadata("CustomVariance.kt")
-            public void testCustomVariance() throws Exception {
-                doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/CustomVariance.kt");
+            @TestMetadata("CustomProjectionKind.kt")
+            public void testCustomProjectionKind() throws Exception {
+                doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/CustomProjectionKind.kt");
             }
             
             @TestMetadata("MethodWithFunctionTypes.kt")
@@ -1568,6 +1568,11 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                         doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/propagation/parameter/NullableToNotNullKotlinSignature.kt");
                     }
                     
+                    @TestMetadata("OverrideWithErasedParameter.kt")
+                    public void testOverrideWithErasedParameter() throws Exception {
+                        doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/propagation/parameter/OverrideWithErasedParameter.kt");
+                    }
+                    
                     @TestMetadata("ReadOnlyToMutable.kt")
                     public void testReadOnlyToMutable() throws Exception {
                         doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/propagation/parameter/ReadOnlyToMutable.kt");
@@ -1666,6 +1671,11 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                         doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritNullabilitySameJavaType.kt");
                     }
                     
+                    @TestMetadata("InheritProjectionKind.kt")
+                    public void testInheritProjectionKind() throws Exception {
+                        doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritProjectionKind.kt");
+                    }
+                    
                     @TestMetadata("InheritReadOnlinessOfArgument.kt")
                     public void testInheritReadOnlinessOfArgument() throws Exception {
                         doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritReadOnlinessOfArgument.kt");
@@ -1679,11 +1689,6 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                     @TestMetadata("InheritReadOnlinessSubclass.kt")
                     public void testInheritReadOnlinessSubclass() throws Exception {
                         doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritReadOnlinessSubclass.kt");
-                    }
-                    
-                    @TestMetadata("InheritVariance.kt")
-                    public void testInheritVariance() throws Exception {
-                        doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/kotlinSignature/propagation/return/InheritVariance.kt");
                     }
                     
                     @TestMetadata("SameProjectionKind.kt")

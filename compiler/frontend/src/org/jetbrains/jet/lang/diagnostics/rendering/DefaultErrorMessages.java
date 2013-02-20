@@ -53,7 +53,7 @@ public class DefaultErrorMessages {
             }
         });
 
-        MAP.put(UNRESOLVED_REFERENCE, "Unresolved reference: {0}", TO_STRING);
+        MAP.put(UNRESOLVED_REFERENCE, "Unresolved reference: {0}", ELEMENT_TEXT);
 
         MAP.put(INVISIBLE_REFERENCE, "Cannot access ''{0}'': it is ''{1}'' in ''{2}''", NAME, TO_STRING, NAME);
         MAP.put(INVISIBLE_MEMBER, "Cannot access ''{0}'': it is ''{1}'' in ''{2}''", NAME, TO_STRING, NAME);
@@ -109,7 +109,7 @@ public class DefaultErrorMessages {
 
         MAP.put(MIXING_NAMED_AND_POSITIONED_ARGUMENTS, "Mixing named and positioned arguments in not allowed");
         MAP.put(ARGUMENT_PASSED_TWICE, "An argument is already passed for this parameter");
-        MAP.put(NAMED_PARAMETER_NOT_FOUND, "Cannot find a parameter with this name: {0}", TO_STRING);
+        MAP.put(NAMED_PARAMETER_NOT_FOUND, "Cannot find a parameter with this name: {0}", ELEMENT_TEXT);
         MAP.put(VARARG_OUTSIDE_PARENTHESES, "Passing value as a vararg is only allowed inside a parenthesized argument list");
         MAP.put(NON_VARARG_SPREAD, "The spread operator (*foo) may only be applied in a vararg position");
 
@@ -440,6 +440,8 @@ public class DefaultErrorMessages {
         MAP.put(DIFFERENT_NAMES_FOR_THE_SAME_PARAMETER_IN_SUPERTYPES,
                     "Names of the parameter #{1} conflict in the following members of supertypes: ''{0}''" +
                     "This may cause problems when calling this function with named arguments.", commaSeparated(TO_STRING), TO_STRING);
+
+        MAP.put(AMBIGUOUS_ANONYMOUS_TYPE_INFERRED, "Right-hand side has anonymous type. Please specify type explicitly", TO_STRING);
 
         MAP.setImmutable();
 

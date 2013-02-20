@@ -67,7 +67,7 @@ public final class LoadDescriptorUtil {
     )
             throws IOException {
         compileKotlinToDirAndGetAnalyzeExhaust(kotlinFile, outDir, disposable, configurationKind);
-        return loadTestNamespaceAndBindingContextFromBinaries(outDir, disposable, ConfigurationKind.JDK_ONLY).first;
+        return loadTestNamespaceAndBindingContextFromJavaRoot(outDir, disposable, ConfigurationKind.JDK_ONLY).first;
     }
 
     @NotNull
@@ -86,16 +86,19 @@ public final class LoadDescriptorUtil {
     }
 
     @NotNull
-    public static Pair<NamespaceDescriptor, BindingContext> loadTestNamespaceAndBindingContextFromBinaries(
-            @NotNull File outDir,
+    public static Pair<NamespaceDescriptor, BindingContext> loadTestNamespaceAndBindingContextFromJavaRoot(
+            @NotNull File javaRoot,
             @NotNull Disposable disposable,
             @NotNull ConfigurationKind configurationKind
     ) {
         Disposer.dispose(disposable);
 
         CompilerConfiguration configuration = JetTestUtils.compilerConfigurationForTests(
-                configurationKind, TestJdkKind.MOCK_JDK, JetTestUtils.getAnnotationsJar(), outDir,
-                ForTestCompileRuntime.runtimeJarForTests());
+                configurationKind, TestJdkKind.MOCK_JDK, JetTestUtils.getAnnotationsJar(),
+                javaRoot,
+                ForTestCompileRuntime.runtimeJarForTests(),
+                new File("compiler/tests") // for @ExpectLoadError annotation
+        );
         JetCoreEnvironment jetCoreEnvironment = new JetCoreEnvironment(disposable, configuration);
         InjectorForJavaSemanticServices injector = new InjectorForJavaSemanticServices(jetCoreEnvironment.getProject());
         JavaDescriptorResolver javaDescriptorResolver = injector.getJavaDescriptorResolver();
@@ -114,13 +117,14 @@ public final class LoadDescriptorUtil {
     )
             throws IOException {
         compileJavaWithAnnotationsJar(javaFiles, outDir);
-        return loadTestNamespaceAndBindingContextFromBinaries(outDir, disposable, configurationKind);
+        return loadTestNamespaceAndBindingContextFromJavaRoot(outDir, disposable, configurationKind);
     }
 
     private static void compileJavaWithAnnotationsJar(@NotNull Collection<File> javaFiles, @NotNull File outDir) throws IOException {
         String classPath = "out/production/runtime" + File.pathSeparator + JetTestUtils.getAnnotationsJar().getPath();
         JetTestUtils.compileJavaFiles(javaFiles, Arrays.asList(
                 "-classpath", classPath,
+                "-sourcepath", "compiler/tests", // for @ExpectLoadError annotation
                 "-d", outDir.getPath()
         ));
     }

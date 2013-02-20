@@ -47,6 +47,9 @@
       <applicationService serviceInterface="org.jetbrains.jet.lang.psi.stubs.elements.StubIndexService"
                           serviceImplementation="org.jetbrains.jet.plugin.stubindex.StubIndexServiceImpl" />
 
+      <applicationService serviceInterface="org.jetbrains.jet.OperationModeProvider"
+                          serviceImplementation="org.jetbrains.jet.plugin.IdeModeProvider" />
+
       <projectService serviceInterface="org.jetbrains.jet.lang.resolve.java.JetFilesProvider"
                       serviceImplementation="org.jetbrains.jet.plugin.project.PluginJetFilesProvider"/>
 
@@ -87,8 +90,8 @@
       <lang.findUsagesProvider language="jet" implementationClass="org.jetbrains.jet.plugin.findUsages.JetFindUsagesProvider"/>
       <importFilteringRule implementation="org.jetbrains.jet.plugin.findUsages.JetImportFilteringRule"/>
       <lang.refactoringSupport language="jet" implementationClass="org.jetbrains.jet.plugin.refactoring.JetRefactoringSupportProvider"/>
-      <lang.surroundDescriptor language="jet" implementationClass="org.jetbrains.jet.plugin.codeInsight.surroundWith.KotlinExpressionSurroundDescriptor"/>
-      <lang.surroundDescriptor language="jet" implementationClass="org.jetbrains.jet.plugin.codeInsight.surroundWith.KotlinStatementSurroundDescriptor"/>
+      <lang.surroundDescriptor language="jet" implementationClass="org.jetbrains.jet.plugin.codeInsight.surroundWith.expression.KotlinExpressionSurroundDescriptor"/>
+      <lang.surroundDescriptor language="jet" implementationClass="org.jetbrains.jet.plugin.codeInsight.surroundWith.statement.KotlinStatementSurroundDescriptor"/>
       <quoteHandler fileType="Kotlin" className="org.jetbrains.jet.plugin.editor.KotlinQuoteHandler"/>
       <refactoring.moveHandler implementation="org.jetbrains.jet.plugin.refactoring.move.JetMoveFilesOrDirectoriesHandler"/>
       <refactoring.copyHandler implementation="org.jetbrains.jet.plugin.refactoring.copy.JetCopyClassHandler"/>

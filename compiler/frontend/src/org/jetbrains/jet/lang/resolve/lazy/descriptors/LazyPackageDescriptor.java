@@ -17,9 +17,9 @@
 package org.jetbrains.jet.lang.resolve.lazy.descriptors;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.AbstractNamespaceDescriptorImpl;
+import org.jetbrains.jet.lang.descriptors.impl.AbstractNamespaceDescriptorImpl;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.descriptors.NamespaceDescriptorParent;
+import org.jetbrains.jet.lang.descriptors.impl.NamespaceDescriptorParent;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.lazy.ForceResolveUtil;
@@ -61,7 +61,7 @@ public class LazyPackageDescriptor extends AbstractNamespaceDescriptorImpl imple
 
     @NotNull
     @Override
-    public FqName getQualifiedName() {
+    public FqName getFqName() {
         return DescriptorUtils.getFQName(this).toSafe();
     }
 

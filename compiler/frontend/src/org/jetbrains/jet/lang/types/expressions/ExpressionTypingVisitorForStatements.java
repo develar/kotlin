@@ -21,6 +21,7 @@ import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.impl.FunctionDescriptorUtil;
 import org.jetbrains.jet.lang.diagnostics.Errors;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
@@ -216,7 +217,7 @@ public class ExpressionTypingVisitorForStatements extends ExpressionTypingVisito
 
         if (leftType == null) {
             dataFlowInfo = facade.getTypeInfo(right, context.replaceDataFlowInfo(dataFlowInfo)).getDataFlowInfo();
-            context.trace.report(UNRESOLVED_REFERENCE.on(operationSign));
+            context.trace.report(UNRESOLVED_REFERENCE.on(operationSign, operationSign));
             temporaryBindingTrace.commit();
             return JetTypeInfo.create(null, dataFlowInfo);
         }
