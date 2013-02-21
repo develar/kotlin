@@ -127,19 +127,8 @@ public final class UsageTracker {
                 addCapturedMember(callableDescriptor);
             }
         }
-        else if (descriptor instanceof ClassDescriptor) {
-            if (trackedClassDescriptor == descriptor) {
-                used = true;
-            }
-            else if (parent != null) {
-                UsageTracker p = parent;
-                do {
-                    if (p.trackedClassDescriptor == descriptor) {
-                        break;
-                    }
-                }
-                while ((p = p.parent) != null);
-            }
+        else if (descriptor instanceof ClassDescriptor && trackedClassDescriptor == descriptor) {
+            used = true;
         }
     }
 
