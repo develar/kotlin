@@ -73,7 +73,19 @@ public class HashSet<E>(): AbstractCollection<E>(), MutableSet<E> {
 }
 
 library
-public open class HashMap<K, V>(): MutableMap<K, V> {
+public trait SortedSet<E> : Set<E> {
+}
+
+library
+public open class TreeSet<E>() : AbstractCollection<E>(), MutableSet<E>, SortedSet<E> {
+}
+
+library
+public open class LinkedHashSet<E>(): AbstractCollection<E>(), MutableSet<E> {
+}
+
+library
+public open class HashMap<K, V>(capacity: Int = 0): MutableMap<K, V> {
     override public fun size(): Int
     override public fun isEmpty(): Boolean
     override public fun get(key: Any?): V?

@@ -33,23 +33,24 @@ public class TestConfig extends Config {
      */
     @NotNull
     public static final List<String> STDLIB_FILE_NAMES = Arrays.asList(
-            "kotlin/Preconditions.kt",
-            "kotlin/Iterators.kt",
-            "kotlin/JUtil.kt",
-            "kotlin/Collections.kt",
-            "kotlin/Maps.kt",
-            "kotlin/Iterables.kt",
-            "kotlin/IterablesLazy.kt",
-            "kotlin/IterablesSpecial.kt",
-            "generated/ArraysFromIterables.kt",
-            "generated/ArraysFromIterablesLazy.kt",
-            "generated/ArraysFromCollections.kt",
-            "generated/IteratorsFromIterables.kt",
-            "kotlin/support/AbstractIterator.kt",
-            "kotlin/Standard.kt",
-            "kotlin/Strings.kt",
-            "kotlin/dom/Dom.kt",
-            "kotlin/test/Test.kt"
+            "/kotlin/Preconditions.kt",
+            "/kotlin/Iterators.kt",
+            "/kotlin/JUtil.kt",
+            "/kotlin/Arrays.kt",
+            "/kotlin/Lists.kt",
+            "/kotlin/Maps.kt",
+            "/kotlin/Exceptions.kt",
+            "/kotlin/IterablesSpecial.kt",
+            "/generated/_Arrays.kt",
+            "/generated/_Collections.kt",
+            "/generated/_Iterables.kt",
+            "/generated/_Iterators.kt",
+            "/generated/_IteratorsCommon.kt",
+            "/kotlin/support/AbstractIterator.kt",
+            "/kotlin/Standard.kt",
+            "/kotlin/Strings.kt",
+            "/kotlin/dom/Dom.kt",
+            "/kotlin/test/Test.kt"
     );
     /**
      * The location of the stdlib sources

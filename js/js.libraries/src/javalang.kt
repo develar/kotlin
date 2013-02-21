@@ -5,6 +5,7 @@ open public class Exception(message: jet.String? = null): Throwable() {
     public native val stack: jet.String
 }
 
+open public class RuntimeException(message: jet.String? = null) : Exception(message)
 public class IllegalArgumentException(message: jet.String? = null): Exception()
 public class IllegalStateException(message: jet.String? = null): Exception()
 public class UnsupportedOperationException(message: jet.String? = null): Exception()
