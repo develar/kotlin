@@ -301,7 +301,10 @@ public final class TopLevelFIF extends CompositeFIF {
             JetType keyType = callTranslator.getResolvedCall().getTypeArguments().values().iterator().next();
             Name keyTypeName = JsDescriptorUtils.getNameIfStandardType(keyType);
             String collectionClassName;
-            if (keyTypeName != null && (NamePredicate.PRIMITIVE_NUMBERS.apply(keyTypeName) || keyTypeName.getName().equals("String"))) {
+            if (keyTypeName != null &&
+                (NamePredicate.PRIMITIVE_NUMBERS.apply(keyTypeName) ||
+                 keyTypeName.getName().equals("String") ||
+                 PrimitiveType.BOOLEAN.getTypeName().equals(keyTypeName))) {
                 collectionClassName = isSet ? "PrimitiveHashSet" : "PrimitiveHashMap";
             }
             else {
