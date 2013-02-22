@@ -54,13 +54,10 @@ public final class FindPreviousVisitor extends JetTreeVisitor<JetExpression> {
         return null;
     }
 
-    //TODO: return value not used, wtf?
-    private boolean addElement(@NotNull JetElement element) {
+    private void addElement(@NotNull JetElement element) {
         if (element instanceof JetExpression) {
             nodesToBeGeneratedBefore.add((JetExpression) element);
-            return true;
         }
-        return false;
     }
 
     private void acceptChildrenThatAreBeforeTheDangerousNode(@NotNull JetElement element, JetExpression dangerousNode) {
