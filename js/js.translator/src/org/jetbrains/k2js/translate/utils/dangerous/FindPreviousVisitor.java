@@ -36,9 +36,7 @@ public final class FindPreviousVisitor extends JetTreeVisitor<JetExpression> {
         PsiElement last = rootNode.getParent();
         while (node != last) {
             hasDangerous.add(node);
-            PsiElement parent = node.getParent();
-            assert parent instanceof JetElement;
-            node = (JetElement)parent;
+            node = (JetElement)node.getParent();
         }
     }
 
