@@ -238,14 +238,6 @@
         }
         return -1;
     };
-    Kotlin.arrayLastIndexOf = function (a, o) {
-        for (var i = a.length - 1; i > -1; i--) {
-            if (Kotlin.equals(a[i], o)) {
-                return i;
-            }
-        }
-        return -1;
-    };
     Kotlin.arrayAddAll = function (a, collection) {
         var i, n;
         if (Array.isArray(collection)) {
