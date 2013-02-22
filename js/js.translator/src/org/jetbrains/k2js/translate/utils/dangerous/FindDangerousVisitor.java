@@ -21,72 +21,99 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.reference.InlinedCallExpressionTranslator;
 
+import java.util.Collections;
+import java.util.List;
+
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isStatement;
 
-public final class FindDangerousVisitor extends JetTreeVisitor<DangerousData> {
+/**
+ * This module uses a metaphor for naming.
+ * <p/>
+ * Dangerous are the nodes that can be expressions in Kotlin but can't be expressions in JavaScript.
+ * These are: when, if, inlined functions.
+ * The issue with them is that we have to translate them to a list of statements. And also all the expressions which must be computed before
+ * the dangerous expressions.
+ * RootNode is a node which contains such an expression. For example, it may be a statement expression belongs to.
+ */
+public final class FindDangerousVisitor extends JetTreeVisitor<TranslationContext> {
+    private JetExpression dangerousNode;
 
     @NotNull
-    private final TranslationContext context;
+    public static List<JetExpression> collect(@NotNull JetExpression expression, @NotNull TranslationContext context) {
+        if (cannotContainDangerousElements(expression)) {
+            return Collections.emptyList();
+        }
 
-    public FindDangerousVisitor(@NotNull TranslationContext context) {
-        this.context = context;
+        FindDangerousVisitor visitor = new FindDangerousVisitor();
+        expression.accept(visitor, context);
+        if (visitor.dangerousNode == null) {
+            return Collections.emptyList();
+        }
+
+        FindPreviousVisitor previousVisitor = new FindPreviousVisitor(expression, visitor.dangerousNode);
+        expression.accept(previousVisitor, visitor.dangerousNode);
+        return previousVisitor.nodesToBeGeneratedBefore;
+    }
+
+    private static boolean cannotContainDangerousElements(@NotNull JetElement element) {
+        return element instanceof JetBlockExpression;
     }
 
     @Override
-    public Void visitDeclaration(JetDeclaration dcl, DangerousData data) {
+    public Void visitDeclaration(JetDeclaration dcl, TranslationContext context) {
         return null;
     }
 
     @Override
-    public Void visitJetElement(JetElement element, DangerousData data) {
-        if (data.exists()) {
+    public Void visitJetElement(JetElement element, TranslationContext context) {
+        if (dangerousNode != null) {
             return null;
         }
-        return super.visitJetElement(element, data);
+        return super.visitJetElement(element, context);
     }
 
     @Override
-    public Void visitWhenExpression(JetWhenExpression expression, DangerousData data) {
-        if (expressionFound(expression, data)) {
+    public Void visitWhenExpression(JetWhenExpression expression, TranslationContext context) {
+        if (expressionFound(expression, context)) {
             return null;
         }
-        return super.visitWhenExpression(expression, data);
+        return super.visitWhenExpression(expression, context);
     }
 
     @Override
-    public Void visitIfExpression(JetIfExpression expression, DangerousData data) {
-        if (expressionFound(expression, data)) {
+    public Void visitIfExpression(JetIfExpression expression, TranslationContext context) {
+        if (expressionFound(expression, context)) {
             return null;
         }
-        return super.visitIfExpression(expression, data);
+        return super.visitIfExpression(expression, context);
     }
 
     @Override
-    public Void visitBlockExpression(JetBlockExpression expression, DangerousData data) {
+    public Void visitBlockExpression(JetBlockExpression expression, TranslationContext context) {
         if (isStatement(context.bindingContext(), expression)) {
             return null;
         }
         else {
-            return super.visitBlockExpression(expression, data);
+            return super.visitBlockExpression(expression, context);
         }
     }
 
     @Override
-    public Void visitCallExpression(JetCallExpression expression, DangerousData data) {
+    public Void visitCallExpression(JetCallExpression expression, TranslationContext context) {
         if (InlinedCallExpressionTranslator.shouldBeInlined(expression, context)) {
-            if (expressionFound(expression, data)) {
+            if (expressionFound(expression, context)) {
                 return null;
             }
         }
-        return super.visitCallExpression(expression, data);
+        return super.visitCallExpression(expression, context);
     }
 
-    private boolean expressionFound(@NotNull JetExpression expression, @NotNull DangerousData data) {
-        if (data.exists()) {
+    private boolean expressionFound(@NotNull JetExpression expression, TranslationContext context) {
+        if (dangerousNode != null) {
             return true;
         }
         if (!isStatement(context.bindingContext(), expression)) {
-            data.setDangerousNode(expression);
+            dangerousNode = expression;
             return true;
         }
         return false;

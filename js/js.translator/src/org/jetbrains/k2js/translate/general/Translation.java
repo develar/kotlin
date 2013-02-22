@@ -42,7 +42,7 @@ import org.jetbrains.k2js.translate.expression.PatternTranslator;
 import org.jetbrains.k2js.translate.reference.CallBuilder;
 import org.jetbrains.k2js.translate.test.JSTestGenerator;
 import org.jetbrains.k2js.translate.test.JSTester;
-import org.jetbrains.k2js.translate.utils.dangerous.DangerousData;
+import org.jetbrains.k2js.translate.utils.dangerous.FindDangerousVisitor;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.kotlin.compiler.TranslationException;
 
@@ -55,7 +55,6 @@ import static org.jetbrains.jet.plugin.JetMainDetector.getMainFunction;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToExpression;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.toStringLiteralList;
-import static org.jetbrains.k2js.translate.utils.dangerous.DangerousData.collect;
 
 /**
  * This class provides a interface which all translators use to interact with each other.
@@ -79,12 +78,12 @@ public final class Translation {
         }
 
         try {
-            DangerousData data = collect(expression, context);
-            if (data.shouldBeTranslated()) {
-                return translateDangerous(context, data);
+            List<JetExpression> nodesToBeGeneratedBefore = FindDangerousVisitor.collect(expression, context);
+            if (nodesToBeGeneratedBefore.isEmpty()) {
+                return doTranslateExpression(expression, context);
             }
             else {
-                return doTranslateExpression(expression, context);
+                return translateDangerous(expression, context, nodesToBeGeneratedBefore);
             }
         }
         catch (TranslationException e) {
@@ -98,19 +97,17 @@ public final class Translation {
         }
     }
 
-    private static JsNode translateDangerous(TranslationContext context, DangerousData data) {
-        List<JetExpression> expressions = data.getNodesToBeGeneratedBefore();
-        Map<JetExpression, String> aliasesForExpressions = new THashMap<JetExpression, String>(expressions.size());
-        List<JsVar> vars = new ArrayList<JsVar>(expressions.size());
-        for (JetExpression expression : expressions) {
+    private static JsNode translateDangerous(JetExpression rootExpression, TranslationContext context, List<JetExpression> nodesToBeGeneratedBefore) {
+        Map<JetExpression, String> aliasesForExpressions = new THashMap<JetExpression, String>(nodesToBeGeneratedBefore.size());
+        List<JsVar> vars = new ArrayList<JsVar>(nodesToBeGeneratedBefore.size());
+        for (JetExpression expression : nodesToBeGeneratedBefore) {
             JsExpression translatedExpression = translateAsExpression(expression, context);
             JsVar alias = context.dynamicContext().createTemporaryVar(translatedExpression);
             vars.add(alias);
             aliasesForExpressions.put(expression, alias.getName());
         }
         context.addStatementToCurrentBlock(new JsVars(vars, true));
-        TranslationContext contextWithAliases = context.innerContextWithAliasesForExpressions(aliasesForExpressions);
-        return doTranslateExpression(data.getRootNode(), contextWithAliases);
+        return doTranslateExpression(rootExpression, context.innerContextWithAliasesForExpressions(aliasesForExpressions));
     }
 
     @NotNull

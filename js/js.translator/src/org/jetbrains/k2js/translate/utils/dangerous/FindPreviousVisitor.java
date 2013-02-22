@@ -16,26 +16,26 @@
 
 package org.jetbrains.k2js.translate.utils.dangerous;
 
-import com.google.common.collect.Maps;
 import com.intellij.psi.PsiElement;
+import com.intellij.util.SmartList;
+import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.*;
 
-import java.util.Map;
+import java.util.List;
+import java.util.Set;
 
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getBaseExpression;
 
-//TODO: refactor
-public final class FindPreviousVisitor extends JetTreeVisitor<DangerousData> {
+public final class FindPreviousVisitor extends JetTreeVisitor<JetExpression> {
+    private final Set<JetElement> hasDangerous = new THashSet<JetElement>();
+    final List<JetExpression> nodesToBeGeneratedBefore = new SmartList<JetExpression>();
 
-    @NotNull
-    private final Map<JetElement, Void> hasDangerous = Maps.newHashMap();
-
-    public FindPreviousVisitor(@NotNull DangerousData data) {
-        JetElement node = data.getDangerousNode();
-        PsiElement last = data.getRootNode().getParent();
+    public FindPreviousVisitor(JetExpression rootNode, JetExpression dangerousNode) {
+        JetElement node = dangerousNode;
+        PsiElement last = rootNode.getParent();
         while (node != last) {
-            hasDangerous.put(node, null);
+            hasDangerous.add(node);
             PsiElement parent = node.getParent();
             assert parent instanceof JetElement;
             node = (JetElement)parent;
@@ -43,34 +43,34 @@ public final class FindPreviousVisitor extends JetTreeVisitor<DangerousData> {
     }
 
     @Override
-    public Void visitJetElement(JetElement element, DangerousData data) {
-        if (data.getDangerousNode() == element) {
+    public Void visitJetElement(JetElement element, JetExpression dangerousNode) {
+        if (dangerousNode == element) {
             return null;
         }
-        if (!hasDangerous(element)) {
-            addElement(element, data);
+        if (!hasDangerous.contains(element)) {
+            addElement(element);
         }
         else {
-            acceptChildrenThatAreBeforeTheDangerousNode(element, data);
+            acceptChildrenThatAreBeforeTheDangerousNode(element, dangerousNode);
         }
         return null;
     }
 
     //TODO: return value not used, wtf?
-    private static boolean addElement(@NotNull JetElement element, @NotNull DangerousData data) {
+    private boolean addElement(@NotNull JetElement element) {
         if (element instanceof JetExpression) {
-            data.getNodesToBeGeneratedBefore().add((JetExpression)element);
+            nodesToBeGeneratedBefore.add((JetExpression) element);
             return true;
         }
         return false;
     }
 
-    private void acceptChildrenThatAreBeforeTheDangerousNode(@NotNull JetElement element, @NotNull DangerousData data) {
+    private void acceptChildrenThatAreBeforeTheDangerousNode(@NotNull JetElement element, JetExpression dangerousNode) {
         PsiElement current = element.getFirstChild();
         while (current != null) {
             if (current instanceof JetElement) {
-                ((JetElement)current).accept(this, data);
-                if (hasDangerous(element)) {
+                ((JetElement)current).accept(this, dangerousNode);
+                if (hasDangerous.contains(element)) {
                     break;
                 }
             }
@@ -79,16 +79,16 @@ public final class FindPreviousVisitor extends JetTreeVisitor<DangerousData> {
     }
 
     @Override
-    public Void visitPrefixExpression(@NotNull JetPrefixExpression expression, @NotNull DangerousData data) {
-        if (data.getDangerousNode() == expression) {
+    public Void visitPrefixExpression(@NotNull JetPrefixExpression expression, JetExpression dangerousNode) {
+        if (dangerousNode == expression) {
             return null;
         }
-        if (!hasDangerous(expression)) {
-            addElement(expression, data);
+        if (!hasDangerous.contains(expression)) {
+            addElement(expression);
             return null;
         }
         else {
-            if (hasDangerous(getBaseExpression(expression))) {
+            if (hasDangerous.contains(getBaseExpression(expression))) {
                 return null;
             }
             else {
@@ -99,31 +99,27 @@ public final class FindPreviousVisitor extends JetTreeVisitor<DangerousData> {
     }
 
     @Override
-    public Void visitCallExpression(@NotNull JetCallExpression expression, @NotNull DangerousData data) {
-        if (data.getDangerousNode() == expression) {
+    public Void visitCallExpression(@NotNull JetCallExpression expression, JetExpression dangerousNode) {
+        if (dangerousNode == expression) {
             return null;
         }
-        if (!hasDangerous(expression)) {
-            data.getNodesToBeGeneratedBefore().add(expression);
+        if (!hasDangerous.contains(expression)) {
+            nodesToBeGeneratedBefore.add(expression);
         }
         else {
-            acceptArgumentsThatAreBeforeDangerousNode(expression, data);
+            acceptArgumentsThatAreBeforeDangerousNode(expression, dangerousNode);
         }
         return null;
     }
 
-    private void acceptArgumentsThatAreBeforeDangerousNode(@NotNull JetCallExpression expression, @NotNull DangerousData data) {
+    private void acceptArgumentsThatAreBeforeDangerousNode(@NotNull JetCallExpression expression, JetExpression dangerousNode) {
         for (ValueArgument argument : expression.getValueArguments()) {
             JetExpression argumentExpression = argument.getArgumentExpression();
             assert argumentExpression != null;
-            argumentExpression.accept(this, data);
-            if (hasDangerous(argumentExpression)) {
+            argumentExpression.accept(this, dangerousNode);
+            if (hasDangerous.contains(argumentExpression)) {
                 break;
             }
         }
-    }
-
-    private boolean hasDangerous(@NotNull JetElement element) {
-        return hasDangerous.containsKey(element);
     }
 }
