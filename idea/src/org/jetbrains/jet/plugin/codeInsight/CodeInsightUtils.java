@@ -1,17 +1,23 @@
 package org.jetbrains.jet.plugin.codeInsight;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtilCore;
+import com.intellij.refactoring.util.CommonRefactoringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetBlockExpression;
 import org.jetbrains.jet.lang.psi.JetElement;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.jet.lang.types.JetType;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -130,6 +136,33 @@ public class CodeInsightUtils {
             return file.findElementAt(element.getTextRange().getStartOffset() - 1);
         }
         return element;
+    }
+
+    public static String defaultInitializer(JetType type) {
+        KotlinBuiltIns builtIns = KotlinBuiltIns.getInstance();
+        if (type.isNullable()) {
+            return "null";
+        }
+        else if (type.equals(builtIns.getIntType()) || type.equals(builtIns.getLongType()) ||
+                 type.equals(builtIns.getShortType()) || type.equals(builtIns.getByteType()) ||
+                 type.equals(builtIns.getFloatType()) || type.equals(builtIns.getDoubleType()) ||
+                 type.equals(builtIns.getCharType())) {
+            return "0";
+        }
+        else if (type.equals(builtIns.getBooleanType())) {
+            return "false";
+        }
+
+        return null;
+    }
+
+    public static void showErrorHint(
+            @NotNull Project project, @NotNull Editor editor,
+            @NotNull String message, @NotNull String title,
+            @Nullable String helpId
+    ) {
+        if (ApplicationManager.getApplication().isUnitTestMode()) throw new RuntimeException(message);
+        CommonRefactoringUtil.showErrorHint(project, editor, message, title, helpId);
     }
 
     private CodeInsightUtils() {

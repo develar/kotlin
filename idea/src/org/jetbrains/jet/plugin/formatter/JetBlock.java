@@ -17,6 +17,7 @@
 package org.jetbrains.jet.plugin.formatter;
 
 import com.intellij.formatting.*;
+import com.intellij.formatting.alignment.AlignmentStrategy;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.TokenType;
 import com.intellij.psi.codeStyle.CodeStyleSettings;
@@ -37,6 +38,7 @@ import static org.jetbrains.jet.lexer.JetTokens.*;
  * @see Block for good JavaDoc documentation
  */
 public class JetBlock extends AbstractBlock {
+    private final ASTAlignmentStrategy myAlignmentStrategy;
     private final Indent myIndent;
     private final CodeStyleSettings mySettings;
     private final SpacingBuilder mySpacingBuilder;
@@ -51,13 +53,14 @@ public class JetBlock extends AbstractBlock {
     // private static final List<IndentWhitespaceRule>
 
     public JetBlock(@NotNull ASTNode node,
-            Alignment alignment,
+            ASTAlignmentStrategy alignmentStrategy,
             Indent indent,
             Wrap wrap,
             CodeStyleSettings settings,
             SpacingBuilder spacingBuilder) {
 
-        super(node, wrap, alignment);
+        super(node, wrap, alignmentStrategy.getAlignment(node));
+        myAlignmentStrategy = alignmentStrategy;
         myIndent = indent;
         mySettings = settings;
         mySpacingBuilder = spacingBuilder;
@@ -79,7 +82,7 @@ public class JetBlock extends AbstractBlock {
     private List<Block> buildSubBlocks() {
         List<Block> blocks = new ArrayList<Block>();
 
-        Map<ASTNode, Alignment> childrenAlignments = createChildrenAlignments();
+        ASTAlignmentStrategy childrenAlignmentStrategy = getChildrenAlignmentStrategy();
 
         for (ASTNode child = myNode.getFirstChildNode(); child != null; child = child.getTreeNext()) {
             IElementType childType = child.getElementType();
@@ -90,25 +93,24 @@ public class JetBlock extends AbstractBlock {
                 continue;
             }
 
-            Alignment childAlignment = childrenAlignments.containsKey(child) ? childrenAlignments.get(child) : null;
-            blocks.add(buildSubBlock(child, childAlignment));
+            blocks.add(buildSubBlock(child, childrenAlignmentStrategy));
         }
         return Collections.unmodifiableList(blocks);
     }
 
     @NotNull
-    private Block buildSubBlock(@NotNull ASTNode child, Alignment childAlignment) {
+    private Block buildSubBlock(@NotNull ASTNode child, ASTAlignmentStrategy alignmentStrategy) {
         Wrap wrap = null;
 
         // Affects to spaces around operators...
         if (child.getElementType() == OPERATION_REFERENCE) {
             ASTNode operationNode = child.getFirstChildNode();
             if (operationNode != null) {
-                return new JetBlock(operationNode, childAlignment, Indent.getNoneIndent(), wrap, mySettings, mySpacingBuilder);
+                return new JetBlock(operationNode, alignmentStrategy, Indent.getNoneIndent(), wrap, mySettings, mySpacingBuilder);
             }
         }
 
-        return new JetBlock(child, childAlignment, createChildIndent(child), wrap, mySettings, mySpacingBuilder);
+        return new JetBlock(child, alignmentStrategy, createChildIndent(child), wrap, mySettings, mySpacingBuilder);
     }
 
     private static Indent indentIfNotBrace(@NotNull ASTNode child) {
@@ -219,12 +221,12 @@ public class JetBlock extends AbstractBlock {
         return myNode.getFirstChildNode() == null;
     }
 
-    @NotNull
-    protected Map<ASTNode, Alignment> createChildrenAlignments() {
+    private ASTAlignmentStrategy getChildrenAlignmentStrategy() {
         CommonCodeStyleSettings jetCommonSettings = mySettings.getCommonSettings(JetLanguage.INSTANCE);
+        JetCodeStyleSettings jetSettings = mySettings.getCustomSettings(JetCodeStyleSettings.class);
 
         // Prepare default null strategy
-        ASTAlignmentStrategy strategy = ASTAlignmentStrategy.getNullStrategy();
+        ASTAlignmentStrategy strategy = myAlignmentStrategy;
 
         // Redefine list of strategies for some special elements
         IElementType parentType = myNode.getElementType();
@@ -238,26 +240,10 @@ public class JetBlock extends AbstractBlock {
                     jetCommonSettings.ALIGN_MULTILINE_PARAMETERS_IN_CALLS, VALUE_ARGUMENT, COMMA,
                     jetCommonSettings.ALIGN_MULTILINE_METHOD_BRACKETS, LPAR, RPAR);
         }
-
-        // Construct information about children alignment
-        HashMap<ASTNode, Alignment> result = new HashMap<ASTNode, Alignment>();
-
-        for (ASTNode child = myNode.getFirstChildNode(); child != null; child = child.getTreeNext()) {
-            IElementType childType = child.getElementType();
-
-            if (child.getTextRange().getLength() == 0) continue;
-
-            if (childType == TokenType.WHITE_SPACE) {
-                continue;
-            }
-
-            Alignment childAlignment = strategy.getAlignment(child);
-            if (childAlignment != null) {
-                result.put(child, childAlignment);
-            }
+        else if (parentType == WHEN) {
+            strategy = getAlignmentForCaseBranch(jetSettings.ALIGN_IN_COLUMNS_CASE_BRANCH);
         }
-
-        return result;
+        return strategy;
     }
 
     private static ASTAlignmentStrategy getAlignmentForChildInParenthesis(
@@ -289,6 +275,16 @@ public class JetBlock extends AbstractBlock {
                 return null;
             }
         };
+    }
+
+    private static ASTAlignmentStrategy getAlignmentForCaseBranch(boolean shouldAlignInColumns) {
+        if (shouldAlignInColumns) {
+            return ASTAlignmentStrategy
+                    .fromTypes(AlignmentStrategy.createAlignmentPerTypeStrategy(Arrays.asList((IElementType) ARROW), WHEN_ENTRY, true));
+        }
+        else {
+            return ASTAlignmentStrategy.getNullStrategy();
+        }
     }
 
     static ASTIndentStrategy[] INDENT_RULES = new ASTIndentStrategy[] {

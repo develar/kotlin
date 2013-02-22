@@ -41,6 +41,10 @@ public class JetLanguageCodeStyleSettingsProvider extends LanguageCodeStyleSetti
                         "    private fun foo1(i1: Int,\n" +
                         "                     i2: Int,\n" +
                         "                     i3: Int) : Int {\n" +
+                        "        when (i1) {\n" +
+                        "            is Number -> 0\n" +
+                        "            else -> 1\n" +
+                        "        }\n" +
                         "        return 0\n" +
                         "    }\n" +
                         "    private fun foo2():Int {\n" +
@@ -116,6 +120,9 @@ public class JetLanguageCodeStyleSettingsProvider extends LanguageCodeStyleSetti
                         "ALIGN_MULTILINE_PARAMETERS_IN_CALLS",
                         "ALIGN_MULTILINE_METHOD_BRACKETS"
                 );
+                consumer.renameStandardOption(CodeStyleSettingsCustomizable.WRAPPING_SWITCH_STATEMENT, "'when' statements");
+                consumer.showCustomOption(JetCodeStyleSettings.class, "ALIGN_IN_COLUMNS_CASE_BRANCH", "Align in columns 'case' branches",
+                                          CodeStyleSettingsCustomizable.WRAPPING_SWITCH_STATEMENT);
                 break;
             default:
                 consumer.showStandardOptions();
@@ -125,11 +132,6 @@ public class JetLanguageCodeStyleSettingsProvider extends LanguageCodeStyleSetti
     @Override
     public IndentOptionsEditor getIndentOptionsEditor() {
         return new SmartIndentOptionsEditor();
-    }
-
-    @Override
-    public boolean usesSharedPreview() {
-        return false;
     }
 
     @Override
