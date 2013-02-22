@@ -169,15 +169,18 @@ public final class StaticContext {
         }
 
         for (PredefinedAnnotation annotation : PredefinedAnnotation.values()) {
-            AnnotationDescriptor annotationDescriptor = getAnnotationOrInsideAnnotatedClass(descriptor, annotation.getFQName());
+            AnnotationDescriptor annotationDescriptor = AnnotationsUtils.getAnnotationByName(descriptor, annotation.getFQName());
+            String name = null;
             if (annotationDescriptor == null) {
-                continue;
+                ClassDescriptor containingClass = DescriptorUtils.getContainingClass(descriptor);
+                if (containingClass == null || AnnotationsUtils.getAnnotationByName(containingClass, annotation.getFQName()) == null) {
+                    continue;
+                }
             }
-            String name = getAnnotationStringParameter(annotationDescriptor);
-            if (name == null) {
-                name = descriptor.getName().getName();
+            else {
+                name = getAnnotationStringParameter(annotationDescriptor);
             }
-            return new JsNameRef(name);
+            return new JsNameRef(name == null ? descriptor.getName().getName() : name);
         }
 
         if (isFromNativeModule(descriptor)) {

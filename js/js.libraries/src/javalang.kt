@@ -2,7 +2,7 @@ package java.lang
 
 native("Error")
 open public class Exception(message: jet.String? = null): Throwable() {
-    public native val stack: jet.String
+    public val stack: jet.String
 }
 
 open public class RuntimeException(message: jet.String? = null) : Exception(message)
