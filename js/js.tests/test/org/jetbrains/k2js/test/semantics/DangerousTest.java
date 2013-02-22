@@ -28,6 +28,10 @@ public final class DangerousTest extends SingleFileTranslationTest {
         fooBoxTest();
     }
 
+    public void testIfAsFunArgumentInsideFunLiteral() throws Exception {
+        fooBoxTest();
+    }
+
     public void testIfAsPlusArgument() throws Exception {
         fooBoxTest();
     }
