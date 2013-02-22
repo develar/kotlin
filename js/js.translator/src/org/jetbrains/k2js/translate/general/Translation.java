@@ -17,8 +17,10 @@
 package org.jetbrains.k2js.translate.general;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.util.SmartList;
+import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
@@ -41,12 +43,13 @@ import org.jetbrains.k2js.translate.reference.CallBuilder;
 import org.jetbrains.k2js.translate.test.JSTestGenerator;
 import org.jetbrains.k2js.translate.test.JSTester;
 import org.jetbrains.k2js.translate.utils.dangerous.DangerousData;
-import org.jetbrains.k2js.translate.utils.dangerous.DangerousTranslator;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.kotlin.compiler.TranslationException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import static org.jetbrains.jet.plugin.JetMainDetector.getMainFunction;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
@@ -74,17 +77,15 @@ public final class Translation {
         if (aliasForExpression != null) {
             return new JsNameRef(aliasForExpression);
         }
-        DangerousData data = collect(expression, context);
-        if (data.shouldBeTranslated()) {
-            return DangerousTranslator.translate(data, context);
-        }
-        return doTranslateExpression(expression, context);
-    }
 
-    @NotNull
-    public static JsNode doTranslateExpression(JetExpression expression, TranslationContext context) {
         try {
-            return expression.accept(new ExpressionVisitor(), context);
+            DangerousData data = collect(expression, context);
+            if (data.shouldBeTranslated()) {
+                return translateDangerous(context, data);
+            }
+            else {
+                return doTranslateExpression(expression, context);
+            }
         }
         catch (TranslationException e) {
             if (e.getLocation() == null) {
@@ -92,9 +93,29 @@ public final class Translation {
             }
             throw e;
         }
-        catch (RuntimeException e) {
+        catch (Throwable e) {
             throw new TranslationException(e, getCompilerMessageLocation(expression));
         }
+    }
+
+    private static JsNode translateDangerous(TranslationContext context, DangerousData data) {
+        List<JetExpression> expressions = data.getNodesToBeGeneratedBefore();
+        Map<JetExpression, String> aliasesForExpressions = new THashMap<JetExpression, String>(expressions.size());
+        List<JsVar> vars = new ArrayList<JsVar>(expressions.size());
+        for (JetExpression expression : expressions) {
+            JsExpression translatedExpression = translateAsExpression(expression, context);
+            JsVar alias = context.dynamicContext().createTemporaryVar(translatedExpression);
+            vars.add(alias);
+            aliasesForExpressions.put(expression, alias.getName());
+        }
+        context.addStatementToCurrentBlock(new JsVars(vars, true));
+        TranslationContext contextWithAliases = context.innerContextWithAliasesForExpressions(aliasesForExpressions);
+        return doTranslateExpression(data.getRootNode(), contextWithAliases);
+    }
+
+    @NotNull
+    private static JsNode doTranslateExpression(JetExpression expression, TranslationContext context) {
+        return expression.accept(new ExpressionVisitor(), context);
     }
 
     public static CompilerMessageLocation getCompilerMessageLocation(JetExpression expression) {
