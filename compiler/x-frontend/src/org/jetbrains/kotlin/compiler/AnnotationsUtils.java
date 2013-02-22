@@ -85,7 +85,7 @@ public final class AnnotationsUtils {
     }
 
     @Nullable
-    public static AnnotationDescriptor getAnnotationOrInsideAnnotatedClass(@NotNull DeclarationDescriptor descriptor, @NotNull String fqn) {
+    private static AnnotationDescriptor getAnnotationOrInsideAnnotatedClass(@NotNull DeclarationDescriptor descriptor, @NotNull String fqn) {
         AnnotationDescriptor annotationDescriptor = getAnnotationByName(descriptor, fqn);
         if (annotationDescriptor != null) {
             return annotationDescriptor;
