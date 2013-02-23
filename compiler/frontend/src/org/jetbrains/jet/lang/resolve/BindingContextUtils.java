@@ -200,7 +200,7 @@ public class BindingContextUtils {
         @NotNull ReadOnlySlice<K, V> slice,
         @NotNull K key
     ) {
-        return getNotNull(bindingContext, slice, key, "Value at " + slice + " must not be null for " + key);
+        return getNotNull(bindingContext, slice, key, null);
     }
 
     @NotNull
@@ -208,11 +208,11 @@ public class BindingContextUtils {
             @NotNull BindingContext bindingContext,
             @NotNull ReadOnlySlice<K, V> slice,
             @NotNull K key,
-            @NotNull String messageIfNull
+            @Nullable String messageIfNull
     ) {
         V value = bindingContext.get(slice, key);
         if (value == null) {
-            throw new IllegalStateException(messageIfNull);
+            throw new IllegalStateException(messageIfNull == null ? ("Value at " + slice + " must not be null for " + key) : messageIfNull);
         }
         return value;
     }
