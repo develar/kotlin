@@ -63,11 +63,18 @@ public class FunctionTest extends AbstractExpressionTest {
         fooBoxTest();
     }
 
-
     public void testDefaultParameters() throws Exception {
         fooBoxTest();
     }
 
+    // todo this test must be running in different modules (trait in A module, class in B module)
+    public void testDefaultParameterInTrait() throws Exception {
+        fooBoxTest();
+    }
+
+    public void testDefaultComplexParameterInAbstractClass() throws Exception {
+        fooBoxTest();
+    }
 
     public void testFunctionLiteralAsLastParameter() throws Exception {
         fooBoxTest();

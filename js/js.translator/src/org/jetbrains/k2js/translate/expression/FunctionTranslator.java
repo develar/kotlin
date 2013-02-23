@@ -30,7 +30,6 @@ import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetParameter;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
-import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.k2js.translate.context.AliasingContext;
@@ -44,7 +43,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
-import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.equality;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getDeclarationDescriptorForReceiver;
@@ -92,11 +90,6 @@ public final class FunctionTranslator {
         }
     }
 
-    @NotNull
-    public static JsPropertyInitializer translateAsMethod(@NotNull JetDeclarationWithBody expression, @NotNull FunctionDescriptor descriptor,  @NotNull TranslationContext context) {
-        return translate(false, expression, descriptor, context);
-    }
-
     static void translateBodyAndAdd(
             @NotNull JsFunction function,
             @NotNull FunctionDescriptor descriptor,
@@ -127,41 +120,48 @@ public final class FunctionTranslator {
             }
 
             ValueParameterDescriptor declarator = valueParameter;
-            boolean maybeAlien = false;
             if (!valueParameter.declaresDefaultValue()) {
                 for (ValueParameterDescriptor parameterDescriptor : valueParameter.getOverriddenDescriptors()) {
                     if (parameterDescriptor.declaresDefaultValue()) {
                         declarator = parameterDescriptor;
-                        maybeAlien = true;
                         break;
                     }
                 }
             }
-
-            BindingContext bindingContext;
-            if (maybeAlien) {
-                bindingContext = context.getModule().findBindingContext(DescriptorUtils.getModuleDescriptor(declarator));
-                assert bindingContext != null;
-            }
-            else {
-                bindingContext = context.bindingContext();
+            else if (!descriptor.getModality().isOverridable()) {
+                JetExpression parameter = getDefaultValue(context.bindingContext(), valueParameter);
+                JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
+                statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
+                                        assignment(parameterRef, translateAsExpression(parameter, context)).asStatement()));
+                continue;
             }
 
-            JetExpression parameter = getParameterForDescriptor(bindingContext, declarator).getDefaultValue();
             JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
-            assert parameter != null;
+            String defaultParameterFunName = createDefaultValueGetterName(descriptor, declarator, context);
             statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
-                                    assignment(parameterRef, translateAsExpression(parameter, context)).asStatement()));
+                                    assignment(parameterRef, new JsInvocation(new JsNameRef(defaultParameterFunName, JsLiteral.THIS)))
+                                            .asStatement()));
         }
     }
 
+    public static String createDefaultValueGetterName(
+            @NotNull FunctionDescriptor descriptor,
+            @NotNull ValueParameterDescriptor valueParameter,
+            @NotNull TranslationContext context
+    ) {
+        return "$dv$" + valueParameter.getName().getName() + '_' + context.getNameRefForDescriptor(descriptor).getName();
+    }
+
     @NotNull
-    private static JetParameter getParameterForDescriptor(@NotNull BindingContext context,
-            @NotNull ValueParameterDescriptor descriptor) {
-        PsiElement result = BindingContextUtils.descriptorToDeclaration(context, descriptor);
-        assert result instanceof JetParameter :
-                message(context, descriptor, "ValueParameterDescriptor should have corresponding JetParameter");
-        return (JetParameter) result;
+    public static JetExpression getDefaultValue(
+            @NotNull BindingContext context,
+            @NotNull ValueParameterDescriptor descriptor
+    ) {
+        PsiElement element = BindingContextUtils.descriptorToDeclaration(context, descriptor);
+        assert element != null;
+        JetExpression defaultValue = ((JetParameter) element).getDefaultValue();
+        assert defaultValue != null;
+        return defaultValue;
     }
 
     @NotNull

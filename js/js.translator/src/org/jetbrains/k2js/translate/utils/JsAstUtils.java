@@ -21,7 +21,6 @@ import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -210,12 +209,6 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsObjectLiteral createPropertyDataDescriptor(@NotNull FunctionDescriptor descriptor,
-            @NotNull JsExpression value) {
-        return createPropertyDataDescriptor(descriptor, descriptor.getModality().isOverridable(), value);
-    }
-
-    @NotNull
     public static JsObjectLiteral createDataDescriptor(@NotNull JsExpression value) {
         return createDataDescriptor(value, false, false);
     }
@@ -239,7 +232,7 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    private static JsObjectLiteral createPropertyDataDescriptor(
+    public static JsObjectLiteral createPropertyDataDescriptor(
             @NotNull DeclarationDescriptor descriptor,
             boolean writable,
             @NotNull JsExpression value
