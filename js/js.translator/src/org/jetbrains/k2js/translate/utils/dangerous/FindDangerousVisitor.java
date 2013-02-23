@@ -56,7 +56,7 @@ public final class FindDangerousVisitor extends JetTreeVisitor<TranslationContex
     }
 
     private static boolean cannotContainDangerousElements(JetExpression element) {
-        return element instanceof JetBlockExpression || element instanceof JetFunctionLiteralExpression;
+        return element instanceof JetBlockExpression || element instanceof JetFunctionLiteralExpression || element instanceof JetConstantExpression;
     }
 
     @Override
