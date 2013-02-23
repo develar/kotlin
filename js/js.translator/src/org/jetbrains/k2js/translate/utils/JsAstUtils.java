@@ -171,14 +171,14 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static List<JsExpression> toStringLiteralList(@NotNull List<String> strings, @NotNull JsProgram program) {
+    public static List<JsExpression> toStringLiteralList(@NotNull List<String> strings) {
         if (strings.isEmpty()) {
             return Collections.emptyList();
         }
 
         List<JsExpression> result = newList(strings.size());
         for (String s : strings) {
-            result.add(program.getStringLiteral(s));
+            result.add(new JsStringLiteral(s));
         }
         return result;
     }
@@ -200,17 +200,13 @@ public final class JsAstUtils {
     public static JsInvocation definePropertyDataDescriptor(@NotNull PropertyDescriptor descriptor,
             @NotNull JsExpression value,
             @NotNull TranslationContext context) {
-        return defineProperty(createNameForProperty(descriptor, context), createPropertyDataDescriptor(descriptor, value),
-                              context);
+        return defineProperty(createNameForProperty(descriptor, context), createPropertyDataDescriptor(descriptor, value)
+        );
     }
 
     @NotNull
-    public static JsInvocation defineProperty(
-            @NotNull String name,
-            @NotNull JsObjectLiteral value,
-            @NotNull TranslationContext context
-    ) {
-        return new JsInvocation(DEFINE_PROPERTY, JsLiteral.THIS, context.program().getStringLiteral(name), value);
+    public static JsInvocation defineProperty(@NotNull String name, @NotNull JsObjectLiteral value) {
+        return new JsInvocation(DEFINE_PROPERTY, JsLiteral.THIS, new JsStringLiteral(name), value);
     }
 
     @NotNull

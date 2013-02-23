@@ -114,7 +114,7 @@ public final class NamespaceTranslator {
             defineArguments.add(JsLiteral.NULL);
         }
         else {
-            defineArguments.add(context.program().getStringLiteral(packageQualifiedName.getName()));
+            defineArguments.add(new JsStringLiteral(packageQualifiedName.getName()));
         }
         if (context.isEcma5()) {
             defineArguments.add(initializer == null ? JsLiteral.NULL : initializer);

@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsInvocation;
+import com.google.dart.compiler.backend.js.ast.JsStringLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
@@ -97,7 +98,7 @@ public final class PatternTranslator extends AbstractTranslator {
         else {
             return null;
         }
-        return typeof(expressionToMatch, program().getStringLiteral(jsSTypeName));
+        return typeof(expressionToMatch, new JsStringLiteral(jsSTypeName));
     }
 
     @NotNull

@@ -199,7 +199,7 @@ public final class TopLevelFIF extends CompositeFIF {
             public JsExpression apply(
                     @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
             ) {
-                return JsAstUtils.wrapValue("s", context.program().getStringLiteral(""));
+                return JsAstUtils.wrapValue("s", new JsStringLiteral(""));
             }
         });
         add("append", new DescriptorPattern("java", "lang", "Appendable").checkOverridden(), new FunctionIntrinsic() {
@@ -230,7 +230,7 @@ public final class TopLevelFIF extends CompositeFIF {
                         @NotNull List<JsExpression> arguments,
                         @NotNull TranslationContext context
                 ) {
-                    JsStringLiteral exceptionName = context.program().getStringLiteral(
+                    JsStringLiteral exceptionName = new JsStringLiteral(
                             callTranslator.getParameters().getDescriptor().getContainingDeclaration().getName().getName());
                     return new JsInvocation(Namer.NEW_EXCEPTION_FUN_NAME_REF,
                                             Arrays.asList(arguments.size() == 1 ? arguments.get(0) : JsLiteral.NULL, exceptionName));

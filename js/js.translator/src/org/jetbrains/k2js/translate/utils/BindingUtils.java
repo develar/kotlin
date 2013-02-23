@@ -142,15 +142,6 @@ public final class BindingUtils {
         return (FunctionDescriptor) referenceTarget;
     }
 
-    @Nullable
-    public static Object getCompileTimeValue(@NotNull BindingContext context, @NotNull JetExpression expression) {
-        CompileTimeConstant<?> compileTimeValue = context.get(BindingContext.COMPILE_TIME_VALUE, expression);
-        if (compileTimeValue != null) {
-            return compileTimeValue.getValue();
-        }
-        return null;
-    }
-
     @NotNull
     public static ResolvedCall<FunctionDescriptor> getIteratorFunction(@NotNull BindingContext context,
             @NotNull JetExpression rangeExpression) {

@@ -20,12 +20,12 @@ import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.JetNodeTypes;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
+import org.jetbrains.jet.lang.resolve.constants.BooleanValue;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.resolve.constants.NullValue;
 import org.jetbrains.jet.lexer.JetTokens;
@@ -60,27 +60,15 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitConstantExpression(@NotNull JetConstantExpression expression,
             @NotNull TranslationContext context) {
-        if (expression.getNode().getElementType() == JetNodeTypes.NULL) {
+        CompileTimeConstant<?> compileTimeValue = BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.COMPILE_TIME_VALUE, expression);
+        if (compileTimeValue == NullValue.NULL) {
             return JsLiteral.NULL;
         }
-
-        CompileTimeConstant<?> compileTimeValue = context.bindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
-
-        // todo workaround, try to compile idea project
-        if (compileTimeValue == null) {
-            if (expression.getNode().getElementType() == JetNodeTypes.BOOLEAN_CONSTANT) {
-                return JsLiteral.getBoolean(Boolean.valueOf(expression.getText()));
-            }
-            else if (expression.getNode().getElementType() == JetNodeTypes.INTEGER_CONSTANT) {
-                // public fun parseInt(s: String, radix:Int = 10): Int = js.noImpl
-                return context.program().getNumberLiteral(Integer.parseInt(expression.getText()));
-            }
+        else if (compileTimeValue == BooleanValue.FALSE) {
+            return JsLiteral.FALSE;
         }
-
-        assert compileTimeValue != null;
-
-        if (compileTimeValue instanceof NullValue) {
-            return JsLiteral.NULL;
+        else if (compileTimeValue == BooleanValue.TRUE) {
+            return JsLiteral.TRUE;
         }
 
         Object value = compileTimeValue.getValue();
@@ -90,18 +78,15 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         else if (value instanceof Number) {
             return context.program().getNumberLiteral(((Number) value).doubleValue());
         }
-        else if (value instanceof Boolean) {
-            return JsLiteral.getBoolean((Boolean) value);
+        else if (value instanceof String) {
+            return new JsStringLiteral((String) value);
         }
-
-        //TODO: test
-        if (value instanceof String) {
-            return context.program().getStringLiteral((String) value);
+        else if (value instanceof Character) {
+            return new JsStringLiteral(value.toString());
         }
-        if (value instanceof Character) {
-            return context.program().getStringLiteral(value.toString());
+        else {
+            throw new AssertionError(message(expression, "Unsupported constant expression"));
         }
-        throw new AssertionError(message(expression, "Unsupported constant expression"));
     }
 
     @Override
@@ -256,29 +241,11 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitStringTemplateExpression(@NotNull JetStringTemplateExpression expression,
             @NotNull TranslationContext context) {
-        JsStringLiteral stringLiteral = resolveAsStringConstant(expression, context);
-        if (stringLiteral != null) {
-            return stringLiteral;
+        CompileTimeConstant<?> compileTimeValue = context.bindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
+        if (compileTimeValue != null) {
+            return new JsStringLiteral((String) compileTimeValue.getValue());
         }
-        return resolveAsTemplate(expression, context).source(expression);
-    }
-
-    @NotNull
-    private static JsNode resolveAsTemplate(@NotNull JetStringTemplateExpression expression,
-            @NotNull TranslationContext context) {
-        return StringTemplateTranslator.translate(expression, context);
-    }
-
-    @Nullable
-    private static JsStringLiteral resolveAsStringConstant(@NotNull JetExpression expression,
-            @NotNull TranslationContext context) {
-        Object value = getCompileTimeValue(context.bindingContext(), expression);
-        if (value == null) {
-            return null;
-        }
-        assert value instanceof String : "Compile time constant template should be a String constant.";
-        String constantString = (String) value;
-        return context.program().getStringLiteral(constantString);
+        return StringTemplateTranslator.translate(expression, context).source(expression);
     }
 
     @Override

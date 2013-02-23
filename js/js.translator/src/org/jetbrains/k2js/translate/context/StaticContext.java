@@ -16,10 +16,7 @@
 
 package org.jetbrains.k2js.translate.context;
 
-import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
-import com.google.dart.compiler.backend.js.ast.JsProgram;
+import com.google.dart.compiler.backend.js.ast.*;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -311,7 +308,7 @@ public final class StaticContext {
             if (dependency == null) {
                 throw new TranslationException("Missed module dependency " + ModuleInfo.getNormalName(moduleDescriptor));
             }
-            return new JsArrayAccess(Namer.kotlin("modules"), program.getStringLiteral(dependency.getName()));
+            return new JsArrayAccess(Namer.kotlin("modules"), new JsStringLiteral(dependency.getName()));
         }
     }
 }

@@ -151,11 +151,6 @@ public class TranslationContext {
     }
 
     @NotNull
-    public JsStringLiteral nameToLiteral(@NotNull Named named) {
-        return program().getStringLiteral(named.getName().getName());
-    }
-
-    @NotNull
     public JsExpression getQualifiedReference(@NotNull DeclarationDescriptor descriptor) {
         return staticContext.getQualifiedReference(descriptor, this);
     }

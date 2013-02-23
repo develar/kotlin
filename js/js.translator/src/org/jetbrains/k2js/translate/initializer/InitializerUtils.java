@@ -23,6 +23,7 @@ import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
+import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.List;
 
@@ -59,7 +60,7 @@ public final class InitializerUtils {
     private static JsStatement create(DeclarationDescriptor descriptor, boolean enumerable, JsExpression value, TranslationContext context) {
         JsExpression expression;
         if (context.isEcma5()) {
-            expression = JsAstUtils.defineProperty(descriptor.getName().getName(), JsAstUtils.createDataDescriptor(value, false, enumerable), context);
+            expression = JsAstUtils.defineProperty(descriptor.getName().getName(), JsAstUtils.createDataDescriptor(value, false, enumerable));
         }
         else {
             expression = assignment(new JsNameRef(descriptor.getName().getName(), JsLiteral.THIS), value);
@@ -73,6 +74,6 @@ public final class InitializerUtils {
     }
 
     public static JsPropertyInitializer createPropertyInitializer(Named named, JsExpression value, TranslationContext context) {
-        return new JsPropertyInitializer(context.nameToLiteral(named), toDataDescriptor(value, context));
+        return new JsPropertyInitializer(TranslationUtils.nameToLiteral(named), toDataDescriptor(value, context));
     }
 }

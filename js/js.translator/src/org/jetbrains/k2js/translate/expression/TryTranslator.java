@@ -101,8 +101,7 @@ public final class TryTranslator {
 
                 JsIf ifStatement = new JsIf();
                 if (errorName != null) {
-                    ifStatement.setIfExpression(JsAstUtils.equality(new JsNameRef("name", catchIdentRef),
-                                                                    context.program().getStringLiteral(errorName)));
+                    ifStatement.setIfExpression(JsAstUtils.equality(new JsNameRef("name", catchIdentRef), new JsStringLiteral(errorName)));
                 }
                 else {
                     // todo is check

@@ -148,20 +148,20 @@ public final class Translation {
         StaticContext staticContext = new StaticContext(bindingContext, config);
         JsFunction definitionFunction = generateDefinitionFunction(staticContext, files, config, mainCallParameters);
         JsProgram program = staticContext.getProgram();
-        program.getStatements().add(generateDefineModuleInvocation(config, definitionFunction, program).asStatement());
+        program.getStatements().add(generateDefineModuleInvocation(config, definitionFunction).asStatement());
         return program;
     }
 
-    private static JsInvocation generateDefineModuleInvocation(Config config, JsFunction definitionFunction, JsProgram program) {
+    private static JsInvocation generateDefineModuleInvocation(Config config, JsFunction definitionFunction) {
         List<JsExpression> moduleDependencies = new SmartList<JsExpression>();
         for (ModuleInfo module : config.getModule().getDependencies()) {
             if (!config.getModule().isDependencyProvided(module)) {
-                moduleDependencies.add(program.getStringLiteral(module.getName()));
+                moduleDependencies.add(new JsStringLiteral(module.getName()));
             }
         }
 
         return new JsInvocation(new JsNameRef("defineModule", Namer.KOTLIN_OBJECT_NAME_REF),
-                                program.getStringLiteral(config.getModule().getName()),
+                                new JsStringLiteral(config.getModule().getName()),
                                 moduleDependencies.isEmpty() ? JsLiteral.NULL : new JsArrayLiteral(moduleDependencies),
                                 definitionFunction);
     }
@@ -174,7 +174,7 @@ public final class Translation {
     ) {
         JsFunction definitionFunction = new JsFunction(staticContext.getProgram().getScope(), new JsBlock());
         List<JsStatement> statements = definitionFunction.getBody().getStatements();
-        statements.add(staticContext.getProgram().getStringLiteral("use strict").asStatement());
+        statements.add(new JsStringLiteral("use strict").asStatement());
 
         TranslationContext context = TranslationContext.rootContext(staticContext, definitionFunction);
         staticContext.initTranslators(context);
@@ -209,7 +209,7 @@ public final class Translation {
             return null;
         }
         FunctionDescriptor functionDescriptor = getFunctionDescriptor(context.bindingContext(), mainFunction);
-        return CallBuilder.build(context).args(new JsArrayLiteral(toStringLiteralList(arguments, context.program()))).
+        return CallBuilder.build(context).args(new JsArrayLiteral(toStringLiteralList(arguments))).
                 descriptor(functionDescriptor).translate().asStatement();
     }
 }
