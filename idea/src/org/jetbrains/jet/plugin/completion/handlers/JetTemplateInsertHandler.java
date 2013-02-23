@@ -27,7 +27,7 @@ import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 
 public class JetTemplateInsertHandler implements InsertHandler<LookupElement> {
-    private String myInsertion;
+    private final String myInsertion;
 
     public JetTemplateInsertHandler(String insertion) {
         myInsertion = insertion;
@@ -85,7 +85,6 @@ public class JetTemplateInsertHandler implements InsertHandler<LookupElement> {
     
     public static LookupElementBuilder lookup(String template) {
         String presentation = template.replaceAll("<#<(\\w+)>#>", "...").replace("\n", "");
-        LookupElementBuilder builder = LookupElementBuilder.create(presentation).setBold();
-        return builder.setInsertHandler(new JetTemplateInsertHandler(template));
+        return LookupElementBuilder.create(presentation).bold().withInsertHandler(new JetTemplateInsertHandler(template));
     }
 }
