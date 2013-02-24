@@ -84,4 +84,8 @@ public final class StringTest extends AbstractExpressionTest {
     public void testExtensionMethods() throws Exception {
         fooBoxTest();
     }
+
+    public void testEscaping() throws Exception {
+        fooBoxTest();
+    }
 }

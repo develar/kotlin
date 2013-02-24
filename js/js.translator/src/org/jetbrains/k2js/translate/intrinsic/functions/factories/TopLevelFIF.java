@@ -199,7 +199,7 @@ public final class TopLevelFIF extends CompositeFIF {
             public JsExpression apply(
                     @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
             ) {
-                return JsAstUtils.wrapValue("s", new JsStringLiteral(""));
+                return JsAstUtils.wrapValue("s", JsStringLiteral.EMPTY);
             }
         });
         add("append", new DescriptorPattern("java", "lang", "Appendable").checkOverridden(), new FunctionIntrinsic() {

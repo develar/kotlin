@@ -78,8 +78,8 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         else if (value instanceof Number) {
             return context.program().getNumberLiteral(((Number) value).doubleValue());
         }
-        else if (value instanceof String) {
-            return new JsStringLiteral((String) value);
+        else if (value instanceof CharSequence) {
+            return JsStringLiteral.unescaped((CharSequence) value);
         }
         else if (value instanceof Character) {
             return new JsStringLiteral(value.toString());
@@ -241,11 +241,9 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @NotNull
     public JsNode visitStringTemplateExpression(@NotNull JetStringTemplateExpression expression,
             @NotNull TranslationContext context) {
-        CompileTimeConstant<?> compileTimeValue = context.bindingContext().get(BindingContext.COMPILE_TIME_VALUE, expression);
-        if (compileTimeValue != null) {
-            return new JsStringLiteral((String) compileTimeValue.getValue());
-        }
-        return StringTemplateTranslator.translate(expression, context).source(expression);
+        StringTemplateVisitor entryVisitor = new StringTemplateVisitor(expression, context);
+        expression.acceptChildren(entryVisitor);
+        return entryVisitor.prepareResult(expression);
     }
 
     @Override
