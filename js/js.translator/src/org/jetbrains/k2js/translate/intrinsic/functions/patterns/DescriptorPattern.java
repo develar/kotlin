@@ -14,7 +14,6 @@ public class DescriptorPattern implements DescriptorPredicate {
     private final String[] names;
 
     private boolean receiverParameterExists;
-
     private boolean checkOverridden;
 
     public DescriptorPattern(String... names) {
@@ -43,17 +42,12 @@ public class DescriptorPattern implements DescriptorPredicate {
 
     private boolean check(FunctionDescriptor functionDescriptor) {
         DeclarationDescriptor descriptor = functionDescriptor.getContainingDeclaration();
-        String[] list = names;
-        int nameIndex = list.length - 1;
+        int nameIndex = names.length - 1;
         do {
             if (nameIndex == -1) {
                 return isRootNamespace(descriptor);
             }
-            else if (isRootNamespace(descriptor)) {
-                return false;
-            }
-
-            if (!descriptor.getName().getName().equals(list[nameIndex--])) {
+            else if (isRootNamespace(descriptor) || !descriptor.getName().getName().equals(names[nameIndex--])) {
                 return false;
             }
         }
@@ -86,7 +80,8 @@ public class DescriptorPattern implements DescriptorPredicate {
             }
 
             if (!descriptor.getName().getName().equals(names[nameIndex--])) {
-                return checkOverridden && nameIndex == (names.length - 2) && checkOverridden(functionDescriptor);
+                // we check overridden on any mismatch - we can have classes with equal name from different packages
+                return checkOverridden && checkOverridden(functionDescriptor);
             }
         }
         return false;
