@@ -39,11 +39,11 @@ import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedRe
  */
 public class TranslationContext {
     @NotNull
-    protected final DynamicContext dynamicContext;
+    private final DynamicContext dynamicContext;
     @NotNull
     private final StaticContext staticContext;
     @NotNull
-    protected AliasingContext aliasingContext;
+    private final AliasingContext aliasingContext;
     @Nullable
     private final UsageTracker usageTracker;
 
