@@ -11,7 +11,7 @@
     <target name="jb_update" depends="fetch-third-party">
         <execute_update
             base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt662/1761290:id"
-            build.zip="ideaIC-126.SNAPSHOT.win.zip"
+            build.zip="ideaIC-128.SNAPSHOT.win.zip"
         />
     </target>
 
