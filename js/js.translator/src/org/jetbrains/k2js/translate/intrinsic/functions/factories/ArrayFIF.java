@@ -119,7 +119,7 @@ public final class ArrayFIF extends CompositeFIF {
                     @NotNull List<JsExpression> arguments,
                     @NotNull TranslationContext context
             ) {
-                assert arguments.isEmpty();
+                // arguments can contains capacity, but we ignore it
                 return new JsArrayLiteral();
             }
         });
