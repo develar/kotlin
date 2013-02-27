@@ -50,6 +50,10 @@ public final class FunctionIntrinsics {
 
     @Nullable
     public FunctionIntrinsic getIntrinsic(@NotNull FunctionDescriptor descriptor) {
+        if (!descriptor.getVisibility().isPublicAPI()) {
+            return null;
+        }
+
         FunctionIntrinsic intrinsic = intrinsicCache.get(descriptor);
         if (intrinsic == null) {
             if (intrinsics.valuesForKey(descriptor.getName().getName()) == 0) {
