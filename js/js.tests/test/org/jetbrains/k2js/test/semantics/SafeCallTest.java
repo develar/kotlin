@@ -19,7 +19,6 @@ package org.jetbrains.k2js.test.semantics;
 import org.jetbrains.k2js.test.SingleFileTranslationTest;
 
 public final class SafeCallTest extends SingleFileTranslationTest {
-
     public SafeCallTest() {
         super("safeCall/");
     }
@@ -37,6 +36,10 @@ public final class SafeCallTest extends SingleFileTranslationTest {
     }
 
     public void testSafeCallReturnsNullIfFails() throws Exception {
+        fooBoxTest();
+    }
+
+    public void testCastToNullableType() throws Exception {
         fooBoxTest();
     }
 }

@@ -45,7 +45,8 @@ import org.jetbrains.k2js.translate.utils.mutator.AssignToExpressionMutator;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.*;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForReferenceExpression;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToExpression;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
@@ -308,11 +309,12 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
 
     @Override
     @NotNull
-    public JsNode visitBinaryWithTypeRHSExpression(@NotNull JetBinaryExpressionWithTypeRHS expression,
-            @NotNull TranslationContext context) {
+    public JsNode visitBinaryWithTypeRHSExpression(@NotNull JetBinaryExpressionWithTypeRHS expression, @NotNull TranslationContext context) {
         JsExpression jsExpression = Translation.translateAsExpression(expression.getLeft(), context);
-        if (expression.getOperationSign().getReferencedNameElementType() != JetTokens.AS_KEYWORD) {
-            return jsExpression;
+        //noinspection ConstantConditions
+        if (expression.getOperationSign().getReferencedNameElementType() != JetTokens.AS_KEYWORD ||
+            BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.TYPE, expression.getRight()).isNullable()) {
+            return jsExpression.source(expression);
         }
 
         // KT-2670
