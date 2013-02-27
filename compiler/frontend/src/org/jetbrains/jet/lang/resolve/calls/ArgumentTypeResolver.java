@@ -20,11 +20,13 @@ import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.diagnostics.Errors;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.*;
+import org.jetbrains.jet.lang.resolve.calls.context.CallCandidateResolutionContext;
 import org.jetbrains.jet.lang.resolve.calls.context.CallResolutionContext;
 import org.jetbrains.jet.lang.resolve.calls.context.ResolveMode;
 import org.jetbrains.jet.lang.resolve.calls.context.TypeInfoForCall;
@@ -34,6 +36,7 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.ErrorUtils;
 import org.jetbrains.jet.lang.types.JetType;
+import org.jetbrains.jet.lang.types.JetTypeInfo;
 import org.jetbrains.jet.lang.types.TypeUtils;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
@@ -45,8 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.jetbrains.jet.lang.resolve.BindingContextUtils.getRecordedTypeInfoForCall;
-import static org.jetbrains.jet.lang.resolve.BindingContextUtils.recordContextForExpressionCall;
+import static org.jetbrains.jet.lang.resolve.BindingContextUtils.getRecordedTypeInfo;
 import static org.jetbrains.jet.lang.resolve.BindingContextUtils.recordExpressionType;
 import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.*;
 import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveArgumentsMode.RESOLVE_FUNCTION_ARGUMENTS;
@@ -159,41 +161,61 @@ public class ArgumentTypeResolver {
     }
 
     @NotNull
-    public TypeInfoForCall getArgumentTypeInfo(
+    public JetTypeInfo getArgumentTypeInfo(
             @Nullable JetExpression expression,
             @NotNull CallResolutionContext context,
-            @NotNull ResolveArgumentsMode resolveFunctionArgumentBodies
+            @NotNull ResolveArgumentsMode resolveArgumentsMode,
+            @Nullable TemporaryBindingTrace traceToCommitForCall
     ) {
         if (expression == null) {
-            return TypeInfoForCall.create(null, context.dataFlowInfo);
+            return JetTypeInfo.create(null, context.dataFlowInfo);
         }
-        if (expression instanceof JetFunctionLiteralExpression && resolveFunctionArgumentBodies == SKIP_FUNCTION_ARGUMENTS) {
-            JetType type = getFunctionLiteralType((JetFunctionLiteralExpression) expression, context.scope, context.trace);
-            return TypeInfoForCall.create(type, context.dataFlowInfo);
+        if (expression instanceof JetFunctionLiteralExpression) {
+            return getFunctionLiteralTypeInfo((JetFunctionLiteralExpression) expression, context, resolveArgumentsMode);
         }
-        TypeInfoForCall cachedTypeInfo = getRecordedTypeInfoForCall(expression, context);
-        if (cachedTypeInfo != null) {
-            return cachedTypeInfo;
+        JetTypeInfo recordedTypeInfo = getRecordedTypeInfo(expression, context.trace.getBindingContext());
+        if (recordedTypeInfo != null) {
+            return recordedTypeInfo;
         }
         //todo deparenthesize
         CallExpressionResolver callExpressionResolver = expressionTypingServices.getCallExpressionResolver();
-        TypeInfoForCall result = null;
+        if (!(expression instanceof JetCallExpression) && !(expression instanceof JetQualifiedExpression)) {
+            return expressionTypingServices.getTypeInfo(context.scope, expression, context.expectedType, context.dataFlowInfo, context.trace);
+        }
+
+        TypeInfoForCall result;
         if (expression instanceof JetCallExpression) {
             result = callExpressionResolver.getCallExpressionTypeInfoForCall(
                     (JetCallExpression) expression, ReceiverValue.NO_RECEIVER, null,
                     context.replaceExpectedType(TypeUtils.NO_EXPECTED_TYPE), ResolveMode.NESTED_CALL);
         }
-        if (expression instanceof JetQualifiedExpression) {
+        else { // expression instanceof JetQualifiedExpression
             result = callExpressionResolver.getQualifiedExpressionExtendedTypeInfo(
                     (JetQualifiedExpression) expression, context.replaceExpectedType(TypeUtils.NO_EXPECTED_TYPE), ResolveMode.NESTED_CALL);
         }
-        if (result != null) {
-            recordExpressionType(expression, context, result.getTypeInfo());
-            recordContextForExpressionCall(expression, context.trace, result.getCallCandidateResolutionContext());
-            return result;
+
+        recordExpressionType(expression, context.trace, context.scope, result.getTypeInfo());
+        CallCandidateResolutionContext<FunctionDescriptor> deferredContext = result.getCallCandidateResolutionContext();
+        if (deferredContext != null) {
+            context.trace.record(BindingContext.DEFERRED_COMPUTATION_FOR_CALL, expression, deferredContext);
         }
-        return TypeInfoForCall.create(
-                expressionTypingServices.getTypeInfo(context.scope, expression, context.expectedType, context.dataFlowInfo, context.trace));
+        if (traceToCommitForCall != null) {
+            traceToCommitForCall.commit();
+        }
+        return result.getTypeInfo();
+    }
+
+    @NotNull
+    public JetTypeInfo getFunctionLiteralTypeInfo(
+            @NotNull JetFunctionLiteralExpression functionLiteralExpression,
+            @NotNull CallResolutionContext context,
+            @NotNull ResolveArgumentsMode resolveArgumentsMode
+    ) {
+        if (resolveArgumentsMode == SKIP_FUNCTION_ARGUMENTS) {
+            JetType type = getFunctionLiteralType(functionLiteralExpression, context.scope, context.trace);
+            return JetTypeInfo.create(type, context.dataFlowInfo);
+        }
+        return expressionTypingServices.getTypeInfo(context.scope, functionLiteralExpression, context.expectedType, context.dataFlowInfo, context.trace);
     }
 
     @Nullable

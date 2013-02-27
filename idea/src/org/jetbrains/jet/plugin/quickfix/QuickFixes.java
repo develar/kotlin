@@ -155,6 +155,11 @@ public class QuickFixes {
         actions.put(VAL_REASSIGNMENT, changeVariableMutabilityFix);
         actions.put(VAR_OVERRIDDEN_BY_VAL, changeVariableMutabilityFix);
 
+        RemoveValVarFromParametersFix removeValVarFromParametersFix = new RemoveValVarFromParametersFix();
+        actions.put(VAL_OR_VAR_ON_FUN_PARAMETER, removeValVarFromParametersFix);
+        actions.put(VAL_OR_VAR_ON_LOOP_PARAMETER, removeValVarFromParametersFix);
+        actions.put(VAL_OR_VAR_ON_CATCH_PARAMETER, removeValVarFromParametersFix);
+
         factories.put(UNUSED_VARIABLE, RemoveVariableFix.createRemoveVariableFactory());
 
         actions.put(UNNECESSARY_SAFE_CALL, ReplaceCallFix.toDotCallFromSafeCall());
@@ -168,6 +173,7 @@ public class QuickFixes {
         factories.put(PACKAGE_MEMBER_CANNOT_BE_PROTECTED, removeProtectedModifierFactory);
 
         actions.put(PUBLIC_MEMBER_SHOULD_SPECIFY_TYPE, new SpecifyTypeExplicitlyFix());
+        actions.put(AMBIGUOUS_ANONYMOUS_TYPE_INFERRED, new SpecifyTypeExplicitlyFix());
 
         factories.put(ELSE_MISPLACED_IN_WHEN, MoveWhenElseBranchFix.createFactory());
         factories.put(NO_ELSE_IN_WHEN, AddWhenElseBranchFix.createFactory());
