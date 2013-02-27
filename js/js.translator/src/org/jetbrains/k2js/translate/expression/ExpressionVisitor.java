@@ -288,23 +288,22 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
 
     @Override
     @NotNull
-    public JsNode visitIsExpression(@NotNull JetIsExpression expression,
-            @NotNull TranslationContext context) {
+    public JsNode visitIsExpression(@NotNull JetIsExpression expression, @NotNull TranslationContext context) {
         return Translation.patternTranslator(context).translateIsExpression(expression);
     }
 
     @Override
     @NotNull
-    public JsNode visitSafeQualifiedExpression(@NotNull JetSafeQualifiedExpression expression,
-            @NotNull TranslationContext context) {
+    public JsNode visitSafeQualifiedExpression(@NotNull JetSafeQualifiedExpression expression, @NotNull TranslationContext context) {
         return QualifiedExpressionTranslator.translateQualifiedExpression(expression, context).source(expression);
     }
 
     @Override
     @NotNull
-    public JsNode visitWhenExpression(@NotNull JetWhenExpression expression,
-            @NotNull TranslationContext context) {
-        return WhenTranslator.translate(expression, context);
+    public JsNode visitWhenExpression(@NotNull JetWhenExpression expression, @NotNull TranslationContext context) {
+        // voidResult is never null if WhenTranslator from visitWhenExpression - true only if from visitBlockExpression, otherwise false
+        // its result used for dangerous translator or binary expression
+        return new WhenTranslator(expression, context, false).translate();
     }
 
     @Override

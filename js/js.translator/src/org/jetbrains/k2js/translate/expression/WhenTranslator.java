@@ -22,8 +22,6 @@ import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.*;
-import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
@@ -61,18 +59,8 @@ public final class WhenTranslator extends AbstractTranslator {
         result = voidResult ? null : context.dynamicContext().createTemporary(null);
     }
 
-    public WhenTranslator(@NotNull JetWhenExpression expression, @NotNull TranslationContext context) {
-        this(expression, context,
-             context.bindingContext().get(BindingContext.EXPRESSION_TYPE, expression) == KotlinBuiltIns.getInstance().getTuple(0));
-    }
-
     @NotNull
-    public static JsNode translate(@NotNull JetWhenExpression expression, @NotNull TranslationContext context) {
-        return new WhenTranslator(expression, context).translate();
-    }
-
-    @NotNull
-    private JsNode translate() {
+    public JsNode translate() {
         List<JsStatement> statements = new SmartList<JsStatement>();
         translate(statements);
         if (result == null) {
