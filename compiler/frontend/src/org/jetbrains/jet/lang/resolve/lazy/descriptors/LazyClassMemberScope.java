@@ -146,7 +146,7 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
     }
 
     @Override
-    protected void getNonDeclaredFunctions(@NotNull Name name, @NotNull final Set<FunctionDescriptor> result) {
+    protected void getNonDeclaredFunctions(@NotNull Name name, @NotNull Set<FunctionDescriptor> result) {
         Collection<FunctionDescriptor> fromSupertypes = Lists.newArrayList();
         for (JetType supertype : thisDescriptor.getTypeConstructor().getSupertypes()) {
             fromSupertypes.addAll(supertype.getMemberScope().getFunctions(name));
@@ -190,7 +190,7 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
     }
 
     private void generateEnumClassObjectMethods(@NotNull Collection<? super FunctionDescriptor> result, @NotNull Name name) {
-        if (!isEnumClassObject()) return;
+        if (!DescriptorUtils.isEnumClassObject(thisDescriptor)) return;
 
         if (name.equals(DescriptorResolver.VALUES_METHOD_NAME)) {
             SimpleFunctionDescriptor valuesMethod = DescriptorResolver
@@ -202,15 +202,6 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
                     .createEnumClassObjectValueOfMethod(thisDescriptor, resolveSession.getTrace());
             result.add(valueOfMethod);
         }
-    }
-
-    private boolean isEnumClassObject() {
-        DeclarationDescriptor containingDeclaration = thisDescriptor.getContainingDeclaration();
-        if (!(containingDeclaration instanceof ClassDescriptor)) return false;
-        ClassDescriptor classDescriptor = (ClassDescriptor) containingDeclaration;
-        if (classDescriptor.getKind() != ClassKind.ENUM_CLASS) return false;
-        if (classDescriptor.getClassObjectDescriptor() != thisDescriptor) return false;
-        return true;
     }
 
     @NotNull
@@ -230,7 +221,7 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
 
     @Override
     @SuppressWarnings("unchecked")
-    protected void getNonDeclaredProperties(@NotNull Name name, @NotNull final Set<VariableDescriptor> result) {
+    protected void getNonDeclaredProperties(@NotNull Name name, @NotNull Set<VariableDescriptor> result) {
         JetClassLikeInfo classInfo = declarationProvider.getOwnerInfo();
 
         // From primary constructor parameters

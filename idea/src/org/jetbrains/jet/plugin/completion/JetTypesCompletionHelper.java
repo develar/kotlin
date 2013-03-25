@@ -28,15 +28,15 @@ import org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.plugin.caches.JetShortNamesCache;
+import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
 import org.jetbrains.jet.plugin.libraries.DecompiledDataFactory;
-import org.jetbrains.jet.plugin.project.JsModuleDetector;
 
 public class JetTypesCompletionHelper {
     private JetTypesCompletionHelper() {}
 
     static void addJetTypes(
-            @NotNull final CompletionParameters parameters,
-            @NotNull final JetCompletionResultSet jetCompletionResult
+            @NotNull CompletionParameters parameters,
+            @NotNull JetCompletionResultSet jetCompletionResult
     ) {
         jetCompletionResult.addAllElements(KotlinBuiltIns.getInstance().getNonPhysicalClasses());
 
@@ -45,7 +45,7 @@ public class JetTypesCompletionHelper {
         jetCompletionResult.addAllElements(namesCache.getJetClassesDescriptors(
                 jetCompletionResult.getShortNameFilter(), jetCompletionResult.getResolveSession()));
 
-        if (!JsModuleDetector.isJsModule((JetFile) parameters.getOriginalFile())) {
+        if (!KotlinFrameworkDetector.isJsKotlinModule((JetFile) parameters.getOriginalFile())) {
             addAdaptedJavaCompletion(parameters,jetCompletionResult);
         }
     }
@@ -54,7 +54,7 @@ public class JetTypesCompletionHelper {
      * Add java elements with performing conversion to kotlin elements if necessary.
      */
     static void addAdaptedJavaCompletion(
-            @NotNull final CompletionParameters parameters,
+            @NotNull CompletionParameters parameters,
             @NotNull final JetCompletionResultSet jetCompletionResult
     ) {
         CompletionResultSet tempResult = jetCompletionResult.getResult().withPrefixMatcher(

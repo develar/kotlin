@@ -412,7 +412,7 @@
         <cleandir dir="${output}/classes/j2k"/>
 
         <javac destdir="${output}/classes/j2k" debug="true" debuglevel="lines,vars,source" includeAntRuntime="false">
-          <src path="compiler/cli/cli-common/src"/>  
+          <src path="compiler/cli/cli-common/src"/>
           <src path="${basedir}/j2k/src"/>
             <classpath path="${kotlin-home}/lib/kotlin-compiler.jar"/>
         </javac>

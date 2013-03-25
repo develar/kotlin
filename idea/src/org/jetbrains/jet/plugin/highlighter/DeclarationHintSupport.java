@@ -73,10 +73,8 @@ class DeclarationHintSupport implements StartupActivity {
         private LightweightHint lastHint;
 
         @Override
-        public void mouseMoved(final EditorMouseEvent e) {
-            Editor editor = e.getEditor();
-            Project project = editor.getProject();
-            if (project == null || DumbService.isDumb(project)) {
+        public void mouseMoved(EditorMouseEvent e) {
+            if (DumbService.getInstance(myProject).isDumb() || !myProject.isInitialized()) {
                 return;
             }
 
@@ -84,16 +82,17 @@ class DeclarationHintSupport implements StartupActivity {
                 return;
             }
 
-            PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
+            Editor editor = e.getEditor();
+            PsiFile psiFile = PsiDocumentManager.getInstance(myProject).getPsiFile(editor.getDocument());
             if (psiFile == null || psiFile.getLanguage() != JetLanguage.INSTANCE) {
                 return;
             }
 
-            final JetFile jetFile = (JetFile) psiFile;
+            JetFile jetFile = (JetFile) psiFile;
 
             int offset = editor.logicalPositionToOffset(editor.xyToLogicalPosition(e.getMouseEvent().getPoint()));
             PsiElement elementAtCursor = psiFile.findElementAt(offset);
-            final JetNamedDeclaration declaration = PsiTreeUtil.getParentOfType(elementAtCursor, JetNamedDeclaration.class);
+            JetNamedDeclaration declaration = PsiTreeUtil.getParentOfType(elementAtCursor, JetNamedDeclaration.class);
 
             if (declaration != null && declaration.getNameIdentifier() == elementAtCursor) {
                 if (lastNamedDeclaration == declaration) {

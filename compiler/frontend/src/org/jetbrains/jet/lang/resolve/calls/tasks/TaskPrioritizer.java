@@ -44,7 +44,7 @@ import java.util.List;
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isClassObject;
 import static org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue.NO_RECEIVER;
 
-public abstract class TaskPrioritizer {
+public class TaskPrioritizer {
 
     public static <D extends CallableDescriptor> void splitLexicallyLocalDescriptors(
             @NotNull Collection<ResolutionCandidate<D>> allDescriptors,
@@ -75,7 +75,7 @@ public abstract class TaskPrioritizer {
     }
 
     @NotNull
-    public static <D extends CallableDescriptor, F extends D> List<ResolutionTask<D, F>> computePrioritizedTasks(@NotNull BasicCallResolutionContext context, @NotNull Name name,
+    public static <D extends CallableDescriptor, F extends D> List<ResolutionTask<D, F>> computePrioritizedTasks(@NotNull final BasicCallResolutionContext context, @NotNull Name name,
                                                            @NotNull JetReferenceExpression functionReference, @NotNull List<CallableDescriptorCollector<? extends D>> callableDescriptorCollectors) {
         ReceiverValue explicitReceiver = context.call.getExplicitReceiver();
         final JetScope scope;
@@ -87,13 +87,13 @@ public abstract class TaskPrioritizer {
         else {
             scope = context.scope;
         }
-        final Predicate<ResolutionCandidate<D>> visibleStrategy = new Predicate<ResolutionCandidate<D>>() {
+        Predicate<ResolutionCandidate<D>> visibleStrategy = new Predicate<ResolutionCandidate<D>>() {
             @Override
             public boolean apply(@Nullable ResolutionCandidate<D> call) {
                 if (call == null) return false;
                 D candidateDescriptor = call.getDescriptor();
                 if (ErrorUtils.isError(candidateDescriptor)) return true;
-                return Visibilities.isVisible(candidateDescriptor, scope.getContainingDeclaration());
+                return Visibilities.isVisible(candidateDescriptor, context.scope.getContainingDeclaration());
             }
         };
 
@@ -208,7 +208,6 @@ public abstract class TaskPrioritizer {
                 if (descriptor.getExpectedThisObject() != null && descriptor.getReceiverParameter() == null) {
                     DeclarationDescriptor containingDeclaration = descriptor.getContainingDeclaration();
                     if (descriptor instanceof ConstructorDescriptor) {
-                        assert containingDeclaration != null;
                         containingDeclaration = containingDeclaration.getContainingDeclaration();
                     }
                     if (containingDeclaration != null && isClassObject(containingDeclaration)) {
@@ -235,5 +234,8 @@ public abstract class TaskPrioritizer {
             }
         }
         return false;
+    }
+
+    private TaskPrioritizer() {
     }
 }

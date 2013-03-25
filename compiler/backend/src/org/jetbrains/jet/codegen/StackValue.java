@@ -23,14 +23,13 @@ import org.jetbrains.asm4.Label;
 import org.jetbrains.asm4.Type;
 import org.jetbrains.asm4.commons.InstructionAdapter;
 import org.jetbrains.asm4.commons.Method;
-import org.jetbrains.jet.codegen.binding.CodegenBinding;
 import org.jetbrains.jet.codegen.intrinsics.IntrinsicMethod;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.codegen.state.JetTypeMapper;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
-import org.jetbrains.jet.lang.resolve.java.JvmAbi;
+import org.jetbrains.jet.lang.resolve.java.AsmTypeConstants;
 import org.jetbrains.jet.lang.resolve.java.JvmClassName;
 import org.jetbrains.jet.lang.resolve.java.JvmPrimitiveType;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
@@ -130,7 +129,8 @@ public abstract class StackValue {
         return new CollectionElement(type, getter, setter, codegen, state);
     }
 
-    public static StackValue field(Type type, JvmClassName owner, String name, boolean isStatic) {
+    @NotNull
+    public static StackValue field(@NotNull Type type, @NotNull JvmClassName owner, @NotNull String name, boolean isStatic) {
         return new Field(type, owner, name, isStatic);
     }
 
@@ -156,7 +156,7 @@ public abstract class StackValue {
         return new Expression(type, expression, generator);
     }
 
-    private static void box(final Type type, final Type toType, InstructionAdapter v) {
+    private static void box(Type type, Type toType, InstructionAdapter v) {
         // TODO handle toType correctly
         if (type == Type.INT_TYPE || (isIntPrimitive(type) && toType.getInternalName().equals("java/lang/Integer"))) {
             v.invokestatic("java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
@@ -184,7 +184,7 @@ public abstract class StackValue {
         }
     }
 
-    private static void unbox(final Type type, InstructionAdapter v) {
+    private static void unbox(Type type, InstructionAdapter v) {
         if (type == Type.INT_TYPE) {
             v.invokevirtual("java/lang/Number", "intValue", "()I");
         }
@@ -236,15 +236,15 @@ public abstract class StackValue {
         }
         else if (fromType.getSort() == Type.VOID) {
             if (toType.getSort() == Type.OBJECT) {
-                putTuple0Instance(v);
+                putUnitInstance(v);
             }
             else {
                 pushDefaultPrimitiveValueOnStack(toType, v);
             }
         }
-        else if (toType.equals(JET_TUPLE0_TYPE)) {
+        else if (toType.equals(JET_UNIT_TYPE)) {
             pop(fromType, v);
-            putTuple0Instance(v);
+            putUnitInstance(v);
         }
         else if (toType.getSort() == Type.ARRAY) {
             v.checkcast(toType);
@@ -276,8 +276,8 @@ public abstract class StackValue {
         }
     }
 
-    public static void putTuple0Instance(InstructionAdapter v) {
-        v.visitFieldInsn(GETSTATIC, "jet/Tuple0", "VALUE", "Ljet/Tuple0;");
+    public static void putUnitInstance(InstructionAdapter v) {
+        v.visitFieldInsn(GETSTATIC, AsmTypeConstants.JET_UNIT_TYPE.getInternalName(), "VALUE", AsmTypeConstants.JET_UNIT_TYPE.getDescriptor());
     }
 
     protected void putAsBoolean(InstructionAdapter v) {
@@ -340,20 +340,8 @@ public abstract class StackValue {
     }
 
     public static StackValue singleton(ClassDescriptor classDescriptor, JetTypeMapper typeMapper) {
-        final Type type = typeMapper.mapType(classDescriptor.getDefaultType());
-
-        final ClassKind kind = classDescriptor.getKind();
-        if (kind == ClassKind.CLASS_OBJECT || kind == ClassKind.OBJECT) {
-            return field(type, JvmClassName.byInternalName(type.getInternalName()), JvmAbi.INSTANCE_FIELD, true);
-        }
-        else if (kind == ClassKind.ENUM_ENTRY) {
-            final JvmClassName owner = typeMapper.getBindingContext()
-                    .get(CodegenBinding.FQN, classDescriptor.getContainingDeclaration().getContainingDeclaration());
-            return field(type, owner, classDescriptor.getName().getName(), true);
-        }
-        else {
-            throw new UnsupportedOperationException();
-        }
+        FieldInfo info = FieldInfo.createForSingleton(classDescriptor, typeMapper);
+        return field(info.getFieldType(), JvmClassName.byInternalName(info.getOwnerInternalName()), info.getFieldName(), true);
     }
 
     private static class None extends StackValue {
@@ -1155,7 +1143,7 @@ public abstract class StackValue {
 
         @Override
         public void put(Type type, InstructionAdapter v) {
-            final StackValue stackValue = codegen.generateThisOrOuter(descriptor, isSuper);
+            StackValue stackValue = codegen.generateThisOrOuter(descriptor, isSuper);
             stackValue.put(coerceType ? type : stackValue.type, v);
         }
     }

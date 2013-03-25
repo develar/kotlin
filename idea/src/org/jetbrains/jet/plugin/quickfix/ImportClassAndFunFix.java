@@ -52,7 +52,7 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.plugin.JetBundle;
 import org.jetbrains.jet.plugin.actions.JetAddImportAction;
 import org.jetbrains.jet.plugin.caches.JetShortNamesCache;
-import org.jetbrains.jet.plugin.project.JsModuleDetector;
+import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
 import org.jetbrains.jet.plugin.project.WholeProjectAnalyzerFacade;
 import org.jetbrains.jet.plugin.util.JetPsiHeuristicsUtil;
 
@@ -80,7 +80,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
             return Collections.emptyList();
         }
 
-        final String referenceName = element.getReferencedName();
+        String referenceName = element.getReferencedName();
 
         if (!StringUtil.isNotEmpty(referenceName)) {
             return Collections.emptyList();
@@ -162,7 +162,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
     public static Collection<FqName> getClassNames(@NotNull String referenceName, @NotNull JetFile file, @NotNull KotlinCodeAnalyzer analyzer) {
         Set<FqName> possibleResolveNames = Sets.newHashSet();
 
-        if (!JsModuleDetector.isJsModule(file)) {
+        if (!KotlinFrameworkDetector.isJsKotlinModule(file)) {
             possibleResolveNames.addAll(getClassesFromCache(referenceName, file));
         }
         else {
@@ -173,7 +173,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
         return Lists.newArrayList(possibleResolveNames);
     }
 
-    private static Collection<FqName> getClassesFromCache(@NotNull final String typeName, @NotNull final JetFile file) {
+    private static Collection<FqName> getClassesFromCache(@NotNull String typeName, @NotNull final JetFile file) {
         PsiShortNamesCache cache = getShortNamesCache(file);
 
         PsiClass[] classes = cache.getClassesByName(typeName, GlobalSearchScope.allScope(file.getProject()));
@@ -199,7 +199,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
     }
 
     private static PsiShortNamesCache getShortNamesCache(@NotNull JetFile jetFile) {
-        if (JsModuleDetector.isJsModule(jetFile)) {
+        if (KotlinFrameworkDetector.isJsKotlinModule(jetFile)) {
             return JetShortNamesCache.getKotlinInstance(jetFile.getProject());
         }
 
@@ -229,7 +229,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
             return false;
         }
 
-        final Project project = editor.getProject();
+        Project project = editor.getProject();
         if (project == null) {
             return false;
         }
@@ -268,7 +268,7 @@ public class ImportClassAndFunFix extends JetHintAction<JetSimpleNameExpression>
     }
 
     @Override
-    public void invoke(@NotNull final Project project, @NotNull final Editor editor, final PsiFile file)
+    public void invoke(@NotNull final Project project, @NotNull final Editor editor, PsiFile file)
             throws IncorrectOperationException {
         CommandProcessor.getInstance().runUndoTransparentAction(new Runnable() {
             @Override

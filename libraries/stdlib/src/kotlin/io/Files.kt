@@ -12,8 +12,9 @@ import java.net.URL
  */
 public fun File.recurse(block: (File) -> Unit): Unit {
     block(this)
-    if (this.isDirectory()) {
-        for (child in this.listFiles()!!) {
+    val children = this.listFiles()
+    if (children != null) {
+        for (child in children) {
             child.recurse(block)
         }
     }
@@ -26,7 +27,7 @@ inline val File.directory: File
 get() = if (this.isDirectory()) this else this.getParentFile()!!
 
 /**
- * Returns the canoncial path of the file
+ * Returns the canonical path of the file
  */
 inline val File.canonicalPath: String
 get() = getCanonicalPath()

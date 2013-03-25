@@ -32,9 +32,13 @@ import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.FilteringScope;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
-import org.jetbrains.jet.lang.types.*;
+import org.jetbrains.jet.lang.types.DescriptorSubstitutor;
+import org.jetbrains.jet.lang.types.JetType;
+import org.jetbrains.jet.lang.types.TypeUtils;
+import org.jetbrains.jet.lang.types.Variance;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
+import org.jetbrains.jet.renderer.DescriptorRenderer;
 
 import java.util.*;
 
@@ -45,8 +49,8 @@ public class DescriptorUtils {
     }
 
     @NotNull
-    public static <D extends CallableDescriptor> D substituteBounds(@NotNull final D functionDescriptor) {
-        final List<TypeParameterDescriptor> typeParameters = functionDescriptor.getTypeParameters();
+    public static <D extends CallableDescriptor> D substituteBounds(@NotNull D functionDescriptor) {
+        List<TypeParameterDescriptor> typeParameters = functionDescriptor.getTypeParameters();
         if (typeParameters.isEmpty()) return functionDescriptor;
 
         // TODO: this does not handle any recursion in the bounds
@@ -144,6 +148,13 @@ public class DescriptorUtils {
         NamespaceDescriptor whatPackage = DescriptorUtils.getParentOfType(first, NamespaceDescriptor.class, false);
         NamespaceDescriptor fromPackage = DescriptorUtils.getParentOfType(second, NamespaceDescriptor.class, false);
         return fromPackage != null && whatPackage != null && whatPackage.equals(fromPackage);
+    }
+
+    public static boolean isInSameModule(@NotNull DeclarationDescriptor first, @NotNull DeclarationDescriptor second) {
+        ModuleDescriptor parentModule = DescriptorUtils.getParentOfType(first, ModuleDescriptor.class, false);
+        ModuleDescriptor fromModule = DescriptorUtils.getParentOfType(second, ModuleDescriptor.class, false);
+        assert parentModule != null && fromModule != null;
+        return parentModule.equals(fromModule);
     }
 
     @Nullable
@@ -354,10 +365,14 @@ public class DescriptorUtils {
         return Name.special("<class-object-for-" + className + ">");
     }
 
-    public static boolean isEnumClassObject(@NotNull DeclarationDescriptor classObjectDescriptor) {
-        DeclarationDescriptor containingDeclaration = classObjectDescriptor.getContainingDeclaration();
-        return ((containingDeclaration instanceof ClassDescriptor) &&
-                ((ClassDescriptor) containingDeclaration).getKind() == ClassKind.ENUM_CLASS);
+    public static boolean isEnumClassObject(@NotNull DeclarationDescriptor descriptor) {
+        if (descriptor instanceof ClassDescriptor && ((ClassDescriptor) descriptor).getKind() == ClassKind.CLASS_OBJECT) {
+            DeclarationDescriptor containing = descriptor.getContainingDeclaration();
+            if ((containing instanceof ClassDescriptor) && ((ClassDescriptor) containing).getKind() == ClassKind.ENUM_CLASS) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @NotNull
@@ -373,10 +388,18 @@ public class DescriptorUtils {
         return Visibilities.PUBLIC;
     }
 
-    public static List<String> getSortedValueArguments(AnnotationDescriptor descriptor) {
+    @NotNull
+    public static List<String> getSortedValueArguments(
+            @NotNull AnnotationDescriptor descriptor,
+            @Nullable DescriptorRenderer rendererForTypesIfNecessary
+    ) {
         List<String> resultList = Lists.newArrayList();
         for (Map.Entry<ValueParameterDescriptor, CompileTimeConstant<?>> entry : descriptor.getAllValueArguments().entrySet()) {
-            resultList.add(entry.getKey().getName().getName() + " = " + entry.getValue().toString());
+            CompileTimeConstant<?> value = entry.getValue();
+            String typeSuffix = rendererForTypesIfNecessary == null
+                                ? ""
+                                : ": " + rendererForTypesIfNecessary.renderType(value.getType(KotlinBuiltIns.getInstance()));
+            resultList.add(entry.getKey().getName().getName() + " = " + value.toString() + typeSuffix);
         }
         Collections.sort(resultList);
         return resultList;
@@ -526,5 +549,19 @@ public class DescriptorUtils {
             return (ClassDescriptor) innerClassDescriptor;
         }
         return null;
+    }
+
+    public static boolean isEnumValueOfMethod(@NotNull FunctionDescriptor functionDescriptor) {
+        List<ValueParameterDescriptor> methodTypeParameters = functionDescriptor.getValueParameters();
+        JetType nullableString = TypeUtils.makeNullable(KotlinBuiltIns.getInstance().getStringType());
+        return "valueOf".equals(functionDescriptor.getName().getName())
+               && methodTypeParameters.size() == 1
+               && JetTypeChecker.INSTANCE.isSubtypeOf(methodTypeParameters.get(0).getType(), nullableString);
+    }
+
+    public static boolean isEnumValuesMethod(@NotNull FunctionDescriptor functionDescriptor) {
+        List<ValueParameterDescriptor> methodTypeParameters = functionDescriptor.getValueParameters();
+        return "values".equals(functionDescriptor.getName().getName())
+               && methodTypeParameters.isEmpty();
     }
 }

@@ -46,16 +46,22 @@ public class KotlinPathsFromHomeDir implements KotlinPaths {
         return getLibraryFile(getRuntimeName(true));
     }
 
-    @NotNull
-    @Override
-    public File getRuntimePath(boolean forJvm) {
-        return getLibraryFile(getRuntimeName(forJvm));
-    }
-
     @Override
     @NotNull
     public File getJdkAnnotationsPath() {
         return getLibraryFile(PathUtil.JDK_ANNOTATIONS_JAR);
+    }
+
+    @Override
+    @NotNull
+    public File getJsLibJsPath() {
+        return getLibraryFile(PathUtil.JS_LIB_JS_NAME);
+    }
+
+    @Override
+    @NotNull
+    public File getJsLibJarPath() {
+        return getLibraryFile(PathUtil.JS_LIB_JAR_NAME);
     }
 
     @NotNull
@@ -64,6 +70,6 @@ public class KotlinPathsFromHomeDir implements KotlinPaths {
     }
 
     public static String getRuntimeName(boolean forJvm) {
-        return forJvm ? "kotlin-runtime.jar" : "kotlin-js-lib.zip";
+        return forJvm ? PathUtil.KOTLIN_JAVA_RUNTIME_JAR : "kotlin-js-lib.zip";
     }
 }

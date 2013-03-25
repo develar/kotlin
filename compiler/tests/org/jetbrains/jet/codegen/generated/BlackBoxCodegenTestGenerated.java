@@ -462,6 +462,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             doTest("compiler/testData/codegen/box/classes/classObject.kt");
         }
         
+        @TestMetadata("classObjectAsStaticInitializer.kt")
+        public void testClassObjectAsStaticInitializer() throws Exception {
+            doTest("compiler/testData/codegen/box/classes/classObjectAsStaticInitializer.kt");
+        }
+        
         @TestMetadata("classObjectField.kt")
         public void testClassObjectField() throws Exception {
             doTest("compiler/testData/codegen/box/classes/classObjectField.kt");
@@ -470,6 +475,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         @TestMetadata("classObjectInTrait.kt")
         public void testClassObjectInTrait() throws Exception {
             doTest("compiler/testData/codegen/box/classes/classObjectInTrait.kt");
+        }
+        
+        @TestMetadata("classObjectNotOfEnum.kt")
+        public void testClassObjectNotOfEnum() throws Exception {
+            doTest("compiler/testData/codegen/box/classes/classObjectNotOfEnum.kt");
         }
         
         @TestMetadata("delegation2.kt")
@@ -1575,6 +1585,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         @TestMetadata("simple.kt")
         public void testSimple() throws Exception {
             doTest("compiler/testData/codegen/box/extensionFunctions/simple.kt");
+        }
+        
+        @TestMetadata("thisMethodInObjectLiteral.kt")
+        public void testThisMethodInObjectLiteral() throws Exception {
+            doTest("compiler/testData/codegen/box/extensionFunctions/thisMethodInObjectLiteral.kt");
         }
         
         @TestMetadata("virtual.kt")
@@ -2713,6 +2728,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/codegen/box/operatorConventions"), Pattern.compile("^(.+)\\.kt$"), true);
         }
         
+        @TestMetadata("assignmentOperations.kt")
+        public void testAssignmentOperations() throws Exception {
+            doTest("compiler/testData/codegen/box/operatorConventions/assignmentOperations.kt");
+        }
+        
         @TestMetadata("compiler/testData/codegen/box/operatorConventions/compareTo")
         public static class CompareTo extends AbstractBlackBoxCodegenTest {
             public void testAllFilesPresentInCompareTo() throws Exception {
@@ -3235,6 +3255,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             doTest("compiler/testData/codegen/box/traits/kt2963.kt");
         }
         
+        @TestMetadata("kt3413.kt")
+        public void testKt3413() throws Exception {
+            doTest("compiler/testData/codegen/box/traits/kt3413.kt");
+        }
+        
         @TestMetadata("multiple.kt")
         public void testMultiple() throws Exception {
             doTest("compiler/testData/codegen/box/traits/multiple.kt");
@@ -3258,6 +3283,21 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         @TestMetadata("withRequired.kt")
         public void testWithRequired() throws Exception {
             doTest("compiler/testData/codegen/box/traits/withRequired.kt");
+        }
+        
+        @TestMetadata("withRequiredGenericProperty.kt")
+        public void testWithRequiredGenericProperty() throws Exception {
+            doTest("compiler/testData/codegen/box/traits/withRequiredGenericProperty.kt");
+        }
+        
+        @TestMetadata("withRequiredProperty.kt")
+        public void testWithRequiredProperty() throws Exception {
+            doTest("compiler/testData/codegen/box/traits/withRequiredProperty.kt");
+        }
+        
+        @TestMetadata("withRequiredPropertyViaBridge.kt")
+        public void testWithRequiredPropertyViaBridge() throws Exception {
+            doTest("compiler/testData/codegen/box/traits/withRequiredPropertyViaBridge.kt");
         }
         
         @TestMetadata("withRequiredSuper.kt")

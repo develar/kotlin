@@ -54,12 +54,6 @@ public interface Errors {
 
     DiagnosticFactory1<PsiElement, String> UNSUPPORTED = DiagnosticFactory1.create(ERROR);
 
-    // TODO: Temporary error message: to deprecate tuples we report this error and provide a quick fix
-    @Deprecated // Tuples will be dropped in Kotlin M4
-            DiagnosticFactory0<PsiElement> TUPLES_ARE_NOT_SUPPORTED = DiagnosticFactory0.create(ERROR);
-    @Deprecated // Tuples will be dropped in Kotlin M4
-            DiagnosticFactory0<PsiElement> TUPLES_ARE_NOT_SUPPORTED_BIG = DiagnosticFactory0.create(ERROR);
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Generic errors/warnings: applicable in many contexts
@@ -524,7 +518,7 @@ public interface Errors {
     DiagnosticFactory0<JetDeclarationWithBody>
             NO_RETURN_IN_FUNCTION_WITH_BLOCK_BODY = DiagnosticFactory0.create(ERROR, DECLARATION_WITH_BODY);
 
-    DiagnosticFactory0<JetClassInitializer> ANONYMOUS_INITIALIZER_WITHOUT_CONSTRUCTOR = DiagnosticFactory0.create(ERROR);
+    DiagnosticFactory0<JetClassInitializer> ANONYMOUS_INITIALIZER_IN_TRAIT = DiagnosticFactory0.create(ERROR);
 
     DiagnosticFactory0<JetThisExpression> NO_THIS = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<JetRootNamespaceExpression> NAMESPACE_IS_NOT_AN_EXPRESSION = DiagnosticFactory0.create(ERROR);

@@ -40,11 +40,6 @@ public class DefaultErrorMessages {
     public static final DiagnosticRenderer<Diagnostic> RENDERER = new DispatchingDiagnosticRenderer(MAP);
 
     static {
-
-        // TODO: remove when tuples are completely dropped
-        MAP.put(TUPLES_ARE_NOT_SUPPORTED, "Tuples are not supported. In the IDE you can use Alt+Enter to replace tuples with library classes");
-        MAP.put(TUPLES_ARE_NOT_SUPPORTED_BIG, "Tuples are not supported. Use data classes instead");
-
         MAP.put(EXCEPTION_WHILE_ANALYZING, "{0}", new Renderer<Throwable>() {
             @NotNull
             @Override
@@ -305,7 +300,7 @@ public class DefaultErrorMessages {
         MAP.put(NOT_A_LOOP_LABEL, "The label ''{0}'' does not denote a loop", TO_STRING);
         MAP.put(NOT_A_RETURN_LABEL, "The label ''{0}'' does not reference to a context from which we can return", TO_STRING);
 
-        MAP.put(ANONYMOUS_INITIALIZER_WITHOUT_CONSTRUCTOR, "Anonymous initializers are only allowed in the presence of a primary constructor");
+        MAP.put(ANONYMOUS_INITIALIZER_IN_TRAIT, "Anonymous initializers are not allowed in traits");
         MAP.put(NULLABLE_SUPERTYPE, "A supertype cannot be nullable");
         MAP.put(REDUNDANT_NULLABLE, "Redundant '?'");
         MAP.put(BASE_WITH_NULLABLE_UPPER_BOUND, "''{0}'' has a nullable upper bound. " +

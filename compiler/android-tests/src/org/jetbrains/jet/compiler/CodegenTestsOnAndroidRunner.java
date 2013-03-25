@@ -57,7 +57,7 @@ public class CodegenTestsOnAndroidRunner {
         if (resultOutput == null) return suite;
 
         // Test name -> stackTrace
-        final Map<String, String> resultMap = parseOutputForFailedTests(resultOutput);
+        Map<String, String> resultMap = parseOutputForFailedTests(resultOutput);
         final Statistics statistics;
 
         // If map is empty => there are no failed tests
@@ -204,15 +204,19 @@ public class CodegenTestsOnAndroidRunner {
             }
             catch (RuntimeException e) {
                 e.printStackTrace();
+                throw e;
             }
             finally {
                 emulator.stopEmulator();
             }
         }
+        catch (RuntimeException e) {
+            e.printStackTrace();
+            throw e;
+        }
         finally {
             emulator.finishEmulatorProcesses();
         }
-        return null;
     }
 
     private static class Statistics {

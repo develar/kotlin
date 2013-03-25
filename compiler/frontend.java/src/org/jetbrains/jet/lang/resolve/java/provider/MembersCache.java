@@ -138,7 +138,9 @@ public final class MembersCache {
                 return false;
             }
 
-            if (member.isPrivate()) {
+            //process private accessors
+            if (member.isPrivate()
+                && !(member instanceof PsiMethodWrapper && ((PsiMethodWrapper)member).getJetMethodAnnotation().hasPropertyFlag())) {
                 return false;
             }
 
@@ -263,7 +265,7 @@ public final class MembersCache {
                 }
 
                 // TODO: what if returnType == null?
-                final PsiType returnType = method.getReturnType();
+                PsiType returnType = method.getReturnType();
                 assert returnType != null;
                 TypeSource propertyType = new TypeSource(method.getJetMethodAnnotation().propertyType(), returnType, method.getPsiMethod());
 

@@ -19,7 +19,10 @@ package org.jetbrains.jet.lang.resolve.java.resolver;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMember;
+import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiPackage;
+import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
@@ -165,9 +168,10 @@ public final class JavaNamespaceResolver {
         if (psiClass == null) {
             return null;
         }
-        if (psiClass.isEnum()) {
-            // NOTE: we don't want to create namespace for enum classes because we put
-            // static members of enum class into class object descriptor
+        if (DescriptorResolverUtils.isKotlinClass(psiClass)) {
+            return null;
+        }
+        if (!hasStaticMembers(psiClass)) {
             return null;
         }
         trace.record(JavaBindingContext.JAVA_NAMESPACE_KIND, namespaceDescriptor, JavaNamespaceKind.CLASS_STATICS);
@@ -206,5 +210,21 @@ public final class JavaNamespaceResolver {
     @Nullable
     private PsiClass getPsiClassForJavaPackageScope(@NotNull FqName packageFQN) {
         return psiClassFinder.findPsiClass(PackageClassUtils.getPackageClassFqName(packageFQN), PsiClassFinder.RuntimeClassesHandleMode.IGNORE);
+    }
+
+    private static boolean hasStaticMembers(@NotNull PsiClass psiClass) {
+        for (PsiMember member : ContainerUtil.concat(psiClass.getMethods(), psiClass.getFields())) {
+            if (member.hasModifierProperty(PsiModifier.STATIC) && !DescriptorResolverUtils.shouldBeInEnumClassObject(member)) {
+                return true;
+            }
+        }
+
+        for (PsiClass nestedClass : psiClass.getInnerClasses()) {
+            if (nestedClass.hasModifierProperty(PsiModifier.STATIC) && hasStaticMembers(nestedClass)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

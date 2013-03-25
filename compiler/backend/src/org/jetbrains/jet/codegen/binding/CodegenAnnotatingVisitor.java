@@ -111,7 +111,7 @@ class CodegenAnnotatingVisitor extends JetVisitorVoid {
     public void visitJetFile(JetFile file) {
         if (file.isScript()) {
             //noinspection ConstantConditions
-            final ClassDescriptor classDescriptor =
+            ClassDescriptor classDescriptor =
                     bindingContext.get(CLASS_FOR_FUNCTION, bindingContext.get(SCRIPT, file.getScript()));
             classStack.push(classDescriptor);
             //noinspection ConstantConditions
@@ -132,7 +132,7 @@ class CodegenAnnotatingVisitor extends JetVisitorVoid {
         ClassDescriptor descriptor = bindingContext.get(CLASS, enumEntry);
         assert descriptor != null;
 
-        final boolean trivial = enumEntry.getDeclarations().isEmpty();
+        boolean trivial = enumEntry.getDeclarations().isEmpty();
         if (!trivial) {
             bindingTrace.record(ENUM_ENTRY_CLASS_NEED_SUBCLASS, descriptor);
             super.visitEnumEntry(enumEntry);
@@ -211,7 +211,7 @@ class CodegenAnnotatingVisitor extends JetVisitorVoid {
             return;
         }
 
-        final String name = inventAnonymousClassName(expression.getObjectDeclaration());
+        String name = inventAnonymousClassName(expression.getObjectDeclaration());
         recordClosure(bindingTrace, expression.getObjectDeclaration(), classDescriptor, peekFromStack(classStack), JvmClassName.byInternalName(name), false);
 
         classStack.push(classDescriptor);
@@ -224,14 +224,15 @@ class CodegenAnnotatingVisitor extends JetVisitorVoid {
 
     @Override
     public void visitFunctionLiteralExpression(JetFunctionLiteralExpression expression) {
+        JetFunctionLiteral functionLiteral = expression.getFunctionLiteral();
         FunctionDescriptor functionDescriptor =
-                (FunctionDescriptor) bindingContext.get(DECLARATION_TO_DESCRIPTOR, expression);
+                (FunctionDescriptor) bindingContext.get(DECLARATION_TO_DESCRIPTOR, functionLiteral);
         // working around a problem with shallow analysis
         if (functionDescriptor == null) return;
 
         String name = inventAnonymousClassName(expression);
         ClassDescriptor classDescriptor = recordClassForFunction(functionDescriptor);
-        recordClosure(bindingTrace, expression, classDescriptor, peekFromStack(classStack), JvmClassName.byInternalName(name), true);
+        recordClosure(bindingTrace, functionLiteral, classDescriptor, peekFromStack(classStack), JvmClassName.byInternalName(name), true);
 
         classStack.push(classDescriptor);
         nameStack.push(name);

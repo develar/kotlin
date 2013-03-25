@@ -27,6 +27,8 @@ import java.io.File;
 
 public class PathUtil {
     public static final String JDK_ANNOTATIONS_JAR = "kotlin-jdk-annotations.jar";
+    public static final String KOTLIN_JAVA_RUNTIME_JAR = "kotlin-runtime.jar";
+    public static final String HOME_FOLDER_NAME = "kotlinc";
 
     private static final File NO_PATH = new File("<no_path>");
 
@@ -61,7 +63,7 @@ public class PathUtil {
 
     @NotNull
     public static KotlinPaths getKotlinPathsForDistDirectory() {
-        return new KotlinPathsFromHomeDir(new File("dist/kotlinc"));
+        return new KotlinPathsFromHomeDir(new File("dist", HOME_FOLDER_NAME));
     }
 
     @NotNull
@@ -86,7 +88,7 @@ public class PathUtil {
 
         if (jar.getName().equals("kotlin-jps-plugin.jar")) {
             File pluginHome = jar.getParentFile().getParentFile().getParentFile();
-            return new File(pluginHome, "kotlinc");
+            return new File(pluginHome, HOME_FOLDER_NAME);
         }
 
         return NO_PATH;
@@ -102,7 +104,7 @@ public class PathUtil {
             File lib = jar.getParentFile();
             File pluginHome = lib.getParentFile();
 
-            return new File(pluginHome, "kotlinc");
+            return new File(pluginHome, HOME_FOLDER_NAME);
         }
 
         return NO_PATH;

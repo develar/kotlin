@@ -38,12 +38,8 @@ import org.jetbrains.jet.lang.resolve.java.provider.NamedMembers;
 import org.jetbrains.jet.lang.resolve.java.provider.PsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.java.wrapper.PsiMethodWrapper;
 import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.SubstitutionUtils;
-import org.jetbrains.jet.lang.types.TypeSubstitutor;
-import org.jetbrains.jet.lang.types.TypeUtils;
+import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
-import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
 import javax.inject.Inject;
 import java.util.Collections;
@@ -51,6 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.jetbrains.jet.lang.resolve.DescriptorUtils.*;
 import static org.jetbrains.jet.lang.resolve.OverridingUtil.*;
 import static org.jetbrains.jet.lang.resolve.java.provider.DeclarationOrigin.JAVA;
 import static org.jetbrains.jet.lang.resolve.java.provider.DeclarationOrigin.KOTLIN;
@@ -94,9 +91,13 @@ public final class JavaFunctionResolver {
 
     @Nullable
     private SimpleFunctionDescriptor resolveMethodToFunctionDescriptor(
-            @NotNull final PsiClass psiClass, final PsiMethodWrapper method,
+            @NotNull PsiClass psiClass, PsiMethodWrapper method,
             @NotNull PsiDeclarationProvider scopeData, @NotNull ClassOrNamespaceDescriptor ownerDescriptor
     ) {
+        if (!DescriptorResolverUtils.isCorrectOwnerForEnumMember(ownerDescriptor, method.getPsiMember())) {
+            return null;
+        }
+
         PsiType returnPsiType = method.getReturnType();
         if (returnPsiType == null) {
             return null;
@@ -107,8 +108,8 @@ public final class JavaFunctionResolver {
             return null;
         }
 
-        final PsiMethod psiMethod = method.getPsiMethod();
-        final PsiClass containingClass = psiMethod.getContainingClass();
+        PsiMethod psiMethod = method.getPsiMethod();
+        PsiClass containingClass = psiMethod.getContainingClass();
         if (scopeData.getDeclarationOrigin() == KOTLIN) {
             // TODO: unless maybe class explicitly extends Object
             assert containingClass != null;
@@ -122,7 +123,7 @@ public final class JavaFunctionResolver {
             return trace.get(BindingContext.FUNCTION, psiMethod);
         }
 
-        final SimpleFunctionDescriptorImpl functionDescriptorImpl = new SimpleFunctionDescriptorImpl(
+        SimpleFunctionDescriptorImpl functionDescriptorImpl = new SimpleFunctionDescriptorImpl(
                 ownerDescriptor,
                 annotationResolver.resolveAnnotations(psiMethod),
                 Name.identifier(method.getName()),
@@ -144,7 +145,7 @@ public final class JavaFunctionResolver {
                 .resolveParameterDescriptors(functionDescriptorImpl, method.getParameters(), methodTypeVariableResolver);
         JetType returnType = makeReturnType(returnPsiType, method, methodTypeVariableResolver);
 
-        final List<String> signatureErrors = Lists.newArrayList();
+        List<String> signatureErrors = Lists.newArrayList();
 
         List<FunctionDescriptor> superFunctions;
         if (ownerDescriptor instanceof ClassDescriptor) {
@@ -197,7 +198,9 @@ public final class JavaFunctionResolver {
             throw new IllegalStateException("non-static method in subclass");
         }
 
-        if (!RawTypesCheck.hasRawTypesInHierarchicalSignature(psiMethod) && JavaMethodSignatureUtil.isMethodReturnTypeCompatible(psiMethod)) {
+        if (!RawTypesCheck.hasRawTypesInHierarchicalSignature(psiMethod)
+                && JavaMethodSignatureUtil.isMethodReturnTypeCompatible(psiMethod)
+                && !containsErrorType(superFunctions, functionDescriptorImpl)) {
             if (signatureErrors.isEmpty()) {
                 checkFunctionsOverrideCorrectly(method, superFunctions, functionDescriptorImpl);
             }
@@ -215,8 +218,16 @@ public final class JavaFunctionResolver {
             FunctionDescriptor functionDescriptor
     ) {
         for (FunctionDescriptor superFunction : superFunctions) {
-            TypeSubstitutor substitutor = SubstitutionUtils.buildDeepSubstitutor(
-                    ((ClassDescriptor) functionDescriptor.getContainingDeclaration()).getDefaultType());
+            ClassDescriptor klass = (ClassDescriptor) functionDescriptor.getContainingDeclaration();
+            List<TypeSubstitution> substitutions = Lists.newArrayList();
+            while (true) {
+                substitutions.add(SubstitutionUtils.buildDeepSubstitutor(klass.getDefaultType()).getSubstitution());
+                if (!klass.isInner()) {
+                    break;
+                }
+                klass = (ClassDescriptor) klass.getContainingDeclaration();
+            }
+            TypeSubstitutor substitutor = TypeSubstitutor.create(substitutions.toArray(new TypeSubstitution[substitutions.size()]));
             FunctionDescriptor superFunctionSubstituted = superFunction.substitute(substitutor);
 
             assert superFunctionSubstituted != null :
@@ -289,9 +300,9 @@ public final class JavaFunctionResolver {
         OverrideResolver.resolveUnknownVisibilities(functions, trace);
         functions.addAll(functionsFromCurrent);
 
-        if (DescriptorUtils.isEnumClassObject(owner)) {
+        if (isEnumClassObject(owner)) {
             for (FunctionDescriptor functionDescriptor : Lists.newArrayList(functions)) {
-                if (isEnumSpecialMethod(functionDescriptor)) {
+                if (isEnumValueOfMethod(functionDescriptor) || isEnumValuesMethod(functionDescriptor)) {
                     functions.remove(functionDescriptor);
                 }
             }
@@ -354,14 +365,37 @@ public final class JavaFunctionResolver {
         return r;
     }
 
-    private static boolean isEnumSpecialMethod(@NotNull FunctionDescriptor functionDescriptor) {
-        List<ValueParameterDescriptor> methodTypeParameters = functionDescriptor.getValueParameters();
-        String methodName = functionDescriptor.getName().getName();
-        JetType nullableString = TypeUtils.makeNullable(KotlinBuiltIns.getInstance().getStringType());
-        if (methodName.equals("valueOf") && methodTypeParameters.size() == 1
-            && JetTypeChecker.INSTANCE.isSubtypeOf(methodTypeParameters.get(0).getType(), nullableString)) {
+    private static boolean containsErrorType(@NotNull List<FunctionDescriptor> superFunctions, @NotNull FunctionDescriptor function) {
+        if (containsErrorType(function)) {
             return true;
         }
-        return (methodName.equals("values") && methodTypeParameters.isEmpty());
+
+        for (FunctionDescriptor superFunction : superFunctions) {
+            if (containsErrorType(superFunction)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean containsErrorType(@NotNull FunctionDescriptor function) {
+        if (ErrorUtils.containsErrorType(function.getReturnType())) {
+            return true;
+        }
+        for (ValueParameterDescriptor parameter : function.getValueParameters()) {
+            if (ErrorUtils.containsErrorType(parameter.getType())) {
+                return true;
+            }
+        }
+        for (TypeParameterDescriptor parameter : function.getTypeParameters()) {
+            for (JetType upperBound : parameter.getUpperBounds()) {
+                if (ErrorUtils.containsErrorType(upperBound)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

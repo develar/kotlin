@@ -22,6 +22,7 @@ import org.jetbrains.jet.checkers.AbstractDiagnosticsTestWithEagerResolve;
 import org.jetbrains.jet.checkers.AbstractJetPsiCheckerTest;
 import org.jetbrains.jet.codegen.AbstractBytecodeTextTest;
 import org.jetbrains.jet.codegen.AbstractCheckLocalVariablesTableTest;
+import org.jetbrains.jet.codegen.AbstractTopLevelMembersInvocationTest;
 import org.jetbrains.jet.codegen.defaultConstructor.AbstractDefaultConstructorCodegenTest;
 import org.jetbrains.jet.codegen.flags.AbstractWriteFlagsTest;
 import org.jetbrains.jet.codegen.generated.AbstractBlackBoxCodegenTest;
@@ -30,6 +31,7 @@ import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveDescriptorRenderer
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveNamespaceComparingTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveTest;
 import org.jetbrains.jet.plugin.codeInsight.surroundWith.AbstractSurroundWithTest;
+import org.jetbrains.jet.plugin.folding.AbstractKotlinFoldingTest;
 import org.jetbrains.jet.plugin.highlighter.AbstractDeprecatedHighlightingTest;
 import org.jetbrains.jet.plugin.quickfix.AbstractQuickFixMultiFileTest;
 import org.jetbrains.jet.plugin.quickfix.AbstractQuickFixTest;
@@ -107,6 +109,13 @@ public class GenerateTests {
 
         generateTest(
                 "compiler/tests/",
+                "TopLevelMembersInvocationTestGenerated",
+                AbstractTopLevelMembersInvocationTest.class,
+                new SimpleTestClassModel(new File("compiler/testData/codegen/topLevelMemberInvocation"), false, Pattern.compile("^(.+)$"), "doTest")
+        );
+
+        generateTest(
+                "compiler/tests/",
                 "CheckLocalVariablesTableTestGenerated",
                 AbstractCheckLocalVariablesTableTest.class,
                 testModel("compiler/testData/checkLocalVariablesTable", "doTest")
@@ -131,14 +140,17 @@ public class GenerateTests {
                 "compiler/tests/",
                 "LoadCompiledKotlinTestGenerated",
                 AbstractLoadCompiledKotlinTest.class,
-                testModel("compiler/testData/loadKotlin")
+                testModel("compiler/testData/loadKotlin", "doTestWithAccessors")
         );
 
         generateTest(
                 "compiler/tests/",
                 "LoadJavaTestGenerated",
                 AbstractLoadJavaTest.class,
-                testModel("compiler/testData/loadJava", true, "java", "doTest")
+                testModel("compiler/testData/loadJava/compiledJavaCompareWithKotlin", true, "java", "doTest"),
+                testModel("compiler/testData/loadJava/compiledJava", true, "java", "doTestCompiledJava"),
+                testModel("compiler/testData/loadJava/sourceJava", true, "java", "doTestSourceJava"),
+                testModel("compiler/testData/loadJava/javaAgainstKotlin", true, "txt", "doTestJavaAgainstKotlin")
         );
 
         generateTest(
@@ -169,15 +181,6 @@ public class GenerateTests {
                 testModel("compiler/testData/renderer")
         );
 
-        // TODO test is temporarily disabled
-        //generateTest(
-        //        "compiler/tests/",
-        //        "org.jetbrains.jet.lang.resolve.lazy",
-        //        "LazyResolveDiagnosticsTestGenerated",
-        //        AbstractLazyResolveDiagnosticsTest.class,
-        //        new SimpleTestClassModel(AbstractLazyResolveDiagnosticsTest.TEST_DATA_DIR, true, "kt", "doTest")
-        //);
-
         generateTest("compiler/tests",
                      "LazyResolveTestGenerated",
                      AbstractLazyResolveTest.class,
@@ -187,8 +190,8 @@ public class GenerateTests {
                 "compiler/tests/",
                 "LazyResolveNamespaceComparingTestGenerated",
                 AbstractLazyResolveNamespaceComparingTest.class,
-                testModel("compiler/testData/loadKotlin", "doTestCheckingPrimaryConstructors"),
-                testModel("compiler/testData/loadJava", "doTestNotCheckingPrimaryConstructors"),
+                testModel("compiler/testData/loadKotlin", "doTestCheckingPrimaryConstructorsAndAccessors"),
+                testModel("compiler/testData/loadJava/compiledJavaCompareWithKotlin", "doTestNotCheckingPrimaryConstructors"),
                 testModel("compiler/testData/lazyResolve/namespaceComparator", "doTestCheckingPrimaryConstructors")
         );
 
@@ -221,6 +224,13 @@ public class GenerateTests {
                 "DeprecatedHighlightingTestGenerated",
                 AbstractDeprecatedHighlightingTest.class,
                 testModel("idea/testData/highlighter/deprecated")
+        );
+
+        generateTest(
+                "idea/tests/",
+                "KotlinFoldingTestGenerated",
+                AbstractKotlinFoldingTest.class,
+                testModel("idea/testData/folding")
         );
 
         generateTest(

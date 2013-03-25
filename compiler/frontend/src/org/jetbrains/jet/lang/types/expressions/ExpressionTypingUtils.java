@@ -63,7 +63,7 @@ public class ExpressionTypingUtils {
     private ExpressionTypingUtils() {
     }
 
-    public static final JetType CANNOT_BE_INFERRED = ErrorUtils.createErrorType("Cannot be inferred");
+    public static final JetType CANT_INFER_LAMBDA_PARAM_TYPE = ErrorUtils.createErrorType("Cannot be inferred");
 
     @Nullable
     protected static ExpressionReceiver getExpressionReceiver(@NotNull JetExpression expression, @Nullable JetType type) {
@@ -286,7 +286,7 @@ public class ExpressionTypingUtils {
         int index = 0;
         List<JetExpression> fakeArguments = Lists.newArrayList();
         for (JetType type : argumentTypes) {
-            final JetReferenceExpression fakeArgument = JetPsiFactory.createSimpleName(context.expressionTypingServices.getProject(), "fakeArgument" + index++);
+            JetReferenceExpression fakeArgument = JetPsiFactory.createSimpleName(context.expressionTypingServices.getProject(), "fakeArgument" + index++);
             fakeArguments.add(fakeArgument);
             traceWithFakeArgumentInfo.record(EXPRESSION_TYPE, fakeArgument, type);
         }
@@ -319,8 +319,7 @@ public class ExpressionTypingUtils {
                 @Override
                 public boolean accept(@NotNull WritableSlice<?, ?> slice, Object key) {
                     // excluding all entries related to fake expression
-                    // keys in RESOLUTION_RESULTS_FOR_FUNCTION slice have fake expression inside
-                    return key != fake && slice != RESOLUTION_RESULTS_FOR_FUNCTION;
+                    return key != fake;
                 }
             }, false);
         }
@@ -336,7 +335,7 @@ public class ExpressionTypingUtils {
     ) {
         int componentIndex = 1;
         for (JetMultiDeclarationEntry entry : multiDeclaration.getEntries()) {
-            final Name componentName = Name.identifier(DescriptorResolver.COMPONENT_FUNCTION_NAME_PREFIX + componentIndex);
+            Name componentName = Name.identifier(DescriptorResolver.COMPONENT_FUNCTION_NAME_PREFIX + componentIndex);
             componentIndex++;
 
             JetType expectedType = getExpectedTypeForComponent(context, entry);

@@ -44,8 +44,8 @@ public class JetLiveTemplateCompletionContributor extends CompletionContributor 
                 if (parameters.getInvocationCount() == 0) {
                     return;
                 }
-                final PsiFile file = parameters.getPosition().getContainingFile();
-                final int offset = parameters.getOffset();
+                PsiFile file = parameters.getPosition().getContainingFile();
+                int offset = parameters.getOffset();
                 final List<TemplateImpl> templates = listApplicableTemplates(file, offset);
                 final Ref<Boolean> templatesShown = Ref.create(false);
 
@@ -65,7 +65,7 @@ public class JetLiveTemplateCompletionContributor extends CompletionContributor 
     private static void ensureTemplatesShown(Ref<Boolean> templatesShown, List<TemplateImpl> templates, CompletionResultSet result) {
         if (!templatesShown.get()) {
             templatesShown.set(true);
-            for (final TemplateImpl possible : templates) {
+            for (TemplateImpl possible : templates) {
                 result.addElement(new LiveTemplateLookupElement(possible, false));
             }
         }

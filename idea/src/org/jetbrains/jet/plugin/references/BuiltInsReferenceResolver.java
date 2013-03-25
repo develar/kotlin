@@ -36,7 +36,6 @@ import org.jetbrains.jet.lang.descriptors.impl.NamespaceDescriptorImpl;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetReferenceExpression;
 import org.jetbrains.jet.lang.resolve.*;
-import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.RedeclarationHandler;
@@ -54,9 +53,7 @@ import java.util.List;
 public class BuiltInsReferenceResolver {
     private BindingContext bindingContext = null;
 
-    private final FqName TUPLE0_FQ_NAME = DescriptorUtils.getFQName(KotlinBuiltIns.getInstance().getTuple(0)).toSafe();
-
-    public BuiltInsReferenceResolver(Project project) {
+   public BuiltInsReferenceResolver(Project project) {
         initialize(project);
     }
 
@@ -76,30 +73,13 @@ public class BuiltInsReferenceResolver {
         scope.changeLockLevel(WritableScope.LockLevel.BOTH);
         jetNamespace.setMemberScope(scope);
 
-        Predicate<JetFile> jetFilesIndependentOfUnit = new Predicate<JetFile>() {
-            @Override
-            public boolean apply(@Nullable JetFile file) {
-                return "Unit.jet".equals(file.getName());
-            }
-        };
         TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace,
-                                                        getJetFiles("jet", jetFilesIndependentOfUnit, myProject));
-
-        ClassDescriptor tuple0 = context.get(BindingContext.FQNAME_TO_CLASS_DESCRIPTOR, TUPLE0_FQ_NAME);
-        assert tuple0 != null : "Can't find the declaration for Tuple0. Please invoke File -> Invalidate Caches...";
-        scope = new WritableScopeImpl(scope, jetNamespace, RedeclarationHandler.THROW_EXCEPTION,
-                                      "Builtin classes scope: needed to analyze builtins which depend on Unit type alias");
-        scope.changeLockLevel(WritableScope.LockLevel.BOTH);
-        scope.addClassifierAlias(KotlinBuiltIns.UNIT_ALIAS, tuple0);
-        jetNamespace.setMemberScope(scope);
-
-        TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace,
-                                                        getJetFiles("jet", Predicates.not(jetFilesIndependentOfUnit), myProject));
+                                                        getJetFiles("jet", Predicates.<JetFile>alwaysTrue()));
 
         bindingContext = context.getBindingContext();
     }
 
-    private static List<JetFile> getJetFiles(String dir, final Predicate<JetFile> filter, Project myProject) {
+    private List<JetFile> getJetFiles(String dir, final Predicate<JetFile> filter) {
         URL url = BuiltInsReferenceResolver.class.getResource("/" + dir + "/");
         VirtualFile vf = VfsUtil.findFileByURL(url);
         assert vf != null : "Virtual file not found by URL: " + url;
@@ -154,8 +134,7 @@ public class BuiltInsReferenceResolver {
             descriptors = memberScope.getAllDescriptors();
         }
         for (DeclarationDescriptor member : descriptors) {
-            if (renderedOriginal.equals(DescriptorRenderer.TEXT.render(member).replace(TUPLE0_FQ_NAME.getFqName(),
-                                                                                       KotlinBuiltIns.UNIT_ALIAS.getName()))) {
+            if (renderedOriginal.equals(DescriptorRenderer.TEXT.render(member))) {
                 return member;
             }
         }
@@ -202,7 +181,7 @@ public class BuiltInsReferenceResolver {
         descriptor = descriptor.getOriginal();
         descriptor = findCurrentDescriptor(descriptor);
         if (descriptor != null) {
-            return DescriptorToDeclarationUtil.descriptorToDeclarations(bindingContext, descriptor);
+            return BindingContextUtils.descriptorToDeclarations(bindingContext, descriptor);
         }
         return Collections.emptyList();
     }

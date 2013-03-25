@@ -370,7 +370,7 @@ public class JetControlFlowProcessor {
         @Override
         public void visitTryExpression(JetTryExpression expression) {
             builder.read(expression);
-            final JetFinallySection finallyBlock = expression.getFinallyBlock();
+            JetFinallySection finallyBlock = expression.getFinallyBlock();
             final FinallyBlockGenerator finallyBlockGenerator = new FinallyBlockGenerator(finallyBlock);
             if (finallyBlock != null) {
                 builder.enterTryFinally(new GenerationTrigger() {
@@ -388,7 +388,7 @@ public class JetControlFlowProcessor {
             }
 
             List<JetCatchClause> catchClauses = expression.getCatchClauses();
-            final boolean hasCatches = !catchClauses.isEmpty();
+            boolean hasCatches = !catchClauses.isEmpty();
             Label onException = null;
             if (hasCatches) {
                 onException = builder.createUnboundLabel("onException");
@@ -602,10 +602,7 @@ public class JetControlFlowProcessor {
                 subroutine = builder.getReturnSubroutine();
                 // TODO : a context check
             }
-            //todo cache JetFunctionLiteral instead
-            if (subroutine instanceof JetFunctionLiteralExpression) {
-                subroutine = ((JetFunctionLiteralExpression) subroutine).getFunctionLiteral();
-            }
+
             if (subroutine instanceof JetFunction || subroutine instanceof JetPropertyAccessor) {
                 if (returnedExpression == null) {
                     builder.returnNoValue(expression, subroutine);
@@ -747,14 +744,6 @@ public class JetControlFlowProcessor {
         }
 
         @Override
-        public void visitTupleExpression(JetTupleExpression expression) {
-            for (JetExpression entry : expression.getEntries()) {
-                generateInstructions(entry, false);
-            }
-            builder.read(expression);
-        }
-
-        @Override
         public void visitBinaryWithTypeRHSExpression(JetBinaryExpressionWithTypeRHS expression) {
             IElementType operationType = expression.getOperationSign().getReferencedNameElementType();
             if (operationType == JetTokens.COLON || operationType == JetTokens.AS_KEYWORD || operationType == JetTokens.AS_SAFE) {
@@ -786,7 +775,7 @@ public class JetControlFlowProcessor {
         }
 
         @Override
-        public void visitIsExpression(final JetIsExpression expression) {
+        public void visitIsExpression(JetIsExpression expression) {
             generateInstructions(expression.getLeftHandSide(), inCondition);
             // no CF for types
             // TODO : builder.read(expression.getPattern());

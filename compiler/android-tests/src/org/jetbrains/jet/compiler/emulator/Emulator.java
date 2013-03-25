@@ -19,6 +19,7 @@ package org.jetbrains.jet.compiler.emulator;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.compiler.OutputUtils;
 import org.jetbrains.jet.compiler.PathManager;
 import org.jetbrains.jet.compiler.ThreadUtils;
@@ -83,33 +84,50 @@ public class Emulator {
         return commandLine;
     }
 
+    @Nullable
     private GeneralCommandLine getStopCommand() {
-        GeneralCommandLine commandLine = new GeneralCommandLine();
         if (SystemInfo.isWindows) {
+            GeneralCommandLine commandLine = new GeneralCommandLine();
             commandLine.setExePath("taskkill");
             commandLine.addParameter("/F");
             commandLine.addParameter("/IM");
             commandLine.addParameter("emulator-arm.exe");
+            return commandLine;
         }
-        else {
-            commandLine.setExePath(pathManager.getPlatformToolsFolderInAndroidSdk() + "/adb");
-            commandLine.addParameter("emu");
-            commandLine.addParameter("kill");
-        }
-        return commandLine;
+        return null;
     }
 
     public void createEmulator() {
         System.out.println("Creating emulator...");
-        OutputUtils.checkResult(RunUtils.execute(getCreateCommand(), "no"));
+        OutputUtils.checkResult(RunUtils.execute(new RunUtils.RunSettings(getCreateCommand(), "no", true, null, false)));
     }
 
+    public void startServer() {
+        GeneralCommandLine commandLine = new GeneralCommandLine();
+        String adbCmdName = SystemInfo.isWindows ? "adb.exe" : "adb";
+        commandLine.setExePath(pathManager.getPlatformToolsFolderInAndroidSdk() + "/" + adbCmdName);
+        commandLine.addParameter("start-server");
+        System.out.println("Start adb server...");
+        OutputUtils.checkResult(RunUtils.execute(commandLine));
+    }
 
     public void startEmulator() {
+        startServer();
         System.out.println("Starting emulator...");
-        OutputUtils.checkResult(RunUtils.executeOnSeparateThread(getStartCommand(), false));
+        RunUtils.executeOnSeparateThread(new RunUtils.RunSettings(getStartCommand(), null, false, "START: ", true));
+        printLog();
     }
 
+    public void printLog() {
+        GeneralCommandLine commandLine = new GeneralCommandLine();
+        String adbCmdName = SystemInfo.isWindows ? "adb.exe" : "adb";
+        commandLine.setExePath(pathManager.getPlatformToolsFolderInAndroidSdk() + "/" + adbCmdName);
+        commandLine.addParameter("logcat");
+        commandLine.addParameter("-v");
+        commandLine.addParameter("time");
+        commandLine.addParameter("*:I");
+        RunUtils.executeOnSeparateThread(new RunUtils.RunSettings(commandLine, null, false, "LOGCAT: ", true));
+    }
 
     public void waitEmulatorStart() {
         System.out.println("Waiting for emulator start...");
@@ -118,7 +136,9 @@ public class Emulator {
 
     public void stopEmulator() {
         System.out.println("Stopping emulator...");
-        OutputUtils.checkResult(RunUtils.execute(getStopCommand()));
+        if (SystemInfo.isWindows) {
+            OutputUtils.checkResult(RunUtils.execute(getStopCommand()));
+        }
         finishProcess("emulator-arm");
     }
 
@@ -203,5 +223,4 @@ public class Emulator {
         }
         OutputUtils.checkResult(RunUtils.execute(commandLineForListOfDevices));
     }
-
 }
