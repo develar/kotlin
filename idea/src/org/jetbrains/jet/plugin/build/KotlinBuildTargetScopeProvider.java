@@ -31,7 +31,7 @@ class KotlinBuildTargetScopeProvider extends BuildTargetScopeProvider {
     @NotNull
     @Override
     public List<CmdlineRemoteProto.Message.ControllerMessage.ParametersMessage.TargetTypeBuildScope> getBuildTargetScopes(
-            @NotNull final CompileScope baseScope, @NotNull CompilerFilter filter, @NotNull final Project project
+            @NotNull final CompileScope baseScope, @NotNull CompilerFilter filter, @NotNull final Project project, boolean forceBuild
     ) {
         THashSet<Module> modules = new ReadAction<THashSet<Module>>() {
             @Override
@@ -57,7 +57,7 @@ class KotlinBuildTargetScopeProvider extends BuildTargetScopeProvider {
             return Collections.emptyList();
         }
 
-        final TargetTypeBuildScope.Builder builder = TargetTypeBuildScope.newBuilder().setTypeId(JsBuildTargetType.TYPE_ID);
+        final TargetTypeBuildScope.Builder builder = TargetTypeBuildScope.newBuilder().setTypeId(JsBuildTargetType.TYPE_ID).setForceBuild(forceBuild);
         modules.forEach(new TObjectProcedure<Module>() {
             @Override
             public boolean execute(Module module) {
