@@ -25,8 +25,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
-import org.jetbrains.jet.lang.resolve.calls.context.ResolutionContext;
-import org.jetbrains.jet.lang.resolve.calls.context.ResolutionResultsCache;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.model.VariableAsFunctionResolvedCall;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
@@ -34,7 +32,6 @@ import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.JetTypeInfo;
 import org.jetbrains.jet.util.slicedmap.ReadOnlySlice;
 import org.jetbrains.jet.util.slicedmap.Slices;
-import org.jetbrains.jet.util.slicedmap.WritableSlice;
 
 import java.util.*;
 
@@ -82,6 +79,22 @@ public class BindingContextUtils {
 
         return null;
     }
+
+    @NotNull
+    public static List<PsiElement> resolveToDeclarationPsiElements(@NotNull BindingContext bindingContext, @Nullable JetReferenceExpression referenceExpression) {
+        DeclarationDescriptor declarationDescriptor = bindingContext.get(BindingContext.REFERENCE_TARGET, referenceExpression);
+        if (declarationDescriptor == null) {
+            return Lists.newArrayList(bindingContext.get(BindingContext.LABEL_TARGET, referenceExpression));
+        }
+
+        List<PsiElement> elements = descriptorToDeclarations(bindingContext, declarationDescriptor);
+        if (elements.size() > 0) {
+            return elements;
+        }
+
+        return Lists.newArrayList();
+    }
+
 
     @Nullable
     public static VariableDescriptor extractVariableDescriptorIfAny(@NotNull BindingContext bindingContext, @Nullable JetElement element, boolean onlyReference) {
@@ -140,6 +153,21 @@ public class BindingContextUtils {
         }
         else {
             return doGetDescriptorToDeclaration(context, descriptor);
+        }
+    }
+
+    @NotNull
+    public static List<PsiElement> descriptorToDeclarations(@NotNull BindingContext context, @NotNull DeclarationDescriptor descriptor) {
+        if (descriptor instanceof CallableMemberDescriptor) {
+            return callableDescriptorToDeclarations(context, (CallableMemberDescriptor) descriptor);
+        }
+        else {
+            PsiElement psiElement = descriptorToDeclaration(context, descriptor);
+            if (psiElement != null) {
+                return Lists.newArrayList(psiElement);
+            } else {
+                return Lists.newArrayList();
+            }
         }
     }
 

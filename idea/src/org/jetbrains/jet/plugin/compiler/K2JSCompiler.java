@@ -25,8 +25,8 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.Chunk;
@@ -42,12 +42,12 @@ import org.jetbrains.jet.compiler.runner.CompilerEnvironment;
 import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
 import org.jetbrains.jet.compiler.runner.OutputItemsCollectorImpl;
 import org.jetbrains.jet.plugin.JetFileType;
-import org.jetbrains.jet.plugin.project.JsModuleDetector;
-import org.jetbrains.jet.plugin.project.KotlinJsBuildConfigurationManager;
+import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
 
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static org.jetbrains.jet.compiler.runner.CompilerRunnerUtil.invokeExecMethod;
@@ -63,7 +63,7 @@ public final class K2JSCompiler implements TranslatingCompiler {
         if (module == null) {
             return false;
         }
-        return JsModuleDetector.isJsModule(module);
+        return KotlinFrameworkDetector.isJsKotlinModule(module);
     }
 
     @Override
@@ -143,15 +143,15 @@ public final class K2JSCompiler implements TranslatingCompiler {
         ArrayList<String> args = Lists.newArrayList("-tags", "-verbose", "-version");
         addPathToSourcesDir(getSourceFiles(module), args);
         addOutputPath(outFile, args);
-        KotlinJsBuildConfigurationManager jsModuleComponent = KotlinJsBuildConfigurationManager.getInstance(module);
+        Pair<List<String>, String> jsModuleComponent = KotlinFrameworkDetector.getLibLocationAndTargetForProject(module);
         addLibLocation(module, args);
 
         args.add("-target");
-        args.add(jsModuleComponent.getEcmaVersion().toString());
+        //args.add(jsModuleComponent.getEcmaVersion().toString());
 
-        if (jsModuleComponent.isSourcemap()) {
-            args.add("-sourcemap");
-        }
+        //if (jsModuleComponent.isSourcemap()) {
+        //    args.add("-sourcemap");
+        //}
         return ArrayUtil.toStringArray(args);
     }
 
@@ -202,10 +202,10 @@ public final class K2JSCompiler implements TranslatingCompiler {
                 }
             }
 
-            VirtualFile libraryFile = StandardFileSystems.getVirtualFileForJar(KotlinJsBuildConfigurationManager.getLibLocation(module.getProject()));
-            if (libraryFile != null) {
-                sb.append(libraryFile.getPath()).append(',');
-            }
+            //VirtualFile libraryFile = StandardFileSystems.getVirtualFileForJar(KotlinJsBuildConfigurationManager.getLibLocation(module.getProject()));
+            //if (libraryFile != null) {
+            //    sb.append(libraryFile.getPath()).append(',');
+            //}
 
             if (sb.length() > 0) {
                 args.add("-libraryFiles");

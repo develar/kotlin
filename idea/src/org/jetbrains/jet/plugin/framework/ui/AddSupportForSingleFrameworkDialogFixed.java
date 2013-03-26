@@ -54,7 +54,7 @@ public class AddSupportForSingleFrameworkDialogFixed extends DialogWrapper {
         myModule = module;
         myModel = new FrameworkSupportModelImpl(module.getProject(), contentRootPath, librariesContainer);
         myConfigurable = provider.createConfigurable(myModel);
-        myComponent = new FrameworkSupportOptionsComponent(myModel, myModel.getLibrariesContainer(), myDisposable, myConfigurable, null);
+        myComponent = new FrameworkSupportOptionsComponent(myModel, myModel.getLibrariesContainer(), myDisposable, null, myConfigurable);
         Disposer.register(myDisposable, myConfigurable);
         init();
     }

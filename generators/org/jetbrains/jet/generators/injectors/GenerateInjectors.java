@@ -86,7 +86,7 @@ public class GenerateInjectors {
     }
 
     private static void generateInjectorForTopDownXAnalyzer() throws IOException {
-        DependencyInjectorGenerator generator = new DependencyInjectorGenerator(false);
+        DependencyInjectorGenerator generator = new DependencyInjectorGenerator();
         generateInjectorForTopDownAnalyzerCommon(generator);
         generator.addPublicParameter(ModuleConfiguration.class);
         generator.addField(DependencyClassByQualifiedNameResolverDummyImpl.class);

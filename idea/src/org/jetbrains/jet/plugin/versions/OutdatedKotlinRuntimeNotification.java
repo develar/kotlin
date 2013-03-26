@@ -25,14 +25,15 @@ import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
@@ -52,11 +53,12 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-public class OutdatedKotlinRuntimeNotification extends AbstractProjectComponent {
+public class OutdatedKotlinRuntimeNotification implements StartupActivity, DumbAware {
     private static final String SUPPRESSED_PROPERTY_NAME = "oudtdated.runtime.suppressed.plugin.version";
 
-    public OutdatedKotlinRuntimeNotification(Project project) {
-        super(project);
+    @Override
+    public void runActivity(Project project) {
+        projectOpened(project);
     }
 
     private static class VersionedLibrary extends Pair<Library, String> {
@@ -75,8 +77,7 @@ public class OutdatedKotlinRuntimeNotification extends AbstractProjectComponent 
         }
     }
 
-    @Override
-    public void projectOpened() {
+    private static void projectOpened(final Project myProject) {
         if (ApplicationManager.getApplication().isInternal()) return;
 
         StartupManager.getInstance(myProject).registerPostStartupActivity(new Runnable() {

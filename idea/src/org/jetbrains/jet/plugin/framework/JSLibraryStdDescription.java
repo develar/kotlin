@@ -62,7 +62,7 @@ public class JSLibraryStdDescription extends CustomLibraryDescription {
 
         KotlinPaths paths = PathUtil.getKotlinPathsForIdeaPlugin();
 
-        File libraryFile = paths.getJsLibJarPath();
+        File libraryFile = paths.getLibPath();
         if (!libraryFile.exists()) {
             Messages.showErrorDialog(String.format("JavaScript standard library was not found in %s", paths.getLibPath()),
                                      JAVA_SCRIPT_LIBRARY_CREATION);

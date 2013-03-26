@@ -191,7 +191,7 @@ public class ImportsResolver {
                 isResolved = namespaceScope.getLocalVariable(aliasName);
             }
             else if (wasResolved instanceof NamespaceDescriptor) {
-                isResolved = namespaceScope.getNamespace(aliasName);
+                isResolved = JetScopeUtils.findFirst(namespaceScope, aliasName);
             }
             if (isResolved == null || isResolved == wasResolved) {
                 uselessHiddenImport = false;

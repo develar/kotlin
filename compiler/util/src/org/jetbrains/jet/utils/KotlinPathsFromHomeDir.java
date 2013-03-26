@@ -43,7 +43,7 @@ public class KotlinPathsFromHomeDir implements KotlinPaths {
     @Override
     @NotNull
     public File getRuntimePath() {
-        return getLibraryFile(getRuntimeName(true));
+        return getLibraryFile(PathUtil.KOTLIN_JAVA_RUNTIME_JAR);
     }
 
     @Override
@@ -67,9 +67,5 @@ public class KotlinPathsFromHomeDir implements KotlinPaths {
     @NotNull
     private File getLibraryFile(@NotNull String fileName) {
         return new File(getLibPath(), fileName);
-    }
-
-    public static String getRuntimeName(boolean forJvm) {
-        return forJvm ? PathUtil.KOTLIN_JAVA_RUNTIME_JAR : "kotlin-js-lib.zip";
     }
 }

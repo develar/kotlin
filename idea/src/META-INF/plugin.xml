@@ -6,7 +6,7 @@
   <version>@snapshot@</version>
   <vendor url="http://www.jetbrains.com">JetBrains Inc.</vendor>
 
-  <idea-version since-build="123.4" until-build="124.9999" />
+  <idea-version since-build="130.1" until-build="130.999" />
 
   <depends optional="true">JUnit</depends>
   <depends optional="true" config-file="kotlin-copyright.xml">com.intellij.copyright</depends>
@@ -165,26 +165,11 @@
     <annotator language="jet" implementationClass="org.jetbrains.jet.plugin.highlighter.JetPsiChecker"/>
     <annotator language="jet" implementationClass="org.jetbrains.jet.plugin.highlighter.DebugInfoAnnotator"/>
 
-      <copyPastePostProcessor implementation="org.jetbrains.jet.plugin.conversion.copy.JavaCopyPastePostProcessor"/>
-      <lang.documentationProvider language="JAVA" implementationClass="org.jetbrains.jet.plugin.JetQuickDocumentationProvider" order="first"/>
-      <documentationProvider implementation="org.jetbrains.jet.plugin.JetQuickDocumentationProvider"/>
-      <configurationType implementation="org.jetbrains.jet.plugin.run.JetRunConfigurationType"/>
-      <configurationType implementation="org.jetbrains.jet.plugin.k2jsrun.K2JSRunConfigurationType"/>
-      <programRunner implementation="org.jetbrains.jet.plugin.k2jsrun.K2JSBrowserProgramRunner"/>
-      <configurationProducer implementation="org.jetbrains.jet.plugin.run.JetRunConfigurationProducer"/>
-      <configurationProducer implementation="org.jetbrains.jet.plugin.run.JetJUnitConfigurationProducer"/>
-      <codeInsight.lineMarkerProvider language="jet" implementationClass="org.jetbrains.jet.plugin.highlighter.JetLineMarkerProvider"/>
-      <codeInsight.lineMarkerProvider language="JAVA" implementationClass="org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerProvider"/>
-      <iconProvider implementation="org.jetbrains.jet.plugin.JetIconProvider"/>
-      <itemPresentationProvider implementationClass="org.jetbrains.jet.plugin.presentation.JetFunctionPresenter" forClass="org.jetbrains.jet.lang.psi.JetNamedFunction"/>
-      <itemPresentationProvider implementationClass="org.jetbrains.jet.plugin.presentation.JetClassPresenter" forClass="org.jetbrains.jet.lang.psi.JetClass"/>
-      <itemPresentationProvider implementationClass="org.jetbrains.jet.plugin.presentation.JetPropertyPresenter" forClass="org.jetbrains.jet.lang.psi.JetProperty"/>
-      <gotoTargetRendererProvider id="JetGotoTargetRenderProvider" implementation="org.jetbrains.jet.plugin.JetGotoTargetRenderProvider" order="first"/>
-      <elementDescriptionProvider implementation="org.jetbrains.jet.plugin.findUsages.JetElementDescriptionProvider"/>
-      <findUsagesHandlerFactory implementation="org.jetbrains.jet.plugin.findUsages.KotlinFindUsagesHandlerFactory"/>
-      <debugger.positionManagerFactory implementation="org.jetbrains.jet.plugin.debugger.JetPositionManagerFactory"/>
-      <codeInsight.implementMethod language="jet" implementationClass="org.jetbrains.jet.plugin.codeInsight.ImplementMethodsHandler"/>
-      <codeInsight.overrideMethod language="jet" implementationClass="org.jetbrains.jet.plugin.codeInsight.OverrideMethodsHandler"/>
+    <extendWordSelectionHandler implementation="org.jetbrains.jet.plugin.editor.wordSelection.JetStatementGroupSelectioner"/>
+    <extendWordSelectionHandler implementation="org.jetbrains.jet.plugin.editor.wordSelection.JetCodeBlockSelectioner"/>
+    <extendWordSelectionHandler implementation="org.jetbrains.jet.plugin.editor.wordSelection.JetListSelectioner"/>
+    <typedHandler implementation="org.jetbrains.jet.plugin.editor.KotlinTypedHandler"/>
+    <backspaceHandlerDelegate implementation="org.jetbrains.jet.plugin.editor.KotlinBackspaceHandler"/>
 
     <copyPastePostProcessor implementation="org.jetbrains.jet.plugin.conversion.copy.JavaCopyPastePostProcessor"/>
     <lang.documentationProvider language="JAVA" implementationClass="org.jetbrains.jet.plugin.JetQuickDocumentationProvider" order="first"/>
@@ -264,15 +249,29 @@
                         serviceImplementation="org.jetbrains.jet.plugin.editor.JetEditorOptions"/>
     <editorAppearanceConfigurable instance="org.jetbrains.jet.plugin.editor.JetSettingEditorConfigurable"/>
 
-      <project.converterProvider implementation="org.jetbrains.jet.plugin.converters.JetRunConfigurationSettingsFormatConverterProvider"/>
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.intentions.SpecifyTypeExplicitlyAction</className>
+      <category>Kotlin</category>
+    </intentionAction>
 
-      <postStartupActivity implementation="org.jetbrains.jet.plugin.compiler.JetCompilerManager"/>
-      <postStartupActivity implementation="org.jetbrains.jet.plugin.versions.OutdatedKotlinRuntimeNotification"/>
-      <postStartupActivity implementation="org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerUpdater"/>
-      <postStartupActivity implementation="org.jetbrains.jet.plugin.BuiltInsInitializer"/>
-      <postStartupActivity implementation="org.jetbrains.jet.plugin.highlighter.DeclarationHintSupport"/>
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureAnnotationIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
 
-      <packaging.elementType implementation="org.jetbrains.jet.plugin.packaging.JsCompilerOutputElementType"/>
-      <compiler.buildTargetScopeProvider implementation="org.jetbrains.jet.plugin.build.KotlinBuildTargetScopeProvider"/>
+    <project.converterProvider implementation="org.jetbrains.jet.plugin.converters.JetRunConfigurationSettingsFormatConverterProvider"/>
+
+    <postStartupActivity implementation="org.jetbrains.jet.plugin.compiler.JetCompilerManager"/>
+    <postStartupActivity implementation="org.jetbrains.jet.plugin.versions.OutdatedKotlinRuntimeNotification"/>
+    <postStartupActivity implementation="org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureInJavaMarkerUpdater"/>
+    <postStartupActivity implementation="org.jetbrains.jet.plugin.BuiltInsInitializer"/>
+    <postStartupActivity implementation="org.jetbrains.jet.plugin.highlighter.DeclarationHintSupport"/>
+
+    <packaging.elementType implementation="org.jetbrains.jet.plugin.packaging.JsCompilerOutputElementType"/>
+    <compiler.buildTargetScopeProvider implementation="org.jetbrains.jet.plugin.build.KotlinBuildTargetScopeProvider"/>
   </extensions>
+
+  <extensionPoints>
+    <extensionPoint name="updater" beanClass="com.intellij.openapi.fileTypes.FileTypeExtensionPoint"/>
+  </extensionPoints>
 </idea-plugin>

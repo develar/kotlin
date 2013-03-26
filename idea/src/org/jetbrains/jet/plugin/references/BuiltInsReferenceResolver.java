@@ -42,7 +42,6 @@ import org.jetbrains.jet.lang.resolve.scopes.RedeclarationHandler;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScopeImpl;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
-import org.jetbrains.jet.plugin.codeInsight.DescriptorToDeclarationUtil;
 import org.jetbrains.jet.renderer.DescriptorRenderer;
 
 import java.net.URL;
@@ -74,12 +73,12 @@ public class BuiltInsReferenceResolver {
         jetNamespace.setMemberScope(scope);
 
         TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace,
-                                                        getJetFiles("jet", Predicates.<JetFile>alwaysTrue()));
+                                                        getJetFiles("jet", Predicates.<JetFile>alwaysTrue(), myProject));
 
         bindingContext = context.getBindingContext();
     }
 
-    private List<JetFile> getJetFiles(String dir, final Predicate<JetFile> filter) {
+    private static List<JetFile> getJetFiles(String dir, final Predicate<JetFile> filter, Project myProject) {
         URL url = BuiltInsReferenceResolver.class.getResource("/" + dir + "/");
         VirtualFile vf = VfsUtil.findFileByURL(url);
         assert vf != null : "Virtual file not found by URL: " + url;

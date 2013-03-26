@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.plugin.JetIcons;
-import org.jetbrains.jet.plugin.project.JsModuleDetector;
+import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
 
 import javax.swing.*;
 
@@ -26,7 +26,7 @@ public class JsCompilerOutputElementType extends ModuleOutputElementTypeBase<JsM
 
     @Override
     public boolean isSuitableModule(ModulesProvider modulesProvider, Module module) {
-        return JsModuleDetector.isJsModule(module);
+        return KotlinFrameworkDetector.isJsKotlinModule(module);
     }
 
     @NotNull

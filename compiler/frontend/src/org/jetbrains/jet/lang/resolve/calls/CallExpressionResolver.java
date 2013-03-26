@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.resolve.calls;
 
 import com.intellij.lang.ASTNode;
+import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -111,15 +112,18 @@ public class CallExpressionResolver {
             @NotNull ResolutionContext context
     ) {
         if (context.expressionPosition == ExpressionPosition.LHS_OF_DOT && classifier instanceof ClassDescriptor) {
-            List<JetScope> scopes = new ArrayList<JetScope>(3);
+            final List<JetScope> scopes = new ArrayList<JetScope>(3);
 
             scopes.add(classObjectType.getMemberScope());
             scopes.add(getStaticNestedClassesScope((ClassDescriptor) classifier));
 
-            NamespaceDescriptor namespace = context.scope.getNamespace(referencedName);
-            if (namespace != null) {
-                scopes.add(namespace.getMemberScope());
-            }
+            context.scope.processNamespaces(referencedName, new Processor<NamespaceDescriptor>() {
+                @Override
+                public boolean process(NamespaceDescriptor namespace) {
+                    scopes.add(namespace.getMemberScope());
+                    return true;
+                }
+            });
 
             JetScope scope = new ChainedScope(classifier, scopes.toArray(new JetScope[scopes.size()]));
             return new NamespaceType(referencedName, scope);

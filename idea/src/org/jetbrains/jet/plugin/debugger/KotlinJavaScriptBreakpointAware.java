@@ -6,7 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PairProcessor;
 import org.jetbrains.jet.plugin.JetFileType;
-import org.jetbrains.jet.plugin.project.JsModuleDetector;
+import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
 
 public class KotlinJavaScriptBreakpointAware implements PairProcessor<VirtualFile, Project> {
     @Override
@@ -14,7 +14,7 @@ public class KotlinJavaScriptBreakpointAware implements PairProcessor<VirtualFil
         if (file.getFileType() == JetFileType.INSTANCE) {
             Module module = ModuleUtilCore.findModuleForFile(file, project);
             if (module != null) {
-                return JsModuleDetector.isJsModule(module);
+                return KotlinFrameworkDetector.isJsKotlinModule(module);
             }
         }
         return false;

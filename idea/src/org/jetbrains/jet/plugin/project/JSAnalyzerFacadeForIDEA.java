@@ -18,9 +18,15 @@ package org.jetbrains.jet.plugin.project;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import com.intellij.util.Processor;
 import com.intellij.util.SingletonSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
@@ -63,7 +69,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             @NotNull Predicate<PsiFile> filesToAnalyzeCompletely
     ) {
         ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
-        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
+        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false).getBindingContext();
         ModuleInfo moduleConfiguration = createModuleInfo(project, libraryModuleConfiguration);
         return XAnalyzerFacade.analyzeFilesAndStoreBodyContext(moduleConfiguration, files, false);
     }
@@ -90,7 +96,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     @NotNull
     @Override
     public ResolveSession getLazyResolveSession(@NotNull Project project, @NotNull Collection<JetFile> files) {
-        Collection<JetFile> allFiles = getLibraryFiles(project);
+        Collection<JetFile> allFiles = getLibraryFiles(project, files);
         if (allFiles != null) {
             allFiles.addAll(files);
         }
@@ -102,14 +108,39 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
         FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(storageManager, allFiles, Predicates.<FqName>alwaysFalse());
         ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
         ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
-        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project), false).getBindingContext();
+        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false).getBindingContext();
         return new ResolveSession(project, storageManager, lazyModule, createModuleInfo(project, libraryModuleConfiguration), declarationProviderFactory);
     }
 
-    private static List<JetFile> getLibraryFiles(Project project) {
-        VirtualFile libraryFile = KotlinJsBuildConfigurationManager.getLibLocation(project);
-        List<JetFile> allFiles = new ArrayList<JetFile>();
-        Traverser.traverseFile(project, libraryFile, allFiles);
+    private static List<JetFile> getLibraryFiles(final Project project, Collection<JetFile> files) {
+        Module module = null;
+        for (JetFile file : files) {
+            module = ModuleUtilCore.findModuleForPsiElement(file);
+            if (module != null) {
+                break;
+            }
+        }
+
+        if (module == null) {
+            return Collections.emptyList();
+        }
+
+        final List<JetFile> allFiles = new ArrayList<JetFile>();
+        ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
+            @Override
+            public boolean process(Library library) {
+                if ("KotlinJsRuntime".equals(library.getName())) {
+                    VirtualFile[] libraryFiles = library.getFiles(OrderRootType.SOURCES);
+                    if (libraryFiles.length > 0) {
+                        for (VirtualFile file : libraryFiles) {
+                            Traverser.traverseFile(project, file, allFiles);
+                        }
+                        return false;
+                    }
+                }
+                return true;
+            }
+        });
         return allFiles;
     }
 }

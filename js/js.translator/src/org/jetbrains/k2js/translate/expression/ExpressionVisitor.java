@@ -349,8 +349,9 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     @Override
     @NotNull
     public JsNode visitFunctionLiteralExpression(@NotNull JetFunctionLiteralExpression expression, @NotNull TranslationContext context) {
-        FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
-        return context.literalFunctionTranslator().translateFunction(expression, descriptor, context, null);
+        JetFunctionLiteral functionLiteral = expression.getFunctionLiteral();
+        FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), functionLiteral);
+        return context.literalFunctionTranslator().translateFunction(functionLiteral, descriptor, context, null);
     }
 
     @Override

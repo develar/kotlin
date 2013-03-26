@@ -203,7 +203,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         @Override
         protected void moduleCreated(JpsModule module) {
             JpsLibrary library = module.addModuleLibrary(JsExternalizationConstants.JS_LIBRARY_NAME, JpsJavaLibraryType.INSTANCE);
-            library.addRoot(PathUtil.getKotlinPathsForDistDirectory().getRuntimePath(false), JpsOrderRootType.SOURCES);
+            library.addRoot(PathUtil.getKotlinPathsForDistDirectory().getJsLibJarPath(), JpsOrderRootType.SOURCES);
             JpsModuleRootModificationUtil.addDependency(module, library);
         }
 
@@ -223,7 +223,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         for (JpsLibraryRoot root : library.getRoots(JpsOrderRootType.SOURCES)) {
             library.removeUrl(root.getUrl(), JpsOrderRootType.SOURCES);
         }
-        library.addRoot(PathUtil.getKotlinPathsForDistDirectory().getRuntimePath(false), JpsOrderRootType.SOURCES);
+        library.addRoot(PathUtil.getKotlinPathsForDistDirectory().getJsLibJarPath(), JpsOrderRootType.SOURCES);
 
         makeAll().assertSuccessful();
     }

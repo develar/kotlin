@@ -126,7 +126,8 @@ public class KotlinFrameworkDetector {
                 ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
                     @Override
                     public boolean process(Library library) {
-                        if (JSLibraryStdPresentationProvider.getInstance().detect(Arrays.asList(library.getFiles(OrderRootType.CLASSES))) != null) {
+                        if (("KotlinJsRuntime".equals(library.getName()) && library.getFiles(OrderRootType.SOURCES).length > 0) ||
+                            JSLibraryStdPresentationProvider.getInstance().detect(Arrays.asList(library.getFiles(OrderRootType.CLASSES))) != null) {
                             jsLibrary.set(library);
                             return false;
                         }
