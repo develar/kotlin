@@ -40,6 +40,7 @@ import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.codegen.state.JetTypeMapper;
 import org.jetbrains.jet.codegen.state.JetTypeMapperMode;
 import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.impl.MutableClassDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
@@ -1050,7 +1051,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         }
 
         if (closure != null) {
-            List<FieldInfo> argsFromClosure = ClosureCodegen.calculateConstructorParameters(typeMapper, bindingContext, state, closure, classAsmType);
+            List<FieldInfo> argsFromClosure = ClosureCodegen.calculateConstructorParameters(typeMapper, bindingContext, closure, classAsmType);
             int k = 1;
             for (FieldInfo info : argsFromClosure) {
                 k = AsmUtil.genAssignInstanceFieldFromParam(info, k, iv);
@@ -1228,6 +1229,16 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                     for (ValueParameterDescriptor parameterDescriptor : constructorDescriptor.getValueParameters()) {
                         //noinspection ConstantConditions
                         if (descriptor.equals(parameterDescriptor)) {
+                            return;
+                        }
+                    }
+                    constructorContext.lookupInContext(descriptor, null, state, true);
+                } else if (isLocalNamedFun(descriptor)) {
+                    MutableClassDescriptor classDescriptor =
+                            (MutableClassDescriptor) constructorContext.getParentContext().getContextDescriptor();
+
+                    for (CallableMemberDescriptor memberDescriptor : classDescriptor.getAllCallableMembers()) {
+                        if (descriptor.equals(memberDescriptor)) {
                             return;
                         }
                     }

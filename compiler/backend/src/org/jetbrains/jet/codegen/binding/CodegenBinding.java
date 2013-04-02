@@ -49,6 +49,8 @@ public class CodegenBinding {
 
     public static final WritableSlice<DeclarationDescriptor, JvmClassName> FQN = Slices.createSimpleSlice();
 
+    public static final WritableSlice<JetCallExpression, JvmClassName> FQN_FOR_SAM_CONSTRUCTOR = Slices.createSimpleSlice();
+
     public static final WritableSlice<JvmClassName, Boolean> SCRIPT_NAMES = Slices.createSimpleSetSlice();
 
     public static final WritableSlice<ClassDescriptor, Boolean> ENUM_ENTRY_CLASS_NEED_SUBCLASS = Slices.createSimpleSetSlice();
@@ -295,19 +297,10 @@ public class CodegenBinding {
         return false;
     }
 
-    public static boolean isLocalFun(BindingContext bindingContext, DeclarationDescriptor fd) {
-        PsiElement psiElement = descriptorToDeclaration(bindingContext, fd);
-        if (psiElement instanceof JetNamedFunction && psiElement.getParent() instanceof JetBlockExpression) {
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean isLocalNamedFun(BindingContext bindingContext, DeclarationDescriptor fd) {
-        PsiElement psiElement = descriptorToDeclaration(bindingContext, fd);
-        if (psiElement instanceof JetNamedFunction) {
-            DeclarationDescriptor declaration = fd.getContainingDeclaration();
-            return declaration instanceof FunctionDescriptor || declaration instanceof PropertyDescriptor;
+    public static boolean isLocalNamedFun(DeclarationDescriptor fd) {
+        if (fd instanceof FunctionDescriptor) {
+            FunctionDescriptor descriptor = (FunctionDescriptor) fd;
+            return descriptor.getVisibility() == Visibilities.LOCAL && !descriptor.getName().isSpecial();
         }
         return false;
     }

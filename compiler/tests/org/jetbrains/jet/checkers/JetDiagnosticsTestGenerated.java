@@ -459,6 +459,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             doTest("compiler/testData/diagnostics/tests/SyntaxErrorInTestHighlightingEof.kt");
         }
         
+        @TestMetadata("TraitOverrideObjectMethods.kt")
+        public void testTraitOverrideObjectMethods() throws Exception {
+            doTest("compiler/testData/diagnostics/tests/TraitOverrideObjectMethods.kt");
+        }
+        
         @TestMetadata("TraitSupertypeList.kt")
         public void testTraitSupertypeList() throws Exception {
             doTest("compiler/testData/diagnostics/tests/TraitSupertypeList.kt");
@@ -2190,6 +2195,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                     doTest("compiler/testData/diagnostics/tests/inference/nestedCalls/kt3395.kt");
                 }
                 
+                @TestMetadata("kt3461checkTypes.kt")
+                public void testKt3461checkTypes() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/nestedCalls/kt3461checkTypes.kt");
+                }
+                
             }
             
             @TestMetadata("compiler/testData/diagnostics/tests/inference/regressions")
@@ -3167,6 +3177,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("OverloadVarAndFunInClass.kt")
             public void testOverloadVarAndFunInClass() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/overload/OverloadVarAndFunInClass.kt");
+            }
+            
+            @TestMetadata("SyntheticAndNotSynthetic.kt")
+            public void testSyntheticAndNotSynthetic() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/overload/SyntheticAndNotSynthetic.kt");
             }
             
         }

@@ -18,15 +18,16 @@ package org.jetbrains.jet.lang.resolve.java.resolver;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiFormatUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.impl.NamespaceDescriptorParent;
 import org.jetbrains.jet.lang.descriptors.impl.SimpleFunctionDescriptorImpl;
 import org.jetbrains.jet.lang.resolve.*;
 import org.jetbrains.jet.lang.resolve.java.*;
@@ -35,17 +36,17 @@ import org.jetbrains.jet.lang.resolve.java.kotlinSignature.SignaturesPropagation
 import org.jetbrains.jet.lang.resolve.java.kt.DescriptorKindUtils;
 import org.jetbrains.jet.lang.resolve.java.provider.ClassPsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.java.provider.NamedMembers;
+import org.jetbrains.jet.lang.resolve.java.provider.PackagePsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.java.provider.PsiDeclarationProvider;
+import org.jetbrains.jet.lang.resolve.java.sam.SingleAbstractMethodUtils;
 import org.jetbrains.jet.lang.resolve.java.wrapper.PsiMethodWrapper;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.*;
 import static org.jetbrains.jet.lang.resolve.OverridingUtil.*;
@@ -139,7 +140,6 @@ public final class JavaFunctionResolver {
         TypeVariableResolver methodTypeVariableResolver = TypeVariableResolvers.typeVariableResolverFromTypeParameters(methodTypeParameters,
                                                                                                                        functionDescriptorImpl,
                                                                                                                        context);
-
 
         JavaDescriptorResolver.ValueParameterDescriptors valueParameterDescriptors = parameterResolver
                 .resolveParameterDescriptors(functionDescriptorImpl, method.getParameters(), methodTypeVariableResolver);
@@ -239,20 +239,13 @@ public final class JavaFunctionResolver {
             boolean returnTypeOk =
                     isReturnTypeOkForOverride(JetTypeChecker.INSTANCE, superFunctionSubstituted, functionDescriptor);
             if (!paramsOk || !returnTypeOk) {
-                String errorMessage = "Loaded Java method overrides another, but resolved as Kotlin function, doesn't.\n"
-                                      + "super function = " + superFunction + "\n"
-                                      + "super class = " + superFunction.getContainingDeclaration() + "\n"
-                                      + "sub function = " + functionDescriptor + "\n"
-                                      + "sub class = " + functionDescriptor.getContainingDeclaration() + "\n"
-                                      + "sub method = " + PsiFormatUtil.getExternalName(method.getPsiMethod()) + "\n"
-                                      + "@KotlinSignature = " + method.getSignatureAnnotation().signature();
-
-                if (ApplicationManager.getApplication().isUnitTestMode()) {
-                    throw new IllegalStateException(errorMessage);
-                }
-                else {
-                    LOG.error(errorMessage);
-                }
+                LOG.error("Loaded Java method overrides another, but resolved as Kotlin function, doesn't.\n"
+                          + "super function = " + superFunction + "\n"
+                          + "super class = " + superFunction.getContainingDeclaration() + "\n"
+                          + "sub function = " + functionDescriptor + "\n"
+                          + "sub class = " + functionDescriptor.getContainingDeclaration() + "\n"
+                          + "sub method = " + PsiFormatUtil.getExternalName(method.getPsiMethod()) + "\n"
+                          + "@KotlinSignature = " + method.getSignatureAnnotation().signature());
             }
         }
     }
@@ -274,6 +267,13 @@ public final class JavaFunctionResolver {
             SimpleFunctionDescriptor function = resolveMethodToFunctionDescriptor(psiClass, method, scopeData, owner);
             if (function != null) {
                 functionsFromCurrent.add(function);
+            }
+        }
+
+        if (owner instanceof NamespaceDescriptor) {
+            SimpleFunctionDescriptor samConstructor = resolveSamConstructor((NamespaceDescriptor) owner, namedMembers);
+            if (samConstructor != null) {
+                functionsFromCurrent.add(samConstructor);
             }
         }
 
@@ -311,6 +311,62 @@ public final class JavaFunctionResolver {
         return functions;
     }
 
+    @Nullable
+    private static ClassDescriptor findClassInScope(@NotNull JetScope memberScope, @NotNull Name name) {
+        ClassifierDescriptor classifier = memberScope.getClassifier(name);
+        if (classifier instanceof ClassDescriptor) {
+            return (ClassDescriptor) classifier;
+        }
+        return null;
+    }
+
+    // E.g. we have foo.Bar.Baz class declared in Java. It will produce the following descriptors structure:
+    // namespace foo
+    // +-- class Bar
+    // |    +-- class Baz
+    // +-- namespace Bar
+    // We need to find class 'Baz' in namespace 'foo.Bar'.
+    @Nullable
+    private static ClassDescriptor findClassInNamespace(@NotNull NamespaceDescriptor namespace, @NotNull Name name) {
+        // First, try to find in namespace directly
+        ClassDescriptor found = findClassInScope(namespace.getMemberScope(), name);
+        if (found != null) {
+            return found;
+        }
+
+        // If unsuccessful, try to find class of the same name as current (class 'foo.Bar')
+        NamespaceDescriptorParent parent = namespace.getContainingDeclaration();
+        if (parent instanceof NamespaceDescriptor) {
+            // Calling recursively, looking for 'Bar' in 'foo'
+            ClassDescriptor classForCurrentNamespace = findClassInNamespace((NamespaceDescriptor) parent, namespace.getName());
+            if (classForCurrentNamespace == null) {
+                return null;
+            }
+
+            // Try to find nested class 'Baz' in class 'foo.Bar'
+            return findClassInScope(DescriptorUtils.getStaticNestedClassesScope(classForCurrentNamespace), name);
+        }
+        return null;
+    }
+
+    @Nullable
+    private SimpleFunctionDescriptor resolveSamConstructor(
+            @NotNull NamespaceDescriptor ownerDescriptor,
+            @NotNull NamedMembers namedMembers
+    ) {
+        PsiClass samInterface = namedMembers.getSamInterface();
+        if (samInterface != null) {
+            ClassDescriptor klass = findClassInNamespace(ownerDescriptor, namedMembers.getName());
+            if (klass != null && SingleAbstractMethodUtils.isSamInterface(klass)) {
+                SimpleFunctionDescriptor constructorFunction = SingleAbstractMethodUtils.createSamConstructorFunction(ownerDescriptor,
+                                                                                                                      klass);
+                trace.record(BindingContext.SAM_CONSTRUCTOR_TO_INTERFACE, constructorFunction, klass);
+                return constructorFunction;
+            }
+        }
+        return null;
+    }
+
     @NotNull
     public Set<FunctionDescriptor> resolveFunctionGroup(
             @NotNull Name methodName,
@@ -327,6 +383,22 @@ public final class JavaFunctionResolver {
     }
 
     @NotNull
+    public Set<FunctionDescriptor> resolveFunctionGroup(
+            @NotNull Name functionName,
+            @NotNull PackagePsiDeclarationProvider scopeData,
+            @NotNull NamespaceDescriptor ownerDescriptor
+    ) {
+        NamedMembers namedMembers = scopeData.getMembersCache().get(functionName);
+        if (namedMembers != null) {
+            SimpleFunctionDescriptor samConstructor = resolveSamConstructor(ownerDescriptor, namedMembers);
+            if (samConstructor != null) {
+                return Collections.<FunctionDescriptor>singleton(samConstructor);
+            }
+        }
+        return Collections.emptySet();
+    }
+
+    @NotNull
     private JetType makeReturnType(
             PsiType returnType, PsiMethodWrapper method,
             @NotNull TypeVariableResolver typeVariableResolver
@@ -339,8 +411,8 @@ public final class JavaFunctionResolver {
             transformedType = typeTransformer.transformToType(returnTypeFromAnnotation, typeVariableResolver);
         }
         else {
-            transformedType = typeTransformer.transformToType(
-                    returnType, TypeUsage.MEMBER_SIGNATURE_COVARIANT, typeVariableResolver);
+            TypeUsage typeUsage = JavaTypeTransformer.adjustTypeUsageWithMutabilityAnnotations(method.getPsiMethod(), TypeUsage.MEMBER_SIGNATURE_COVARIANT);
+            transformedType = typeTransformer.transformToType(returnType, typeUsage, typeVariableResolver);
         }
 
         if (JavaAnnotationResolver.findAnnotationWithExternal(method.getPsiMethod(), JvmAbi.JETBRAINS_NOT_NULL_ANNOTATION.getFqName().getFqName()) !=

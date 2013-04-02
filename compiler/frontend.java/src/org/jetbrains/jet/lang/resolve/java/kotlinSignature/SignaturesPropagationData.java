@@ -17,7 +17,6 @@
 package org.jetbrains.jet.lang.resolve.java.kotlinSignature;
 
 import com.google.common.collect.*;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.SystemInfo;
@@ -34,6 +33,7 @@ import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.java.*;
+import org.jetbrains.jet.lang.resolve.java.provider.MembersCache;
 import org.jetbrains.jet.lang.resolve.java.wrapper.PsiMethodWrapper;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
@@ -71,7 +71,7 @@ public class SignaturesPropagationData {
         this.containingClass = containingClass;
         superFunctions = getSuperFunctionsForMethod(method, trace, containingClass);
 
-        autoTypeParameterToModified = SignaturesUtil.recreateTypeParametersAndReturnMapping(autoTypeParameters);
+        autoTypeParameterToModified = SignaturesUtil.recreateTypeParametersAndReturnMapping(autoTypeParameters, null);
 
         modifiedTypeParameters = modifyTypeParametersAccordingToSuperMethods(autoTypeParameters);
         modifiedReturnType = modifyReturnTypeAccordingToSuperMethods(autoReturnType);
@@ -187,7 +187,7 @@ public class SignaturesPropagationData {
 
         JetType originalReceiverType = parameters.getReceiverType();
         if (originalReceiverType != null) {
-            JetType substituted = SignaturesUtil.createSubstitutorForFunctionTypeParameters(autoTypeParameterToModified)
+            JetType substituted = SignaturesUtil.createSubstitutorForTypeParameters(autoTypeParameterToModified)
                     .substitute(originalReceiverType, INVARIANT);
             assert substituted != null;
             return new JavaDescriptorResolver.ValueParameterDescriptors(substituted, resultParameters);
@@ -229,7 +229,10 @@ public class SignaturesPropagationData {
                                              ? trace.get(BindingContext.DECLARATION_TO_DESCRIPTOR, ((JetClsMethod) superMethod).getOrigin())
                                              : findSuperFunction(superclassToFunctions.get(classFqName), superMethod);
             if (superFun == null) {
-                reportCantFindSuperFunction(method);
+                // Super methods which are Object methods in interfaces are not loaded by JDR.
+                if (!MembersCache.isObjectMethodInInterface(superMethod)) {
+                    reportCantFindSuperFunction(method);
+                }
                 continue;
             }
 
@@ -655,16 +658,11 @@ public class SignaturesPropagationData {
     private static void reportCantFindSuperFunction(PsiMethodWrapper method) {
         String errorMessage = "Can't find super function for " + method.getPsiMethod() +
                               " defined in " + method.getPsiMethod().getContainingClass();
-        if (ApplicationManager.getApplication().isUnitTestMode()) {
-            throw new IllegalStateException(errorMessage);
+        if (SystemInfo.isMac) {
+            LOG.error("Remove duplicates from your JDK definition\n" + errorMessage);
         }
         else {
-            if (SystemInfo.isMac) {
-                LOG.error("Remove duplicates from your JDK definition\n" + errorMessage);
-            }
-            else {
-                LOG.error(errorMessage);
-            }
+            LOG.error(errorMessage);
         }
     }
 

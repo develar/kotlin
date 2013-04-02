@@ -816,6 +816,16 @@ public class JetTypeMapper extends BindingTraceAware {
                     signatureWriter.writeAsmType(sharedVarType, false);
                     signatureWriter.writeParameterTypeEnd();
                 }
+                else if (isLocalNamedFun(variableDescriptor)) {
+                    Type type = classNameForAnonymousClass(
+                            bindingContext,
+                           (JetElement) BindingContextUtils.descriptorToDeclaration(bindingContext, variableDescriptor)
+                    ).getAsmType();
+
+                    signatureWriter.writeParameterType(JvmMethodParameterKind.VALUE);
+                    signatureWriter.writeAsmType(type, false);
+                    signatureWriter.writeParameterTypeEnd();
+                }
             }
 
             JetDelegatorToSuperCall superCall = closure.getSuperCall();
@@ -921,10 +931,6 @@ public class JetTypeMapper extends BindingTraceAware {
             return StackValue.sharedTypeForType(mapType(outType));
         }
         return null;
-    }
-
-    public JvmMethodSignature invokeSignature(FunctionDescriptor fd) {
-        return mapSignature(Name.identifier("invoke"), fd);
     }
 
     public CallableMethod asCallableMethod(FunctionDescriptor fd) {

@@ -17,6 +17,8 @@
 package org.jetbrains.jet.codegen.binding;
 
 import com.intellij.util.containers.Stack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.descriptors.impl.ClassDescriptorImpl;
@@ -24,6 +26,7 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
+import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.java.JvmAbi;
 import org.jetbrains.jet.lang.resolve.java.JvmClassName;
 import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
@@ -51,6 +54,30 @@ class CodegenAnnotatingVisitor extends JetVisitorVoid {
     public CodegenAnnotatingVisitor(BindingTrace bindingTrace) {
         this.bindingTrace = bindingTrace;
         this.bindingContext = bindingTrace.getBindingContext();
+    }
+
+    @Override
+    public void visitCallExpression(JetCallExpression expression) {
+        super.visitCallExpression(expression);
+
+        JetExpression callee = expression.getCalleeExpression();
+        assert callee != null : "not found callee for " + expression.getText();
+
+        ResolvedCall<? extends CallableDescriptor> resolvedCall = bindingContext.get(BindingContext.RESOLVED_CALL, callee);
+        if (resolvedCall == null) {
+            return;
+        }
+
+        DeclarationDescriptor funDescriptor = resolvedCall.getResultingDescriptor();
+
+        if (funDescriptor instanceof SimpleFunctionDescriptor) {
+            ClassDescriptor samTrait = bindingContext.get(
+                    BindingContext.SAM_CONSTRUCTOR_TO_INTERFACE, ((SimpleFunctionDescriptor) funDescriptor).getOriginal());
+            if (samTrait != null) {
+                String name = inventAnonymousClassName(expression);
+                bindingTrace.record(FQN_FOR_SAM_CONSTRUCTOR, expression, JvmClassName.byInternalName(name));
+            }
+        }
     }
 
     private ClassDescriptor recordClassForFunction(FunctionDescriptor funDescriptor) {
@@ -88,11 +115,12 @@ class CodegenAnnotatingVisitor extends JetVisitorVoid {
         if (descriptor == null) {
             if (declaration instanceof JetFunctionLiteralExpression ||
                 declaration instanceof JetNamedFunction ||
-                declaration instanceof JetObjectLiteralExpression) {
+                declaration instanceof JetObjectLiteralExpression ||
+                declaration instanceof JetCallExpression) {
             }
             else {
                 throw new IllegalStateException(
-                        "Class-less declaration which is not JetFunctionLiteralExpression|JetNamedFunction|JetObjectLiteralExpression : " +
+                        "Class-less declaration which is not JetFunctionLiteralExpression|JetNamedFunction|JetObjectLiteralExpression|JetCallExpression : " +
                         declaration.getClass().getName());
             }
         }
@@ -243,7 +271,17 @@ class CodegenAnnotatingVisitor extends JetVisitorVoid {
 
     @Override
     public void visitProperty(JetProperty property) {
-        nameStack.push(peekFromStack(nameStack) + '$' + property.getName());
+        DeclarationDescriptor propertyDescriptor = bindingContext.get(DECLARATION_TO_DESCRIPTOR, property);
+        // working around a problem with shallow analysis
+        if (propertyDescriptor == null) return;
+
+        String nameForClassOrNamespaceMember = getNameForClassOrNamespaceMember(propertyDescriptor);
+        if (nameForClassOrNamespaceMember != null) {
+            nameStack.push(nameForClassOrNamespaceMember);
+        }
+        else {
+            nameStack.push(peekFromStack(nameStack) + '$' + property.getName());
+        }
         super.visitProperty(property);
         nameStack.pop();
     }
@@ -254,23 +292,10 @@ class CodegenAnnotatingVisitor extends JetVisitorVoid {
                 (FunctionDescriptor) bindingContext.get(DECLARATION_TO_DESCRIPTOR, function);
         // working around a problem with shallow analysis
         if (functionDescriptor == null) return;
-        DeclarationDescriptor containingDeclaration = functionDescriptor.getContainingDeclaration();
-        if (containingDeclaration instanceof ClassDescriptor) {
-            nameStack.push(peekFromStack(nameStack) + '$' + function.getName());
-            super.visitNamedFunction(function);
-            nameStack.pop();
-        }
-        else if (containingDeclaration instanceof NamespaceDescriptor) {
-            String peek = peekFromStack(nameStack);
-            FqName qualifiedName = ((NamespaceDescriptor) containingDeclaration).getFqName();
-            String packageClassName = PackageClassUtils.getPackageClassName(qualifiedName);
-            if (peek.isEmpty()) {
-                peek = packageClassName;
-            }
-            else {
-                peek += "/" + packageClassName;
-            }
-            nameStack.push(peek + '$' + function.getName());
+
+        String nameForClassOrNamespaceMember = getNameForClassOrNamespaceMember(functionDescriptor);
+        if (nameForClassOrNamespaceMember != null) {
+            nameStack.push(nameForClassOrNamespaceMember);
             super.visitNamedFunction(function);
             nameStack.pop();
         }
@@ -284,6 +309,26 @@ class CodegenAnnotatingVisitor extends JetVisitorVoid {
             super.visitNamedFunction(function);
             nameStack.pop();
             classStack.pop();
+        }
+    }
+
+    @Nullable
+    private String getNameForClassOrNamespaceMember(@NotNull DeclarationDescriptor descriptor) {
+        DeclarationDescriptor containingDeclaration = descriptor.getContainingDeclaration();
+
+        String peek = peekFromStack(nameStack);
+        String name = descriptor.getName().getName();
+        if (containingDeclaration instanceof ClassDescriptor) {
+            return peek + '$' + name;
+        }
+        else if (containingDeclaration instanceof NamespaceDescriptor) {
+            FqName qualifiedName = ((NamespaceDescriptor) containingDeclaration).getFqName();
+            String packageClassShortName = PackageClassUtils.getPackageClassName(qualifiedName);
+            String packageClassName = peek.isEmpty() ? packageClassShortName : peek + "/" + packageClassShortName;
+            return packageClassName + '$' + name;
+        }
+        else {
+            return null;
         }
     }
 }

@@ -7,20 +7,13 @@ import org.jetbrains.kotlin.gradle.plugin.KSpec
 import java.io.File
 import org.gradle.api.GradleException
 import org.jetbrains.jet.cli.common.ExitCode
-import org.gradle.api.Task
 import org.gradle.api.tasks.SourceTask
 import org.jetbrains.kotlin.doc.KDocArguments
-import org.jetbrains.kotlin.doc.KDocConfig
 import java.util.HashMap
 import java.util.HashSet
 import org.jetbrains.kotlin.doc.KDocCompiler
 import org.gradle.api.tasks.TaskAction
-import java.util.LinkedList
-import com.google.common.io.Resources
-import java.net.URL
-import com.google.common.io.Files
 import org.gradle.api.file.SourceDirectorySet
-import com.google.common.base.Joiner
 import java.util.ArrayList
 import org.apache.commons.io.FilenameUtils
 import org.jetbrains.jet.cli.common.messages.MessageCollector
@@ -28,14 +21,16 @@ import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
-import org.apache.commons.io.FileUtils
-import java.io.IOException
+import org.apache.commons.lang.StringUtils
+import org.gradle.api.initialization.dsl.ScriptHandler
 
 public open class KotlinCompile(): AbstractCompile() {
 
     val srcDirsRoots = HashSet<File>()
     val compiler = K2JVMCompiler()
-    val logger = getLogger()
+    val logger = Logging.getLogger(getClass())
+
+    public val kotlinOptions: K2JVMCompilerArguments = K2JVMCompilerArguments();
 
     // override setSource to track source directory sets
     override fun setSource(source: Any?) {
@@ -69,8 +64,7 @@ public open class KotlinCompile(): AbstractCompile() {
 
 
     override fun compile() {
-
-        val args = K2JVMCompilerArguments()
+        val args = kotlinOptions
 
         val javaSrcRoots = HashSet<File>()
         val sources = ArrayList<File>()
@@ -92,30 +86,30 @@ public open class KotlinCompile(): AbstractCompile() {
             return
         }
 
-        args.setSourceDirs(sources.map { it.getAbsolutePath() })
+        val customSources = args.getSourceDirs();
+        if (customSources == null || customSources.isEmpty()) {
+            args.setSourceDirs(sources.map { it.getAbsolutePath() })
+        }
 
-        val gradleClasspath = getClasspath()
-        val effectiveClassPath = (javaSrcRoots + gradleClasspath).makeString(File.pathSeparator)
 
-        args.setClasspath(effectiveClassPath)
+        if (StringUtils.isEmpty(kotlinOptions.classpath)) {
+            val existingClasspathEntries =  getClasspath().filter(KSpec<File?>({ it != null && it.exists() }))
+            val effectiveClassPath = (javaSrcRoots + existingClasspathEntries).makeString(File.pathSeparator)
+            args.setClasspath(effectiveClassPath)
+        }
+
+        args.outputDir = if (StringUtils.isEmpty(kotlinOptions.outputDir)) { getDestinationDir()?.getPath() } else { kotlinOptions.outputDir }
 
         val embeddedAnnotations = getAnnotations()
+        val userAnnotations = (kotlinOptions.annotations ?: "").split(File.pathSeparatorChar).toList()
+        val allAnnotations = if (kotlinOptions.noJdkAnnotations) userAnnotations else userAnnotations.plus(embeddedAnnotations.getPath())
+        args.annotations = allAnnotations.makeString(File.pathSeparator)
 
-        args.outputDir = getDestinationDir()?.getPath()
-        args.noJdkAnnotations = true
-        args.annotations = embeddedAnnotations.getPath()
         args.noStdlib = true
+        args.noJdkAnnotations = true
 
-        val logger = Logging.getLogger(getClass())
         val messageCollector = GradleMessageCollector(logger)
         val exitCode = compiler.exec(messageCollector, args)
-
-        val annotationsDir = embeddedAnnotations.getParentFile()
-        try {
-            FileUtils.deleteDirectory(annotationsDir);
-        } catch (e : IOException) {
-            logger.warn("Could not delete temporary annotations directory " + annotationsDir, e)
-        }
 
         when (exitCode) {
             ExitCode.COMPILATION_ERROR -> throw GradleException("Compilation error. See log for more details")
@@ -125,19 +119,25 @@ public open class KotlinCompile(): AbstractCompile() {
     }
 
     fun getAnnotations(): File {
-        val jdkAnnotations: String = "kotlin-jdk-annotations.jar"
-        val jdkAnnotationsResource = Resources.getResource(jdkAnnotations) ?:
-                                     throw GradleException(jdkAnnotations + " not found in Kotlin gradle plugin classpath")
+        val configuration = getProject()
+                .getBuildscript()
+                .getConfigurations()
+                .getByName(ScriptHandler.CLASSPATH_CONFIGURATION)!!
 
-        val jdkAnnotationsTempDir = Files.createTempDir()
-        val jdkAnnotationsFile = File(jdkAnnotationsTempDir, jdkAnnotations)
+        val jdkAnnotationsFromClasspath = configuration.find { it.name.startsWith("kotlin-jdk-annotations") }
 
-        Files.copy(Resources.newInputStreamSupplier(jdkAnnotationsResource), jdkAnnotationsFile)
-        return jdkAnnotationsFile
+        if (jdkAnnotationsFromClasspath != null) {
+            logger.info("using jdk annontations from [${jdkAnnotationsFromClasspath.getAbsolutePath()}]")
+            return jdkAnnotationsFromClasspath
+        } else {
+            throw GradleException("kotlin-jdk-annotations not found in Kotlin gradle plugin classpath")
+        }
     }
 }
 
 public open class KDoc(): SourceTask() {
+
+    val logger = Logging.getLogger(getClass())
 
     /**
      * Returns the directory to use to output the API docs
@@ -210,7 +210,6 @@ public open class KDoc(): SourceTask() {
 
         val compiler = KDocCompiler()
 
-        val logger = Logging.getLogger(getClass())
         val messageCollector = GradleMessageCollector(logger)
         val exitCode = compiler.exec(messageCollector, args);
 
@@ -231,10 +230,10 @@ class GradleMessageCollector(val logger : Logger): MessageCollector {
         val text = position + message
 
         when (severity) {
-          in CompilerMessageSeverity.VERBOSE -> logger.debug(text)
-          in CompilerMessageSeverity.ERRORS -> logger.error(text)
-          CompilerMessageSeverity.INFO -> logger.info(text)
-          else -> logger.warn(text)
+            in CompilerMessageSeverity.VERBOSE -> logger.debug(text)
+            in CompilerMessageSeverity.ERRORS -> logger.error(text)
+            CompilerMessageSeverity.INFO -> logger.info(text)
+            else -> logger.warn(text)
         }
     }
 }

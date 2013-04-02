@@ -16,11 +16,15 @@
 
 package org.jetbrains.jet.plugin.project;
 
+import com.google.common.base.Predicates;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.libraries.LibraryUtil;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -33,14 +37,16 @@ import com.intellij.util.containers.SLRUCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
+import org.jetbrains.jet.asJava.LightClassUtil;
 import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.diagnostics.DiagnosticUtils;
 import org.jetbrains.jet.lang.diagnostics.Errors;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.*;
+import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
 import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
-import org.jetbrains.jet.plugin.caches.resolve.AnalyzeExhaustAsKotlinDeclarationsCache;
+import org.jetbrains.jet.plugin.caches.resolve.KotlinDeclarationsCacheImpl;
 import org.jetbrains.jet.plugin.caches.resolve.KotlinCacheManager;
 import org.jetbrains.jet.plugin.caches.resolve.KotlinDeclarationsCache;
 import org.jetbrains.jet.plugin.util.ApplicationUtils;
@@ -119,8 +125,19 @@ public final class AnalyzerFacadeWithCache {
     }
 
     private static AnalyzeExhaust analyzeHeadersWithCacheOnFile(@NotNull JetFile fileToCache) {
+        VirtualFile virtualFile = fileToCache.getVirtualFile();
+        if (LightClassUtil.belongsToKotlinBuiltIns(fileToCache) ||
+                virtualFile != null && LibraryUtil.findLibraryEntry(virtualFile, fileToCache.getProject()) != null) {
+            /* For library sources we should resolve it, not only project files (as KotlinCacheManager do) */
+            return AnalyzerFacadeForJVM.INSTANCE.analyzeFiles(
+                    fileToCache.getProject(),
+                    Collections.singleton(fileToCache),
+                    Collections.<AnalyzerScriptParameter>emptyList(),
+                    Predicates.<PsiFile>alwaysFalse()
+            );
+        }
         KotlinDeclarationsCache cache = KotlinCacheManager.getInstance(fileToCache.getProject()).getDeclarationsFromProject();
-        return ((AnalyzeExhaustAsKotlinDeclarationsCache) cache).getAnalyzeExhaust();
+        return ((KotlinDeclarationsCacheImpl) cache).getAnalyzeExhaust();
     }
 
     private static AnalyzeExhaust analyzeBodies(AnalyzeExhaust analyzeExhaustHeaders, JetFile file) {

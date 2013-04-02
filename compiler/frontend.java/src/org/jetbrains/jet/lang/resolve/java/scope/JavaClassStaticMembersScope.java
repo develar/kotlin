@@ -16,14 +16,22 @@
 
 package org.jetbrains.jet.lang.resolve.java.scope;
 
-import com.intellij.util.Processor;
+import com.intellij.psi.PsiClass;
+import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
 import org.jetbrains.jet.lang.resolve.java.JavaSemanticServices;
 import org.jetbrains.jet.lang.resolve.java.provider.ClassPsiDeclarationProvider;
+import org.jetbrains.jet.lang.resolve.java.provider.PackagePsiDeclarationProvider;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
+
+import java.util.Collection;
+
+import static org.jetbrains.jet.lang.resolve.java.scope.ScopeUtils.computeAllPackageDeclarations;
 
 public final class JavaClassStaticMembersScope extends JavaClassMembersScope {
     @NotNull
@@ -40,11 +48,17 @@ public final class JavaClassStaticMembersScope extends JavaClassMembersScope {
     }
 
     @Override
-    public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(@NotNull Name name, @NotNull P processor) {
-        NamespaceDescriptor descriptor = getResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
-        if (descriptor != null) {
-            return processor.process(descriptor);
+    public NamespaceDescriptor getNamespace(@NotNull Name name) {
+        return getResolver().resolveNamespace(packageFQN.child(name), DescriptorSearchRule.INCLUDE_KOTLIN);
+    }
+
+    @NotNull
+    @Override
+    protected Collection<DeclarationDescriptor> computeAllDescriptors() {
+        Collection<DeclarationDescriptor> result = super.computeAllDescriptors();
+        for (PsiClass nested : declarationProvider.getPsiClass().getInnerClasses()) {
+            ContainerUtil.addIfNotNull(result, getNamespace(Name.identifier(nested.getName())));
         }
-        return true;
+        return result;
     }
 }

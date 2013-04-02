@@ -21,6 +21,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.util.PsiTreeUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
@@ -32,8 +33,8 @@ import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.types.DeferredType;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
-
-import static org.jetbrains.jet.plugin.project.AnalyzeSingleFileUtil.getContextForSingleFile;
+import org.jetbrains.jet.plugin.project.AnalyzerFacadeWithCache;
+import org.jetbrains.jet.plugin.references.BuiltInsReferenceResolver;
 
 public class QuickFixUtil {
     private QuickFixUtil() {
@@ -56,7 +57,7 @@ public class QuickFixUtil {
     public static JetType getDeclarationReturnType(JetNamedDeclaration declaration) {
         PsiFile file = declaration.getContainingFile();
         if (!(file instanceof JetFile)) return null;
-        BindingContext bindingContext = getContextForSingleFile((JetFile)file);
+        BindingContext bindingContext = AnalyzerFacadeWithCache.analyzeFileWithCache((JetFile) file).getBindingContext();
         DeclarationDescriptor descriptor = bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, declaration);
         if (!(descriptor instanceof CallableDescriptor)) return null;
         JetType type = ((CallableDescriptor) descriptor).getReturnType();
@@ -87,5 +88,9 @@ public class QuickFixUtil {
             }
         }
         return matchingReturnType;
+    }
+
+    public static boolean canModifyElement(@NotNull PsiElement element) {
+        return element.isWritable() && !BuiltInsReferenceResolver.isFromBuiltIns(element);
     }
 }

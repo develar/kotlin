@@ -44,9 +44,17 @@ public final class ArrayListTest extends JavaClassesTest {
         fooBoxTest();
     }
 
-    public void testMisc() throws Exception {
+    public void testRemoveWithIndexOutOfBounds() throws Exception {
         fooBoxTest();
     }
+
+    public void testToArray() throws Exception {
+        fooBoxTest();
+    }
+    
+    public void testMisc() throws Exception {
+            fooBoxTest();
+        }
 
     public void testIndexOOB() throws Exception {
         try {

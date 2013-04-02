@@ -62,7 +62,7 @@ public class AsmUtil {
     );
 
     private static final int NO_FLAG_LOCAL = 0;
-    private static final int NO_FLAG_PACKAGE_PRIVATE = 0;
+    public static final int NO_FLAG_PACKAGE_PRIVATE = 0;
 
     @NotNull
     private static final Map<Visibility, Integer> visibilityToAccessFlag = ImmutableMap.<Visibility, Integer>builder()
@@ -230,9 +230,13 @@ public class AsmUtil {
             return ACC_PUBLIC;
         }
         Visibility memberVisibility = memberDescriptor.getVisibility();
+        if (memberVisibility == Visibilities.LOCAL && memberDescriptor instanceof CallableMemberDescriptor) {
+            return ACC_PUBLIC;
+        }
         if (memberVisibility != Visibilities.PRIVATE) {
             return null;
         }
+        // the following code is only for PRIVATE visibility of member
         if (isClassObject(containingDeclaration)) {
             return NO_FLAG_PACKAGE_PRIVATE;
         }

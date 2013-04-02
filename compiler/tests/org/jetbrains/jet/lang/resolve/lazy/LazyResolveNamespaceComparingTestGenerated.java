@@ -180,6 +180,11 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                 doTestCheckingPrimaryConstructorsAndAccessors("compiler/testData/loadKotlin/class/NestedGenericClass.kt");
             }
             
+            @TestMetadata("SingleAbstractMethod.kt")
+            public void testSingleAbstractMethod() throws Exception {
+                doTestCheckingPrimaryConstructorsAndAccessors("compiler/testData/loadKotlin/class/SingleAbstractMethod.kt");
+            }
+            
             @TestMetadata("Trait.kt")
             public void testTrait() throws Exception {
                 doTestCheckingPrimaryConstructorsAndAccessors("compiler/testData/loadKotlin/class/Trait.kt");
@@ -1070,7 +1075,7 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
     }
     
     @TestMetadata("compiler/testData/loadJava/compiledJavaCompareWithKotlin")
-    @InnerTestClasses({CompiledJavaCompareWithKotlin.Annotation.class, CompiledJavaCompareWithKotlin.Constructor.class, CompiledJavaCompareWithKotlin.JavaBean.class, CompiledJavaCompareWithKotlin.KotlinSignature.class, CompiledJavaCompareWithKotlin.Library.class, CompiledJavaCompareWithKotlin.Modality.class, CompiledJavaCompareWithKotlin.NotNull.class, CompiledJavaCompareWithKotlin.Vararg.class})
+    @InnerTestClasses({CompiledJavaCompareWithKotlin.Annotation.class, CompiledJavaCompareWithKotlin.Constructor.class, CompiledJavaCompareWithKotlin.JavaBean.class, CompiledJavaCompareWithKotlin.KotlinSignature.class, CompiledJavaCompareWithKotlin.Library.class, CompiledJavaCompareWithKotlin.Modality.class, CompiledJavaCompareWithKotlin.Mutability.class, CompiledJavaCompareWithKotlin.NotNull.class, CompiledJavaCompareWithKotlin.Vararg.class})
     public static class CompiledJavaCompareWithKotlin extends AbstractLazyResolveNamespaceComparingTest {
         public void testAllFilesPresentInCompiledJavaCompareWithKotlin() throws Exception {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/compiledJavaCompareWithKotlin"), Pattern.compile("^(.+)\\.kt$"), true);
@@ -1951,6 +1956,34 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
             
         }
         
+        @TestMetadata("compiler/testData/loadJava/compiledJavaCompareWithKotlin/mutability")
+        public static class Mutability extends AbstractLazyResolveNamespaceComparingTest {
+            public void testAllFilesPresentInMutability() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/compiledJavaCompareWithKotlin/mutability"), Pattern.compile("^(.+)\\.kt$"), true);
+            }
+            
+            @TestMetadata("LoadIterable.kt")
+            public void testLoadIterable() throws Exception {
+                doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/compiledJavaCompareWithKotlin/mutability/LoadIterable.kt");
+            }
+            
+            @TestMetadata("LoadIterableWithConflict.kt")
+            public void testLoadIterableWithConflict() throws Exception {
+                doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/compiledJavaCompareWithKotlin/mutability/LoadIterableWithConflict.kt");
+            }
+            
+            @TestMetadata("LoadIterableWithNullability.kt")
+            public void testLoadIterableWithNullability() throws Exception {
+                doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/compiledJavaCompareWithKotlin/mutability/LoadIterableWithNullability.kt");
+            }
+            
+            @TestMetadata("LoadIterableWithPropagation.kt")
+            public void testLoadIterableWithPropagation() throws Exception {
+                doTestNotCheckingPrimaryConstructors("compiler/testData/loadJava/compiledJavaCompareWithKotlin/mutability/LoadIterableWithPropagation.kt");
+            }
+            
+        }
+        
         @TestMetadata("compiler/testData/loadJava/compiledJavaCompareWithKotlin/notNull")
         public static class NotNull extends AbstractLazyResolveNamespaceComparingTest {
             public void testAllFilesPresentInNotNull() throws Exception {
@@ -2001,6 +2034,7 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
             suite.addTest(KotlinSignature.innerSuite());
             suite.addTestSuite(Library.class);
             suite.addTestSuite(Modality.class);
+            suite.addTestSuite(Mutability.class);
             suite.addTestSuite(NotNull.class);
             suite.addTestSuite(Vararg.class);
             return suite;
