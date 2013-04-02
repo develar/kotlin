@@ -73,8 +73,7 @@ public class TestConfig extends Config {
     public static final String LIBRARIES_LOCATION = "js/js.libraries";
     @NotNull
     public static final List<String> LIB_FILES_WITH_CODE = Arrays.asList(
-            "stdlib/TuplesCode.kt",
-            "src/core/javautilCode.kt"
+            "stdlib/TuplesCode.kt"
     );
     @NotNull
     public static final List<String> LIB_FILES_WITH_DECLARATIONS = Arrays.asList(

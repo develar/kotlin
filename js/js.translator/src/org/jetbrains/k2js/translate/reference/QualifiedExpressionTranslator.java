@@ -23,14 +23,13 @@ import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.utils.ErrorReportingUtils;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getDescriptorForReferenceExpression;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.getNotNullSimpleNameSelector;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.getSelector;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.getSelectorAsSimpleName;
+import static org.jetbrains.k2js.translate.utils.PsiUtils.*;
 
 public final class QualifiedExpressionTranslator {
 
@@ -130,9 +129,8 @@ public final class QualifiedExpressionTranslator {
             return false;
         }
         if (receiverExpression instanceof JetReferenceExpression) {
-            DeclarationDescriptor descriptorForReferenceExpression =
-                getDescriptorForReferenceExpression(context.bindingContext(), (JetReferenceExpression)receiverExpression);
-            if (descriptorForReferenceExpression instanceof NamespaceDescriptor) {
+            DeclarationDescriptor reference = context.bindingContext().get(BindingContext.REFERENCE_TARGET, (JetReferenceExpression)receiverExpression);
+            if (reference instanceof NamespaceDescriptor) {
                 return true;
             }
         }

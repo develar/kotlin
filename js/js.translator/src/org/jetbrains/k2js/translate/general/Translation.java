@@ -53,7 +53,6 @@ import java.util.Map;
 
 import static org.jetbrains.jet.plugin.JetMainDetector.getMainFunction;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToExpression;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.toStringLiteralList;
 
 /**
@@ -122,9 +121,8 @@ public final class Translation {
     }
 
     @NotNull
-    public static JsExpression translateAsExpression(@NotNull JetExpression expression,
-            @NotNull TranslationContext context) {
-        return convertToExpression(translateExpression(expression, context));
+    public static JsExpression translateAsExpression(@NotNull JetExpression expression, @NotNull TranslationContext context) {
+        return (JsExpression) translateExpression(expression, context);
     }
 
     @NotNull

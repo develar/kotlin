@@ -53,7 +53,6 @@ import java.util.Collections;
 import java.util.List;
 
 public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
-
     INSTANCE;
     private static final Name MODULE_NAME = Name.special("<module>");
 
