@@ -20,7 +20,7 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Sets;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -31,6 +31,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.Function;
 import com.intellij.util.containers.ContainerUtil;
+import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -56,13 +57,16 @@ import java.util.Set;
 public class BuiltInsReferenceResolver {
     private BindingContext bindingContext = null;
     private Set<? extends PsiFile> builtInsSources = Sets.newHashSet();
+    private Project myProject;
 
    public BuiltInsReferenceResolver(Project project) {
         initialize(project);
     }
 
     public static BuiltInsReferenceResolver getInstance(Project project) {
-        return ServiceManager.getService(project, BuiltInsReferenceResolver.class);
+        BuiltInsReferenceResolver service = ServiceManager.getService(project, BuiltInsReferenceResolver.class);
+        service.myProject = project;
+        return service;
     }
 
     private void initialize(Project myProject) {
@@ -77,10 +81,10 @@ public class BuiltInsReferenceResolver {
         scope.changeLockLevel(WritableScope.LockLevel.BOTH);
         jetNamespace.setMemberScope(scope);
 
-        TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace,
-                                                        getJetFiles("jet", Predicates.<JetFile>alwaysTrue()));
+        List<JetFile> jetBuiltInsFiles = getJetFiles("jet", Predicates.<JetFile>alwaysTrue(), myProject);
+        TopDownAnalyzer.processStandardLibraryNamespace(myProject, context, scope, jetNamespace, jetBuiltInsFiles);
 
-        builtInsSources = Sets.newHashSet(jetBuiltInsFiles);
+        builtInsSources = new THashSet<PsiFile>(jetBuiltInsFiles);
         bindingContext = context.getBindingContext();
     }
 

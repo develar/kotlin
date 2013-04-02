@@ -10,8 +10,8 @@
 
     <target name="jb_update" depends="fetch-third-party">
         <execute_update
-            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt3498/1807694:id"
-            build.zip="ideaIC-129.SNAPSHOT.win.zip"
+            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt662/1813618:id"
+            build.zip="ideaIC-130.SNAPSHOT.win.zip"
         />
     </target>
 
