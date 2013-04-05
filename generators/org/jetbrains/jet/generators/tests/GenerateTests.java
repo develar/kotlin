@@ -19,6 +19,7 @@ package org.jetbrains.jet.generators.tests;
 import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.checkers.AbstractDiagnosticsTestWithEagerResolve;
+import org.jetbrains.jet.checkers.AbstractJetJsCheckerTest;
 import org.jetbrains.jet.checkers.AbstractJetPsiCheckerTest;
 import org.jetbrains.jet.codegen.AbstractBytecodeTextTest;
 import org.jetbrains.jet.codegen.AbstractCheckLocalVariablesTableTest;
@@ -30,6 +31,7 @@ import org.jetbrains.jet.jvm.compiler.*;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveDescriptorRendererTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveNamespaceComparingTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveTest;
+import org.jetbrains.jet.plugin.codeInsight.codeTransformations.AbstractCodeTransformationTest;
 import org.jetbrains.jet.plugin.codeInsight.surroundWith.AbstractSurroundWithTest;
 import org.jetbrains.jet.plugin.folding.AbstractKotlinFoldingTest;
 import org.jetbrains.jet.plugin.hierarchy.AbstractHierarchyTest;
@@ -209,6 +211,13 @@ public class GenerateTests {
 
         generateTest(
                 "idea/tests/",
+                "JetJsCheckerTestGenerated",
+                AbstractJetJsCheckerTest.class,
+                testModel("idea/testData/checker/js", false, "kt", "doTest")
+        );
+
+        generateTest(
+                "idea/tests/",
                 "QuickFixTestGenerated",
                 AbstractQuickFixTest.class,
                 new SimpleTestClassModel(new File("idea/testData/quickfix"), true, Pattern.compile("^before(\\w+)\\.kt$"), "doTest")
@@ -249,6 +258,14 @@ public class GenerateTests {
                 testModel("idea/testData/codeInsight/surroundWith/tryCatchFinally", "doTestWithTryCatchFinallySurrounder"),
                 testModel("idea/testData/codeInsight/surroundWith/tryFinally", "doTestWithTryFinallySurrounder"),
                 testModel("idea/testData/codeInsight/surroundWith/functionLiteral", "doTestWithFunctionLiteralSurrounder")
+        );
+
+        generateTest(
+                "idea/tests/",
+                "CodeTransformationsTestGenerated",
+                AbstractCodeTransformationTest.class,
+                testModel("idea/testData/codeInsight/codeTransformations/ifStatementWithAssignmentsToExpression", "doTestIfStatementWithAssignmentsToExpression"),
+                testModel("idea/testData/codeInsight/codeTransformations/assignmentWithIfExpressionToStatement", "doTestAssignmentWithIfExpressionToStatement")
         );
 
         generateTest(

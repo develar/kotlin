@@ -2175,6 +2175,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                     JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/inference/nestedCalls"), Pattern.compile("^(.+)\\.kt$"), true);
                 }
                 
+                @TestMetadata("checkTypesForQualifiedProperties.kt")
+                public void testCheckTypesForQualifiedProperties() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/nestedCalls/checkTypesForQualifiedProperties.kt");
+                }
+                
                 @TestMetadata("completeNestedCallsForArraySetExpression.kt")
                 public void testCompleteNestedCallsForArraySetExpression() throws Exception {
                     doTest("compiler/testData/diagnostics/tests/inference/nestedCalls/completeNestedCallsForArraySetExpression.kt");
@@ -2467,6 +2472,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 @TestMetadata("kt2856.kt")
                 public void testKt2856() throws Exception {
                     doTest("compiler/testData/diagnostics/tests/inference/upperBounds/kt2856.kt");
+                }
+                
+                @TestMetadata("useBoundsIfUnknownParameters.kt")
+                public void testUseBoundsIfUnknownParameters() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/inference/upperBounds/useBoundsIfUnknownParameters.kt");
                 }
                 
                 @TestMetadata("useBoundsToInferTypeParamsSimple.kt")

@@ -216,6 +216,7 @@ public class CandidateResolver {
         resolvedCall.setResultingSubstitutor(constraintSystem.getResultingSubstitutor());
     }
 
+    @Nullable
     public <D extends CallableDescriptor> JetType completeTypeInferenceDependentOnExpectedTypeForCall(
             @NotNull CallCandidateResolutionContext<D> context,
             boolean isInnerCall
@@ -228,29 +229,22 @@ public class CandidateResolver {
 
         constraintSystem.addSupertypeConstraint(context.expectedType, descriptor.getReturnType(), ConstraintPosition.EXPECTED_TYPE_POSITION);
 
-        if (!constraintSystem.isSuccessful()) {
-            resolvedCall.setResultingSubstitutor(constraintSystem.getResultingSubstitutor());
-            completeNestedCallsInference(context);
-            List<JetType> argumentTypes = checkValueArgumentTypes(context, resolvedCall, context.trace,
-                                                                  RESOLVE_FUNCTION_ARGUMENTS).argumentTypes;
-            JetType receiverType = resolvedCall.getReceiverArgument().exists() ? resolvedCall.getReceiverArgument().getType() : null;
-            InferenceErrorData.ExtendedInferenceErrorData errorData = InferenceErrorData
-                    .create(descriptor, constraintSystem, argumentTypes, receiverType, context.expectedType);
-
-            context.tracing.typeInferenceFailed(context.trace, errorData);
-            resolvedCall.addStatus(ResolutionStatus.OTHER_ERROR);
-            if (!CallResolverUtil.hasInferredReturnType(resolvedCall)) return null;
-            return resolvedCall.getResultingDescriptor().getReturnType();
+        if (constraintSystem.hasContradiction()) {
+            return reportInferenceError(context);
         }
 
         boolean boundsAreSatisfied = ConstraintsUtil.checkBoundsAreSatisfied(constraintSystem, /*substituteOtherTypeParametersInBounds=*/true);
-        if (!boundsAreSatisfied) {
+        if (!boundsAreSatisfied || constraintSystem.hasUnknownParameters()) {
             ConstraintSystemImpl copy = (ConstraintSystemImpl) constraintSystem.copy();
             copy.processDeclaredBoundConstraints();
             boundsAreSatisfied = copy.isSuccessful() && ConstraintsUtil.checkBoundsAreSatisfied(copy, /*substituteOtherTypeParametersInBounds=*/true);
             if (boundsAreSatisfied) {
                 constraintSystem = copy;
+                resolvedCall.setConstraintSystem(constraintSystem);
             }
+        }
+        if (!constraintSystem.isSuccessful()) {
+            return reportInferenceError(context);
         }
         if (!boundsAreSatisfied) {
             context.tracing.upperBoundViolated(context.trace, InferenceErrorData.create(resolvedCall.getCandidateDescriptor(), constraintSystem));
@@ -266,12 +260,33 @@ public class CandidateResolver {
         if (status == ResolutionStatus.UNKNOWN_STATUS || status == ResolutionStatus.INCOMPLETE_TYPE_INFERENCE) {
             resolvedCall.setStatusToSuccess();
         }
+        JetType returnType = resolvedCall.getResultingDescriptor().getReturnType();
         if (isInnerCall) {
             PsiElement callElement = context.call.getCallElement();
             if (callElement instanceof JetCallExpression) {
-                DataFlowUtils.checkType(resolvedCall.getResultingDescriptor().getReturnType(), (JetCallExpression) callElement, context, context.dataFlowInfo);
+                DataFlowUtils.checkType(returnType, (JetCallExpression) callElement, context, context.dataFlowInfo);
             }
         }
+        return returnType;
+    }
+
+    private <D extends CallableDescriptor> JetType reportInferenceError(
+            @NotNull CallCandidateResolutionContext<D> context
+    ) {
+        ResolvedCallImpl<D> resolvedCall = context.candidateCall;
+        ConstraintSystem constraintSystem = resolvedCall.getConstraintSystem();
+
+        resolvedCall.setResultingSubstitutor(constraintSystem.getResultingSubstitutor());
+        completeNestedCallsInference(context);
+        List<JetType> argumentTypes = checkValueArgumentTypes(
+                context, resolvedCall, context.trace, RESOLVE_FUNCTION_ARGUMENTS).argumentTypes;
+        JetType receiverType = resolvedCall.getReceiverArgument().exists() ? resolvedCall.getReceiverArgument().getType() : null;
+        InferenceErrorData.ExtendedInferenceErrorData errorData = InferenceErrorData
+                .create(resolvedCall.getCandidateDescriptor(), constraintSystem, argumentTypes, receiverType, context.expectedType);
+
+        context.tracing.typeInferenceFailed(context.trace, errorData);
+        resolvedCall.addStatus(ResolutionStatus.OTHER_ERROR);
+        if (!CallResolverUtil.hasInferredReturnType(resolvedCall)) return null;
         return resolvedCall.getResultingDescriptor().getReturnType();
     }
 
@@ -295,7 +310,7 @@ public class CandidateResolver {
                                        : effectiveExpectedType;
 
                 //todo inner calls should be analyzed, for parenthesized, labeled, if, when expressions as well
-                JetVisitor<JetExpression, Void> callExpressionFinder = new JetVisitor<JetExpression, Void>() {
+                JetVisitor<JetExpression, Void> selectorExpressionFinder = new JetVisitor<JetExpression, Void>() {
                     @Override
                     public JetExpression visitQualifiedExpression(JetQualifiedExpression expression, Void data) {
                         JetExpression selector = expression.getSelectorExpression();
@@ -308,15 +323,30 @@ public class CandidateResolver {
                     }
 
                     @Override
+                    public JetExpression visitSimpleNameExpression(JetSimpleNameExpression expression, Void data) {
+                        return expression;
+                    }
+
+                    @Override
                     public JetExpression visitJetElement(JetElement element, Void data) {
                         return null;
                     }
                 };
-                JetExpression callExpression = expression.accept(callExpressionFinder, null);
-                if (callExpression == null) continue;
+                // selector expression is callExpression or simpleNameExpression (if it's inside qualified expression)
+                JetExpression selectorExpression = expression.accept(selectorExpressionFinder, null);
+                if (selectorExpression == null) continue;
 
+                if (selectorExpression instanceof JetSimpleNameExpression) {
+                    if (expression instanceof JetQualifiedExpression) {
+                        //todo get rid of this hack, 'checkType' once at the end of the analysis
+                        JetType type = context.trace.get(BindingContext.EXPRESSION_TYPE, selectorExpression);
+                        DataFlowUtils.checkType(type, expression, context.replaceExpectedType(expectedType));
+                    }
+                    continue;
+                }
                 CallCandidateResolutionContext<FunctionDescriptor> storedContextForArgument =
-                        context.resolutionResultsCache.getDeferredComputation(CallKey.create(Call.CallType.DEFAULT, callExpression));
+                        context.resolutionResultsCache.getDeferredComputation(CallKey.create(Call.CallType.DEFAULT, selectorExpression));
+                //todo assert storedContextForArgument != null
                 if (storedContextForArgument == null) continue;
 
                 CallCandidateResolutionContext<FunctionDescriptor> contextForArgument =

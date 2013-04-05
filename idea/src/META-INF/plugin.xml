@@ -102,7 +102,8 @@
     <treeStructureProvider implementation="org.jetbrains.jet.plugin.projectView.JetProjectViewProvider"/>
 
     <colorSettingsPage implementation="org.jetbrains.jet.plugin.highlighter.JetColorSettingsPage"/>
-    <additionalTextAttributes scheme="Darcula" file="/colorScheme/Darcula_Kotlin.xml"/>
+    <additionalTextAttributes scheme="Default" file="colorScheme/Default_Kotlin.xml"/>
+    <additionalTextAttributes scheme="Darcula" file="colorScheme/Darcula_Kotlin.xml"/>
 
     <codeStyleSettingsProvider implementation="org.jetbrains.jet.plugin.formatter.JetCodeStyleSettingsProvider"/>
     <langCodeStyleSettingsProvider implementation="org.jetbrains.jet.plugin.formatter.JetLanguageCodeStyleSettingsProvider"/>
@@ -258,6 +259,16 @@
 
     <intentionAction>
       <className>org.jetbrains.jet.plugin.codeInsight.ktSignature.KotlinSignatureAnnotationIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.IfStatementWithAssignmentsToExpressionIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.AssignmentWithIfExpressionToStatementIntention</className>
       <category>Kotlin</category>
     </intentionAction>
 
