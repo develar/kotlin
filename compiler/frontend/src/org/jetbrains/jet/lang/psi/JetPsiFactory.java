@@ -75,6 +75,12 @@ public class JetPsiFactory {
         return Pair.create(property.findElementAt(5), property.findElementAt(7));
     }
 
+    //the pair contains the first and the last elements of a range
+    public static Pair<PsiElement, PsiElement> createTypeWhiteSpaceAndColon(Project project, String type) {
+        JetProperty property = createProperty(project, "val x: " + type);
+        return Pair.create(property.findElementAt(5), (PsiElement) property.getTypeRef());
+    }
+
     public static ASTNode createColonNode(Project project) {
         JetProperty property = createProperty(project, "val x: Int");
         return property.getNode().findChildByType(JetTokens.COLON);
@@ -223,5 +229,21 @@ public class JetPsiFactory {
 
     public static JetExpression createFieldIdentifier(Project project, @NotNull String fieldName) {
         return createExpression(project, "$" + fieldName);
+    }
+
+    public static JetBinaryExpression createAssignment(Project project, @NotNull String lhs, @NotNull String rhs) {
+        return (JetBinaryExpression) createExpression(project, lhs + " = " + rhs);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public static JetBinaryExpression createAssignment(Project project, @NotNull JetExpression lhs, @NotNull JetExpression rhs) {
+        JetBinaryExpression assignment = createAssignment(project, "_", "_");
+
+        assert assignment.getRight() != null;
+
+        assignment = (JetBinaryExpression)assignment.getLeft().replace(lhs).getParent();
+        assignment = (JetBinaryExpression)assignment.getRight().replace(rhs).getParent();
+
+        return assignment;
     }
 }

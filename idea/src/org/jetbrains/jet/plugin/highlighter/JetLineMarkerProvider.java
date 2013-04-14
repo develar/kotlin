@@ -21,10 +21,10 @@ import com.intellij.codeHighlighting.Pass;
 import com.intellij.codeInsight.daemon.GutterIconNavigationHandler;
 import com.intellij.codeInsight.daemon.LineMarkerInfo;
 import com.intellij.codeInsight.daemon.LineMarkerProvider;
+import com.intellij.codeInsight.daemon.impl.LineMarkerNavigator;
 import com.intellij.codeInsight.daemon.impl.MarkerType;
 import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.codeInsight.navigation.NavigationUtil;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
@@ -35,9 +35,10 @@ import com.intellij.psi.search.searches.ClassInheritorsSearch;
 import com.intellij.psi.util.PsiUtilCore;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.Function;
+import com.intellij.util.NullableFunction;
 import com.intellij.util.PsiNavigateUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.asJava.KotlinLightClass;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.asJava.LightClassUtil;
 import org.jetbrains.jet.lang.descriptors.CallableMemberDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
@@ -67,37 +68,50 @@ public class JetLineMarkerProvider implements LineMarkerProvider {
 
     private static final Function<PsiElement, String> SUBCLASSED_CLASS_TOOLTIP_ADAPTER = new Function<PsiElement, String>() {
         @Override
-        public String fun(PsiElement element) {
-            PsiElement child = getPsiClassFirstChild(element);
-            // Java puts its marker on a child of the PsiClass, so we must find a child of our own class too
-            return child != null ? MarkerType.SUBCLASSED_CLASS.getTooltip().fun(child) : null;
+        public String fun(@NotNull PsiElement element) {
+            PsiClass psiClass = getPsiClass(element);
+            return psiClass != null ? SUBCLASSED_CLASS.getTooltip().fun(psiClass) : null;
         }
     };
 
-    private static PsiElement getPsiClassFirstChild(PsiElement element) {
+    private static final GutterIconNavigationHandler<PsiElement> SUBCLASSED_CLASS_NAVIGATION_HANDLER = new GutterIconNavigationHandler<PsiElement>() {
+        @Override
+        public void navigate(@Nullable MouseEvent e, @Nullable PsiElement elt) {
+            if (elt == null) return;
+            PsiElement psiClass = getPsiClass(elt);
+            if (psiClass != null) {
+                SUBCLASSED_CLASS.getNavigationHandler().navigate(e, psiClass);
+            }
+        }
+    };
+
+    private static final MarkerType SUBCLASSED_CLASS = new MarkerType(
+            new NullableFunction<PsiElement, String>() {
+                @Override
+                public String fun(@Nullable PsiElement element) {
+                    if (!(element instanceof PsiClass)) return null;
+                    return MarkerType.getSubclassedClassTooltip((PsiClass) element);
+                }
+            },
+            new LineMarkerNavigator() {
+                @Override
+                public void browse(@Nullable MouseEvent e, @Nullable PsiElement element) {
+                    if (!(element instanceof PsiClass)) return;
+                    MarkerType.navigateToSubclassedClass(e, (PsiClass) element);
+                }
+            }
+    );
+
+    @Nullable
+    private static PsiClass getPsiClass(@NotNull PsiElement element) {
         if (!(element instanceof JetClass)) {
             element = element.getParent();
             if (!(element instanceof JetClass)) {
                 return null;
             }
         }
-        KotlinLightClass lightClass = LightClassUtil.createLightClass((JetClass) element);
-        if (lightClass == null) {
-            return null;
-        }
-        PsiElement[] children = lightClass.getDelegate().getChildren();
-        return children.length > 0 ? children[0] : null;
+        return LightClassUtil.getPsiClass((JetClass) element);
     }
-
-    private static final GutterIconNavigationHandler<PsiElement> SUBCLASSED_CLASS_NAVIGATION_HANDLER = new GutterIconNavigationHandler<PsiElement>() {
-        @Override
-        public void navigate(MouseEvent e, PsiElement elt) {
-            PsiElement child = getPsiClassFirstChild(elt);
-            if (child != null) {
-                MarkerType.SUBCLASSED_CLASS.getNavigationHandler().navigate(e, child);
-            }
-        }
-    };
 
     @Override
     public LineMarkerInfo getLineMarkerInfo(@NotNull PsiElement element) {
@@ -252,7 +266,7 @@ public class JetLineMarkerProvider implements LineMarkerProvider {
               element.hasModifier(JetTokens.ABSTRACT_KEYWORD))) {
             return;
         }
-        PsiClass lightClass = LightClassUtil.createLightClass(element);
+        PsiClass lightClass = LightClassUtil.getPsiClass(element);
         if (lightClass == null) {
             return;
         }

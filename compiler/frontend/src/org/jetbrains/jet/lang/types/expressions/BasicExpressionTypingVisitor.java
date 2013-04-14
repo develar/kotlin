@@ -72,7 +72,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         CallExpressionResolver callExpressionResolver = context.expressionTypingServices.getCallExpressionResolver();
         JetTypeInfo typeInfo = callExpressionResolver.getSimpleNameExpressionTypeInfo(expression, NO_RECEIVER, null, context);
         JetType type = DataFlowUtils.checkType(typeInfo.getType(), expression, context);
-        ExpressionTypingUtils.checkWrappingInRef(expression, context.trace, context.scope);
+        ExpressionTypingUtils.checkCapturingInClosure(expression, context.trace, context.scope);
         return JetTypeInfo.create(type, typeInfo.getDataFlowInfo()); // TODO : Extensions to this
     }
 
@@ -710,18 +710,25 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     private static boolean isKnownToBeNotNull(JetExpression expression, ExpressionTypingContext context) {
         JetType type = context.trace.get(EXPRESSION_TYPE, expression);
         assert type != null : "This method is only supposed to be called when the type is not null";
-        DataFlowValue dataFlowValue = DataFlowValueFactory.INSTANCE.createDataFlowValue(expression, type, context.trace.getBindingContext());
+        return isKnownToBeNotNull(expression, type, context);
+    }
+
+    private static boolean isKnownToBeNotNull(JetExpression expression, JetType jetType, ExpressionTypingContext context) {
+        DataFlowValue dataFlowValue = DataFlowValueFactory.INSTANCE.createDataFlowValue(expression, jetType, context.trace.getBindingContext());
         return !context.dataFlowInfo.getNullability(dataFlowValue).canBeNull();
     }
 
-    public static void checkLValue(BindingTrace trace, JetExpression expression) {
+    public static void checkLValue(@NotNull BindingTrace trace, @NotNull JetExpression expression) {
         checkLValue(trace, expression, false);
     }
 
-    private static void checkLValue(BindingTrace trace, JetExpression expressionWithParenthesis, boolean canBeThis) {
+    private static void checkLValue(@NotNull BindingTrace trace, @NotNull JetExpression expressionWithParenthesis, boolean canBeThis) {
         JetExpression expression = JetPsiUtil.deparenthesizeWithNoTypeResolution(expressionWithParenthesis);
         if (expression instanceof JetArrayAccessExpression) {
-            checkLValue(trace, ((JetArrayAccessExpression) expression).getArrayExpression(), true);
+            JetExpression arrayExpression = ((JetArrayAccessExpression) expression).getArrayExpression();
+            if (arrayExpression != null) {
+                checkLValue(trace, arrayExpression, true);
+            }
             return;
         }
         if (canBeThis && expression instanceof JetThisExpression) return;
@@ -852,12 +859,14 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 JetType leftType = leftTypeInfo.getType();
                 dataFlowInfo = leftTypeInfo.getDataFlowInfo();
 
-                ExpressionTypingContext newContext = contextWithExpectedType.replaceDataFlowInfo(dataFlowInfo).replaceScope(context.scope);
-                JetType rightType = right == null ? null : facade.getTypeInfo(right, newContext).getType();
                 if (leftType != null) {
-                    if (!leftType.isNullable()) {
+                    if (isKnownToBeNotNull(left, leftType, context)) {
                         context.trace.report(USELESS_ELVIS.on(left, leftType));
                     }
+
+                    ExpressionTypingContext newContext = contextWithExpectedType.replaceDataFlowInfo(dataFlowInfo).replaceScope(context.scope);
+                    JetType rightType = right == null ? null : facade.getTypeInfo(right, newContext).getType();
+
                     if (rightType != null) {
                         DataFlowUtils.checkType(TypeUtils.makeNullableAsSpecified(leftType, rightType.isNullable()), left, contextWithExpectedType);
                         return JetTypeInfo.create(TypeUtils.makeNullableAsSpecified(
@@ -1105,13 +1114,16 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                                                     @NotNull ExpressionTypingContext oldContext,
                                                     @NotNull BindingTrace traceForResolveResult,
                                                     boolean isGet) {
-        JetTypeInfo arrayTypeInfo = facade.getTypeInfo(arrayAccessExpression.getArrayExpression(), oldContext);
+        JetExpression arrayExpression = arrayAccessExpression.getArrayExpression();
+        if (arrayExpression == null) return JetTypeInfo.create(null, oldContext.dataFlowInfo);
+
+        JetTypeInfo arrayTypeInfo = facade.getTypeInfo(arrayExpression, oldContext);
         JetType arrayType = arrayTypeInfo.getType();
         if (arrayType == null) return arrayTypeInfo;
 
         DataFlowInfo dataFlowInfo = arrayTypeInfo.getDataFlowInfo();
         ExpressionTypingContext context = oldContext.replaceDataFlowInfo(dataFlowInfo);
-        ExpressionReceiver receiver = new ExpressionReceiver(arrayAccessExpression.getArrayExpression(), arrayType);
+        ExpressionReceiver receiver = new ExpressionReceiver(arrayExpression, arrayType);
         if (!isGet) assert rightHandSide != null;
 
         OverloadResolutionResults<FunctionDescriptor> functionResults = context.resolveCallWithGivenName(

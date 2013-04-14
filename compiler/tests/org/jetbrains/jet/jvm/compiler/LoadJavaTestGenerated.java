@@ -1322,6 +1322,11 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
                 doTestJavaAgainstKotlin("compiler/testData/loadJava/javaAgainstKotlin/signaturePropagation/DeepSubclassingKotlinInJava.txt");
             }
             
+            @TestMetadata("SubclassFromTraitImplementation.txt")
+            public void testSubclassFromTraitImplementation() throws Exception {
+                doTestJavaAgainstKotlin("compiler/testData/loadJava/javaAgainstKotlin/signaturePropagation/SubclassFromTraitImplementation.txt");
+            }
+            
             @TestMetadata("SubclassingKotlinInJava.txt")
             public void testSubclassingKotlinInJava() throws Exception {
                 doTestJavaAgainstKotlin("compiler/testData/loadJava/javaAgainstKotlin/signaturePropagation/SubclassingKotlinInJava.txt");

@@ -31,7 +31,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.asJava.KotlinLightClass;
 import org.jetbrains.jet.asJava.LightClassUtil;
 import org.jetbrains.jet.lang.psi.*;
 
@@ -65,7 +64,7 @@ public class JetJUnitConfigurationProducer extends RuntimeConfigurationProducer 
             JetElement owner = PsiTreeUtil.getParentOfType(function, JetFunction.class, JetClass.class);
 
             if (owner instanceof JetClass) {
-                KotlinLightClass delegate = LightClassUtil.createLightClass((JetClass) owner);
+                PsiClass delegate = LightClassUtil.getPsiClass((JetClass) owner);
                 if (delegate != null) {
                     for (PsiMethod method : delegate.getMethods()) {
                         if (method.getNavigationElement() == function) {
@@ -96,7 +95,7 @@ public class JetJUnitConfigurationProducer extends RuntimeConfigurationProducer 
 
         if (jetClass != null) {
             myElement = jetClass;
-            PsiClass delegate = LightClassUtil.createLightClass(jetClass);
+            PsiClass delegate = LightClassUtil.getPsiClass(jetClass);
 
             if (delegate != null && JUnitUtil.isTestClass(delegate)) {
                 RunnerAndConfigurationSettings settings = cloneTemplateConfiguration(context.getProject(), context);

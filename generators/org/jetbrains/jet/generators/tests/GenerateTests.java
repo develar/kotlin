@@ -27,6 +27,10 @@ import org.jetbrains.jet.codegen.AbstractTopLevelMembersInvocationTest;
 import org.jetbrains.jet.codegen.defaultConstructor.AbstractDefaultConstructorCodegenTest;
 import org.jetbrains.jet.codegen.flags.AbstractWriteFlagsTest;
 import org.jetbrains.jet.codegen.generated.AbstractBlackBoxCodegenTest;
+import org.jetbrains.jet.completion.AbstractJavaCompletionTest;
+import org.jetbrains.jet.completion.AbstractJavaWithLibCompletionTest;
+import org.jetbrains.jet.completion.AbstractJetJSCompletionTest;
+import org.jetbrains.jet.completion.AbstractKeywordCompletionTest;
 import org.jetbrains.jet.jvm.compiler.*;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveDescriptorRendererTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveNamespaceComparingTest;
@@ -225,6 +229,35 @@ public class GenerateTests {
 
         generateTest(
                 "idea/tests/",
+                "JetBasicJSCompletionTestGenerated",
+                AbstractJetJSCompletionTest.class,
+                testModel("idea/testData/completion/basic/common"),
+                testModel("idea/testData/completion/basic/js")
+        );
+
+        generateTest(
+                "idea/tests/",
+                "JetBasicJavaCompletionTestGenerated",
+                AbstractJavaCompletionTest.class,
+                testModel("idea/testData/completion/basic/common"),
+                testModel("idea/testData/completion/basic/java")
+        );
+
+        generateTest(
+                "idea/tests/",
+                "JetKeywordCompletionTestGenerated",
+                AbstractKeywordCompletionTest.class,
+                testModel("idea/testData/completion/keywords", false, "doTest")
+        );
+
+        generateTest(
+                "idea/tests",
+                "JetJavaLibCompletionTestGenerated",
+                AbstractJavaWithLibCompletionTest.class,
+                testModel("idea/testData/completion/basic/custom", false, "doTestWithJar"));
+
+        generateTest(
+                "idea/tests/",
                 "QuickFixMultiFileTestGenerated",
                 AbstractQuickFixMultiFileTest.class,
                 new SimpleTestClassModel(new File("idea/testData/quickfix"), true, Pattern.compile("^(\\w+)\\.before\\.Main\\.kt$"), "doTestWithExtraFile")
@@ -284,6 +317,10 @@ public class GenerateTests {
 
     private static SimpleTestClassModel testModel(@NotNull String rootPath, @NotNull String methodName) {
         return testModel(rootPath, true, "kt", methodName);
+    }
+
+    private static SimpleTestClassModel testModel(@NotNull String rootPath, boolean recursive, @NotNull String methodName) {
+        return testModel(rootPath, recursive, "kt", methodName);
     }
 
     private static SimpleTestClassModel testModelWithDirectories(@NotNull String rootPath, @NotNull String methodName) {

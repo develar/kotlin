@@ -1976,10 +1976,20 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/incompleteCode/SupertypeOfErrorType.kt");
             }
             
+            @TestMetadata("typeParameterOnLhsOfDot.kt")
+            public void testTypeParameterOnLhsOfDot() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/incompleteCode/typeParameterOnLhsOfDot.kt");
+            }
+            
             @TestMetadata("compiler/testData/diagnostics/tests/incompleteCode/diagnosticWithSyntaxError")
             public static class DiagnosticWithSyntaxError extends AbstractDiagnosticsTestWithEagerResolve {
                 public void testAllFilesPresentInDiagnosticWithSyntaxError() throws Exception {
                     JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/incompleteCode/diagnosticWithSyntaxError"), Pattern.compile("^(.+)\\.kt$"), true);
+                }
+                
+                @TestMetadata("arrayExpression.kt")
+                public void testArrayExpression() throws Exception {
+                    doTest("compiler/testData/diagnostics/tests/incompleteCode/diagnosticWithSyntaxError/arrayExpression.kt");
                 }
                 
                 @TestMetadata("checkBackingFieldException.kt")
@@ -3053,6 +3063,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("safeCallOnTypeWithNullableUpperBound.kt")
             public void testSafeCallOnTypeWithNullableUpperBound() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/nullableTypes/safeCallOnTypeWithNullableUpperBound.kt");
+            }
+            
+            @TestMetadata("uselessElvis.kt")
+            public void testUselessElvis() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/nullableTypes/uselessElvis.kt");
             }
             
         }

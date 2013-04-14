@@ -36,7 +36,7 @@ import org.jetbrains.jet.lang.resolve.constants.ConstantUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.ChainedScope;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
+import org.jetbrains.jet.lang.resolve.scopes.JetScopeImpl;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ExpressionReceiver;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.*;
@@ -68,7 +68,7 @@ public class CallExpressionResolver {
     @Nullable
     private JetType lookupNamespaceOrClassObject(@NotNull JetSimpleNameExpression expression, @NotNull ResolutionContext context) {
         Name referencedName = expression.getReferencedNameAsName();
-        ClassifierDescriptor classifier = context.scope.getClassifier(referencedName);
+        final ClassifierDescriptor classifier = context.scope.getClassifier(referencedName);
         if (classifier != null) {
             JetType classObjectType = classifier.getClassObjectType();
             if (classObjectType != null) {
@@ -89,13 +89,33 @@ public class CallExpressionResolver {
         }
         // To report NO_CLASS_OBJECT when no namespace found
         if (classifier != null) {
-            if (context.expressionPosition == ExpressionPosition.FREE) {
+            if (classifier instanceof TypeParameterDescriptor) {
+                if (context.expressionPosition == ExpressionPosition.FREE) {
+                    context.trace.report(TYPE_PARAMETER_IS_NOT_AN_EXPRESSION.on(expression, (TypeParameterDescriptor) classifier));
+                }
+                else {
+                    context.trace.report(TYPE_PARAMETER_ON_LHS_OF_DOT.on(expression, (TypeParameterDescriptor) classifier));
+                }
+            }
+            else if (context.expressionPosition == ExpressionPosition.FREE) {
                 context.trace.report(NO_CLASS_OBJECT.on(expression, classifier));
             }
             context.trace.record(REFERENCE_TARGET, expression, classifier);
-            JetScope scopeForStaticMembersResolution = classifier instanceof ClassDescriptor
-                                                       ? getStaticNestedClassesScope((ClassDescriptor) classifier)
-                                                       : JetScope.EMPTY;
+            JetScope scopeForStaticMembersResolution =
+                    classifier instanceof ClassDescriptor
+                    ? getStaticNestedClassesScope((ClassDescriptor) classifier)
+                    : new JetScopeImpl() {
+                            @NotNull
+                            @Override
+                            public DeclarationDescriptor getContainingDeclaration() {
+                                return classifier;
+                            }
+
+                            @Override
+                            public String toString() {
+                                return "Scope for the type parameter on the left hand side of dot";
+                            }
+                        };
             return new NamespaceType(referencedName, scopeForStaticMembersResolution);
         }
         temporaryTrace.commit();
