@@ -10,7 +10,7 @@
 
     <target name="jb_update" depends="fetch-third-party">
         <execute_update
-            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt662/1813618:id"
+            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt662/1833042:id"
             build.zip="ideaIC-130.SNAPSHOT.win.zip"
         />
     </target>
@@ -97,10 +97,10 @@
         <copy file="dependencies/download/jansi-1.9-sources.jar" tofile="dependencies/jansi-sources.jar" overwrite="true"/>
         -->
 
-        <!-- Guava 12 sources-->
-        <get src="http://repository.jetbrains.com/remote-repos/com/google/guava/guava/12.0/guava-12.0-sources.jar"
-             dest="dependencies/download/guava-12.0-sources.jar" usetimestamp="true"/>
-        <copy file="dependencies/download/guava-12.0-sources.jar" tofile="dependencies/guava-12.0-sources.jar" overwrite="true"/>
+        <!-- Guava 14 sources-->
+        <get src="http://repository.jetbrains.com/remote-repos/com/google/guava/guava/14.0.1/guava-14.0.1-sources.jar"
+             dest="dependencies/download/guava-14.0.1-sources.jar" usetimestamp="true"/>
+        <copy file="dependencies/download/guava-14.0.1-sources.jar" tofile="dependencies/guava-14.0.1-sources.jar" overwrite="true"/>
 
         <!-- ASM 4 -->
         <get-asm4-and-rename-packages/>
@@ -181,7 +181,7 @@
                     <get src="@{base.url.for.core}/core/intellij-core.jar" dest="${core}/intellij-core.jar" usetimestamp="true"/>
                     <get src="@{base.url}/core/annotations.jar" dest="${core}/annotations.jar" usetimestamp="true"/>
                     <get src="@{base.url}/core/cli-parser-1.1.jar" dest="${core}/cli-parser-1.1.jar" usetimestamp="true"/>
-                    <get src="@{base.url}/core/guava-12.0.jar" dest="${core}/guava-12.0.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/core/guava-14.0.1.jar" dest="${core}/guava-14.0.1.jar" usetimestamp="true"/>
                     <get src="@{base.url}/core/picocontainer.jar" dest="${core}/picocontainer.jar" usetimestamp="true"/>
                     <get src="@{base.url}/core/trove4j.jar" dest="${core}/trove4j.jar" usetimestamp="true"/>
 

@@ -16,10 +16,8 @@
 
 package org.jetbrains.jet.plugin.caches.resolve;
 
-import com.google.common.base.Predicates;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
-import com.intellij.psi.PsiFile;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.CachedValue;
 import com.intellij.psi.util.CachedValueProvider;
@@ -27,12 +25,12 @@ import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiModificationTracker;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
-import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
+import org.jetbrains.jet.plugin.project.JSAnalyzerFacadeForIDEA;
 import org.jetbrains.jet.plugin.project.TargetPlatform;
-import org.jetbrains.k2js.analyze.AnalyzerFacadeForJS;
-import org.jetbrains.k2js.config.EcmaVersion;
-import org.jetbrains.k2js.config.LibrarySourcesConfig;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
 
 class JSDeclarationsCacheProvider extends DeclarationsCacheProvider {
     private final CachedValueProvider<KotlinDeclarationsCache> declarationsProvider;
@@ -49,16 +47,11 @@ class JSDeclarationsCacheProvider extends DeclarationsCacheProvider {
             @Override
             public Result<KotlinDeclarationsCache> compute() {
                 synchronized (declarationAnalysisLock) {
-                    LibrarySourcesConfig config = new LibrarySourcesConfig(
-                            project, "default",
-                            KotlinFrameworkDetector.getLibLocationAndTargetForProject(project).first,
-                            EcmaVersion.defaultVersion());
-
-                    AnalyzeExhaust analyzeExhaust = AnalyzerFacadeForJS.analyzeFiles(
+                    ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
+                    ModuleInfo info = JSAnalyzerFacadeForIDEA.createModuleInfo(project, libraryModuleConfiguration);
+                    AnalyzeExhaust analyzeExhaust = XAnalyzerFacade.analyzeFiles(info,
                             JetFilesProvider.getInstance(project).allInScope(GlobalSearchScope.allScope(project)),
-                            Predicates.<PsiFile>alwaysFalse(),
-                            config,
-                            true);
+                            false);
 
                     return Result.<KotlinDeclarationsCache>create(
                             new KotlinDeclarationsCacheImpl(analyzeExhaust),

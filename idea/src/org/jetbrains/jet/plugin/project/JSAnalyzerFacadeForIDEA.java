@@ -73,7 +73,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
         return XAnalyzerFacade.analyzeFilesAndStoreBodyContext(moduleConfiguration, files, false);
     }
 
-    private static ModuleInfo createModuleInfo(Project project, ModuleInfo libraryModuleConfiguration) {
+    public static ModuleInfo createModuleInfo(Project project, ModuleInfo libraryModuleConfiguration) {
         return new ModuleInfo(new ModuleDescriptor(MODULE_NAME), project, Collections.<ModuleInfo>singletonList(libraryModuleConfiguration),
                               new SingletonSet<ModuleInfo>(libraryModuleConfiguration));
     }
