@@ -152,8 +152,8 @@ public class DescriptorUtils {
     }
 
     public static boolean isInSameModule(@NotNull DeclarationDescriptor first, @NotNull DeclarationDescriptor second) {
-        ModuleDescriptor parentModule = DescriptorUtils.getParentOfType(first, ModuleDescriptor.class, false);
-        ModuleDescriptor fromModule = DescriptorUtils.getParentOfType(second, ModuleDescriptor.class, false);
+        ModuleDescriptor parentModule = DescriptorUtils.getParentOfType(first, ModuleDescriptorImpl.class, false);
+        ModuleDescriptor fromModule = DescriptorUtils.getParentOfType(second, ModuleDescriptorImpl.class, false);
         assert parentModule != null && fromModule != null;
         return parentModule.equals(fromModule);
     }
@@ -161,6 +161,9 @@ public class DescriptorUtils {
     @Nullable
     public static DeclarationDescriptor findTopLevelParent(@NotNull DeclarationDescriptor declarationDescriptor) {
         DeclarationDescriptor descriptor = declarationDescriptor;
+        if (declarationDescriptor instanceof PropertyAccessorDescriptor) {
+            descriptor = ((PropertyAccessorDescriptor)descriptor).getCorrespondingProperty();
+        }
         while (!(descriptor == null || isTopLevelDeclaration(descriptor))) {
             descriptor = descriptor.getContainingDeclaration();
         }
@@ -281,23 +284,31 @@ public class DescriptorUtils {
     }
 
     public static boolean isClassObject(@NotNull DeclarationDescriptor descriptor) {
-        return descriptor instanceof ClassDescriptor
-               && ((ClassDescriptor) descriptor).getKind() == ClassKind.CLASS_OBJECT;
+        return isKindOf(descriptor, ClassKind.CLASS_OBJECT);
     }
 
     public static boolean isAnonymous(@Nullable ClassifierDescriptor descriptor) {
-        return descriptor instanceof ClassDescriptor
-               && descriptor.getName().isSpecial() && ((ClassDescriptor)descriptor).getKind() == ClassKind.OBJECT;
+        return isKindOf(descriptor, ClassKind.OBJECT) && descriptor.getName().isSpecial();
     }
 
     public static boolean isEnumEntry(@NotNull DeclarationDescriptor descriptor) {
-        return descriptor instanceof ClassDescriptor
-               && ((ClassDescriptor) descriptor).getKind() == ClassKind.ENUM_ENTRY;
+        return isKindOf(descriptor, ClassKind.ENUM_ENTRY);
     }
 
     public static boolean isEnumClass(@NotNull DeclarationDescriptor descriptor) {
-        return descriptor instanceof ClassDescriptor
-               && ((ClassDescriptor) descriptor).getKind() == ClassKind.ENUM_CLASS;
+        return isKindOf(descriptor, ClassKind.ENUM_CLASS);
+    }
+
+    public static boolean isKindOf(@NotNull JetType jetType, @NotNull ClassKind classKind) {
+        ClassifierDescriptor descriptor = jetType.getConstructor().getDeclarationDescriptor();
+        return isKindOf(descriptor, classKind);
+    }
+
+    public static boolean isKindOf(@Nullable DeclarationDescriptor descriptor, @NotNull ClassKind classKind) {
+        if (descriptor instanceof ClassDescriptor) {
+            return ((ClassDescriptor) descriptor).getKind() == classKind;
+        }
+        return false;
     }
 
     @NotNull

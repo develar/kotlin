@@ -25,8 +25,7 @@ import org.jetbrains.jet.lang.resolve.DescriptorResolver;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
-import org.jetbrains.jet.lang.ModuleConfiguration;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
 import org.jetbrains.jet.lang.types.DependencyClassByQualifiedNameResolverDummyImpl;
 import org.jetbrains.jet.lang.resolve.NamespaceFactoryImpl;
 import org.jetbrains.jet.lang.resolve.DeclarationResolver;
@@ -60,8 +59,7 @@ public class InjectorForTopDownXAnalyzer {
     private final Project project;
     private final TopDownAnalysisParameters topDownAnalysisParameters;
     private final BindingTrace bindingTrace;
-    private final ModuleDescriptor moduleDescriptor;
-    private final ModuleConfiguration moduleConfiguration;
+    private final ModuleDescriptorImpl moduleDescriptor;
     private DependencyClassByQualifiedNameResolverDummyImpl dependencyClassByQualifiedNameResolverDummy;
     private NamespaceFactoryImpl namespaceFactory;
     private DeclarationResolver declarationResolver;
@@ -85,8 +83,7 @@ public class InjectorForTopDownXAnalyzer {
         @NotNull Project project,
         @NotNull TopDownAnalysisParameters topDownAnalysisParameters,
         @NotNull BindingTrace bindingTrace,
-        @NotNull ModuleDescriptor moduleDescriptor,
-        @NotNull ModuleConfiguration moduleConfiguration
+        @NotNull ModuleDescriptorImpl moduleDescriptor
     ) {
         this.topDownAnalyzer = new TopDownAnalyzer();
         this.topDownAnalysisContext = new TopDownAnalysisContext();
@@ -98,7 +95,6 @@ public class InjectorForTopDownXAnalyzer {
         this.topDownAnalysisParameters = topDownAnalysisParameters;
         this.bindingTrace = bindingTrace;
         this.moduleDescriptor = moduleDescriptor;
-        this.moduleConfiguration = moduleConfiguration;
         this.dependencyClassByQualifiedNameResolverDummy = new DependencyClassByQualifiedNameResolverDummyImpl();
         this.namespaceFactory = new NamespaceFactoryImpl();
         this.declarationResolver = new DeclarationResolver();
@@ -150,7 +146,6 @@ public class InjectorForTopDownXAnalyzer {
         this.descriptorResolver.setExpressionTypingServices(expressionTypingServices);
         this.descriptorResolver.setTypeResolver(typeResolver);
 
-        namespaceFactory.setConfiguration(moduleConfiguration);
         namespaceFactory.setModuleDescriptor(moduleDescriptor);
         namespaceFactory.setTrace(bindingTrace);
 
@@ -182,14 +177,14 @@ public class InjectorForTopDownXAnalyzer {
 
         typeResolver.setAnnotationResolver(annotationResolver);
         typeResolver.setDescriptorResolver(descriptorResolver);
-        typeResolver.setModuleConfiguration(moduleConfiguration);
+        typeResolver.setModuleDescriptor(moduleDescriptor);
         typeResolver.setQualifiedExpressionResolver(qualifiedExpressionResolver);
 
         candidateResolver.setArgumentTypeResolver(argumentTypeResolver);
 
-        importsResolver.setConfiguration(moduleConfiguration);
         importsResolver.setContext(topDownAnalysisContext);
         importsResolver.setImportsFactory(jetImportsFactory);
+        importsResolver.setModuleDescriptor(moduleDescriptor);
         importsResolver.setQualifiedExpressionResolver(qualifiedExpressionResolver);
         importsResolver.setTrace(bindingTrace);
 
@@ -261,8 +256,8 @@ public class InjectorForTopDownXAnalyzer {
         return this.bindingTrace;
     }
     
-    public ModuleConfiguration getModuleConfiguration() {
-        return this.moduleConfiguration;
+    public ModuleDescriptorImpl getModuleDescriptor() {
+        return this.moduleDescriptor;
     }
     
 }

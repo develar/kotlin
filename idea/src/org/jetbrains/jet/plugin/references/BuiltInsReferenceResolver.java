@@ -33,6 +33,8 @@ import com.intellij.util.containers.ContainerUtil;
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.ModuleConfiguration;
+import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.descriptors.impl.NamespaceDescriptorImpl;
@@ -216,9 +218,10 @@ public class BuiltInsReferenceResolver {
         private WritableScope memberScope;
 
         private FakeJetNamespaceDescriptor() {
-            super(new NamespaceDescriptorImpl(new ModuleDescriptor(Name.special("<fake_module>")),
-                                              Collections.<AnnotationDescriptor>emptyList(), Name.special("<root>")),
-                  Collections.<AnnotationDescriptor>emptyList(),
+            super(new NamespaceDescriptorImpl(
+                    new ModuleDescriptorImpl(Name.special("<fake_module>"), Collections.<ImportPath>emptyList(), PlatformToKotlinClassMap.EMPTY)
+                            .setModuleConfiguration(ModuleConfiguration.EMPTY),
+                  Collections.<AnnotationDescriptor>emptyList(), Name.special("<root>")), Collections.<AnnotationDescriptor>emptyList(),
                   KotlinBuiltIns.getInstance().getBuiltInsPackage().getName());
         }
 

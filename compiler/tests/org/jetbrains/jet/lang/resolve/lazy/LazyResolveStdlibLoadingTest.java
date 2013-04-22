@@ -27,6 +27,7 @@ import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
+import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 import org.jetbrains.jet.test.util.NamespaceComparator;
@@ -57,8 +58,8 @@ public class LazyResolveStdlibLoadingTest extends KotlinTestWithEnvironmentManag
         ModuleDescriptor lazyModule = LazyResolveTestUtil.resolveLazily(files, stdlibEnvironment);
 
         for (Name name : namespaceShortNames) {
-            NamespaceDescriptor eager = JetScopeUtils.findFirst(module.getRootNamespace().getMemberScope(), name);
-            NamespaceDescriptor lazy = JetScopeUtils.findFirst(lazyModule.getRootNamespace().getMemberScope(), name);
+            NamespaceDescriptor eager = module.getNamespace(FqName.topLevel(name));
+            NamespaceDescriptor lazy = lazyModule.getNamespace(FqName.topLevel(name));
             NamespaceComparator.compareNamespaces(eager, lazy, NamespaceComparator.RECURSIVE, null);
         }
     }

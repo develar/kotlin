@@ -782,6 +782,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/quickfix/override/typeMismatchOnOverride"), Pattern.compile("^before(\\w+)\\.kt$"), true);
             }
             
+            @TestMetadata("beforePropertyReturnTypeMismatchOnOverride.kt")
+            public void testPropertyReturnTypeMismatchOnOverride() throws Exception {
+                doTest("idea/testData/quickfix/override/typeMismatchOnOverride/beforePropertyReturnTypeMismatchOnOverride.kt");
+            }
+            
             @TestMetadata("beforePropertyTypeMismatchOnOverrideIntLong.kt")
             public void testPropertyTypeMismatchOnOverrideIntLong() throws Exception {
                 doTest("idea/testData/quickfix/override/typeMismatchOnOverride/beforePropertyTypeMismatchOnOverrideIntLong.kt");
@@ -1026,6 +1031,16 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
         @TestMetadata("beforeComponentFunctionReturnTypeMismatch5.kt")
         public void testComponentFunctionReturnTypeMismatch5() throws Exception {
             doTest("idea/testData/quickfix/typeMismatch/beforeComponentFunctionReturnTypeMismatch5.kt");
+        }
+        
+        @TestMetadata("beforeExpectedParameterTypeMismatch.kt")
+        public void testExpectedParameterTypeMismatch() throws Exception {
+            doTest("idea/testData/quickfix/typeMismatch/beforeExpectedParameterTypeMismatch.kt");
+        }
+        
+        @TestMetadata("beforeExpectedReturnTypeMismatch.kt")
+        public void testExpectedReturnTypeMismatch() throws Exception {
+            doTest("idea/testData/quickfix/typeMismatch/beforeExpectedReturnTypeMismatch.kt");
         }
         
         @TestMetadata("beforeHasNextFunctionReturnTypeMismatch.kt")

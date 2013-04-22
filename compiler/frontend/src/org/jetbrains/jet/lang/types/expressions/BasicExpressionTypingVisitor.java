@@ -36,6 +36,7 @@ import org.jetbrains.jet.lang.resolve.calls.context.ExpressionPosition;
 import org.jetbrains.jet.lang.resolve.calls.context.ResolutionResultsCache;
 import org.jetbrains.jet.lang.resolve.calls.context.ResolveMode;
 import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResults;
+import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResultsImpl;
 import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResultsUtil;
 import org.jetbrains.jet.lang.resolve.calls.util.CallMaker;
 import org.jetbrains.jet.lang.resolve.constants.*;
@@ -136,7 +137,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         DataFlowInfo dataFlowInfo = context.dataFlowInfo;
         if (right != null) {
             JetType targetType = context.expressionTypingServices.getTypeResolver().resolveType(context.scope, right, context.trace, true);
-            IElementType operationType = expression.getOperationSign().getReferencedNameElementType();
+            IElementType operationType = expression.getOperationReference().getReferencedNameElementType();
 
             boolean tryWithNoExpectedType = true;
             if (isTypeFlexible(left) || operationType == JetTokens.COLON) {
@@ -178,7 +179,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             @NotNull JetType targetType,
             JetType actualType
     ) {
-        JetSimpleNameExpression operationSign = expression.getOperationSign();
+        JetSimpleNameExpression operationSign = expression.getOperationReference();
         IElementType operationType = operationSign.getReferencedNameElementType();
         if (operationType == JetTokens.COLON) {
             if (targetType != NO_EXPECTED_TYPE && !JetTypeChecker.INSTANCE.isSubtypeOf(actualType, targetType)) {
@@ -208,16 +209,16 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         JetTypeChecker typeChecker = JetTypeChecker.INSTANCE;
         if (!typeChecker.isSubtypeOf(targetType, actualType)) {
             if (typeChecker.isSubtypeOf(actualType, targetType)) {
-                context.trace.report(USELESS_CAST_STATIC_ASSERT_IS_FINE.on(expression.getOperationSign()));
+                context.trace.report(USELESS_CAST_STATIC_ASSERT_IS_FINE.on(expression.getOperationReference()));
             }
             else {
                 // See JET-58 Make 'as never succeeds' a warning, or even never check for Java (external) types
-                context.trace.report(CAST_NEVER_SUCCEEDS.on(expression.getOperationSign()));
+                context.trace.report(CAST_NEVER_SUCCEEDS.on(expression.getOperationReference()));
             }
         }
         else {
             if (typeChecker.isSubtypeOf(actualType, targetType)) {
-                context.trace.report(USELESS_CAST.on(expression.getOperationSign()));
+                context.trace.report(USELESS_CAST.on(expression.getOperationReference()));
             }
             else {
                 if (isCastErased(actualType, targetType, typeChecker)) {
@@ -493,6 +494,11 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             }
         }
         if (result != null) {
+            if (DescriptorUtils.isKindOf(thisType, ClassKind.TRAIT)) {
+                if (DescriptorUtils.isKindOf(result, ClassKind.CLASS)) {
+                    context.trace.report(SUPERCLASS_NOT_ACCESSIBLE_FROM_TRAIT.on(expression));
+                }
+            }
             context.trace.record(BindingContext.EXPRESSION_TYPE, expression.getInstanceReference(), result);
             context.trace.record(BindingContext.REFERENCE_TARGET, expression.getInstanceReference(), result.getConstructor().getDeclarationDescriptor());
             if (superTypeQualifier != null) {
@@ -749,6 +755,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
 
         JetType result = null;
         DataFlowInfo dataFlowInfo = context.dataFlowInfo;
+
         if (operationType == JetTokens.IDENTIFIER) {
             Name referencedName = operationSign.getReferencedNameAsName();
             JetTypeInfo typeInfo = getTypeInfoForBinaryCall(context.scope, referencedName, context, expression);
@@ -786,10 +793,12 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
         else {
             JetType booleanType = KotlinBuiltIns.getInstance().getBooleanType();
             if (OperatorConventions.EQUALS_OPERATIONS.contains(operationType)) {
-                if (right != null) {
+                if (right != null && left != null) {
                     ExpressionReceiver receiver = ExpressionTypingUtils.safeGetExpressionReceiver(facade, left, context);
 
-                    dataFlowInfo = facade.getTypeInfo(left, context).getDataFlowInfo();
+                    JetTypeInfo leftTypeInfo = getTypeInfoOrNullType(left, context, facade);
+
+                    dataFlowInfo = leftTypeInfo.getDataFlowInfo();
                     ExpressionTypingContext contextWithDataFlow = context.replaceDataFlowInfo(dataFlowInfo);
 
                     OverloadResolutionResults<FunctionDescriptor> resolutionResults = resolveFakeCall(
@@ -824,7 +833,6 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
             }
             else if (OperatorConventions.IN_OPERATIONS.contains(operationType)) {
                 if (right == null) {
-                    result = ErrorUtils.createErrorType("No right argument"); // TODO
                     return JetTypeInfo.create(null, dataFlowInfo);
                 }
                 JetTypeInfo typeInfo = checkInExpression(expression, expression.getOperationReference(), left, right, context);
@@ -832,7 +840,8 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 result = typeInfo.getType();
             }
             else if (OperatorConventions.BOOLEAN_OPERATIONS.containsKey(operationType)) {
-                JetTypeInfo leftTypeInfo = facade.getTypeInfo(left, context);
+                JetTypeInfo leftTypeInfo = getTypeInfoOrNullType(left, context, facade);
+
                 JetType leftType = leftTypeInfo.getType();
                 dataFlowInfo = leftTypeInfo.getDataFlowInfo();
 
@@ -846,7 +855,7 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 JetType rightType = right == null
                                     ? null
                                     : facade.getTypeInfo(right, context.replaceDataFlowInfo(flowInfoLeft).replaceScope(rightScope)).getType();
-                if (leftType != null && !isBoolean(leftType)) {
+                if (left != null && leftType != null && !isBoolean(leftType)) {
                     context.trace.report(TYPE_MISMATCH.on(left, booleanType, leftType));
                 }
                 if (rightType != null && !isBoolean(rightType)) {
@@ -855,11 +864,12 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
                 result = booleanType;
             }
             else if (operationType == JetTokens.ELVIS) {
-                JetTypeInfo leftTypeInfo = facade.getTypeInfo(left, context);
+                JetTypeInfo leftTypeInfo = getTypeInfoOrNullType(left, context, facade);
+
                 JetType leftType = leftTypeInfo.getType();
                 dataFlowInfo = leftTypeInfo.getDataFlowInfo();
 
-                if (leftType != null) {
+                if (left != null && leftType != null) {
                     if (isKnownToBeNotNull(left, leftType, context)) {
                         context.trace.report(USELESS_ELVIS.on(left, leftType));
                     }
@@ -912,6 +922,8 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
 
     private void ensureNonemptyIntersectionOfOperandTypes(JetBinaryExpression expression, ExpressionTypingContext context) {
         JetExpression left = expression.getLeft();
+        if (left == null) return;
+
         JetExpression right = expression.getRight();
 
         // TODO : duplicated effort for == and !=
@@ -988,12 +1000,20 @@ public class BasicExpressionTypingVisitor extends ExpressionTypingVisitor {
     ) {
         ExpressionTypingContext context = contextWithOldScope.replaceScope(scope);
         JetExpression left = binaryExpression.getLeft();
-        DataFlowInfo dataFlowInfo = facade.getTypeInfo(left, context).getDataFlowInfo();
-
-        ExpressionReceiver receiver = safeGetExpressionReceiver(facade, left, context);
+        DataFlowInfo dataFlowInfo = context.dataFlowInfo;
+        if (left != null) {
+            dataFlowInfo = facade.getTypeInfo(left, context).getDataFlowInfo();
+        }
         ExpressionTypingContext contextWithDataFlow = context.replaceDataFlowInfo(dataFlowInfo);
-        OverloadResolutionResults<FunctionDescriptor> resolutionResults =
-                getResolutionResultsForBinaryCall(scope, name, contextWithDataFlow, binaryExpression, receiver);
+
+        OverloadResolutionResults<FunctionDescriptor> resolutionResults;
+        if (left != null) {
+            ExpressionReceiver receiver = safeGetExpressionReceiver(facade, left, context);
+            resolutionResults = getResolutionResultsForBinaryCall(scope, name, contextWithDataFlow, binaryExpression, receiver);
+        }
+        else {
+            resolutionResults = OverloadResolutionResultsImpl.nameNotFound();
+        }
 
         JetExpression right = binaryExpression.getRight();
         if (right != null) {

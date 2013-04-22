@@ -1172,6 +1172,7 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
         }
         
         @TestMetadata("compiler/testData/loadJava/compiledJava/singleAbstractMethod")
+        @InnerTestClasses({SingleAbstractMethod.Adapter.class})
         public static class SingleAbstractMethod extends AbstractLoadJavaTest {
             public void testAllFilesPresentInSingleAbstractMethod() throws Exception {
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/compiledJava/singleAbstractMethod"), Pattern.compile("^(.+)\\.java$"), true);
@@ -1217,6 +1218,50 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
                 doTestCompiledJava("compiler/testData/loadJava/compiledJava/singleAbstractMethod/Runnable.java");
             }
             
+            @TestMetadata("compiler/testData/loadJava/compiledJava/singleAbstractMethod/adapter")
+            public static class Adapter extends AbstractLoadJavaTest {
+                public void testAllFilesPresentInAdapter() throws Exception {
+                    JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/loadJava/compiledJava/singleAbstractMethod/adapter"), Pattern.compile("^(.+)\\.java$"), true);
+                }
+                
+                @TestMetadata("Basic.java")
+                public void testBasic() throws Exception {
+                    doTestCompiledJava("compiler/testData/loadJava/compiledJava/singleAbstractMethod/adapter/Basic.java");
+                }
+                
+                @TestMetadata("NonTrivialFunctionType.java")
+                public void testNonTrivialFunctionType() throws Exception {
+                    doTestCompiledJava("compiler/testData/loadJava/compiledJava/singleAbstractMethod/adapter/NonTrivialFunctionType.java");
+                }
+                
+                @TestMetadata("SeveralSamParameters.java")
+                public void testSeveralSamParameters() throws Exception {
+                    doTestCompiledJava("compiler/testData/loadJava/compiledJava/singleAbstractMethod/adapter/SeveralSamParameters.java");
+                }
+                
+                @TestMetadata("TypeParameterOfClass.java")
+                public void testTypeParameterOfClass() throws Exception {
+                    doTestCompiledJava("compiler/testData/loadJava/compiledJava/singleAbstractMethod/adapter/TypeParameterOfClass.java");
+                }
+                
+                @TestMetadata("TypeParameterOfMethod.java")
+                public void testTypeParameterOfMethod() throws Exception {
+                    doTestCompiledJava("compiler/testData/loadJava/compiledJava/singleAbstractMethod/adapter/TypeParameterOfMethod.java");
+                }
+                
+                @TestMetadata("TypeParameterOfOuterClass.java")
+                public void testTypeParameterOfOuterClass() throws Exception {
+                    doTestCompiledJava("compiler/testData/loadJava/compiledJava/singleAbstractMethod/adapter/TypeParameterOfOuterClass.java");
+                }
+                
+            }
+            
+            public static Test innerSuite() {
+                TestSuite suite = new TestSuite("SingleAbstractMethod");
+                suite.addTestSuite(SingleAbstractMethod.class);
+                suite.addTestSuite(Adapter.class);
+                return suite;
+            }
         }
         
         @TestMetadata("compiler/testData/loadJava/compiledJava/static")
@@ -1269,7 +1314,7 @@ public class LoadJavaTestGenerated extends AbstractLoadJavaTest {
             suite.addTestSuite(ProtectedPackage.class);
             suite.addTestSuite(ProtectedStatic.class);
             suite.addTestSuite(SignaturePropagation.class);
-            suite.addTestSuite(SingleAbstractMethod.class);
+            suite.addTest(SingleAbstractMethod.innerSuite());
             suite.addTestSuite(Static.class);
             return suite;
         }

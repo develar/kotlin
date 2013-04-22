@@ -33,7 +33,7 @@ import org.jetbrains.jet.checkers.AbstractDiagnosticsTestWithEagerResolve;
 @InnerTestClasses({JetDiagnosticsTestGenerated.Tests.class, JetDiagnosticsTestGenerated.Script.class})
 public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEagerResolve {
     @TestMetadata("compiler/testData/diagnostics/tests")
-    @InnerTestClasses({Tests.Annotations.class, Tests.BackingField.class, Tests.Cast.class, Tests.CheckArguments.class, Tests.ControlFlowAnalysis.class, Tests.ControlStructures.class, Tests.DataClasses.class, Tests.DataFlow.class, Tests.DataFlowInfoTraversal.class, Tests.DeclarationChecks.class, Tests.Deparenthesize.class, Tests.Enum.class, Tests.Extensions.class, Tests.FunctionLiterals.class, Tests.Generics.class, Tests.IncompleteCode.class, Tests.Inference.class, Tests.Infos.class, Tests.Inner.class, Tests.J_k.class, Tests.Jdk_annotations.class, Tests.Library.class, Tests.NullabilityAndAutoCasts.class, Tests.NullableTypes.class, Tests.Objects.class, Tests.OperatorsOverloading.class, Tests.Overload.class, Tests.Override.class, Tests.Redeclarations.class, Tests.Regressions.class, Tests.Resolve.class, Tests.Scopes.class, Tests.SenselessComparison.class, Tests.Shadowing.class, Tests.SmartCasts.class, Tests.Substitutions.class, Tests.Subtyping.class, Tests.ThisAndSuper.class, Tests.Varargs.class})
+    @InnerTestClasses({Tests.Annotations.class, Tests.BackingField.class, Tests.Cast.class, Tests.CheckArguments.class, Tests.ControlFlowAnalysis.class, Tests.ControlStructures.class, Tests.DataClasses.class, Tests.DataFlow.class, Tests.DataFlowInfoTraversal.class, Tests.DeclarationChecks.class, Tests.Deparenthesize.class, Tests.Enum.class, Tests.Extensions.class, Tests.FunctionLiterals.class, Tests.Generics.class, Tests.IncompleteCode.class, Tests.Inference.class, Tests.Infos.class, Tests.Inner.class, Tests.J_k.class, Tests.Jdk_annotations.class, Tests.Library.class, Tests.NullabilityAndAutoCasts.class, Tests.NullableTypes.class, Tests.Objects.class, Tests.OperatorsOverloading.class, Tests.Overload.class, Tests.Override.class, Tests.Recovery.class, Tests.Redeclarations.class, Tests.Regressions.class, Tests.Resolve.class, Tests.Scopes.class, Tests.SenselessComparison.class, Tests.Shadowing.class, Tests.SmartCasts.class, Tests.Substitutions.class, Tests.Subtyping.class, Tests.ThisAndSuper.class, Tests.Varargs.class})
     public static class Tests extends AbstractDiagnosticsTestWithEagerResolve {
         @TestMetadata("Abstract.kt")
         public void testAbstract() throws Exception {
@@ -3050,6 +3050,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/nullableTypes/nullAssertOnTypeWithNullableUpperBound.kt");
             }
             
+            @TestMetadata("nullableArgumentForIn.kt")
+            public void testNullableArgumentForIn() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/nullableTypes/nullableArgumentForIn.kt");
+            }
+            
             @TestMetadata("redundantNullable.kt")
             public void testRedundantNullable() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/nullableTypes/redundantNullable.kt");
@@ -3399,6 +3404,19 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             
         }
         
+        @TestMetadata("compiler/testData/diagnostics/tests/recovery")
+        public static class Recovery extends AbstractDiagnosticsTestWithEagerResolve {
+            @TestMetadata("absentLeftHandSide.kt")
+            public void testAbsentLeftHandSide() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/recovery/absentLeftHandSide.kt");
+            }
+            
+            public void testAllFilesPresentInRecovery() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/recovery"), Pattern.compile("^(.+)\\.kt$"), true);
+            }
+            
+        }
+        
         @TestMetadata("compiler/testData/diagnostics/tests/redeclarations")
         public static class Redeclarations extends AbstractDiagnosticsTestWithEagerResolve {
             public void testAllFilesPresentInRedeclarations() throws Exception {
@@ -3448,6 +3466,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("Redeclarations.kt")
             public void testRedeclarations() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/redeclarations/Redeclarations.kt");
+            }
+            
+            @TestMetadata("RedeclarationsInObjects.kt")
+            public void testRedeclarationsInObjects() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/redeclarations/RedeclarationsInObjects.kt");
             }
             
             @TestMetadata("RedeclaredTypeParameters.kt")
@@ -4352,6 +4375,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/thisAndSuper/ambigousLabelOnThis.kt");
             }
             
+            @TestMetadata("notAccessibleSuperInTrait.kt")
+            public void testNotAccessibleSuperInTrait() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/thisAndSuper/notAccessibleSuperInTrait.kt");
+            }
+            
             @TestMetadata("QualifiedThis.kt")
             public void testQualifiedThis() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/thisAndSuper/QualifiedThis.kt");
@@ -4498,6 +4526,7 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             suite.addTestSuite(OperatorsOverloading.class);
             suite.addTestSuite(Overload.class);
             suite.addTestSuite(Override.class);
+            suite.addTestSuite(Recovery.class);
             suite.addTestSuite(Redeclarations.class);
             suite.addTestSuite(Regressions.class);
             suite.addTestSuite(Resolve.class);

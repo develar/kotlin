@@ -34,13 +34,11 @@ import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.di.InjectorForJavaDescriptorResolver;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
-import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.DelegatingBindingTrace;
+import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.java.scope.JavaClassNonStaticMembersScope;
 import org.jetbrains.jet.lang.resolve.name.FqName;
@@ -119,7 +117,10 @@ public class KotlinSignatureInJavaMarkerProvider implements LineMarkerProvider {
         BindingContext bindingContext = declarationsCache.getBindingContext();
         DelegatingBindingTrace delegatingTrace = new DelegatingBindingTrace(bindingContext, "wrapped context of declarations cache");
 
-        return new InjectorForJavaDescriptorResolver(project, delegatingTrace, new ModuleDescriptor(Name.special("<fake>")));
+        ModuleDescriptorImpl moduleDescriptor = AnalyzerFacadeForJVM.createJavaModule("<fake>");
+        InjectorForJavaDescriptorResolver injector = new InjectorForJavaDescriptorResolver(project, delegatingTrace, moduleDescriptor);
+        moduleDescriptor.setModuleConfiguration(injector.getJavaBridgeConfiguration());
+        return injector;
     }
 
     @Nullable

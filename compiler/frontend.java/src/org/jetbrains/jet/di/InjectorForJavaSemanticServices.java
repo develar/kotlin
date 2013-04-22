@@ -21,7 +21,7 @@ import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
 import org.jetbrains.jet.lang.resolve.java.JavaBridgeConfiguration;
 import org.jetbrains.jet.lang.resolve.java.PsiClassFinderImpl;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.jet.lang.resolve.java.provider.PsiDeclarationProviderFactory;
 import org.jetbrains.jet.lang.resolve.java.JavaTypeTransformer;
@@ -48,7 +48,7 @@ public class InjectorForJavaSemanticServices {
     private BindingTrace bindingTrace;
     private JavaBridgeConfiguration javaBridgeConfiguration;
     private PsiClassFinderImpl psiClassFinder;
-    private ModuleDescriptor moduleDescriptor;
+    private ModuleDescriptorImpl moduleDescriptor;
     private final Project project;
     private PsiDeclarationProviderFactory psiDeclarationProviderFactory;
     private JavaTypeTransformer javaTypeTransformer;
@@ -73,7 +73,7 @@ public class InjectorForJavaSemanticServices {
         this.bindingTrace = new org.jetbrains.jet.lang.resolve.BindingTraceContext();
         this.javaBridgeConfiguration = new JavaBridgeConfiguration();
         this.psiClassFinder = new PsiClassFinderImpl();
-        this.moduleDescriptor = new org.jetbrains.jet.lang.descriptors.ModuleDescriptor(org.jetbrains.jet.lang.resolve.name.Name.special("<dummy>"));
+        this.moduleDescriptor = new org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl(org.jetbrains.jet.lang.resolve.name.Name.special("<dummy>"), org.jetbrains.jet.lang.resolve.java.JavaBridgeConfiguration.ALL_JAVA_IMPORTS, org.jetbrains.jet.lang.resolve.java.JavaToKotlinClassMap.getInstance());
         this.project = project;
         this.psiDeclarationProviderFactory = new PsiDeclarationProviderFactory(getPsiClassFinder());
         this.javaTypeTransformer = new JavaTypeTransformer();
@@ -106,6 +106,8 @@ public class InjectorForJavaSemanticServices {
         javaBridgeConfiguration.setJavaSemanticServices(javaSemanticServices);
 
         this.psiClassFinder.setProject(project);
+
+        moduleDescriptor.setModuleConfiguration(javaBridgeConfiguration);
 
         javaTypeTransformer.setJavaSemanticServices(javaSemanticServices);
         javaTypeTransformer.setResolver(javaDescriptorResolver);
@@ -158,8 +160,6 @@ public class InjectorForJavaSemanticServices {
         javaPropertyResolver.setJavaSignatureResolver(javaSignatureResolver);
         javaPropertyResolver.setSemanticServices(javaSemanticServices);
         javaPropertyResolver.setTrace(bindingTrace);
-
-        javaBridgeConfiguration.init();
 
         psiClassFinder.initialize();
 

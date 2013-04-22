@@ -457,6 +457,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/codegen/box/classes"), Pattern.compile("^(.+)\\.kt$"), true);
         }
         
+        @TestMetadata("boxPrimitiveTypeInClinitOfClassObject.kt")
+        public void testBoxPrimitiveTypeInClinitOfClassObject() throws Exception {
+            doTest("compiler/testData/codegen/box/classes/boxPrimitiveTypeInClinitOfClassObject.kt");
+        }
+        
         @TestMetadata("classObject.kt")
         public void testClassObject() throws Exception {
             doTest("compiler/testData/codegen/box/classes/classObject.kt");
@@ -2621,6 +2626,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/codegen/box/namespace"), Pattern.compile("^(.+)\\.kt$"), true);
         }
         
+        @TestMetadata("boxPrimitiveTypeInClinit.kt")
+        public void testBoxPrimitiveTypeInClinit() throws Exception {
+            doTest("compiler/testData/codegen/box/namespace/boxPrimitiveTypeInClinit.kt");
+        }
+        
         @TestMetadata("checkCast.kt")
         public void testCheckCast() throws Exception {
             doTest("compiler/testData/codegen/box/namespace/checkCast.kt");
@@ -3043,6 +3053,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/codegen/box/properties"), Pattern.compile("^(.+)\\.kt$"), true);
         }
         
+        @TestMetadata("generalAccess.kt")
+        public void testGeneralAccess() throws Exception {
+            doTest("compiler/testData/codegen/box/properties/generalAccess.kt");
+        }
+        
         @TestMetadata("kt1159.kt")
         public void testKt1159() throws Exception {
             doTest("compiler/testData/codegen/box/properties/kt1159.kt");
@@ -3121,6 +3136,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         @TestMetadata("kt613.kt")
         public void testKt613() throws Exception {
             doTest("compiler/testData/codegen/box/properties/kt613.kt");
+        }
+        
+        @TestMetadata("traitExtendsClass.kt")
+        public void testTraitExtendsClass() throws Exception {
+            doTest("compiler/testData/codegen/box/properties/traitExtendsClass.kt");
         }
         
     }
@@ -3295,9 +3315,39 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             doTest("compiler/testData/codegen/box/super/innerClassLabeledSuper.kt");
         }
         
+        @TestMetadata("innerClassLabeledSuper2.kt")
+        public void testInnerClassLabeledSuper2() throws Exception {
+            doTest("compiler/testData/codegen/box/super/innerClassLabeledSuper2.kt");
+        }
+        
         @TestMetadata("innerClassLabeledSuperProperty.kt")
         public void testInnerClassLabeledSuperProperty() throws Exception {
             doTest("compiler/testData/codegen/box/super/innerClassLabeledSuperProperty.kt");
+        }
+        
+        @TestMetadata("innerClassLabeledSuperProperty2.kt")
+        public void testInnerClassLabeledSuperProperty2() throws Exception {
+            doTest("compiler/testData/codegen/box/super/innerClassLabeledSuperProperty2.kt");
+        }
+        
+        @TestMetadata("kt3492ClassFun.kt")
+        public void testKt3492ClassFun() throws Exception {
+            doTest("compiler/testData/codegen/box/super/kt3492ClassFun.kt");
+        }
+        
+        @TestMetadata("kt3492ClassProperty.kt")
+        public void testKt3492ClassProperty() throws Exception {
+            doTest("compiler/testData/codegen/box/super/kt3492ClassProperty.kt");
+        }
+        
+        @TestMetadata("kt3492TraitFun.kt")
+        public void testKt3492TraitFun() throws Exception {
+            doTest("compiler/testData/codegen/box/super/kt3492TraitFun.kt");
+        }
+        
+        @TestMetadata("kt3492TraitProperty.kt")
+        public void testKt3492TraitProperty() throws Exception {
+            doTest("compiler/testData/codegen/box/super/kt3492TraitProperty.kt");
         }
         
         @TestMetadata("multipleSuperTraits.kt")
@@ -3321,6 +3371,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         @TestMetadata("finalMethod.kt")
         public void testFinalMethod() throws Exception {
             doTest("compiler/testData/codegen/box/traits/finalMethod.kt");
+        }
+        
+        @TestMetadata("genericMethod.kt")
+        public void testGenericMethod() throws Exception {
+            doTest("compiler/testData/codegen/box/traits/genericMethod.kt");
         }
         
         @TestMetadata("inheritedFun.kt")
@@ -3363,9 +3418,24 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
             doTest("compiler/testData/codegen/box/traits/kt2963.kt");
         }
         
+        @TestMetadata("kt3315.kt")
+        public void testKt3315() throws Exception {
+            doTest("compiler/testData/codegen/box/traits/kt3315.kt");
+        }
+        
         @TestMetadata("kt3413.kt")
         public void testKt3413() throws Exception {
             doTest("compiler/testData/codegen/box/traits/kt3413.kt");
+        }
+        
+        @TestMetadata("kt3429.kt")
+        public void testKt3429() throws Exception {
+            doTest("compiler/testData/codegen/box/traits/kt3429.kt");
+        }
+        
+        @TestMetadata("kt3500.kt")
+        public void testKt3500() throws Exception {
+            doTest("compiler/testData/codegen/box/traits/kt3500.kt");
         }
         
         @TestMetadata("multiple.kt")

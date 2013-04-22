@@ -26,7 +26,6 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.JetNodeTypes;
-import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.diagnostics.AbstractDiagnosticFactory;
 import org.jetbrains.jet.lang.diagnostics.Diagnostic;
@@ -244,12 +243,12 @@ public class ExpressionTypingUtils {
             @NotNull JetExpression receiverExpression,
             @NotNull JetType receiverType,
             @NotNull JetScope scope,
-            @NotNull ModuleConfiguration moduleConfiguration
+            @NotNull ModuleDescriptor module
     ) {
         JetImportDirective importDirective = JetPsiFactory.createImportDirective(project, callableFQN.getFqName());
 
         Collection<? extends DeclarationDescriptor> declarationDescriptors = new QualifiedExpressionResolver()
-                .analyseImportReference(importDirective, scope, new BindingTraceContext(), moduleConfiguration);
+                .analyseImportReference(importDirective, scope, new BindingTraceContext(), module);
 
         List<CallableDescriptor> callableExtensionDescriptors = new ArrayList<CallableDescriptor>();
         ReceiverValue receiverValue = new ExpressionReceiver(receiverExpression, receiverType);
@@ -467,5 +466,16 @@ public class ExpressionTypingUtils {
                 super.report(diagnostic);
             }
         };
+    }
+
+    @NotNull
+    public static JetTypeInfo getTypeInfoOrNullType(
+            @Nullable JetExpression expression,
+            @NotNull ExpressionTypingContext context,
+            @NotNull ExpressionTypingInternals facade
+    ) {
+        return expression != null
+               ? facade.getTypeInfo(expression, context)
+               : JetTypeInfo.create(null, context.dataFlowInfo);
     }
 }

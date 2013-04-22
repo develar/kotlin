@@ -208,12 +208,13 @@ public class ExpressionTypingVisitorForStatements extends ExpressionTypingVisito
 
         JetSimpleNameExpression operationSign = expression.getOperationReference();
         IElementType operationType = operationSign.getReferencedNameElementType();
-        JetTypeInfo leftInfo = facade.getTypeInfo(expression.getLeft(), context);
+        JetExpression leftOperand = expression.getLeft();
+        JetTypeInfo leftInfo = ExpressionTypingUtils.getTypeInfoOrNullType(leftOperand, context, facade);
         JetType leftType = leftInfo.getType();
         DataFlowInfo dataFlowInfo = leftInfo.getDataFlowInfo();
 
         JetExpression right = expression.getRight();
-        JetExpression left = JetPsiUtil.deparenthesizeWithNoTypeResolution(expression.getLeft());
+        JetExpression left = leftOperand == null ? null : JetPsiUtil.deparenthesizeWithNoTypeResolution(leftOperand);
         if (right == null || left == null) {
             temporaryBindingTrace.commit();
             return JetTypeInfo.create(null, dataFlowInfo);
@@ -271,7 +272,7 @@ public class ExpressionTypingVisitorForStatements extends ExpressionTypingVisito
                 basic.resolveArrayAccessSetMethod((JetArrayAccessExpression) left, right, contextForResolve, context.trace);
             }
             dataFlowInfo = facade.getTypeInfo(right, context.replaceDataFlowInfo(dataFlowInfo)).getDataFlowInfo();
-            BasicExpressionTypingVisitor.checkLValue(context.trace, expression.getLeft());
+            BasicExpressionTypingVisitor.checkLValue(context.trace, leftOperand);
         }
         temporaryBindingTrace.commit();
         return JetTypeInfo.create(checkAssignmentType(type, expression, contextWithExpectedType), dataFlowInfo);
@@ -280,7 +281,8 @@ public class ExpressionTypingVisitorForStatements extends ExpressionTypingVisito
     @NotNull
     protected JetTypeInfo visitAssignment(JetBinaryExpression expression, ExpressionTypingContext contextWithExpectedType) {
         ExpressionTypingContext context = contextWithExpectedType.replaceExpectedType(TypeUtils.NO_EXPECTED_TYPE).replaceScope(scope);
-        JetExpression left = context.expressionTypingServices.deparenthesize(expression.getLeft(), context);
+        JetExpression leftOperand = expression.getLeft();
+        JetExpression left = leftOperand == null ? null : context.expressionTypingServices.deparenthesize(leftOperand, context);
         JetExpression right = expression.getRight();
         if (left instanceof JetArrayAccessExpression) {
             JetArrayAccessExpression arrayAccessExpression = (JetArrayAccessExpression) left;
@@ -290,15 +292,15 @@ public class ExpressionTypingVisitorForStatements extends ExpressionTypingVisito
             return JetTypeInfo.create(checkAssignmentType(typeInfo.getType(), expression, contextWithExpectedType),
                                       typeInfo.getDataFlowInfo());
         }
-        JetTypeInfo leftInfo = facade.getTypeInfo(expression.getLeft(), context);
+        JetTypeInfo leftInfo = ExpressionTypingUtils.getTypeInfoOrNullType(left, context, facade);
         JetType leftType = leftInfo.getType();
         DataFlowInfo dataFlowInfo = leftInfo.getDataFlowInfo();
         if (right != null) {
             JetTypeInfo rightInfo = facade.getTypeInfo(right, context.replaceDataFlowInfo(dataFlowInfo).replaceExpectedType(leftType));
             dataFlowInfo = rightInfo.getDataFlowInfo();
         }
-        if (leftType != null) { //if leftType == null, some another error has been generated
-            BasicExpressionTypingVisitor.checkLValue(context.trace, expression.getLeft());
+        if (leftType != null && leftOperand != null) { //if leftType == null, some other error has been generated
+            BasicExpressionTypingVisitor.checkLValue(context.trace, leftOperand);
         }
         return DataFlowUtils.checkStatementType(expression, contextWithExpectedType, dataFlowInfo);
     }

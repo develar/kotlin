@@ -92,7 +92,7 @@ public class InjectorForJavaDescriptorResolver {
         this.javaInnerClassResolver = new JavaInnerClassResolver();
         this.javaPropertyResolver = new JavaPropertyResolver();
 
-        javaBridgeConfiguration.setJavaSemanticServices(javaSemanticServices);
+        this.javaBridgeConfiguration.setJavaSemanticServices(javaSemanticServices);
 
         this.javaSemanticServices.setDescriptorResolver(javaDescriptorResolver);
         this.javaSemanticServices.setPsiClassFinder(psiClassFinder);
@@ -161,8 +161,6 @@ public class InjectorForJavaDescriptorResolver {
         javaPropertyResolver.setSemanticServices(javaSemanticServices);
         javaPropertyResolver.setTrace(bindingTrace);
 
-        javaBridgeConfiguration.init();
-
         psiClassFinder.initialize();
 
     }
@@ -181,6 +179,10 @@ public class InjectorForJavaDescriptorResolver {
     
     public ModuleDescriptor getModuleDescriptor() {
         return this.moduleDescriptor;
+    }
+    
+    public JavaBridgeConfiguration getJavaBridgeConfiguration() {
+        return this.javaBridgeConfiguration;
     }
     
     public JavaSemanticServices getJavaSemanticServices() {

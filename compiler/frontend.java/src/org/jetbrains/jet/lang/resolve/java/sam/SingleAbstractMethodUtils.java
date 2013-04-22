@@ -18,15 +18,18 @@ package org.jetbrains.jet.lang.resolve.java.sam;
 
 import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.descriptors.impl.SimpleFunctionDescriptorImpl;
 import org.jetbrains.jet.lang.descriptors.impl.TypeParameterDescriptorImpl;
 import org.jetbrains.jet.lang.descriptors.impl.ValueParameterDescriptorImpl;
+import org.jetbrains.jet.lang.resolve.java.descriptor.ClassDescriptorFromJvmBytecode;
 import org.jetbrains.jet.lang.resolve.java.kotlinSignature.SignaturesUtil;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeSubstitutor;
+import org.jetbrains.jet.lang.types.TypeUtils;
 import org.jetbrains.jet.lang.types.Variance;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 
@@ -36,7 +39,34 @@ import java.util.List;
 import java.util.Map;
 
 public class SingleAbstractMethodUtils {
-    public static boolean isSamInterface(@NotNull ClassDescriptor klass) {
+    @NotNull
+    private static List<CallableMemberDescriptor> getAbstractMembers(@NotNull JetType type) {
+        List<CallableMemberDescriptor> abstractMembers = Lists.newArrayList();
+        for (DeclarationDescriptor member : type.getMemberScope().getAllDescriptors()) {
+            if (member instanceof CallableMemberDescriptor &&
+                ((CallableMemberDescriptor) member).getModality() == Modality.ABSTRACT &&
+                ((CallableMemberDescriptor) member).getKind() != CallableMemberDescriptor.Kind.SYNTHESIZED) {
+                abstractMembers.add((CallableMemberDescriptor) member);
+            }
+        }
+        return abstractMembers;
+    }
+
+    @NotNull
+    private static JetType getFunctionTypeForSamType(@NotNull JetType samType) {
+        FunctionDescriptor function = getAbstractMethodOfSamType(samType);
+        JetType returnType = function.getReturnType();
+        assert returnType != null : "function is not initialized: " + function;
+        List<JetType> parameterTypes = Lists.newArrayList();
+        for (ValueParameterDescriptor parameter : function.getValueParameters()) {
+            parameterTypes.add(parameter.getType());
+        }
+        JetType functionType = KotlinBuiltIns.getInstance()
+                .getFunctionType(Collections.<AnnotationDescriptor>emptyList(), null, parameterTypes, returnType);
+        return TypeUtils.makeNullableAsSpecified(functionType, samType.isNullable());
+    }
+
+    private static boolean isSamInterface(@NotNull ClassDescriptor klass) {
         if (klass.getKind() != ClassKind.TRAIT) {
             return false;
         }
@@ -52,31 +82,12 @@ public class SingleAbstractMethodUtils {
     }
 
     @NotNull
-    private static List<CallableMemberDescriptor> getAbstractMembers(@NotNull JetType type) {
-        List<CallableMemberDescriptor> abstractMembers = Lists.newArrayList();
-        for (DeclarationDescriptor member : type.getMemberScope().getAllDescriptors()) {
-            if (member instanceof CallableMemberDescriptor && ((CallableMemberDescriptor) member).getModality() == Modality.ABSTRACT) {
-                abstractMembers.add((CallableMemberDescriptor) member);
-            }
-        }
-        return abstractMembers;
-    }
-
-    @NotNull
-    private static JetType getFunctionTypeForFunction(@NotNull FunctionDescriptor function) {
-        JetType returnType = function.getReturnType();
-        assert returnType != null : "function is not initialized: " + function;
-        List<JetType> parameterTypes = Lists.newArrayList();
-        for (ValueParameterDescriptor parameter : function.getValueParameters()) {
-            parameterTypes.add(parameter.getType());
-        }
-        return KotlinBuiltIns.getInstance().getFunctionType(Collections.<AnnotationDescriptor>emptyList(), null, parameterTypes, returnType);
-    }
-
     public static SimpleFunctionDescriptor createSamConstructorFunction(
             @NotNull ClassOrNamespaceDescriptor owner,
             @NotNull ClassDescriptor samInterface
     ) {
+        assert isSamInterface(samInterface) : samInterface;
+
         SimpleFunctionDescriptorImpl result = new SimpleFunctionDescriptorImpl(
                 owner,
                 samInterface.getAnnotations(),
@@ -84,19 +95,97 @@ public class SingleAbstractMethodUtils {
                 CallableMemberDescriptor.Kind.SYNTHESIZED
         );
 
-        Map<TypeParameterDescriptor, TypeParameterDescriptorImpl> traitToFunTypeParameters =
-                SignaturesUtil.recreateTypeParametersAndReturnMapping(samInterface.getTypeConstructor().getParameters(), result);
-        TypeSubstitutor typeParametersSubstitutor = SignaturesUtil.createSubstitutorForTypeParameters(traitToFunTypeParameters);
+        TypeParameters typeParameters = recreateAndInitializeTypeParameters(samInterface.getTypeConstructor().getParameters(), result);
 
-        JetType parameterTypeUnsubstituted = getFunctionTypeForFunction(getAbstractMethodOfSamType(samInterface.getDefaultType()));
-        JetType parameterType = typeParametersSubstitutor.substitute(parameterTypeUnsubstituted, Variance.IN_VARIANCE);
-        assert parameterType != null : "couldn't substitute type: " + parameterType + ", substitutor = " + typeParametersSubstitutor;
+        JetType parameterTypeUnsubstituted = getFunctionTypeForSamType(samInterface.getDefaultType());
+        JetType parameterType = typeParameters.substitutor.substitute(parameterTypeUnsubstituted, Variance.IN_VARIANCE);
+        assert parameterType != null : "couldn't substitute type: " + parameterType + ", substitutor = " + typeParameters.substitutor;
         ValueParameterDescriptor parameter = new ValueParameterDescriptorImpl(
                 result, 0, Collections.<AnnotationDescriptor>emptyList(), Name.identifier("function"), parameterType, false, null);
 
-        JetType returnType = typeParametersSubstitutor.substitute(samInterface.getDefaultType(), Variance.OUT_VARIANCE);
-        assert returnType != null : "couldn't substitute type: " + returnType + ", substitutor = " + typeParametersSubstitutor;
+        JetType returnType = typeParameters.substitutor.substitute(samInterface.getDefaultType(), Variance.OUT_VARIANCE);
+        assert returnType != null : "couldn't substitute type: " + returnType + ", substitutor = " + typeParameters.substitutor;
 
+        result.initialize(
+                null,
+                null,
+                typeParameters.descriptors,
+                Arrays.asList(parameter),
+                returnType,
+                Modality.FINAL,
+                samInterface.getVisibility(),
+                false
+        );
+
+        return result;
+    }
+
+    public static boolean isSamType(@NotNull JetType type) {
+        ClassifierDescriptor classifier = type.getConstructor().getDeclarationDescriptor();
+        return classifier instanceof ClassDescriptorFromJvmBytecode &&
+               ((ClassDescriptorFromJvmBytecode) classifier).isSamInterface() &&
+               getAbstractMembers(type).size() == 1; // Comparator<*> is not a SAM type, because substituted compare() method doesn't exist
+    }
+
+    public static boolean isSamAdapterNecessary(@NotNull SimpleFunctionDescriptor fun) {
+        for (ValueParameterDescriptor param : fun.getValueParameters()) {
+            if (isSamType(param.getType())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @NotNull
+    public static SimpleFunctionDescriptor createSamAdapterFunction(@NotNull SimpleFunctionDescriptor original) {
+        SimpleFunctionDescriptorImpl result = new SimpleFunctionDescriptorImpl(
+                original.getContainingDeclaration(),
+                original.getAnnotations(),
+                original.getName(),
+                CallableMemberDescriptor.Kind.SYNTHESIZED
+        );
+
+        TypeParameters typeParameters = recreateAndInitializeTypeParameters(original.getTypeParameters(), result);
+
+        JetType returnTypeUnsubstituted = original.getReturnType();
+        assert returnTypeUnsubstituted != null : original;
+        JetType returnType = typeParameters.substitutor.substitute(returnTypeUnsubstituted, Variance.OUT_VARIANCE);
+        assert returnType != null : "couldn't substitute type: " + returnType + ", substitutor = " + typeParameters.substitutor;
+
+        List<ValueParameterDescriptor> valueParameters = Lists.newArrayList();
+        for (ValueParameterDescriptor originalParam : original.getValueParameters()) {
+            JetType originalType = originalParam.getType();
+            JetType newTypeUnsubstituted = isSamType(originalType) ? getFunctionTypeForSamType(originalType) : originalType;
+            JetType newType = typeParameters.substitutor.substitute(newTypeUnsubstituted, Variance.IN_VARIANCE);
+            assert newType != null : "couldn't substitute type: " + newTypeUnsubstituted + ", substitutor = " + typeParameters.substitutor;
+
+            ValueParameterDescriptor newParam = new ValueParameterDescriptorImpl(
+                    result, originalParam.getIndex(), originalParam.getAnnotations(), originalParam.getName(), newType, false, null);
+            valueParameters.add(newParam);
+        }
+
+        result.initialize(
+                null,
+                original.getExpectedThisObject(),
+                typeParameters.descriptors,
+                valueParameters,
+                returnType,
+                original.getModality(),
+                original.getVisibility(),
+                false
+        );
+
+        return result;
+    }
+
+    @NotNull
+    private static TypeParameters recreateAndInitializeTypeParameters(
+            @NotNull List<TypeParameterDescriptor> originalParameters,
+            @Nullable DeclarationDescriptor newOwner
+    ) {
+        Map<TypeParameterDescriptor, TypeParameterDescriptorImpl> traitToFunTypeParameters =
+                SignaturesUtil.recreateTypeParametersAndReturnMapping(originalParameters, newOwner);
+        TypeSubstitutor typeParametersSubstitutor = SignaturesUtil.createSubstitutorForTypeParameters(traitToFunTypeParameters);
         for (Map.Entry<TypeParameterDescriptor, TypeParameterDescriptorImpl> mapEntry : traitToFunTypeParameters.entrySet()) {
             TypeParameterDescriptor traitTypeParameter = mapEntry.getKey();
             TypeParameterDescriptorImpl funTypeParameter = mapEntry.getValue();
@@ -110,18 +199,8 @@ public class SingleAbstractMethodUtils {
             funTypeParameter.setInitialized();
         }
 
-        result.initialize(
-                null,
-                null,
-                Lists.newArrayList(traitToFunTypeParameters.values()),
-                Arrays.asList(parameter),
-                returnType,
-                Modality.FINAL,
-                samInterface.getVisibility(),
-                false
-        );
-
-        return result;
+        List<TypeParameterDescriptor> typeParameters = Lists.<TypeParameterDescriptor>newArrayList(traitToFunTypeParameters.values());
+        return new TypeParameters(typeParameters, typeParametersSubstitutor);
     }
 
     @NotNull
@@ -135,5 +214,15 @@ public class SingleAbstractMethodUtils {
     }
 
     private SingleAbstractMethodUtils() {
+    }
+
+    private static class TypeParameters {
+        public final List<TypeParameterDescriptor> descriptors;
+        public final TypeSubstitutor substitutor;
+
+        private TypeParameters(List<TypeParameterDescriptor> descriptors, TypeSubstitutor substitutor) {
+            this.descriptors = descriptors;
+            this.substitutor = substitutor;
+        }
     }
 }

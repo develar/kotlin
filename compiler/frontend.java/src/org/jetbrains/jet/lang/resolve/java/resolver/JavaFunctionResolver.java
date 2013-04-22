@@ -21,9 +21,9 @@ import com.google.common.collect.Sets;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiFormatUtil;
+import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -46,7 +46,10 @@ import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.*;
 import static org.jetbrains.jet.lang.resolve.OverridingUtil.*;
@@ -267,14 +270,13 @@ public final class JavaFunctionResolver {
             SimpleFunctionDescriptor function = resolveMethodToFunctionDescriptor(psiClass, method, scopeData, owner);
             if (function != null) {
                 functionsFromCurrent.add(function);
+
+                ContainerUtil.addIfNotNull(functionsFromCurrent, resolveSamAdapter(function));
             }
         }
 
         if (owner instanceof NamespaceDescriptor) {
-            SimpleFunctionDescriptor samConstructor = resolveSamConstructor((NamespaceDescriptor) owner, namedMembers);
-            if (samConstructor != null) {
-                functionsFromCurrent.add(samConstructor);
-            }
+            ContainerUtil.addIfNotNull(functionsFromCurrent, resolveSamConstructor((NamespaceDescriptor) owner, namedMembers));
         }
 
         if (owner instanceof ClassDescriptor) {
@@ -357,13 +359,25 @@ public final class JavaFunctionResolver {
         PsiClass samInterface = namedMembers.getSamInterface();
         if (samInterface != null) {
             ClassDescriptor klass = findClassInNamespace(ownerDescriptor, namedMembers.getName());
-            if (klass != null && SingleAbstractMethodUtils.isSamInterface(klass)) {
+            if (klass != null) {
                 SimpleFunctionDescriptor constructorFunction = SingleAbstractMethodUtils.createSamConstructorFunction(ownerDescriptor,
                                                                                                                       klass);
                 trace.record(BindingContext.SAM_CONSTRUCTOR_TO_INTERFACE, constructorFunction, klass);
                 trace.record(BindingContext.SOURCE_DESCRIPTOR_FOR_SYNTHESIZED, constructorFunction, klass);
                 return constructorFunction;
             }
+        }
+        return null;
+    }
+
+    @Nullable
+    private SimpleFunctionDescriptor resolveSamAdapter(@NotNull SimpleFunctionDescriptor original) {
+        if (SingleAbstractMethodUtils.isSamAdapterNecessary(original)) {
+            SimpleFunctionDescriptor adapterFunction = SingleAbstractMethodUtils.createSamAdapterFunction(original);
+
+            trace.record(BindingContext.SAM_ADAPTER_FUNCTION_TO_ORIGINAL, adapterFunction, original);
+            trace.record(BindingContext.SOURCE_DESCRIPTOR_FOR_SYNTHESIZED, adapterFunction, original);
+            return adapterFunction;
         }
         return null;
     }

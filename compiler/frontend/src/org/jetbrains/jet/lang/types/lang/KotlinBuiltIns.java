@@ -25,6 +25,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiFileFactory;
+import com.intellij.util.LocalTimeCounter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.DefaultModuleConfiguration;
@@ -34,7 +35,9 @@ import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.descriptors.impl.ValueParameterDescriptorImpl;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.*;
+import org.jetbrains.jet.lang.resolve.AnalyzingUtils;
+import org.jetbrains.jet.lang.resolve.BindingTraceContext;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.lazy.KotlinCodeAnalyzer;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.lazy.declarations.FileBasedDeclarationProviderFactory;
@@ -43,7 +46,6 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 import org.jetbrains.jet.lang.resolve.scopes.WritableScope;
 import org.jetbrains.jet.lang.types.*;
 import org.jetbrains.jet.plugin.JetFileType;
@@ -88,9 +90,16 @@ public class KotlinBuiltIns {
     private static volatile boolean initializing;
     private static Throwable initializationFailed;
 
+    public enum InitializationMode {
+        // Multi-threaded mode is used in the IDE
+        MULTI_THREADED,
+        // Single-threaded mode is used in the compiler and IDE-independent tests
+        SINGLE_THREADED
+    }
+
     // This method must be called at least once per application run, on any project
     // before any type checking is run
-    public static synchronized void initialize(@NotNull Project project) {
+    public static synchronized void initialize(@NotNull Project project, @NotNull InitializationMode initializationMode) {
         if (instance == null) {
             if (initializationFailed != null) {
                 throw new RuntimeException(
@@ -102,7 +111,7 @@ public class KotlinBuiltIns {
             initializing = true;
             try {
                 instance = new KotlinBuiltIns(project);
-                instance.initialize();
+                instance.initialize(initializationMode == InitializationMode.MULTI_THREADED);
             }
             catch (Throwable e) {
                 initializationFailed = e;
@@ -131,7 +140,7 @@ public class KotlinBuiltIns {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private final KotlinCodeAnalyzer analyzer;
-    private final ModuleDescriptor builtInsModule;
+    private final ModuleDescriptorImpl builtInsModule;
 
     private volatile ImmutableSet<ClassDescriptor> nonPhysicalClasses;
 
@@ -163,7 +172,10 @@ public class KotlinBuiltIns {
 
     private KotlinBuiltIns(@NotNull Project project) {
         try {
-            this.builtInsModule = new ModuleDescriptor(Name.special("<built-ins lazy module>"));
+            this.builtInsModule = new ModuleDescriptorImpl(Name.special("<built-ins lazy module>"),
+                                                           DefaultModuleConfiguration.DEFAULT_JET_IMPORTS,
+                                                           PlatformToKotlinClassMap.EMPTY);
+            builtInsModule.setModuleConfiguration(ModuleConfiguration.EMPTY);
             this.analyzer = createLazyResolveSession(project);
 
             this.functionClassesSet = computeIndexedClasses("Function", FUNCTION_TRAIT_COUNT);
@@ -191,7 +203,7 @@ public class KotlinBuiltIns {
         }
     }
 
-    private void initialize() {
+    private void initialize(boolean forceResolveAll) {
         anyType = getBuiltInTypeByClassName("Any");
         nullableAnyType = TypeUtils.makeNullable(anyType);
         nothingType = getBuiltInTypeByClassName("Nothing");
@@ -206,7 +218,9 @@ public class KotlinBuiltIns {
 
         nonPhysicalClasses = computeNonPhysicalClasses();
 
-        analyzer.forceResolveAll();
+        if (forceResolveAll) {
+            analyzer.forceResolveAll();
+        }
 
         AnalyzingUtils.throwExceptionOnErrors(analyzer.getBindingContext());
     }
@@ -219,7 +233,6 @@ public class KotlinBuiltIns {
                 project,
                 storageManager,
                 builtInsModule,
-                new SpecialModuleConfiguration(),
                 new FileBasedDeclarationProviderFactory(storageManager, files),
                 ResolveSession.NO_ALIASES,
                 Predicates.in(Sets.newHashSet(new FqNameUnsafe("jet.Any"), new FqNameUnsafe("jet.Nothing"))),
@@ -241,34 +254,10 @@ public class KotlinBuiltIns {
             //noinspection IOResourceOpenedButNotSafelyClosed
             String text = FileUtil.loadTextAndClose(new InputStreamReader(stream));
             JetFile file = (JetFile) PsiFileFactory.getInstance(project).createFileFromText(path,
-                    JetFileType.INSTANCE, StringUtil.convertLineSeparators(text));
+                    JetFileType.INSTANCE, StringUtil.convertLineSeparators(text), LocalTimeCounter.currentTime(), true, false);
             files.add(file);
         }
         return files;
-    }
-
-    private static class SpecialModuleConfiguration implements ModuleConfiguration {
-
-        private SpecialModuleConfiguration() {
-        }
-
-        @Override
-        public List<ImportPath> getDefaultImports() {
-            return DefaultModuleConfiguration.DEFAULT_JET_IMPORTS;
-        }
-
-        @Override
-        public void extendNamespaceScope(@NotNull BindingTrace trace,
-                @NotNull NamespaceDescriptor namespaceDescriptor,
-                @NotNull WritableScope namespaceMemberScope) {
-            // DO nothing
-        }
-
-        @NotNull
-        @Override
-        public PlatformToKotlinClassMap getPlatformToKotlinClassMap() {
-            return PlatformToKotlinClassMap.EMPTY;
-        }
     }
 
     private void makePrimitive(PrimitiveType primitiveType) {
@@ -289,14 +278,14 @@ public class KotlinBuiltIns {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @NotNull
-    public ModuleDescriptor getBuiltInsModule() {
+    public ModuleDescriptorImpl getBuiltInsModule() {
         return builtInsModule;
     }
 
     @NotNull
     public NamespaceDescriptor getBuiltInsPackage() {
-        NamespaceDescriptor namespace = JetScopeUtils.findFirst(getBuiltInsModule().getRootNamespace().getMemberScope(), BUILT_INS_PACKAGE_NAME);
-        assert namespace != null : "Built ins namespace not found: " + BUILT_INS_PACKAGE_NAME;
+        NamespaceDescriptor namespace = getBuiltInsModule().getNamespace(BUILT_INS_PACKAGE_FQ_NAME);
+        assert namespace != null : "Built ins namespace not found: " + BUILT_INS_PACKAGE_FQ_NAME;
         return namespace;
     }
 

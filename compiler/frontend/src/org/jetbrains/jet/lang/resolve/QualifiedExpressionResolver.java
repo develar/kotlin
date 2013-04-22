@@ -23,7 +23,6 @@ import com.google.common.collect.Sets;
 import com.intellij.util.CommonProcessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.diagnostics.Errors;
 import org.jetbrains.jet.lang.psi.*;
@@ -50,9 +49,9 @@ public class QualifiedExpressionResolver {
             @NotNull JetImportDirective importDirective,
             @NotNull JetScope scope,
             @NotNull BindingTrace trace,
-            @NotNull ModuleConfiguration moduleConfiguration
+            @NotNull ModuleDescriptor module
     ) {
-        return processImportReference(importDirective, scope, scope, Importer.DO_NOTHING, trace, moduleConfiguration, LookupMode.EVERYTHING);
+        return processImportReference(importDirective, scope, scope, Importer.DO_NOTHING, trace, module, LookupMode.EVERYTHING);
     }
 
     @NotNull
@@ -62,7 +61,7 @@ public class QualifiedExpressionResolver {
             @NotNull JetScope scopeToCheckVisibility,
             @NotNull Importer importer,
             @NotNull BindingTrace trace,
-            @NotNull ModuleConfiguration moduleConfiguration,
+            @NotNull ModuleDescriptor module,
             @NotNull LookupMode lookupMode
     ) {
         if (importDirective.isAbsoluteInRootNamespace()) {
@@ -95,7 +94,7 @@ public class QualifiedExpressionResolver {
             }
 
             for (DeclarationDescriptor descriptor : descriptors) {
-                importer.addAllUnderImport(descriptor, moduleConfiguration.getPlatformToKotlinClassMap());
+                importer.addAllUnderImport(descriptor, module.getPlatformToKotlinClassMap());
             }
             return Collections.emptyList();
         }

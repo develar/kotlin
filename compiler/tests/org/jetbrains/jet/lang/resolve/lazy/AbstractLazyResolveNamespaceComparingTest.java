@@ -25,9 +25,8 @@ import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiFactory;
+import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.FqNameUnsafe;
-import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.test.util.NamespaceComparator;
 
@@ -67,9 +66,9 @@ public abstract class AbstractLazyResolveNamespaceComparingTest extends KotlinTe
         ModuleDescriptor eagerModule = LazyResolveTestUtil.resolveEagerly(files, getEnvironment());
         ModuleDescriptor lazyModule = LazyResolveTestUtil.resolveLazily(files, getEnvironment());
 
-        Name test = Name.identifier("test");
-        NamespaceDescriptor actual = JetScopeUtils.findFirst(lazyModule.getRootNamespace().getMemberScope(), test);
-        NamespaceDescriptor expected = JetScopeUtils.findFirst(eagerModule.getRootNamespace().getMemberScope(), test);
+        FqName test = new FqName("test");
+        NamespaceDescriptor actual = lazyModule.getNamespace(test);
+        NamespaceDescriptor expected = eagerModule.getNamespace(test);
 
         File serializeResultsTo = new File(FileUtil.getNameWithoutExtension(testFileName) + ".txt");
 
