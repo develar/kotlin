@@ -53,7 +53,6 @@ import java.util.List;
 import static org.jetbrains.jet.lang.diagnostics.Errors.*;
 import static org.jetbrains.jet.lang.resolve.BindingContext.*;
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getStaticNestedClassesScope;
-
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
 
 public class CallExpressionResolver {
@@ -194,16 +193,17 @@ public class CallExpressionResolver {
     }
 
     @Nullable
-    private ResolvedCallWithTrace<FunctionDescriptor> getResolvedCallForFunction(
-            @NotNull Call call, @NotNull JetExpression callExpression, @NotNull ReceiverValue receiver,
+    public ResolvedCallWithTrace<FunctionDescriptor> getResolvedCallForFunction(
+            @NotNull Call call, @NotNull JetExpression callExpression,
             @NotNull ResolutionContext context, @NotNull ResolveMode resolveMode,
-            @NotNull ResolutionResultsCache resolutionResultsCache, @NotNull boolean[] result
+            @NotNull CheckValueArgumentsMode checkArguments, @NotNull ResolutionResultsCache resolutionResultsCache,
+            @NotNull boolean[] result
     ) {
         CallResolver callResolver = expressionTypingServices.getCallResolver();
         OverloadResolutionResultsImpl<FunctionDescriptor> results = callResolver.resolveFunctionCall(
-                BasicCallResolutionContext.create(context, call, resolveMode, resolutionResultsCache));
+                BasicCallResolutionContext.create(context, call, resolveMode, checkArguments, resolutionResultsCache));
         if (!results.isNothing()) {
-            checkSuper(receiver, results, context.trace, callExpression);
+            checkSuper(call.getExplicitReceiver(), results, context.trace, callExpression);
             result[0] = true;
             if (results.isSingleResult() && resolveMode == ResolveMode.TOP_LEVEL_CALL) {
                 if (!CallResolverUtil.hasInferredReturnType(results.getResultingCall())) return null;
@@ -225,7 +225,7 @@ public class CallExpressionResolver {
         Call call = CallMaker.makePropertyCall(receiver, callOperationNode, nameExpression);
         OverloadResolutionResults<VariableDescriptor> resolutionResult = callResolver.resolveSimpleProperty(
                 BasicCallResolutionContext.create(context.replaceBindingTrace(traceForVariable), call, ResolveMode.TOP_LEVEL_CALL,
-                                                  ResolutionResultsCache.create()));
+                                                  CheckValueArgumentsMode.ENABLED, ResolutionResultsCache.create()));
         if (!resolutionResult.isNothing()) {
             traceForVariable.commit();
             checkSuper(receiver, resolutionResult, context.trace, nameExpression);
@@ -273,7 +273,7 @@ public class CallExpressionResolver {
         Call call = CallMaker.makeCall(nameExpression, receiver, callOperationNode, nameExpression, Collections.<ValueArgument>emptyList());
         TemporaryBindingTrace traceForFunction = TemporaryBindingTrace.create(context.trace, "trace to resolve as function", nameExpression);
         ResolvedCall<FunctionDescriptor> resolvedCall = getResolvedCallForFunction(
-                call, nameExpression, receiver, context, ResolveMode.TOP_LEVEL_CALL,
+                call, nameExpression, context, ResolveMode.TOP_LEVEL_CALL, CheckValueArgumentsMode.ENABLED,
                 ResolutionResultsCache.create(), result);
         if (result[0]) {
             FunctionDescriptor functionDescriptor = resolvedCall != null ? resolvedCall.getResultingDescriptor() : null;
@@ -289,7 +289,7 @@ public class CallExpressionResolver {
     }
 
     @NotNull
-    public <D extends CallableDescriptor> JetTypeInfo getCallExpressionTypeInfo(
+    public JetTypeInfo getCallExpressionTypeInfo(
             @NotNull JetCallExpression callExpression, @NotNull ReceiverValue receiver,
             @Nullable ASTNode callOperationNode, @NotNull ResolutionContext context, @NotNull ResolveMode resolveMode,
             @NotNull ResolutionResultsCache resolutionResultsCache
@@ -303,7 +303,7 @@ public class CallExpressionResolver {
     }
 
     @NotNull
-    public <D extends CallableDescriptor> JetTypeInfo getCallExpressionTypeInfoWithoutFinalTypeCheck(
+    public JetTypeInfo getCallExpressionTypeInfoWithoutFinalTypeCheck(
             @NotNull JetCallExpression callExpression, @NotNull ReceiverValue receiver,
             @Nullable ASTNode callOperationNode, @NotNull ResolutionContext context, @NotNull ResolveMode resolveMode,
             @NotNull ResolutionResultsCache resolutionResultsCache
@@ -313,7 +313,8 @@ public class CallExpressionResolver {
 
         TemporaryBindingTrace traceForFunction = TemporaryBindingTrace.create(context.trace, "trace to resolve as function call", callExpression);
         ResolvedCallWithTrace<FunctionDescriptor> resolvedCall = getResolvedCallForFunction(
-                call, callExpression, receiver, context.replaceBindingTrace(traceForFunction), resolveMode, resolutionResultsCache, result);
+                call, callExpression, context.replaceBindingTrace(traceForFunction), resolveMode, CheckValueArgumentsMode.ENABLED,
+                resolutionResultsCache, result);
         if (result[0]) {
             FunctionDescriptor functionDescriptor = resolvedCall != null ? resolvedCall.getResultingDescriptor() : null;
             traceForFunction.commit();

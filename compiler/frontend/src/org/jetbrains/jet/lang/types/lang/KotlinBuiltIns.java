@@ -77,11 +77,14 @@ public class KotlinBuiltIns {
             BUILT_INS_DIR + "/Any.jet",
             BUILT_INS_DIR + "/ExtensionFunctions.jet",
             BUILT_INS_DIR + "/Functions.jet",
+            BUILT_INS_DIR + "/KFunctions.jet",
+            BUILT_INS_DIR + "/KMemberFunctions.jet",
+            BUILT_INS_DIR + "/KExtensionFunctions.jet",
             BUILT_INS_DIR + "/Nothing.jet",
             BUILT_INS_DIR + "/Unit.jet"
     );
 
-    private static final int FUNCTION_TRAIT_COUNT = 23;
+    public static final int FUNCTION_TRAIT_COUNT = 23;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -417,6 +420,21 @@ public class KotlinBuiltIns {
     @NotNull
     public ClassDescriptor getExtensionFunction(int parameterCount) {
         return getBuiltInClassByName("ExtensionFunction" + parameterCount);
+    }
+
+    @NotNull
+    public ClassDescriptor getKFunction(int parameterCount) {
+        return getBuiltInClassByName("KFunction" + parameterCount);
+    }
+
+    @NotNull
+    public ClassDescriptor getKMemberFunction(int parameterCount) {
+        return getBuiltInClassByName("KMemberFunction" + parameterCount);
+    }
+
+    @NotNull
+    public ClassDescriptor getKExtensionFunction(int parameterCount) {
+        return getBuiltInClassByName("KExtensionFunction" + parameterCount);
     }
 
     @NotNull
@@ -776,6 +794,57 @@ public class KotlinBuiltIns {
             @NotNull List<JetType> parameterTypes,
             @NotNull JetType returnType
     ) {
+        List<TypeProjection> arguments = getFunctionTypeArgumentProjections(receiverType, parameterTypes, returnType);
+        int size = parameterTypes.size();
+        ClassDescriptor classDescriptor = receiverType == null ? getFunction(size) : getExtensionFunction(size);
+        TypeConstructor constructor = classDescriptor.getTypeConstructor();
+
+        return new JetTypeImpl(annotations, constructor, false, arguments, classDescriptor.getMemberScope(arguments));
+    }
+
+    @NotNull
+    public JetType getKFunctionType(
+            @NotNull List<AnnotationDescriptor> annotations,
+            @Nullable JetType receiverType,
+            @NotNull List<JetType> parameterTypes,
+            @NotNull JetType returnType,
+            boolean extensionFunction
+    ) {
+        List<TypeProjection> arguments = getFunctionTypeArgumentProjections(receiverType, parameterTypes, returnType);
+        ClassDescriptor classDescriptor = getCorrespondingKFunctionClass(receiverType, extensionFunction, parameterTypes.size());
+
+        return new JetTypeImpl(
+                annotations,
+                classDescriptor.getTypeConstructor(),
+                false,
+                arguments,
+                classDescriptor.getMemberScope(arguments)
+        );
+    }
+
+    @NotNull
+    private ClassDescriptor getCorrespondingKFunctionClass(
+            @Nullable JetType receiverType,
+            boolean extensionFunction,
+            int numberOfParameters
+    ) {
+        if (receiverType == null) {
+            return getKFunction(numberOfParameters);
+        }
+        else if (extensionFunction) {
+            return getKExtensionFunction(numberOfParameters);
+        }
+        else {
+            return getKMemberFunction(numberOfParameters);
+        }
+    }
+
+    @NotNull
+    private static List<TypeProjection> getFunctionTypeArgumentProjections(
+            @Nullable JetType receiverType,
+            @NotNull List<JetType> parameterTypes,
+            @NotNull JetType returnType
+    ) {
         List<TypeProjection> arguments = new ArrayList<TypeProjection>();
         if (receiverType != null) {
             arguments.add(defaultProjection(receiverType));
@@ -784,10 +853,7 @@ public class KotlinBuiltIns {
             arguments.add(defaultProjection(parameterType));
         }
         arguments.add(defaultProjection(returnType));
-        int size = parameterTypes.size();
-        ClassDescriptor classDescriptor = receiverType == null ? getFunction(size) : getExtensionFunction(size);
-        TypeConstructor constructor = classDescriptor.getTypeConstructor();
-        return new JetTypeImpl(annotations, constructor, false, arguments, classDescriptor.getMemberScope(arguments));
+        return arguments;
     }
 
     private static TypeProjection defaultProjection(JetType returnType) {
@@ -824,17 +890,29 @@ public class KotlinBuiltIns {
     }
 
     public boolean isFunctionType(@NotNull JetType type) {
-        return setContainsClassOf(functionClassesSet, type);
+        if (setContainsClassOf(functionClassesSet, type)) return true;
+
+        for (JetType superType : type.getConstructor().getSupertypes()) {
+            if (isFunctionType(superType)) return true;
+        }
+
+        return false;
     }
 
     public boolean isExtensionFunctionType(@NotNull JetType type) {
-        return setContainsClassOf(extensionFunctionClassesSet, type);
+        if (setContainsClassOf(extensionFunctionClassesSet, type)) return true;
+
+        for (JetType superType : type.getConstructor().getSupertypes()) {
+            if (isExtensionFunctionType(superType)) return true;
+        }
+
+        return false;
     }
 
     @Nullable
     public JetType getReceiverType(@NotNull JetType type) {
         assert isFunctionOrExtensionFunctionType(type) : type;
-        if (setContainsClassOf(extensionFunctionClassesSet, type)) {
+        if (isExtensionFunctionType(type)) {
             return type.getArguments().get(0).getType();
         }
         return null;
@@ -866,7 +944,7 @@ public class KotlinBuiltIns {
     public List<TypeProjection> getParameterTypeProjectionsFromFunctionType(@NotNull JetType type) {
         assert isFunctionOrExtensionFunctionType(type);
         List<TypeProjection> arguments = type.getArguments();
-        int first = setContainsClassOf(extensionFunctionClassesSet, type) ? 1 : 0;
+        int first = isExtensionFunctionType(type) ? 1 : 0;
         int last = arguments.size() - 2;
         List<TypeProjection> parameterTypes = Lists.newArrayList();
         for (int i = first; i <= last; i++) {

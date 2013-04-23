@@ -14,23 +14,11 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.psi;
+package jet;
 
-import com.intellij.lang.ASTNode;
-import org.jetbrains.annotations.NotNull;
-
-public class JetHashQualifiedExpression extends JetQualifiedExpression {
-    public JetHashQualifiedExpression(@NotNull ASTNode node) {
-        super(node);
-    }
-
+public abstract class ExtensionFunctionImpl13<T, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, R> extends DefaultJetObject implements ExtensionFunction13<T, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, R> {
     @Override
-    public void accept(@NotNull JetVisitorVoid visitor) {
-        visitor.visitHashQualifiedExpression(this);
-    }
-
-    @Override
-    public <R, D> R accept(@NotNull JetVisitor<R, D> visitor, D data) {
-        return visitor.visitHashQualifiedExpression(this, data);
+    public String toString() {
+        return getClass().getGenericSuperclass().toString();
     }
 }
