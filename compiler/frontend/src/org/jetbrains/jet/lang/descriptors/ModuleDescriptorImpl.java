@@ -24,6 +24,7 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.descriptors.impl.DeclarationDescriptorImpl;
 import org.jetbrains.jet.lang.descriptors.impl.NamespaceDescriptorImpl;
 import org.jetbrains.jet.lang.resolve.ImportPath;
+import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.TypeSubstitutor;
@@ -67,13 +68,18 @@ public class ModuleDescriptorImpl extends DeclarationDescriptorImpl implements C
     @Nullable
     @Override
     public NamespaceDescriptor getNamespace(@NotNull FqName fqName) {
-        if (fqName.isRoot()) return rootNamepsace;
-        NamespaceDescriptor current = rootNamepsace;
-        for (Name simpleName : fqName.pathSegments()) {
-            current = current.getMemberScope().getNamespace(simpleName);
-            if (current == null) return null;
+        if (fqName.isRoot()) {
+            return rootNamepsace;
         }
-        return current;
+
+        List<Name> names = fqName.pathSegments();
+        if (names.isEmpty()) {
+            return null;
+        }
+
+        ResolveSession.PackageProcessor processor = new ResolveSession.PackageProcessor(names);
+        processor.process(rootNamepsace);
+        return processor.result;
     }
 
     @NotNull

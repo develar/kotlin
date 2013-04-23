@@ -59,9 +59,9 @@ public final class DescriptorToDeclarationUtil {
 
     @Nullable
     private static BindingContext getBindingContextByDeclaration(AnalyzeExhaust analyzeExhaust, DeclarationDescriptor declarationDescriptor) {
-        if (analyzeExhaust.getModuleConfiguration() instanceof ModuleInfo) {
+        if (analyzeExhaust.getModuleDescriptor() instanceof ModuleInfo.MyModuleDescriptor) {
             ModuleDescriptor moduleDescriptor = DescriptorUtils.getModuleDescriptor(declarationDescriptor);
-            return ((ModuleInfo) analyzeExhaust.getModuleConfiguration()).findBindingContext(moduleDescriptor);
+            return ((ModuleInfo.MyModuleDescriptor) analyzeExhaust.getModuleDescriptor()).getInfo().findBindingContext(moduleDescriptor);
         }
         else {
             return analyzeExhaust.getBindingContext();

@@ -29,7 +29,6 @@ import com.intellij.util.SingletonSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.AnalyzingUtils;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
@@ -78,7 +77,7 @@ public final class TranslationUtils {
                 }
             };
             XAnalyzerFacade.checkForErrors(allLibFiles);
-            ModuleInfo moduleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
+            ModuleInfo moduleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
             AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleConfiguration, allLibFiles,
                                                                   new TopDownAnalysisParameters(filesWithCode), false);
             exhaust.throwIfError();
@@ -105,7 +104,7 @@ public final class TranslationUtils {
     ) throws Exception {
         List<JetFile> psiFiles = createPsiFileList(project, inputFiles, null);
         ModuleInfo libraryContext = getLibraryContext(project);
-        ModuleInfo moduleInfo = new ModuleInfo(new ModuleDescriptor(Name.special('<' + TestConfig.TEST_MODULE_NAME + '>')), project,
+        ModuleInfo moduleInfo = new ModuleInfo(Name.special('<' + TestConfig.TEST_MODULE_NAME + '>'), project,
                                                         Collections.singletonList(libraryContext), new SingletonSet<ModuleInfo>(libraryContext));
         AnalyzeExhaust exhaust = XAnalyzerFacade.analyzeFiles(moduleInfo, psiFiles, true);
         exhaust.throwIfError();

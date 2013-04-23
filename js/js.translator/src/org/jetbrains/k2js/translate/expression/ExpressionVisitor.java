@@ -311,7 +311,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
     public JsNode visitBinaryWithTypeRHSExpression(@NotNull JetBinaryExpressionWithTypeRHS expression, @NotNull TranslationContext context) {
         JsExpression jsExpression = Translation.translateAsExpression(expression.getLeft(), context);
         //noinspection ConstantConditions
-        if (expression.getOperationSign().getReferencedNameElementType() != JetTokens.AS_KEYWORD ||
+        if (expression.getOperationReference().getReferencedNameElementType() != JetTokens.AS_KEYWORD ||
             BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.TYPE, expression.getRight()).isNullable()) {
             return jsExpression.source(expression);
         }

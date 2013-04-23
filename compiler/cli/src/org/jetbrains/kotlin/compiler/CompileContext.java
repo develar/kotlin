@@ -29,7 +29,7 @@ public class CompileContext extends CompilerContextBase<CoreProjectEnvironment> 
 
         projectEnvironment = new CoreProjectEnvironment(parentDisposable, applicationEnvironment);
         registerFileTypes();
-        KotlinBuiltIns.initialize(getProject());
+        KotlinBuiltIns.initialize(getProject(), KotlinBuiltIns.InitializationMode.SINGLE_THREADED);
     }
 
     @Override

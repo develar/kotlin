@@ -23,7 +23,6 @@ import com.intellij.util.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -90,7 +89,7 @@ public final class K2JSTranslator {
     @NotNull
     public String translateStringWithCallToMain(@NotNull String programText, @NotNull String argumentsString) {
         JetFile file = JetFileUtils.createPsiFile("test", programText, config.getProject());
-        KotlinBuiltIns.initialize(config.getProject());
+        KotlinBuiltIns.initialize(config.getProject(), KotlinBuiltIns.InitializationMode.SINGLE_THREADED);
         List<JetFile> files = Collections.singletonList(file);
         String programCode = toSource(new TextOutputImpl(), null, Translation
                 .generateAst(analyzeFilesAndCheckErrors(files, config), files,
@@ -110,7 +109,7 @@ public final class K2JSTranslator {
 
         XAnalyzerFacade.checkForErrors(files);
         return XAnalyzerFacade.analyzeFiles(
-                new ModuleInfo(new ModuleDescriptor(Name.special("<web-demo>")), config.getProject(), libraryModuleConfiguration), files,
+                new ModuleInfo(Name.special("<web-demo>"), config.getProject(), libraryModuleConfiguration), files,
                 true).getBindingContext();
     }
 

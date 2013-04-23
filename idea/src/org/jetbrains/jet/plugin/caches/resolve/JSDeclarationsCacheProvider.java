@@ -25,7 +25,6 @@ import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiModificationTracker;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
 import org.jetbrains.jet.plugin.project.JSAnalyzerFacadeForIDEA;
 import org.jetbrains.jet.plugin.project.TargetPlatform;
@@ -47,7 +46,7 @@ class JSDeclarationsCacheProvider extends DeclarationsCacheProvider {
             @Override
             public Result<KotlinDeclarationsCache> compute() {
                 synchronized (declarationAnalysisLock) {
-                    ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
+                    ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
                     ModuleInfo info = JSAnalyzerFacadeForIDEA.createModuleInfo(project, libraryModuleConfiguration);
                     AnalyzeExhaust analyzeExhaust = XAnalyzerFacade.analyzeFiles(info,
                             JetFilesProvider.getInstance(project).allInScope(GlobalSearchScope.allScope(project)),

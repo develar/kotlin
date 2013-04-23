@@ -63,7 +63,7 @@ public class JavaCompileContext extends CompilerContextBase<JavaCoreProjectEnvir
     }
 
     public void initializeKotlinBuiltIns() {
-        KotlinBuiltIns.initialize(getProject());
+        KotlinBuiltIns.initialize(getProject(), KotlinBuiltIns.InitializationMode.SINGLE_THREADED);
     }
 
     public CoreExternalAnnotationsManager getAnnotationsManager() {

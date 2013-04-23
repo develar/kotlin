@@ -70,14 +70,13 @@ public final class XAnalyzerFacade {
     ) {
         BindingTrace trace = new BindingTraceContext();
         InjectorForTopDownXAnalyzer injector =
-                new InjectorForTopDownXAnalyzer(moduleInfo.getProject(), topDownAnalysisParameters, trace, moduleInfo.getModuleDescriptor(),
-                                                moduleInfo);
+                new InjectorForTopDownXAnalyzer(moduleInfo.getProject(), topDownAnalysisParameters, trace, moduleInfo.getModuleDescriptor());
         try {
             injector.getTopDownAnalyzer().analyzeFiles(files, Collections.<AnalyzerScriptParameter>emptyList());
             assert !storeContextForBodiesResolve || bodiesResolveContext == null;
             moduleInfo.setBindingContext(trace.getBindingContext());
             return AnalyzeExhaust.success(trace.getBindingContext(), storeContextForBodiesResolve ? new CachedBodiesResolveContext(
-                    injector.getTopDownAnalysisContext()) : bodiesResolveContext, injector.getModuleConfiguration());
+                    injector.getTopDownAnalysisContext()) : bodiesResolveContext, injector.getModuleDescriptor());
         }
         finally {
             injector.destroy();

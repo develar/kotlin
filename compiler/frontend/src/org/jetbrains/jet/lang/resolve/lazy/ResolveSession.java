@@ -164,12 +164,12 @@ public class ResolveSession implements KotlinCodeAnalyzer {
         return processor.result;
     }
 
-    private static final class PackageProcessor implements Processor<NamespaceDescriptor> {
+    public static final class PackageProcessor implements Processor<NamespaceDescriptor> {
         private int currentNameIndex = 0;
-        private NamespaceDescriptor result;
+        public NamespaceDescriptor result;
         private final List<Name> names;
 
-        private PackageProcessor(List<Name> names) {
+        public PackageProcessor(List<Name> names) {
             this.names = names;
         }
 

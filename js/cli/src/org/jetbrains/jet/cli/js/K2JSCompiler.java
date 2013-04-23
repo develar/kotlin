@@ -38,7 +38,6 @@ import org.jetbrains.jet.cli.common.messages.*;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.config.CommonConfigurationKeys;
 import org.jetbrains.jet.config.CompilerConfiguration;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.k2js.ToJsSubCompiler;
@@ -95,7 +94,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
         final Map<String, List<JetFile>> modules = getConfig(arguments, project);
 
         List<JetFile> libraryFiles = modules.get(ModuleInfo.STUBS_MODULE_NAME.getName());
-        ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
+        ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
         if (!analyze(messageCollector, libraryModuleConfiguration, libraryFiles, false)) {
             return ExitCode.COMPILATION_ERROR;
         }

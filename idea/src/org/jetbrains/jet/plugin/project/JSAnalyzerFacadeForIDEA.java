@@ -32,8 +32,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.analyzer.AnalyzerFacade;
 import org.jetbrains.jet.analyzer.AnalyzerFacadeForEverything;
-import org.jetbrains.jet.lang.ModuleConfiguration;
+import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
@@ -67,14 +68,14 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             @NotNull List<AnalyzerScriptParameter> scriptParameters,
             @NotNull Predicate<PsiFile> filesToAnalyzeCompletely
     ) {
-        ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
+        ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
         XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false).getBindingContext();
         ModuleInfo moduleConfiguration = createModuleInfo(project, libraryModuleConfiguration);
         return XAnalyzerFacade.analyzeFilesAndStoreBodyContext(moduleConfiguration, files, false);
     }
 
     public static ModuleInfo createModuleInfo(Project project, ModuleInfo libraryModuleConfiguration) {
-        return new ModuleInfo(new ModuleDescriptor(MODULE_NAME), project, Collections.<ModuleInfo>singletonList(libraryModuleConfiguration),
+        return new ModuleInfo(MODULE_NAME, project, Collections.<ModuleInfo>singletonList(libraryModuleConfiguration),
                               new SingletonSet<ModuleInfo>(libraryModuleConfiguration));
     }
 
@@ -86,10 +87,10 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             @NotNull Predicate<PsiFile> filesForBodiesResolve,
             @NotNull BindingTrace traceContext,
             @NotNull BodiesResolveContext bodiesResolveContext,
-            @NotNull ModuleConfiguration configuration
+            @NotNull ModuleDescriptor module
     ) {
         return AnalyzerFacadeForEverything.analyzeBodiesInFilesWithJavaIntegration(project, scriptParameters, filesForBodiesResolve,
-                                                                                   traceContext, bodiesResolveContext, configuration);
+                                                                                   traceContext, bodiesResolveContext, module);
     }
 
     @NotNull
@@ -105,10 +106,10 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
 
         LockBasedStorageManager storageManager = new LockBasedStorageManager();
         FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(storageManager, allFiles, Predicates.<FqName>alwaysFalse());
-        ModuleDescriptor lazyModule = new ModuleDescriptor(Name.special("<lazy module>"));
-        ModuleInfo libraryModuleConfiguration = new ModuleInfo(new ModuleDescriptor(ModuleInfo.STUBS_MODULE_NAME), project);
+        ModuleDescriptorImpl lazyModule = new ModuleDescriptorImpl(Name.special("<lazy module>"), ModuleInfo.DEFAULT_IMPORT_PATHS, PlatformToKotlinClassMap.EMPTY);
+        ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
         XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false).getBindingContext();
-        return new ResolveSession(project, storageManager, lazyModule, createModuleInfo(project, libraryModuleConfiguration), declarationProviderFactory);
+        return new ResolveSession(project, storageManager, lazyModule, declarationProviderFactory);
     }
 
     private static List<JetFile> getLibraryFiles(final Project project, Collection<JetFile> files) {
