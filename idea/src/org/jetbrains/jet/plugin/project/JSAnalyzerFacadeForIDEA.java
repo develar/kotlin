@@ -32,9 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.analyzer.AnalyzerFacade;
 import org.jetbrains.jet.analyzer.AnalyzerFacadeForEverything;
-import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
 import org.jetbrains.jet.lang.resolve.BindingTrace;
@@ -55,7 +53,7 @@ import java.util.List;
 
 public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     INSTANCE;
-    private static final Name MODULE_NAME = Name.special("<module>");
+    public static final Name MODULE_NAME = Name.special("<module>");
 
     private JSAnalyzerFacadeForIDEA() {
     }
@@ -96,20 +94,23 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     @NotNull
     @Override
     public ResolveSession getLazyResolveSession(@NotNull Project project, @NotNull Collection<JetFile> files) {
-        Collection<JetFile> allFiles = getLibraryFiles(project, files);
-        if (allFiles != null) {
-            allFiles.addAll(files);
-        }
-        else {
-            allFiles = files;
-        }
+        //Collection<JetFile> allFiles = getLibraryFiles(project, files);
+        //if (allFiles != null) {
+        //    allFiles.addAll(files);
+        //}
+        //else {
+        //    allFiles = files;
+        //}
 
         LockBasedStorageManager storageManager = new LockBasedStorageManager();
-        FileBasedDeclarationProviderFactory declarationProviderFactory = new FileBasedDeclarationProviderFactory(storageManager, allFiles, Predicates.<FqName>alwaysFalse());
-        ModuleDescriptorImpl lazyModule = new ModuleDescriptorImpl(Name.special("<lazy module>"), ModuleInfo.DEFAULT_IMPORT_PATHS, PlatformToKotlinClassMap.EMPTY);
+
         ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
-        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false).getBindingContext();
-        return new ResolveSession(project, storageManager, lazyModule, declarationProviderFactory);
+        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false);
+
+        ModuleInfo lazyModule = createModuleInfo(project, libraryModuleConfiguration);
+
+        return new ResolveSession(project, storageManager, lazyModule.getModuleDescriptor(),
+                                  new FileBasedDeclarationProviderFactory(storageManager, files, Predicates.<FqName>alwaysFalse()));
     }
 
     private static List<JetFile> getLibraryFiles(final Project project, Collection<JetFile> files) {

@@ -21,6 +21,7 @@ import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
+import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.descriptors.CallableMemberDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
@@ -59,9 +60,10 @@ public final class DescriptorToDeclarationUtil {
 
     @Nullable
     private static BindingContext getBindingContextByDeclaration(AnalyzeExhaust analyzeExhaust, DeclarationDescriptor declarationDescriptor) {
-        if (analyzeExhaust.getModuleDescriptor() instanceof ModuleInfo.MyModuleDescriptor) {
+        ModuleConfiguration moduleConfiguration = analyzeExhaust.getModuleDescriptor().getModuleConfiguration();
+        if (moduleConfiguration instanceof ModuleInfo) {
             ModuleDescriptor moduleDescriptor = DescriptorUtils.getModuleDescriptor(declarationDescriptor);
-            return ((ModuleInfo.MyModuleDescriptor) analyzeExhaust.getModuleDescriptor()).getInfo().findBindingContext(moduleDescriptor);
+            return ((ModuleInfo) moduleConfiguration).findBindingContext(moduleDescriptor);
         }
         else {
             return analyzeExhaust.getBindingContext();

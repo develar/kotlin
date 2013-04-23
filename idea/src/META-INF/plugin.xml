@@ -45,6 +45,12 @@
     </group>
   </actions>
 
+  <application-components>
+    <component>
+      <implementation-class>org.jetbrains.jet.plugin.PluginBundledRegistrar</implementation-class>
+    </component>
+  </application-components>
+
   <extensions defaultExtensionNs="com.intellij">
     <applicationService serviceInterface="org.jetbrains.jet.lang.psi.stubs.elements.StubIndexService"
                         serviceImplementation="org.jetbrains.jet.plugin.stubindex.StubIndexServiceImpl"/>
@@ -269,6 +275,11 @@
 
     <intentionAction>
       <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.AssignmentWithIfExpressionToStatementIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.RemoveUnnecessaryParenthesesIntention</className>
       <category>Kotlin</category>
     </intentionAction>
 

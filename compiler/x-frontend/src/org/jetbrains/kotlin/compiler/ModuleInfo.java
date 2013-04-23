@@ -44,7 +44,7 @@ public final class ModuleInfo implements ModuleConfiguration {
 
     private final Set<ModuleInfo> providedDependencies;
 
-    private final MyModuleDescriptor moduleDescriptor;
+    private final ModuleDescriptorImpl moduleDescriptor;
 
     public ModuleInfo(@NotNull Project project) {
         this(Name.special("<module>"), project, null, null);
@@ -68,7 +68,8 @@ public final class ModuleInfo implements ModuleConfiguration {
     }
 
     public ModuleInfo(Name name, Project project, @Nullable List<ModuleInfo> dependencies, @Nullable Set<ModuleInfo> providedDependencies) {
-        moduleDescriptor = new MyModuleDescriptor(name, DEFAULT_IMPORT_PATHS, PlatformToKotlinClassMap.EMPTY);
+        moduleDescriptor = new ModuleDescriptorImpl(name, DEFAULT_IMPORT_PATHS, PlatformToKotlinClassMap.EMPTY);
+        moduleDescriptor.setModuleConfiguration(this);
 
         this.project = project;
         this.providedDependencies = providedDependencies == null ? Collections.<ModuleInfo>emptySet() : providedDependencies;
@@ -80,20 +81,6 @@ public final class ModuleInfo implements ModuleConfiguration {
         else {
             this.dependencies = dependencies;
             delegateConfiguration = null;
-        }
-    }
-
-    public class MyModuleDescriptor extends ModuleDescriptorImpl {
-        public MyModuleDescriptor(
-                @NotNull Name name,
-                @NotNull List<ImportPath> defaultImports,
-                @NotNull PlatformToKotlinClassMap platformToKotlinClassMap
-        ) {
-            super(name, defaultImports, platformToKotlinClassMap);
-        }
-
-        public ModuleInfo getInfo() {
-            return ModuleInfo.this;
         }
     }
 
@@ -147,8 +134,12 @@ public final class ModuleInfo implements ModuleConfiguration {
         if (dependencies != null) {
             FqName qualifiedName = namespaceDescriptor.getFqName();
             for (ModuleInfo dependency : dependencies) {
-                NamespaceDescriptor namespaceDependency = dependency.bindingContext.get(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR,
-                                                                                        qualifiedName);
+                BindingContext context = dependency.bindingContext;
+                if (context == null) {
+                    continue;
+                }
+                NamespaceDescriptor namespaceDependency = context.get(BindingContext.FQNAME_TO_NAMESPACE_DESCRIPTOR,
+                                                                      qualifiedName);
                 if (namespaceDependency != null) {
                     namespaceMemberScope.importScope(namespaceDependency.getMemberScope());
                 }
