@@ -178,6 +178,9 @@ public class RegExp(pattern: String, flags: String? = null) {
     }
 
     public fun exec(string: String): ExecResult
+
+    native("test")
+    public fun matches(string: String): Boolean
 }
 
 //public fun String.toRegex(flags: Int = 0): RegExp
