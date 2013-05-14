@@ -171,10 +171,10 @@ native public fun String.toDouble() : Double = java.lang.Double.parseDouble(this
 
 public class RegExp(pattern: String, flags: String? = null) {
     public trait ExecResult {
-        val index: Int
-        val input: String
+        public val index: Int
+        public val input: String
 
-        fun get(index: Int): String
+        public fun get(index: Int): String
     }
 
     public fun exec(string: String): ExecResult
