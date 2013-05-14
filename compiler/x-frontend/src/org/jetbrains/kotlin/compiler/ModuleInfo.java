@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.DefaultModuleConfiguration;
 import org.jetbrains.jet.lang.ModuleConfiguration;
 import org.jetbrains.jet.lang.PlatformToKotlinClassMap;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
@@ -75,8 +76,8 @@ public final class ModuleInfo implements ModuleConfiguration {
         this.providedDependencies = providedDependencies == null ? Collections.<ModuleInfo>emptySet() : providedDependencies;
         if (dependencies == null || dependencies.isEmpty()) {
             this.dependencies = null;
-            delegateConfiguration = null;
-            //delegateConfiguration = DefaultModuleConfiguration.createStandardConfiguration();
+            //delegateConfiguration = null;
+            delegateConfiguration = DefaultModuleConfiguration.INSTANCE;
         }
         else {
             this.dependencies = dependencies;

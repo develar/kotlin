@@ -141,7 +141,7 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         VariableDescriptor descriptor = BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.VARIABLE, expression);
         JsExpression initializer = translateInitializerForProperty(expression, context);
         String name = context.getNameForDescriptor(descriptor);
-        if (descriptor.isVar() && Boolean.TRUE.equals(context.bindingContext().get(BindingContext.CAPTURED_IN_CLOSURE, descriptor))) {
+        if (descriptor.isVar() && context.bindingContext().get(BindingContext.CAPTURED_IN_CLOSURE, descriptor) != null) {
             // well, wrap it
             JsNameRef alias = new JsNameRef("v", new JsNameRef(name));
             initializer = JsAstUtils.wrapValue(alias, initializer == null ? JsLiteral.NULL : initializer);
