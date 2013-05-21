@@ -41,7 +41,7 @@ import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
 import org.jetbrains.jet.plugin.project.AnalyzerFacadeWithCache;
 import org.jetbrains.jet.plugin.references.JetPsiReference;
 import org.jetbrains.jet.util.QualifiedNamesUtil;
-import org.jetbrains.k2js.analyze.JsConfiguration;
+import org.jetbrains.kotlin.compiler.ModuleInfo;
 
 import java.util.List;
 
@@ -179,7 +179,7 @@ public class ImportInsertHelper {
     }
 
     public static boolean isImportedWithJsDefault(ImportPath importPath) {
-        return QualifiedNamesUtil.isImported(JsConfiguration.DEFAULT_IMPORT_PATHS, importPath);
+        return QualifiedNamesUtil.isImported(ModuleInfo.DEFAULT_IMPORT_PATHS, importPath);
     }
 
     public static boolean isImportedWithKotlinDefault(ImportPath importPath) {

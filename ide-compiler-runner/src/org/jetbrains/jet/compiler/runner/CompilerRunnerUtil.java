@@ -119,13 +119,16 @@ public class CompilerRunnerUtil {
         }
     }
 
-    public static Object invokeExecMethod(CompilerEnvironment environment,
-            PrintStream out,
-            MessageCollector messageCollector, String[] arguments, String name) throws Exception {
-        ClassLoader loader = getOrCreateClassLoader(environment.getKotlinPaths(), messageCollector);
-        Class<?> kompiler = Class.forName(name, true, loader);
-        Method exec = kompiler.getMethod("exec", PrintStream.class, String[].class);
-        return exec.invoke(kompiler.newInstance(), out, arguments);
+    public static Object invokeExecMethod(
+            String className, String[] arguments, CompilerEnvironment environment,
+            MessageCollector messageCollector, PrintStream out, boolean usePreloader
+    ) throws Exception {
+        ClassLoader loader = usePreloader
+                             ? createClassLoader(environment.getKotlinPaths(), messageCollector)
+                             : getOrCreateClassLoader(environment.getKotlinPaths(), messageCollector);
+        Class<?> compiler = Class.forName(className, true, loader);
+        Method exec = compiler.getMethod("exec", PrintStream.class, String[].class);
+        return exec.invoke(compiler.newInstance(), out, arguments);
     }
 
     public static void outputCompilerMessagesAndHandleExitCode(@NotNull MessageCollector messageCollector,
