@@ -186,6 +186,9 @@ public final class TopLevelFIF extends CompositeFIF {
         add("get", json, ArrayFIF.GET_INTRINSIC);
         add("set", json, ArrayFIF.SET_INTRINSIC);
 
+        // todo do it for any native class
+        add("get", new DescriptorPattern("kotlin", "RegExp", "ExecResult"), ArrayFIF.GET_INTRINSIC);
+
         JsNameRef systemOut = new JsNameRef("out", new JsNameRef("System", Namer.KOTLIN_OBJECT_NAME_REF));
         add("println", js, new QualifiedInvocationFunctionIntrinsic("println", systemOut));
         add("print", js, new QualifiedInvocationFunctionIntrinsic("print", systemOut));
