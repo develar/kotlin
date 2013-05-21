@@ -105,6 +105,7 @@
     <quoteHandler fileType="Kotlin" className="org.jetbrains.jet.plugin.editor.KotlinQuoteHandler"/>
     <refactoring.moveHandler implementation="org.jetbrains.jet.plugin.refactoring.move.JetMoveFilesOrDirectoriesHandler"/>
     <refactoring.copyHandler implementation="org.jetbrains.jet.plugin.refactoring.copy.JetCopyClassHandler"/>
+    <refactoring.changeSignatureUsageProcessor implementation="org.jetbrains.jet.plugin.refactoring.changeSignature.JetChangeSignatureUsageProcessor"/>
     <treeStructureProvider implementation="org.jetbrains.jet.plugin.projectView.JetProjectViewProvider"/>
 
     <colorSettingsPage implementation="org.jetbrains.jet.plugin.highlighter.JetColorSettingsPage"/>
@@ -196,6 +197,8 @@
                               forClass="org.jetbrains.jet.lang.psi.JetClass"/>
     <itemPresentationProvider implementationClass="org.jetbrains.jet.plugin.presentation.JetPropertyPresenter"
                               forClass="org.jetbrains.jet.lang.psi.JetProperty"/>
+    <itemPresentationProvider implementationClass="org.jetbrains.jet.plugin.presentation.JetParameterPresenter"
+                              forClass="org.jetbrains.jet.lang.psi.JetParameter"/>
     <gotoTargetRendererProvider id="JetGotoTargetRenderProvider" implementation="org.jetbrains.jet.plugin.JetGotoTargetRenderProvider"
                                 order="first"/>
     <elementDescriptionProvider implementation="org.jetbrains.jet.plugin.findUsages.JetElementDescriptionProvider"/>
@@ -251,7 +254,7 @@
     <toolWindow id="Kotlin"
                 factoryClass="org.jetbrains.jet.plugin.internal.KotlinInternalToolWindowFactory"
                 anchor="right"
-                icon="/org/jetbrains/jet/plugin/icons/kotlin_13.png"
+                icon="/org/jetbrains/jet/plugin/icons/kotlin13.png"
         />
 
     <applicationService serviceInterface="org.jetbrains.jet.plugin.editor.JetEditorOptions"
@@ -269,12 +272,72 @@
     </intentionAction>
 
     <intentionAction>
-      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.IfStatementWithAssignmentsToExpressionIntention</className>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.FoldBranchedExpressionIntention$FoldIfToAssignmentIntention</className>
       <category>Kotlin</category>
     </intentionAction>
 
     <intentionAction>
-      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.AssignmentWithIfExpressionToStatementIntention</className>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.FoldBranchedExpressionIntention$FoldIfToReturnAsymmetricallyIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.FoldBranchedExpressionIntention$FoldIfToReturnIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.FoldBranchedExpressionIntention$FoldWhenToAssignmentIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.FoldBranchedExpressionIntention$FoldWhenToReturnIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.UnfoldBranchedExpressionIntention$UnfoldAssignmentToIfIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.UnfoldBranchedExpressionIntention$UnfoldAssignmentToWhenIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.UnfoldBranchedExpressionIntention$UnfoldReturnToIfIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.UnfoldBranchedExpressionIntention$UnfoldReturnToWhenIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.IfToWhenIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.WhenToIfIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.FlattenWhenIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.IntroduceWhenSubjectIntention</className>
+      <category>Kotlin</category>
+    </intentionAction>
+
+    <intentionAction>
+      <className>org.jetbrains.jet.plugin.codeInsight.codeTransformations.branchedTransformations.intentions.EliminateWhenSubjectIntention</className>
       <category>Kotlin</category>
     </intentionAction>
 

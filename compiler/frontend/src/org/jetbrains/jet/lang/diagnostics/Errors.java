@@ -241,6 +241,11 @@ public interface Errors {
     DiagnosticFactory0<JetPropertyAccessor> ABSTRACT_PROPERTY_WITH_GETTER = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory0<JetPropertyAccessor> ABSTRACT_PROPERTY_WITH_SETTER = DiagnosticFactory0.create(ERROR);
 
+    DiagnosticFactory0<JetPropertyDelegate> ABSTRACT_DELEGATED_PROPERTY = DiagnosticFactory0.create(ERROR);
+    DiagnosticFactory0<JetPropertyAccessor> ACCESSOR_FOR_DELEGATED_PROPERTY = DiagnosticFactory0.create(ERROR);
+    DiagnosticFactory0<JetPropertyDelegate> DELEGATED_PROPERTY_IN_TRAIT = DiagnosticFactory0.create(ERROR);
+    DiagnosticFactory0<JetPropertyDelegate> LOCAL_VARIABLE_WITH_DELEGATE = DiagnosticFactory0.create(ERROR);
+
     DiagnosticFactory0<JetProperty> PROPERTY_WITH_NO_TYPE_NO_INITIALIZER = DiagnosticFactory0.create(ERROR, NAMED_ELEMENT);
 
     DiagnosticFactory0<JetProperty> MUST_BE_INITIALIZED = DiagnosticFactory0.create(ERROR, NAMED_ELEMENT);
@@ -395,6 +400,11 @@ public interface Errors {
     DiagnosticFactory0<JetExpression> ITERATOR_MISSING = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory1<PsiElement, Collection<? extends ResolvedCall<?>>> ITERATOR_AMBIGUITY = DiagnosticFactory1.create(ERROR);
 
+    DiagnosticFactory2<JetExpression, String, JetType> DELEGATE_SPECIAL_FUNCTION_MISSING = DiagnosticFactory2.create(ERROR);
+    DiagnosticFactory2<JetExpression, String, Collection<? extends ResolvedCall<?>>> DELEGATE_SPECIAL_FUNCTION_AMBIGUITY = DiagnosticFactory2.create(ERROR);
+    DiagnosticFactory2<JetExpression, String, Collection<? extends ResolvedCall<?>>> DELEGATE_SPECIAL_FUNCTION_NONE_APPLICABLE = DiagnosticFactory2.create(ERROR);
+    DiagnosticFactory3<JetExpression, String, JetType, JetType> DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH = DiagnosticFactory3.create(ERROR);
+
     DiagnosticFactory1<JetSimpleNameExpression, JetType> COMPARE_TO_TYPE_MISMATCH = DiagnosticFactory1.create(ERROR);
 
     // Labels
@@ -495,7 +505,7 @@ public interface Errors {
 
     // Type mismatch
 
-    DiagnosticFactory2<PsiElement, JetType, JetType> TYPE_MISMATCH = DiagnosticFactory2.create(ERROR);
+    DiagnosticFactory2<JetExpression, JetType, JetType> TYPE_MISMATCH = DiagnosticFactory2.create(ERROR);
     DiagnosticFactory1<JetExpression, JetType> RETURN_TYPE_MISMATCH = DiagnosticFactory1.create(ERROR);
     DiagnosticFactory1<JetExpression, JetType> EXPECTED_TYPE_MISMATCH = DiagnosticFactory1.create(ERROR);
     DiagnosticFactory1<JetBinaryExpression, JetType> ASSIGNMENT_TYPE_MISMATCH = DiagnosticFactory1.create(ERROR);

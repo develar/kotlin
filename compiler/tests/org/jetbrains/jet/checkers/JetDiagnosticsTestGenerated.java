@@ -33,7 +33,7 @@ import org.jetbrains.jet.checkers.AbstractDiagnosticsTestWithEagerResolve;
 @InnerTestClasses({JetDiagnosticsTestGenerated.Tests.class, JetDiagnosticsTestGenerated.Script.class})
 public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEagerResolve {
     @TestMetadata("compiler/testData/diagnostics/tests")
-    @InnerTestClasses({Tests.Annotations.class, Tests.BackingField.class, Tests.CallableReference.class, Tests.Cast.class, Tests.CheckArguments.class, Tests.ControlFlowAnalysis.class, Tests.ControlStructures.class, Tests.DataClasses.class, Tests.DataFlow.class, Tests.DataFlowInfoTraversal.class, Tests.DeclarationChecks.class, Tests.Deparenthesize.class, Tests.Enum.class, Tests.Extensions.class, Tests.FunctionLiterals.class, Tests.Generics.class, Tests.IncompleteCode.class, Tests.Inference.class, Tests.Infos.class, Tests.Inner.class, Tests.J_k.class, Tests.Jdk_annotations.class, Tests.Library.class, Tests.NullabilityAndAutoCasts.class, Tests.NullableTypes.class, Tests.Objects.class, Tests.OperatorsOverloading.class, Tests.Overload.class, Tests.Override.class, Tests.Recovery.class, Tests.Redeclarations.class, Tests.Regressions.class, Tests.Resolve.class, Tests.Scopes.class, Tests.SenselessComparison.class, Tests.Shadowing.class, Tests.SmartCasts.class, Tests.Substitutions.class, Tests.Subtyping.class, Tests.ThisAndSuper.class, Tests.Varargs.class})
+    @InnerTestClasses({Tests.Annotations.class, Tests.BackingField.class, Tests.CallableReference.class, Tests.Cast.class, Tests.CheckArguments.class, Tests.ControlFlowAnalysis.class, Tests.ControlStructures.class, Tests.DataClasses.class, Tests.DataFlow.class, Tests.DataFlowInfoTraversal.class, Tests.DeclarationChecks.class, Tests.DelegatedProperty.class, Tests.Deparenthesize.class, Tests.Enum.class, Tests.Extensions.class, Tests.FunctionLiterals.class, Tests.Generics.class, Tests.IncompleteCode.class, Tests.Inference.class, Tests.Infos.class, Tests.Inner.class, Tests.J_k.class, Tests.Jdk_annotations.class, Tests.Library.class, Tests.NullabilityAndAutoCasts.class, Tests.NullableTypes.class, Tests.Objects.class, Tests.OperatorsOverloading.class, Tests.Overload.class, Tests.Override.class, Tests.Recovery.class, Tests.Redeclarations.class, Tests.Regressions.class, Tests.Resolve.class, Tests.Scopes.class, Tests.SenselessComparison.class, Tests.Shadowing.class, Tests.SmartCasts.class, Tests.Substitutions.class, Tests.Subtyping.class, Tests.ThisAndSuper.class, Tests.Varargs.class})
     public static class Tests extends AbstractDiagnosticsTestWithEagerResolve {
         @TestMetadata("Abstract.kt")
         public void testAbstract() throws Exception {
@@ -1887,6 +1887,174 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             }
         }
         
+        @TestMetadata("compiler/testData/diagnostics/tests/delegatedProperty")
+        public static class DelegatedProperty extends AbstractDiagnosticsTestWithEagerResolve {
+            @TestMetadata("absentErrorAboutInitializer.kt")
+            public void testAbsentErrorAboutInitializer() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/absentErrorAboutInitializer.kt");
+            }
+            
+            @TestMetadata("absentErrorAboutType.kt")
+            public void testAbsentErrorAboutType() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/absentErrorAboutType.kt");
+            }
+            
+            @TestMetadata("abstractDelegatedProperty.kt")
+            public void testAbstractDelegatedProperty() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/abstractDelegatedProperty.kt");
+            }
+            
+            public void testAllFilesPresentInDelegatedProperty() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/delegatedProperty"), Pattern.compile("^(.+)\\.kt$"), true);
+            }
+            
+            @TestMetadata("backingField.kt")
+            public void testBackingField() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/backingField.kt");
+            }
+            
+            @TestMetadata("delegatedPropertyOverridedInTrait.kt")
+            public void testDelegatedPropertyOverridedInTrait() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/delegatedPropertyOverridedInTrait.kt");
+            }
+            
+            @TestMetadata("delegatedPropertyOverridedInTraitTypeMismatch.kt")
+            public void testDelegatedPropertyOverridedInTraitTypeMismatch() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/delegatedPropertyOverridedInTraitTypeMismatch.kt");
+            }
+            
+            @TestMetadata("genericGetter.kt")
+            public void testGenericGetter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/genericGetter.kt");
+            }
+            
+            @TestMetadata("getterWithSubtype.kt")
+            public void testGetterWithSubtype() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/getterWithSubtype.kt");
+            }
+            
+            @TestMetadata("inTrait.kt")
+            public void testInTrait() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/inTrait.kt");
+            }
+            
+            @TestMetadata("incompleteTypeInference.kt")
+            public void testIncompleteTypeInference() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/incompleteTypeInference.kt");
+            }
+            
+            @TestMetadata("localVariable.kt")
+            public void testLocalVariable() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/localVariable.kt");
+            }
+            
+            @TestMetadata("missedGetter.kt")
+            public void testMissedGetter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/missedGetter.kt");
+            }
+            
+            @TestMetadata("missedSetter.kt")
+            public void testMissedSetter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/missedSetter.kt");
+            }
+            
+            @TestMetadata("propertyDefferedType.kt")
+            public void testPropertyDefferedType() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/propertyDefferedType.kt");
+            }
+            
+            @TestMetadata("publicDelegatedProperty.kt")
+            public void testPublicDelegatedProperty() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/publicDelegatedProperty.kt");
+            }
+            
+            @TestMetadata("recursiveType.kt")
+            public void testRecursiveType() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/recursiveType.kt");
+            }
+            
+            @TestMetadata("redundantGetter.kt")
+            public void testRedundantGetter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/redundantGetter.kt");
+            }
+            
+            @TestMetadata("redundantSetter.kt")
+            public void testRedundantSetter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/redundantSetter.kt");
+            }
+            
+            @TestMetadata("setterThisTypeMismatch.kt")
+            public void testSetterThisTypeMismatch() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/setterThisTypeMismatch.kt");
+            }
+            
+            @TestMetadata("setterWithSupertype.kt")
+            public void testSetterWithSupertype() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/setterWithSupertype.kt");
+            }
+            
+            @TestMetadata("thisInDelegate.kt")
+            public void testThisInDelegate() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/thisInDelegate.kt");
+            }
+            
+            @TestMetadata("thisOfAnyType.kt")
+            public void testThisOfAnyType() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/thisOfAnyType.kt");
+            }
+            
+            @TestMetadata("thisOfNothingNullableType.kt")
+            public void testThisOfNothingNullableType() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/thisOfNothingNullableType.kt");
+            }
+            
+            @TestMetadata("thisOfNothingType.kt")
+            public void testThisOfNothingType() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/thisOfNothingType.kt");
+            }
+            
+            @TestMetadata("twoGetMethods.kt")
+            public void testTwoGetMethods() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/twoGetMethods.kt");
+            }
+            
+            @TestMetadata("typeMismatchForGetReturnType.kt")
+            public void testTypeMismatchForGetReturnType() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/typeMismatchForGetReturnType.kt");
+            }
+            
+            @TestMetadata("typeMismatchForGetWithGeneric.kt")
+            public void testTypeMismatchForGetWithGeneric() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/typeMismatchForGetWithGeneric.kt");
+            }
+            
+            @TestMetadata("typeMismatchForSetParameter.kt")
+            public void testTypeMismatchForSetParameter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/typeMismatchForSetParameter.kt");
+            }
+            
+            @TestMetadata("typeMismatchForThisGetParameter.kt")
+            public void testTypeMismatchForThisGetParameter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/typeMismatchForThisGetParameter.kt");
+            }
+            
+            @TestMetadata("wrongCountOfParametersInGet.kt")
+            public void testWrongCountOfParametersInGet() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/wrongCountOfParametersInGet.kt");
+            }
+            
+            @TestMetadata("wrongCountOfParametersInSet.kt")
+            public void testWrongCountOfParametersInSet() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/wrongCountOfParametersInSet.kt");
+            }
+            
+            @TestMetadata("wrongSetterReturnType.kt")
+            public void testWrongSetterReturnType() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/delegatedProperty/wrongSetterReturnType.kt");
+            }
+            
+        }
+        
         @TestMetadata("compiler/testData/diagnostics/tests/deparenthesize")
         public static class Deparenthesize extends AbstractDiagnosticsTestWithEagerResolve {
             public void testAllFilesPresentInDeparenthesize() throws Exception {
@@ -3590,6 +3758,11 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/override/kt1862.kt");
             }
             
+            @TestMetadata("kt2052.kt")
+            public void testKt2052() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/override/kt2052.kt");
+            }
+            
             @TestMetadata("kt880.kt")
             public void testKt880() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/override/kt880.kt");
@@ -4752,6 +4925,7 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             suite.addTestSuite(DataFlow.class);
             suite.addTestSuite(DataFlowInfoTraversal.class);
             suite.addTest(DeclarationChecks.innerSuite());
+            suite.addTestSuite(DelegatedProperty.class);
             suite.addTestSuite(Deparenthesize.class);
             suite.addTest(Enum.innerSuite());
             suite.addTestSuite(Extensions.class);

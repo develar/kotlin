@@ -262,4 +262,15 @@ public class CodegenUtil {
         }
         return false;
     }
+
+    public static boolean couldUseDirectAccessToProperty(PropertyDescriptor propertyDescriptor, boolean forGetter, boolean isInsideClass, boolean isDelegated) {
+        PropertyAccessorDescriptor accessorDescriptor = forGetter ? propertyDescriptor.getGetter() : propertyDescriptor.getSetter();
+        boolean isExtensionProperty = propertyDescriptor.getReceiverParameter() != null;
+        return isInsideClass &&
+               !isDelegated &&
+               !isExtensionProperty &&
+               (accessorDescriptor == null ||
+                accessorDescriptor.isDefault() &&
+                (!DescriptorUtils.isExternallyAccessible(propertyDescriptor) || accessorDescriptor.getModality() == Modality.FINAL));
+    }
 }

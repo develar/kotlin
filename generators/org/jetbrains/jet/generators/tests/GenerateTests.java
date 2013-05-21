@@ -32,9 +32,11 @@ import org.jetbrains.jet.completion.AbstractJavaWithLibCompletionTest;
 import org.jetbrains.jet.completion.AbstractJetJSCompletionTest;
 import org.jetbrains.jet.completion.AbstractKeywordCompletionTest;
 import org.jetbrains.jet.jvm.compiler.*;
+import org.jetbrains.jet.lang.psi.AbstractJetPsiMatcherTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveDescriptorRendererTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveNamespaceComparingTest;
 import org.jetbrains.jet.lang.resolve.lazy.AbstractLazyResolveTest;
+import org.jetbrains.jet.modules.xml.AbstractModuleXmlParserTest;
 import org.jetbrains.jet.plugin.codeInsight.codeTransformations.AbstractCodeTransformationTest;
 import org.jetbrains.jet.plugin.codeInsight.surroundWith.AbstractSurroundWithTest;
 import org.jetbrains.jet.plugin.folding.AbstractKotlinFoldingTest;
@@ -204,6 +206,20 @@ public class GenerateTests {
         );
 
         generateTest(
+                "compiler/tests/",
+                "ModuleXmlParserTestGenerated",
+                AbstractModuleXmlParserTest.class,
+                testModel("compiler/testData/modules.xml", true, "xml", "doTest")
+        );
+
+        generateTest(
+                "compiler/tests/",
+                "JetPsiMatcherTest",
+                AbstractJetPsiMatcherTest.class,
+                testModel("compiler/testData/psi/jetPsiMatcher", "doTestExpressions")
+        );
+
+        generateTest(
                 "idea/tests/",
                 "JetPsiCheckerTestGenerated",
                 AbstractJetPsiCheckerTest.class,
@@ -297,9 +313,20 @@ public class GenerateTests {
                 "idea/tests/",
                 "CodeTransformationsTestGenerated",
                 AbstractCodeTransformationTest.class,
-                testModel("idea/testData/codeInsight/codeTransformations/ifStatementWithAssignmentsToExpression", "doTestIfStatementWithAssignmentsToExpression"),
-                testModel("idea/testData/codeInsight/codeTransformations/assignmentWithIfExpressionToStatement", "doTestAssignmentWithIfExpressionToStatement"),
-                testModel("idea/testData/codeInsight/codeTransformations/removeUnnecessaryParentheses", "doTestRemoveUnnecessaryParentheses")
+                testModel("idea/testData/codeInsight/codeTransformations/branched/folding/ifToAssignment", "doTestFoldIfToAssignment"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/folding/ifToReturn", "doTestFoldIfToReturn"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/folding/ifToReturnAsymmetrically", "doTestFoldIfToReturnAsymmetrically"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/folding/whenToAssignment", "doTestFoldWhenToAssignment"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/folding/whenToReturn", "doTestFoldWhenToReturn"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/assignmentToIf", "doTestUnfoldAssignmentToIf"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/assignmentToWhen", "doTestUnfoldAssignmentToWhen"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/returnToIf", "doTestUnfoldReturnToIf"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/returnToWhen", "doTestUnfoldReturnToWhen"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/ifWhen/ifToWhen", "doTestIfToWhen"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/ifWhen/whenToIf", "doTestWhenToIf"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/when/flatten", "doTestFlattenWhen"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/when/introduceSubject", "doTestIntroduceWhenSubject"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/when/eliminateSubject", "doTestEliminateWhenSubject")
         );
 
         generateTest(

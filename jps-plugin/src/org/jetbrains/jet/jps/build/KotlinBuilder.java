@@ -94,7 +94,7 @@ public class KotlinBuilder extends ModuleLevelBuilder {
             return ExitCode.NOTHING_DONE;
         }
 
-        File scriptFile = KotlinBuilderModuleScriptGenerator.generateModuleScript(context, representativeTarget, sourceFiles);
+        File moduleFile = KotlinBuilderModuleScriptGenerator.generateModuleDescription(context, representativeTarget, sourceFiles);
 
         File outputDir = representativeTarget.getOutputDir();
 
@@ -111,7 +111,7 @@ public class KotlinBuilder extends ModuleLevelBuilder {
         KotlinCompilerRunner.runCompiler(
                 messageCollector,
                 environment,
-                scriptFile,
+                moduleFile,
                 outputItemCollector,
                 /*runOutOfProcess = */false);
 

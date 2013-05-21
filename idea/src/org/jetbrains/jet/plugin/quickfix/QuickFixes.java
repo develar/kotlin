@@ -85,9 +85,12 @@ public class QuickFixes {
 
         factories.put(NON_VARARG_SPREAD, RemovePsiElementSimpleFix.createRemoveSpreadFactory());
 
+        factories.put(MIXING_NAMED_AND_POSITIONED_ARGUMENTS, AddNameToArgumentFix.createFactory());
+
         factories.put(NON_MEMBER_FUNCTION_NO_BODY, addFunctionBodyFactory);
 
         factories.put(NOTHING_TO_OVERRIDE, RemoveModifierFix.createRemoveModifierFromListOwnerFactory(OVERRIDE_KEYWORD));
+        factories.put(NOTHING_TO_OVERRIDE, ChangeMemberFunctionSignatureFix.createFactory());
         factories.put(VIRTUAL_MEMBER_HIDDEN, AddModifierFix.createFactory(OVERRIDE_KEYWORD));
 
         factories.put(USELESS_CAST_STATIC_ASSERT_IS_FINE, ReplaceOperationInBinaryExpressionFix.createChangeCastToStaticAssertFactory());
@@ -215,13 +218,25 @@ public class QuickFixes {
         factories.put(PROPERTY_TYPE_MISMATCH_ON_OVERRIDE, changeVariableTypeFix);
         factories.put(COMPONENT_FUNCTION_RETURN_TYPE_MISMATCH, ChangeVariableTypeFix.createFactoryForComponentFunctionReturnTypeMismatch());
 
+        JetIntentionActionFactory changeFunctionReturnTypeFix = ChangeFunctionReturnTypeFix.createFactoryForChangingReturnTypeToUnit();
+        factories.put(RETURN_TYPE_MISMATCH, changeFunctionReturnTypeFix);
+        factories.put(NO_RETURN_IN_FUNCTION_WITH_BLOCK_BODY, changeFunctionReturnTypeFix);
         factories.put(RETURN_TYPE_MISMATCH_ON_OVERRIDE, ChangeFunctionReturnTypeFix.createFactoryForReturnTypeMismatchOnOverride());
         factories.put(COMPONENT_FUNCTION_RETURN_TYPE_MISMATCH, ChangeFunctionReturnTypeFix.createFactoryForComponentFunctionReturnTypeMismatch());
         factories.put(HAS_NEXT_FUNCTION_TYPE_MISMATCH, ChangeFunctionReturnTypeFix.createFactoryForHasNextFunctionTypeMismatch());
         factories.put(COMPARE_TO_TYPE_MISMATCH, ChangeFunctionReturnTypeFix.createFactoryForCompareToTypeMismatch());
+        factories.put(TYPE_MISMATCH, ChangeFunctionReturnTypeFix.createFactoryForTypeMismatch());
+
+        factories.put(TOO_MANY_ARGUMENTS, ChangeFunctionSignatureFix.createFactory());
+        factories.put(NO_VALUE_FOR_PARAMETER, ChangeFunctionSignatureFix.createFactory());
+        factories.put(UNUSED_PARAMETER, ChangeFunctionSignatureFix.createFactoryForUnusedParameter());
+        factories.put(EXPECTED_PARAMETERS_NUMBER_MISMATCH, ChangeFunctionSignatureFix.createFactoryForParametersNumberMismatch());
 
         factories.put(EXPECTED_PARAMETER_TYPE_MISMATCH, ChangeTypeFix.createFactoryForExpectedParameterTypeMismatch());
         factories.put(EXPECTED_RETURN_TYPE_MISMATCH, ChangeTypeFix.createFactoryForExpectedReturnTypeMismatch());
+        
+        factories.put(AUTOCAST_IMPOSSIBLE, CastExpressionFix.createFactoryForAutoCastImpossible());
+        factories.put(TYPE_MISMATCH, CastExpressionFix.createFactoryForTypeMismatch());
 
         factories.put(PLATFORM_CLASS_MAPPED_TO_KOTLIN, MapPlatformClassToKotlinFix.createFactory());
 

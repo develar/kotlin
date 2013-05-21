@@ -1,5 +1,5 @@
 <component name="ArtifactManager">
-  <artifact build-on-make="true" name="KotlinPlugin">
+  <artifact name="KotlinPlugin">
     <output-path>$PROJECT_DIR$/out/artifacts</output-path>
     <root id="root">
       <element id="directory" name="Kotlin">
@@ -17,6 +17,7 @@
             <element id="module-output" name="js.translator" />
             <element id="module-output" name="cli-common" />
             <element id="module-output" name="ide-compiler-runner" />
+            <element id="module-output" name="preloader" />
             <element id="module-output" name="x-frontend" />
           </element>
           <element id="library" level="project" name="js-libs" />
@@ -30,6 +31,7 @@
               <element id="module-output" name="ide-compiler-runner" />
               <element id="module-output" name="cli-common" />
               <element id="module-output" name="util" />
+              <element id="module-output" name="preloader" />
             </element>
           </element>
         </element>
