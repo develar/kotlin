@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.analyzer.AnalyzerFacade;
 import org.jetbrains.jet.analyzer.AnalyzerFacadeForEverything;
+import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
@@ -125,7 +126,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
         ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
             @Override
             public boolean process(Library library) {
-                if ("KotlinJsRuntime".equals(library.getName())) {
+                if (JsExternalizationConstants.JS_LIBRARY_NAME.equals(library.getName())) {
                     VirtualFile[] libraryFiles = library.getFiles(OrderRootType.SOURCES);
                     if (libraryFiles.length > 0) {
                         for (VirtualFile file : libraryFiles) {

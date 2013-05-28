@@ -38,6 +38,7 @@ import com.intellij.util.PathUtil;
 import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.plugin.versions.KotlinRuntimeLibraryUtil;
 import org.jetbrains.k2js.config.EcmaVersion;
@@ -118,7 +119,7 @@ public class KotlinFrameworkDetector {
                 ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
                     @Override
                     public boolean process(Library library) {
-                        if (("KotlinJsRuntime".equals(library.getName()) && library.getFiles(OrderRootType.SOURCES).length > 0) || LibraryPresentationProviderUtil.isDetected(JSLibraryStdPresentationProvider.getInstance(), library)) {
+                        if ((JsExternalizationConstants.JS_LIBRARY_NAME.equals(library.getName()) && library.getFiles(OrderRootType.SOURCES).length > 0) || LibraryPresentationProviderUtil.isDetected(JSLibraryStdPresentationProvider.getInstance(), library)) {
                             jsLibrary.set(library);
                             return false;
                         }

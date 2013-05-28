@@ -28,6 +28,7 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.plugin.framework.ui.CreateJavaScriptLibraryDialog;
 import org.jetbrains.jet.plugin.framework.ui.FileUIUtils;
 import org.jetbrains.jet.utils.KotlinPaths;
@@ -41,7 +42,7 @@ import java.util.Set;
 
 public class JSLibraryStdDescription extends CustomLibraryDescription {
     public static final LibraryKind KOTLIN_JAVASCRIPT_KIND = LibraryKind.create("kotlin-js-stdlib");
-    public static final String LIBRARY_NAME = "KotlinJavaScript";
+    public static final String LIBRARY_NAME = JsExternalizationConstants.JS_LIBRARY_NAME;
 
     private static final String JAVA_SCRIPT_LIBRARY_CREATION = "JavaScript Library Creation";
     private static final Set<LibraryKind> libraryKinds = Sets.newHashSet(KOTLIN_JAVASCRIPT_KIND);
