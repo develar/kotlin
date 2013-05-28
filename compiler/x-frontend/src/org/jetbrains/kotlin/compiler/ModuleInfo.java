@@ -156,6 +156,10 @@ public final class ModuleInfo implements ModuleConfiguration {
 
     @Nullable
     public ModuleInfo findDependency(ModuleDescriptor descriptor) {
+        if (dependencies == null) {
+            return null;
+        }
+
         for (ModuleInfo dependency : dependencies) {
             if (dependency.moduleDescriptor == descriptor) {
                 return dependency;

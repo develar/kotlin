@@ -16,6 +16,8 @@
 
 package org.jetbrains.jet.plugin.caches.resolve;
 
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -27,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.lang.resolve.TopDownAnalysisParameters;
 import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
+import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
 import org.jetbrains.jet.plugin.project.JSAnalyzerFacadeForIDEA;
 import org.jetbrains.jet.plugin.project.TargetPlatform;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
@@ -50,9 +53,20 @@ class JSDeclarationsCacheProvider extends DeclarationsCacheProvider {
                     //ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
                     //XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false).getBindingContext();
 
+                    GlobalSearchScope scope = null;
+                    for (Module module : ModuleManager.getInstance(project).getModules()) {
+                        if (KotlinFrameworkDetector.isJsKotlinModule(module)) {
+                            if (scope == null) {
+                                scope = module.getModuleScope(false);
+                            }
+                            else {
+                                scope = scope.uniteWith(module.getModuleScope(false));
+                            }
+                        }
+                    }
+
                     ModuleInfo info = new ModuleInfo(JSAnalyzerFacadeForIDEA.MODULE_NAME, project);
-                    AnalyzeExhaust analyzeExhaust = XAnalyzerFacade.analyzeFiles(info,
-                            JetFilesProvider.getInstance(project).allInScope(GlobalSearchScope.allScope(project)),
+                    AnalyzeExhaust analyzeExhaust = XAnalyzerFacade.analyzeFiles(info, JetFilesProvider.getInstance(project).allInScope(scope == null ? GlobalSearchScope.EMPTY_SCOPE : scope),
                             new TopDownAnalysisParameters(false), true);
 
                     return Result.<KotlinDeclarationsCache>create(

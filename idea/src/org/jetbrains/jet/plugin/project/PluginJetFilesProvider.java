@@ -16,31 +16,28 @@
 
 package org.jetbrains.jet.plugin.project;
 
-import com.google.common.base.Predicates;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Sets;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtil;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentIterator;
 import com.intellij.openapi.roots.ModuleFileIndex;
 import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Function;
-import org.jetbrains.annotations.Nullable;
+import com.intellij.util.containers.OrderedSet;
+import com.intellij.util.indexing.FileBasedIndex;
+import gnu.trove.THashSet;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.java.JetFilesProvider;
 import org.jetbrains.jet.plugin.JetFileType;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
 public class PluginJetFilesProvider extends JetFilesProvider {
@@ -55,12 +52,12 @@ public class PluginJetFilesProvider extends JetFilesProvider {
         @Override
         public Collection<JetFile> fun(final JetFile rootFile) {
             final Project project = rootFile.getProject();
-            final Set<JetFile> files = Sets.newLinkedHashSet();
+            final Set<JetFile> files = new OrderedSet<JetFile>();
 
-            Module rootModule = ModuleUtil.findModuleForPsiElement(rootFile);
+            Module rootModule = ModuleUtilCore.findModuleForPsiElement(rootFile);
             if (rootModule != null) {
-                Set<Module> allModules = new HashSet<Module>();
-                ModuleUtil.getDependencies(rootModule, allModules);
+                Set<Module> allModules = new THashSet<Module>();
+                ModuleUtilCore.getDependencies(rootModule, allModules);
 
                 for (Module module : allModules) {
                     final ModuleFileIndex index = ModuleRootManager.getInstance(module).getFileIndex();
@@ -97,24 +94,17 @@ public class PluginJetFilesProvider extends JetFilesProvider {
     @Override
     public Collection<JetFile> allInScope(GlobalSearchScope scope) {
         final PsiManager manager = PsiManager.getInstance(project);
-
-        Collection<JetFile> jetFiles = Collections2.transform(FileTypeIndex.getFiles(JetFileType.INSTANCE, scope),
-               new com.google.common.base.Function<VirtualFile, JetFile>() {
-                   @Override
-                   public JetFile apply(@Nullable VirtualFile file) {
-                       if (file == null || !ProjectFileIndex.SERVICE.getInstance(project).isInSourceContent(file)) {
-                           return null;
-                       }
-
-                       PsiFile psiFile = manager.findFile(file);
-                       if (!(psiFile instanceof JetFile)) {
-                           return null;
-                       }
-
-                       return ((JetFile) psiFile);
-                   }
-               });
-
-        return Sets.newHashSet(Collections2.filter(jetFiles, Predicates.<JetFile>notNull()));
+        final Set<JetFile> files = new THashSet<JetFile>();
+        FileBasedIndex.getInstance().processValues(FileTypeIndex.NAME, JetFileType.INSTANCE, null, new FileBasedIndex.ValueProcessor<Void>() {
+            @Override
+            public boolean process(VirtualFile file, Void value) {
+                PsiFile psiFile = manager.findFile(file);
+                if (psiFile instanceof JetFile) {
+                    files.add((JetFile) psiFile);
+                }
+                return true;
+            }
+        }, scope);
+        return files;
     }
 }
