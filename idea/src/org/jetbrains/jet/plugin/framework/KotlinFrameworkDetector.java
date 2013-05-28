@@ -20,9 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtilCore;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ProjectRootModificationTracker;
@@ -77,18 +75,6 @@ public class KotlinFrameworkDetector {
         }
 
         return result.getValue();
-    }
-
-    @NotNull
-    public static Pair<List<String>, String> getLibLocationAndTargetForProject(@NotNull Project project) {
-        Module[] modules = ModuleManager.getInstance(project).getModules();
-        for (Module module : modules) {
-            if (isJsKotlinModule(module)) {
-                return getLibLocationAndTargetForProject(module);
-            }
-        }
-
-        return Pair.empty();
     }
 
     public static Pair<List<String>, String> getLibLocationAndTargetForProject(final Module module) {
