@@ -153,7 +153,7 @@ public final class Namer {
             return getRootNamespaceName();
         }
         else {
-            return descriptor.getName().getName();
+            return descriptor.getName().asString();
         }
     }
 

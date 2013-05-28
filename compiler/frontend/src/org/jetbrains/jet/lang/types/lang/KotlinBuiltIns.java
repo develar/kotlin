@@ -264,9 +264,9 @@ public class KotlinBuiltIns {
     }
 
     private void makePrimitive(PrimitiveType primitiveType) {
-        ClassDescriptor theClass = getBuiltInClassByName(primitiveType.getTypeName().getName());
+        ClassDescriptor theClass = getBuiltInClassByName(primitiveType.getTypeName().asString());
         JetType type = new JetTypeImpl(theClass);
-        ClassDescriptor arrayClass = getBuiltInClassByName(primitiveType.getArrayTypeName().getName());
+        ClassDescriptor arrayClass = getBuiltInClassByName(primitiveType.getArrayTypeName().asString());
         JetType arrayType = new JetTypeImpl(arrayClass);
 
         primitiveTypeToClass.put(primitiveType, theClass);
@@ -336,7 +336,7 @@ public class KotlinBuiltIns {
 
     @NotNull
     public ClassDescriptor getPrimitiveClassDescriptor(@NotNull PrimitiveType type) {
-        return getBuiltInClassByName(type.getTypeName().getName());
+        return getBuiltInClassByName(type.getTypeName().asString());
     }
 
     @NotNull
@@ -399,7 +399,7 @@ public class KotlinBuiltIns {
 
     @NotNull
     public ClassDescriptor getPrimitiveArrayClassDescriptor(@NotNull PrimitiveType type) {
-        return getBuiltInClassByName(type.getArrayTypeName().getName());
+        return getBuiltInClassByName(type.getArrayTypeName().asString());
     }
 
     @NotNull

@@ -28,10 +28,12 @@ import com.intellij.psi.impl.CheckUtil;
 import com.intellij.psi.impl.source.codeStyle.CodeEditUtil;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.util.codeInsight.CommentUtilCore;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.JetNodeTypes;
+import org.jetbrains.jet.kdoc.psi.api.KDocElement;
 import org.jetbrains.jet.lang.parsing.JetExpressionParsing;
 import org.jetbrains.jet.lang.resolve.ImportPath;
 import org.jetbrains.jet.lang.resolve.name.FqName;
@@ -408,7 +410,7 @@ public class JetPsiUtil {
             return false;
         }
 
-        return KotlinBuiltIns.getInstance().getUnit().getName().getName().equals(typeReference.getText());
+        return KotlinBuiltIns.getInstance().getUnit().getName().asString().equals(typeReference.getText());
     }
 
     public static boolean isSafeCall(@NotNull Call call) {
@@ -694,7 +696,7 @@ public class JetPsiUtil {
     public static boolean checkVariableDeclarationInBlock(@NotNull JetBlockExpression block, @NotNull String varName) {
         for (JetElement element : block.getStatements()) {
             if (element instanceof JetVariableDeclaration) {
-                if (((JetVariableDeclaration) element).getNameAsSafeName().getName().equals(varName)) {
+                if (((JetVariableDeclaration) element).getNameAsSafeName().asString().equals(varName)) {
                     return true;
                 }
             }
@@ -739,5 +741,18 @@ public class JetPsiUtil {
     @NotNull
     public static String getText(@Nullable PsiElement element) {
         return element != null ? element.getText() : "";
+    }
+
+    /**
+     * CommentUtilCore.isComment fails if element <strong>inside</strong> comment.
+     *
+     * Also, we can not add KDocTokens to COMMENTS TokenSet, because it is used in JetParserDefinition.getCommentTokens(),
+     * and therefor all COMMENTS tokens will be ignored by PsiBuilder.
+     *
+     * @param element
+     * @return
+     */
+    public static boolean isInComment(PsiElement element) {
+        return CommentUtilCore.isComment(element) || element instanceof KDocElement;
     }
 }

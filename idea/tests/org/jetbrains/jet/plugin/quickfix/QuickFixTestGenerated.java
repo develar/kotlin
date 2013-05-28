@@ -866,9 +866,49 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
         
         @TestMetadata("idea/testData/quickfix/override/nothingToOverride")
         public static class NothingToOverride extends AbstractQuickFixTest {
+            @TestMetadata("beforeAddFunction.kt")
+            public void testAddFunction() throws Exception {
+                doTest("idea/testData/quickfix/override/nothingToOverride/beforeAddFunction.kt");
+            }
+            
+            @TestMetadata("beforeAddFunctionAbstractClass.kt")
+            public void testAddFunctionAbstractClass() throws Exception {
+                doTest("idea/testData/quickfix/override/nothingToOverride/beforeAddFunctionAbstractClass.kt");
+            }
+            
+            @TestMetadata("beforeAddFunctionNoBody.kt")
+            public void testAddFunctionNoBody() throws Exception {
+                doTest("idea/testData/quickfix/override/nothingToOverride/beforeAddFunctionNoBody.kt");
+            }
+            
+            @TestMetadata("beforeAddFunctionNonUnitReturnType.kt")
+            public void testAddFunctionNonUnitReturnType() throws Exception {
+                doTest("idea/testData/quickfix/override/nothingToOverride/beforeAddFunctionNonUnitReturnType.kt");
+            }
+            
+            @TestMetadata("beforeAddFunctionTrait.kt")
+            public void testAddFunctionTrait() throws Exception {
+                doTest("idea/testData/quickfix/override/nothingToOverride/beforeAddFunctionTrait.kt");
+            }
+            
+            @TestMetadata("beforeAddFunctionTwoSuperclasses.kt")
+            public void testAddFunctionTwoSuperclasses() throws Exception {
+                doTest("idea/testData/quickfix/override/nothingToOverride/beforeAddFunctionTwoSuperclasses.kt");
+            }
+            
+            @TestMetadata("beforeAddFunctionTwoTraits.kt")
+            public void testAddFunctionTwoTraits() throws Exception {
+                doTest("idea/testData/quickfix/override/nothingToOverride/beforeAddFunctionTwoTraits.kt");
+            }
+            
             @TestMetadata("beforeAddParameter.kt")
             public void testAddParameter() throws Exception {
                 doTest("idea/testData/quickfix/override/nothingToOverride/beforeAddParameter.kt");
+            }
+            
+            @TestMetadata("beforeAddParameterGenericClass.kt")
+            public void testAddParameterGenericClass() throws Exception {
+                doTest("idea/testData/quickfix/override/nothingToOverride/beforeAddParameterGenericClass.kt");
             }
             
             @TestMetadata("beforeAddParameterMultiple.kt")
@@ -963,6 +1003,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             @TestMetadata("beforeRemoveParameterTwoTraits.kt")
             public void testRemoveParameterTwoTraits() throws Exception {
                 doTest("idea/testData/quickfix/override/nothingToOverride/beforeRemoveParameterTwoTraits.kt");
+            }
+            
+            @TestMetadata("beforeSwapParametersGenericClass.kt")
+            public void testSwapParametersGenericClass() throws Exception {
+                doTest("idea/testData/quickfix/override/nothingToOverride/beforeSwapParametersGenericClass.kt");
             }
             
         }

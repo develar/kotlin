@@ -19,14 +19,17 @@ package org.jetbrains.jet.lexer;
 import com.intellij.psi.TokenType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
+import org.jetbrains.jet.kdoc.lexer.KDocTokens;
 
 public interface JetTokens {
     JetToken EOF   = new JetToken("EOF");
 
-    JetToken BLOCK_COMMENT = new JetToken("BLOCK_COMMENT");
-    JetToken DOC_COMMENT   = new JetToken("DOC_COMMENT");
-    JetToken EOL_COMMENT   = new JetToken("EOL_COMMENT");
-    JetToken SHEBANG_COMMENT = new JetToken("SHEBANG_COMMENT");
+    JetToken BLOCK_COMMENT     = new JetToken("BLOCK_COMMENT");
+    JetToken EOL_COMMENT       = new JetToken("EOL_COMMENT");
+    JetToken SHEBANG_COMMENT   = new JetToken("SHEBANG_COMMENT");
+
+    //JetToken DOC_COMMENT   = new JetToken("DOC_COMMENT");
+    IElementType DOC_COMMENT   = KDocTokens.KDOC;
 
     IElementType WHITE_SPACE = TokenType.WHITE_SPACE;
 
@@ -180,9 +183,16 @@ public interface JetTokens {
             OPEN_KEYWORD, INNER_KEYWORD, ANNOTATION_KEYWORD, OVERRIDE_KEYWORD, PRIVATE_KEYWORD, PUBLIC_KEYWORD, INTERNAL_KEYWORD,
             PROTECTED_KEYWORD, OUT_KEYWORD, IN_KEYWORD, FINAL_KEYWORD, VARARG_KEYWORD, INLINE_KEYWORD, REIFIED_KEYWORD
     );
-    TokenSet WHITE_SPACE_OR_COMMENT_BIT_SET = TokenSet.create(WHITE_SPACE, BLOCK_COMMENT, EOL_COMMENT, DOC_COMMENT, SHEBANG_COMMENT);
     TokenSet WHITESPACES = TokenSet.create(TokenType.WHITE_SPACE);
+
+    /**
+     * Don't add KDocTokens to COMMENTS TokenSet, because it is used in JetParserDefinition.getCommentTokens(),
+     * and therefor all COMMENTS tokens will be ignored by PsiBuilder.
+     *
+     * @see org.jetbrains.jet.lang.psi.JetPsiUtil.isInComment()
+     */
     TokenSet COMMENTS = TokenSet.create(EOL_COMMENT, BLOCK_COMMENT, DOC_COMMENT, SHEBANG_COMMENT);
+    TokenSet WHITE_SPACE_OR_COMMENT_BIT_SET = TokenSet.orSet(COMMENTS, TokenSet.create(WHITE_SPACE));
 
     TokenSet STRINGS = TokenSet.create(CHARACTER_LITERAL, REGULAR_STRING_PART);
     TokenSet OPERATIONS = TokenSet.create(AS_KEYWORD, AS_SAFE, IS_KEYWORD, IN_KEYWORD, DOT, PLUSPLUS, MINUSMINUS, EXCLEXCL, MUL, PLUS,

@@ -16,7 +16,7 @@
 
 package org.jetbrains.jet.plugin.codeInsight;
 
-import com.google.common.collect.Lists;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,10 +71,16 @@ public final class DescriptorToDeclarationUtil {
     }
 
     public static PsiElement getDeclaration(JetFile file, DeclarationDescriptor descriptor, BindingContext bindingContext) {
-        Collection<PsiElement> elements = descriptorToDeclarations(bindingContext, descriptor);
+        return getDeclaration(file.getProject(), descriptor, bindingContext);
+    }
+
+    public static PsiElement getDeclaration(Project project, DeclarationDescriptor descriptor, BindingContext bindingContext) {
+        Collection<PsiElement> elements = BindingContextUtils.descriptorToDeclarations(bindingContext, descriptor);
 
         if (elements.isEmpty()) {
-            elements = BuiltInsReferenceResolver.getInstance(file.getProject()).resolveStandardLibrarySymbol(descriptor);
+            BuiltInsReferenceResolver libraryReferenceResolver =
+                    project.getComponent(BuiltInsReferenceResolver.class);
+            elements = libraryReferenceResolver.resolveStandardLibrarySymbol(descriptor);
         }
 
         if (!elements.isEmpty()) {
