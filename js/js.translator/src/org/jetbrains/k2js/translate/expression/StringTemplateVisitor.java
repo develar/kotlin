@@ -114,7 +114,7 @@ final class StringTemplateVisitor extends JetVisitorVoid {
     private boolean mustCallToString(@NotNull JetType type, JsExpression translatedExpression) {
         Name typeName = getNameIfStandardType(type);
         if (typeName != null) {
-            if (typeName.getName().equals("String")) {
+            if (typeName.asString().equals("String")) {
                 return false;
             }
             else if (NamePredicate.PRIMITIVE_NUMBERS.apply(typeName)) {

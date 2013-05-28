@@ -107,7 +107,7 @@ public final class ModuleInfo implements ModuleConfiguration {
     }
 
     public static String getNormalName(ModuleDescriptor moduleDescriptor) {
-        String specialName = moduleDescriptor.getName().getName();
+        String specialName = moduleDescriptor.getName().asString();
         return specialName.substring(1, specialName.length() - 1);
     }
 

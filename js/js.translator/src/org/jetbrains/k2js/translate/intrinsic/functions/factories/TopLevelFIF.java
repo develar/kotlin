@@ -113,9 +113,9 @@ public final class TopLevelFIF extends CompositeFIF {
 
             DeclarationDescriptor packageDescriptor =
                     ((ConstructorDescriptor) descriptor).getContainingDeclaration().getContainingDeclaration();
-            if (packageDescriptor.getName().getName().equals("lang")) {
+            if (packageDescriptor.getName().asString().equals("lang")) {
                 DeclarationDescriptor javaPackage = packageDescriptor.getContainingDeclaration();
-                if (javaPackage != null && javaPackage.getName().getName().equals("java")) {
+                if (javaPackage != null && javaPackage.getName().asString().equals("java")) {
                     DeclarationDescriptor root = javaPackage.getContainingDeclaration();
                     return root instanceof NamespaceDescriptor && DescriptorUtils.isRootNamespace((NamespaceDescriptor) root);
                 }
@@ -135,7 +135,7 @@ public final class TopLevelFIF extends CompositeFIF {
         add("iterator", jetWithReceiver, RETURN_RECEIVER_INTRINSIC);
 
         for (PrimitiveType primitiveType : PrimitiveType.values()) {
-            add("equals", new DescriptorPattern("jet", primitiveType.getTypeName().getName()), EQUALS);
+            add("equals", new DescriptorPattern("jet", primitiveType.getTypeName().asString()), EQUALS);
         }
         add("equals", new DescriptorPattern("jet", "String"), EQUALS);
         add("equals", new DescriptorPattern("jet", "Hashable"), EQUALS);
@@ -234,7 +234,7 @@ public final class TopLevelFIF extends CompositeFIF {
                         @NotNull TranslationContext context
                 ) {
                     JsStringLiteral exceptionName = new JsStringLiteral(
-                            callTranslator.getParameters().getDescriptor().getContainingDeclaration().getName().getName());
+                            callTranslator.getParameters().getDescriptor().getContainingDeclaration().getName().asString());
                     return new JsInvocation(Namer.NEW_EXCEPTION_FUN_NAME_REF,
                                             Arrays.asList(arguments.size() == 1 ? arguments.get(0) : JsLiteral.NULL, exceptionName));
                 }
@@ -306,7 +306,7 @@ public final class TopLevelFIF extends CompositeFIF {
             String collectionClassName;
             if (keyTypeName != null &&
                 (NamePredicate.PRIMITIVE_NUMBERS.apply(keyTypeName) ||
-                 keyTypeName.getName().equals("String") ||
+                 keyTypeName.asString().equals("String") ||
                  PrimitiveType.BOOLEAN.getTypeName().equals(keyTypeName))) {
                 collectionClassName = isSet ? "PrimitiveHashSet" : "PrimitiveHashMap";
             }

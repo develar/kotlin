@@ -187,13 +187,13 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
     }
 
     private String createNameForClass(ClassDescriptor descriptor) {
-        String suggestedName = descriptor.getName().getName();
+        String suggestedName = descriptor.getName().asString();
         String name = suggestedName;
         DeclarationDescriptor containing = descriptor;
         while (!nameClashGuard.add(name)) {
             containing = containing.getContainingDeclaration();
             assert containing != null;
-            name = suggestedName + '_' + containing.getName().getName();
+            name = suggestedName + '_' + containing.getName().asString();
         }
         return name;
     }

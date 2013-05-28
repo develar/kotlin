@@ -47,7 +47,7 @@ public class DescriptorPattern implements DescriptorPredicate {
             if (nameIndex == -1) {
                 return isRootNamespace(descriptor);
             }
-            else if (isRootNamespace(descriptor) || !descriptor.getName().getName().equals(names[nameIndex--])) {
+            else if (isRootNamespace(descriptor) || !descriptor.getName().asString().equals(names[nameIndex--])) {
                 return false;
             }
         }
@@ -79,7 +79,7 @@ public class DescriptorPattern implements DescriptorPredicate {
                 return false;
             }
 
-            if (!descriptor.getName().getName().equals(names[nameIndex--])) {
+            if (!descriptor.getName().asString().equals(names[nameIndex--])) {
                 // we check overridden on any mismatch - we can have classes with equal name from different packages
                 return checkOverridden && checkOverridden(functionDescriptor);
             }

@@ -60,10 +60,10 @@ public final class InitializerUtils {
     private static JsStatement create(DeclarationDescriptor descriptor, boolean enumerable, JsExpression value, TranslationContext context) {
         JsExpression expression;
         if (context.isEcma5()) {
-            expression = JsAstUtils.defineProperty(descriptor.getName().getName(), JsAstUtils.createDataDescriptor(value, false, enumerable));
+            expression = JsAstUtils.defineProperty(descriptor.getName().asString(), JsAstUtils.createDataDescriptor(value, false, enumerable));
         }
         else {
-            expression = assignment(new JsNameRef(descriptor.getName().getName(), JsLiteral.THIS), value);
+            expression = assignment(new JsNameRef(descriptor.getName().asString(), JsLiteral.THIS), value);
         }
         return expression.asStatement();
     }

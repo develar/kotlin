@@ -188,10 +188,10 @@ public final class JsAstUtils {
 
     public static String createNameForProperty(@NotNull PropertyDescriptor descriptor, boolean isEcma5) {
         if (isEcma5 && !JsDescriptorUtils.isAsPrivate(descriptor)) {
-            return descriptor.getName().getName();
+            return descriptor.getName().asString();
         }
         else {
-            return Namer.getKotlinBackingFieldName(descriptor.getName().getName());
+            return Namer.getKotlinBackingFieldName(descriptor.getName().asString());
         }
     }
 

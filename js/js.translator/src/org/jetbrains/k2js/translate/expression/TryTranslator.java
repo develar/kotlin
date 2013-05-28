@@ -93,7 +93,7 @@ public final class TryTranslator {
                     Collection<ConstructorDescriptor> constructors = ((ClassDescriptor) classDescriptor).getConstructors();
                     for (ConstructorDescriptor constructor : constructors) {
                         if (constructor.isPrimary() && TopLevelFIF.JAVA_EXCEPTION_PATTERN.apply(constructor)) {
-                            errorName = classDescriptor.getName().getName();
+                            errorName = classDescriptor.getName().asString();
                             break;
                         }
                     }

@@ -56,7 +56,7 @@ public final class FunctionIntrinsics {
 
         FunctionIntrinsic intrinsic = intrinsicCache.get(descriptor);
         if (intrinsic == null) {
-            if (intrinsics.valuesForKey(descriptor.getName().getName()) == 0) {
+            if (intrinsics.valuesForKey(descriptor.getName().asString()) == 0) {
                 return null;
             }
             intrinsic = computeIntrinsic(descriptor);
@@ -68,7 +68,7 @@ public final class FunctionIntrinsics {
     @NotNull
     private static FunctionIntrinsic computeIntrinsic(@NotNull FunctionDescriptor descriptor) {
         MyProcessor processor = new MyProcessor(descriptor);
-        intrinsics.processForKey(descriptor.getName().getName(), processor);
+        intrinsics.processForKey(descriptor.getName().asString(), processor);
         if (processor.result != null) {
             return processor.result;
         }

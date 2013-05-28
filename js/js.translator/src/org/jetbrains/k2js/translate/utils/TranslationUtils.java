@@ -246,6 +246,6 @@ public final class TranslationUtils {
 
     @NotNull
     public static JsStringLiteral nameToLiteral(@NotNull Named named) {
-        return new JsStringLiteral(named.getName().getName());
+        return new JsStringLiteral(named.getName().asString());
     }
 }

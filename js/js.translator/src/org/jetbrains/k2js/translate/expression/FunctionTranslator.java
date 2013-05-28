@@ -149,7 +149,7 @@ public final class FunctionTranslator {
             @NotNull ValueParameterDescriptor valueParameter,
             @NotNull TranslationContext context
     ) {
-        return "$dv$" + valueParameter.getName().getName() + '_' + context.getNameRefForDescriptor(descriptor).getName();
+        return "$dv$" + valueParameter.getName().asString() + '_' + context.getNameRefForDescriptor(descriptor).getName();
     }
 
     @NotNull

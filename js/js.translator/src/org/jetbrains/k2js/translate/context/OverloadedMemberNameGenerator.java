@@ -35,7 +35,7 @@ final class OverloadedMemberNameGenerator {
             return resolvedName;
         }
 
-        String name = Namer.getNameForAccessor(accessor.getCorrespondingProperty().getName().getName(),
+        String name = Namer.getNameForAccessor(accessor.getCorrespondingProperty().getName().asString(),
                                                        accessor instanceof PropertyGetterDescriptor);
 
         JetScope memberScope = getMemberScope(accessor.getCorrespondingProperty());
@@ -92,7 +92,7 @@ final class OverloadedMemberNameGenerator {
         }
 
         Collection<FunctionDescriptor> functions = memberScope.getFunctions(function.getName());
-        String name = function.getName().getName();
+        String name = function.getName().asString();
         final String originalName = name;
         if (functions.size() <= 1) {
             return name;

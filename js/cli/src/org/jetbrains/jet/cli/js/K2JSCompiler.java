@@ -91,9 +91,9 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             reportCompiledSourcesList(messageCollector, environmentForJS);
         }
 
-        final Map<String, List<JetFile>> modules = getConfig(arguments, project);
+        Map<String, List<JetFile>> modules = getConfig(arguments, project);
 
-        List<JetFile> libraryFiles = modules.get(ModuleInfo.STUBS_MODULE_NAME.getName());
+        List<JetFile> libraryFiles = modules.get(ModuleInfo.STUBS_MODULE_NAME.asString());
         ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
         if (!analyze(messageCollector, libraryModuleConfiguration, libraryFiles, false)) {
             return ExitCode.COMPILATION_ERROR;
@@ -105,7 +105,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             otherModulesFiles = new ArrayList<JetFile>();
             // todo normal module dependency resolution (exhaust per module)
             for (Map.Entry<String, List<JetFile>> entry : modules.entrySet()) {
-                if (entry.getKey() != ModuleInfo.STUBS_MODULE_NAME.getName()) {
+                if (entry.getKey() != ModuleInfo.STUBS_MODULE_NAME.asString()) {
                     otherModulesFiles.addAll(entry.getValue());
                 }
             }
@@ -183,7 +183,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             return collectModules(project, arguments.libraryFiles);
         }
         else {
-            return Collections.singletonMap(ModuleInfo.STUBS_MODULE_NAME.getName(), MetaInfServices
+            return Collections.singletonMap(ModuleInfo.STUBS_MODULE_NAME.asString(), MetaInfServices
                     .loadServicesFiles("META-INF/services/org.jetbrains.kotlin.js.libraryDefinitions", project));
         }
     }
@@ -194,11 +194,11 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             return Collections.emptyMap();
         }
 
-        final Map<String, List<JetFile>> modules = Maps.newLinkedHashMap();
+        Map<String, List<JetFile>> modules = Maps.newLinkedHashMap();
         List<JetFile> psiFiles = null;
-        String moduleName = ModuleInfo.STUBS_MODULE_NAME.getName();
+        String moduleName = ModuleInfo.STUBS_MODULE_NAME.asString();
         VirtualFileSystem fileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.FILE_PROTOCOL);
-        final PsiManager psiManager = PsiManager.getInstance(project);
+        PsiManager psiManager = PsiManager.getInstance(project);
         for (String path : files) {
             if (path.charAt(0) == '@') {
                 moduleName = path.substring(1);
@@ -219,7 +219,7 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
                 if (jarFile != null) {
                     psiFiles = new ArrayList<JetFile>();
                     moduleName = null;
-                    modules.put(ModuleInfo.STUBS_MODULE_NAME.getName(), psiFiles);
+                    modules.put(ModuleInfo.STUBS_MODULE_NAME.asString(), psiFiles);
                     Traverser.traverseFile(project, jarFile, psiFiles);
                 }
                 else if (file.isDirectory()) {

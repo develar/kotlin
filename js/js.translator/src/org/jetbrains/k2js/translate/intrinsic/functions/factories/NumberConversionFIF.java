@@ -90,10 +90,10 @@ public final class NumberConversionFIF extends CompositeFIF {
         for (String typeName : new String[] {"Int", "Byte", "Short"}) {
             DescriptorPattern packagePattern = new DescriptorPattern("jet", typeName);
             for (Name conversionMethodName : NUMBER_CONVERSIONS) {
-                add(conversionMethodName.getName(), packagePattern, RETURN_RECEIVER);
+                add(conversionMethodName.asString(), packagePattern, RETURN_RECEIVER);
             }
-            add(CHAR.getName(), packagePattern, RETURN_RECEIVER);
-            add(LONG.getName(), packagePattern, RETURN_RECEIVER);
+            add(CHAR.asString(), packagePattern, RETURN_RECEIVER);
+            add(LONG.asString(), packagePattern, RETURN_RECEIVER);
 
             add("div", packagePattern, INTEGER_DIVISION_INTRINSIC);
         }
@@ -103,11 +103,11 @@ public final class NumberConversionFIF extends CompositeFIF {
             DescriptorPattern packagePattern = new DescriptorPattern("jet", typeName);
 
             for (Name conversionMethodName : integerConversions) {
-                add(conversionMethodName.getName(), packagePattern, GET_INTEGER_PART);
+                add(conversionMethodName.asString(), packagePattern, GET_INTEGER_PART);
             }
 
-            add(FLOAT.getName(), packagePattern, RETURN_RECEIVER);
-            add(DOUBLE.getName(), packagePattern, RETURN_RECEIVER);
+            add(FLOAT.asString(), packagePattern, RETURN_RECEIVER);
+            add(DOUBLE.asString(), packagePattern, RETURN_RECEIVER);
         }
     }
 }

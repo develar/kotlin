@@ -89,7 +89,7 @@ public final class PatternTranslator extends AbstractTranslator {
         }
 
         String jsSTypeName;
-        if (typeName.getName().equals("String")) {
+        if (typeName.asString().equals("String")) {
             jsSTypeName = "string";
         }
         else if (NamePredicate.PRIMITIVE_NUMBERS.apply(typeName)) {

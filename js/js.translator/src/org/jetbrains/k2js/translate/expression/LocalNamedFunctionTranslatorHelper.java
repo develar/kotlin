@@ -39,7 +39,7 @@ class LocalNamedFunctionTranslatorHelper {
         this.descriptor = descriptor;
         this.context = context;
 
-        name = context.scope().declareFreshName(descriptor.getName().getName());
+        name = context.scope().declareFreshName(descriptor.getName().asString());
         context.aliasingContext().registerAlias(descriptor, new JsNameRef(name));
     }
 
@@ -55,7 +55,7 @@ class LocalNamedFunctionTranslatorHelper {
     }
 
     private String createReferenceName(JsScope funScope) {
-        return funScope.declareFreshName(descriptor.getName().getName() + "$ref");
+        return funScope.declareFreshName(descriptor.getName().asString() + "$ref");
     }
 
     public AliasingContext createAliasingContext(JsScope funScope) {

@@ -99,7 +99,7 @@ public final class ArrayFIF extends CompositeFIF {
                 add("array", kotlin, array);
             }
             else {
-                typeName = primitiveTypes[i].getArrayTypeName().getName();
+                typeName = primitiveTypes[i].getArrayTypeName().asString();
                 add(Character.toLowerCase(typeName.charAt(0)) + typeName.substring(1) + "Array", kotlin, array);
             }
             DescriptorPattern namePattern = new DescriptorPattern("jet", typeName);

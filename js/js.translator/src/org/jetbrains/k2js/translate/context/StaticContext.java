@@ -153,7 +153,7 @@ public final class StaticContext {
         String name = nameMap.get(descriptor);
         if (name == null) {
             assert context != null;
-            name = context.scope().declareFreshName(descriptor.getName().getName());
+            name = context.scope().declareFreshName(descriptor.getName().asString());
             nameMap.put(descriptor, name);
         }
         return name;
@@ -177,11 +177,11 @@ public final class StaticContext {
             else {
                 name = getAnnotationStringParameter(annotationDescriptor);
             }
-            return new JsNameRef(name == null ? descriptor.getName().getName() : name);
+            return new JsNameRef(name == null ? descriptor.getName().asString() : name);
         }
 
         if (isFromNativeModule(descriptor)) {
-            return new JsNameRef(descriptor.getName().getName());
+            return new JsNameRef(descriptor.getName().asString());
         }
 
         // property cannot be overloaded, so, name collision is not possible, we don't need create extra JsName and keep generated ref
@@ -191,7 +191,7 @@ public final class StaticContext {
                 return new JsNameRef(overloadedMemberNameGenerator.forExtensionProperty(accessorDescriptor));
             }
 
-            String name = accessorDescriptor.getCorrespondingProperty().getName().getName();
+            String name = accessorDescriptor.getCorrespondingProperty().getName().asString();
             if (!isEcma5() && !isObjectDeclaration(bindingContext, accessorDescriptor.getCorrespondingProperty())) {
                 name = Namer.getNameForAccessor(name, descriptor instanceof PropertyGetterDescriptor);
             }
@@ -208,7 +208,7 @@ public final class StaticContext {
         }
         else if (descriptor instanceof ClassDescriptor) {
             String standardName = getStandardObjectName((ClassDescriptor) descriptor);
-            return new JsNameRef(standardName == null ? descriptor.getName().getName() : standardName);
+            return new JsNameRef(standardName == null ? descriptor.getName().asString() : standardName);
         }
         else if (descriptor instanceof NamespaceDescriptor) {
             return new JsNameRef(Namer.generateNamespaceName(descriptor));
@@ -231,7 +231,7 @@ public final class StaticContext {
                     return "NumberProgression";
                 }
             }
-            return name.getName();
+            return name.asString();
         }
         return null;
     }
@@ -284,7 +284,7 @@ public final class StaticContext {
             List<String> names = new ArrayList<String>();
             NamespaceDescriptor p = namespace;
             do {
-                names.add(p.getName().getName());
+                names.add(p.getName().asString());
                 p = p.getContainingDeclaration() instanceof NamespaceDescriptor ? (NamespaceDescriptor) p.getContainingDeclaration() : null;
             }
             while (p != null && !DescriptorUtils.isRootNamespace(p));

@@ -16,6 +16,7 @@
 
 package org.jetbrains.jet.plugin.codeInsight;
 
+import com.google.common.collect.Lists;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;

@@ -77,7 +77,7 @@ public class PrimitiveUnaryOperationFIF extends CompositeFIF {
 
         DescriptorPredicate predicate = new MyDescriptorPredicate(numberPredicate);
         for (Map.Entry<JetToken, Name> entry : OperatorConventions.UNARY_OPERATION_NAMES.entrySet()) {
-            add(entry.getValue().getName(), predicate, new MyFunctionIntrinsic(OperatorTable.getUnaryOperator(entry.getKey())));
+            add(entry.getValue().asString(), predicate, new MyFunctionIntrinsic(OperatorTable.getUnaryOperator(entry.getKey())));
         }
 
         for (Map.Entry<JetToken, Name> entry : OperatorConventions.BINARY_OPERATION_NAMES.entrySet()) {
@@ -94,7 +94,7 @@ public class PrimitiveUnaryOperationFIF extends CompositeFIF {
                 continue;
             }
 
-            add(entry.getValue().getName(), numberPredicate, intrinsic);
+            add(entry.getValue().asString(), numberPredicate, intrinsic);
         }
 
         DescriptorPattern booleanPattern = new DescriptorPattern("jet", "Boolean");
