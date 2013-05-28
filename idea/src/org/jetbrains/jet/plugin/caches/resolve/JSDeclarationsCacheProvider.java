@@ -50,13 +50,12 @@ class JSDeclarationsCacheProvider extends DeclarationsCacheProvider {
             @Override
             public Result<KotlinDeclarationsCache> compute() {
                 synchronized (declarationAnalysisLock) {
-                    //ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
-                    //XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false).getBindingContext();
-
                     GlobalSearchScope scope = null;
+                    Module anyJsModule = null;
                     for (Module module : ModuleManager.getInstance(project).getModules()) {
                         if (KotlinFrameworkDetector.isJsKotlinModule(module)) {
                             if (scope == null) {
+                                anyJsModule = module;
                                 scope = module.getModuleScope(false);
                             }
                             else {
@@ -65,7 +64,17 @@ class JSDeclarationsCacheProvider extends DeclarationsCacheProvider {
                         }
                     }
 
-                    ModuleInfo info = new ModuleInfo(JSAnalyzerFacadeForIDEA.MODULE_NAME, project);
+                    ModuleInfo info;
+                    if (anyJsModule != null) {
+                        ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
+                        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, JSAnalyzerFacadeForIDEA.getLibraryFiles(project,
+                                                                                                                         anyJsModule), false);
+                        info = JSAnalyzerFacadeForIDEA.createModuleInfo(project, libraryModuleConfiguration);
+                    }
+                    else {
+                        info = new ModuleInfo(JSAnalyzerFacadeForIDEA.MODULE_NAME, project);
+                    }
+
                     AnalyzeExhaust analyzeExhaust = XAnalyzerFacade.analyzeFiles(info, JetFilesProvider.getInstance(project).allInScope(scope == null ? GlobalSearchScope.EMPTY_SCOPE : scope),
                             new TopDownAnalysisParameters(false), true);
 

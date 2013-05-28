@@ -67,7 +67,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             @NotNull Predicate<PsiFile> filesToAnalyzeCompletely
     ) {
         ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
-        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false).getBindingContext();
+        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false);
         ModuleInfo moduleConfiguration = createModuleInfo(project, libraryModuleConfiguration);
         return XAnalyzerFacade.analyzeFilesAndStoreBodyContext(moduleConfiguration, files, false);
     }
@@ -94,16 +94,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     @NotNull
     @Override
     public ResolveSession getLazyResolveSession(@NotNull Project project, @NotNull Collection<JetFile> files) {
-        //Collection<JetFile> allFiles = getLibraryFiles(project, files);
-        //if (allFiles != null) {
-        //    allFiles.addAll(files);
-        //}
-        //else {
-        //    allFiles = files;
-        //}
-
         LockBasedStorageManager storageManager = new LockBasedStorageManager();
-
         ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
         XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false);
 
@@ -113,7 +104,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
                                   new FileBasedDeclarationProviderFactory(storageManager, files, Predicates.<FqName>alwaysFalse()));
     }
 
-    private static List<JetFile> getLibraryFiles(final Project project, Collection<JetFile> files) {
+    private static List<JetFile> getLibraryFiles(Project project, Collection<JetFile> files) {
         Module module = null;
         for (JetFile file : files) {
             module = ModuleUtilCore.findModuleForPsiElement(file);
@@ -126,6 +117,10 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             return Collections.emptyList();
         }
 
+        return getLibraryFiles(project, module);
+    }
+
+    public static List<JetFile> getLibraryFiles(final Project project, Module module) {
         final List<JetFile> allFiles = new ArrayList<JetFile>();
         ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
             @Override
