@@ -24,7 +24,6 @@
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/xslt-debugger/engine/impl/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/xslt-debugger/engine/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/xslt-debugger/rt/impl/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/xslt-debugger/rt/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/xslt-debugger/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/maven/maven-server-api/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/maven/maven2-server-impl/test" />
@@ -33,12 +32,8 @@
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/maven/maven3-server-impl/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/maven/src/test/java" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/maven/src/main/java" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/spellchecker/testSrc" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/spellchecker/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/svn4idea/testSource" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/svn4idea/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/svn4ideaOld/testSource" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/svn4ideaOld/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/java-i18n/testSrc" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/java-i18n/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/InspectionGadgets/test" />
@@ -46,11 +41,6 @@
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/InspectionGadgets/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/testng/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/testng/testSources" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/android/testSrc" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/android/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/android/jps-plugin/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/android/common/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/android/rt/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/ant/tests/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/ant/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/properties/testSrc" />
@@ -76,7 +66,6 @@
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/tasks/jira-connector/src/main/java" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/ui-designer/testSrc" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/ui-designer/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/ui-designer/ui-designer-new/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/git4idea/tests" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/git4idea/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/git4idea/rt/src" />
@@ -88,11 +77,6 @@
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/gradle/testSources" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/eclipse/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/eclipse/testSources" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/gettext/test" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/gettext/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/android-designer/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/rearranger/test/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/rearranger/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/devkit/jps-plugin/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/java/jsp-openapi/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/java/jsp-spi/src" />
@@ -165,7 +149,6 @@
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/RegExpSupport/test" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/RegExpSupport/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/images/src" />
-      <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/jps/model/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/jps/antLayout/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/jps/jps-builders/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/jps/jps-builders/testSrc" />
