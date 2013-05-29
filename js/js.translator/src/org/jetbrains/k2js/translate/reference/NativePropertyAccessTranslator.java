@@ -58,7 +58,6 @@ public final class NativePropertyAccessTranslator extends PropertyAccessTranslat
     @Override
     @NotNull
     protected JsExpression translateAsSet(@Nullable JsExpression receiver, @NotNull final JsExpression setTo) {
-        assert receiver != null;
         return callType.constructCall(receiver, new CallType.CallConstructor() {
             @NotNull
             @Override
