@@ -75,8 +75,7 @@ class DeclarationHintSupport implements StartupActivity {
         @Override
         public void mouseMoved(EditorMouseEvent e) {
             Project myProject = e.getEditor().getProject();
-            assert myProject != null;
-            if (DumbService.getInstance(myProject).isDumb() || !myProject.isInitialized()) {
+            if (myProject == null || DumbService.getInstance(myProject).isDumb() || !myProject.isInitialized()) {
                 return;
             }
 
