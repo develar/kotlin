@@ -6,7 +6,7 @@ import org.jetbrains.k2js.translate.LabelGenerator;
 
 import java.util.List;
 
-public class GenerationPlace {
+public final class GenerationPlace {
     private final List<JsPropertyInitializer> propertyInitializers;
     private final LabelGenerator labelGenerator;
     private final JsExpression expression;

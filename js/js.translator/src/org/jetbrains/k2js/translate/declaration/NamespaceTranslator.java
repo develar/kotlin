@@ -93,7 +93,7 @@ public final class NamespaceTranslator {
                 declaration.accept(visitor, context);
             }
         }
-        context.literalFunctionTranslator().setDefinitionPlace(null);
+        context.literalFunctionTranslator().popDefinitionPlace();
 
         JsExpression initializer;
         if (visitor.initializerStatements.isEmpty()) {

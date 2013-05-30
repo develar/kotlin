@@ -54,15 +54,14 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         return new GenerationPlace(list, new LabelGenerator('f'), reference);
     }
 
-    public void setDefinitionPlace(@Nullable NotNullLazyValue<GenerationPlace> place) {
-        if (place == null) {
-            definitionPlaces.pop();
-            definitionPlace = definitionPlaces.isEmpty() ? null : definitionPlaces.peek();
-        }
-        else {
-            definitionPlaces.push(place);
-            definitionPlace = place;
-        }
+    public void popDefinitionPlace() {
+        definitionPlaces.pop();
+        definitionPlace = definitionPlaces.isEmpty() ? null : definitionPlaces.peek();
+    }
+
+    public void setDefinitionPlace(@NotNull NotNullLazyValue<GenerationPlace> place) {
+        definitionPlaces.push(place);
+        definitionPlace = place;
     }
 
     public JsExpression translateFunction(

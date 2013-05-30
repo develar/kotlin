@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.openapi.util.NotNullLazyValue;
-import com.intellij.openapi.util.Trinity;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +27,6 @@ import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.GenerationPlace;
@@ -119,7 +117,7 @@ public final class ClassTranslator extends AbstractTranslator {
         return descriptor.getKind().equals(ClassKind.TRAIT);
     }
 
-    private void addClassOwnDeclarations(@NotNull List<JsExpression> invocationArguments, @NotNull final TranslationContext declarationContext) {
+    private void addClassOwnDeclarations(@NotNull List<JsExpression> invocationArguments, @NotNull TranslationContext declarationContext) {
         final List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
 
         final List<JsPropertyInitializer> staticProperties;
@@ -168,7 +166,7 @@ public final class ClassTranslator extends AbstractTranslator {
         new DeclarationBodyVisitor(properties).traverseContainer(classDeclaration, declarationContext);
 
         if (isTopLevelDeclaration) {
-            declarationContext.literalFunctionTranslator().setDefinitionPlace(null);
+            declarationContext.literalFunctionTranslator().popDefinitionPlace();
         }
 
         boolean hasStaticProperties = staticProperties != null && !staticProperties.isEmpty();
