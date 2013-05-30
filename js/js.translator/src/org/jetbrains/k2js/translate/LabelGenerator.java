@@ -16,6 +16,8 @@
 
 package org.jetbrains.k2js.translate;
 
+import org.jetbrains.annotations.Nullable;
+
 public final class LabelGenerator {
     private int nameCounter;
     private final char prefix;
@@ -24,7 +26,11 @@ public final class LabelGenerator {
         this.prefix = prefix;
     }
 
-    public String generate() {
-        return prefix + Integer.toString(nameCounter++, 36);
+    public String generate(@Nullable String ns) {
+        StringBuilder builder = new StringBuilder();
+        if (ns != null) {
+            builder.append(ns).append('$');
+        }
+        return builder.append(prefix).append(Integer.toString(nameCounter++, 36)).toString();
     }
 }

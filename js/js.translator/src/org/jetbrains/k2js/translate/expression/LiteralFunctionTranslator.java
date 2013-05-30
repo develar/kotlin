@@ -20,10 +20,7 @@ import com.intellij.openapi.util.NotNullLazyValue;
 import com.intellij.util.containers.Stack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetClassBody;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetDeclarationWithBody;
@@ -122,15 +119,15 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
             return fun;
         }
         else {
-            JsExpression result = new InnerFunctionTranslator(descriptor, funContext, fun).translate(createReference(fun), outerContext, namedFunctionTranslatorHelper);
+            JsExpression result = new InnerFunctionTranslator(descriptor, funContext, fun).translate(createReference(fun, descriptor), outerContext, namedFunctionTranslatorHelper);
             addRegularParameters(descriptor, fun.getParameters(), funContext, receiverName);
             return result;
         }
     }
 
-    private JsNameRef createReference(JsFunction fun) {
+    private JsNameRef createReference(JsFunction fun, MemberDescriptor descriptor) {
         GenerationPlace place = definitionPlace.getValue();
-        JsNameRef nameRef = new JsNameRef(place.getLabelGenerator().generate(), place.getExpression());
+        JsNameRef nameRef = new JsNameRef(place.generateLabel(descriptor), place.getExpression());
         place.getPropertyInitializers().add(new JsPropertyInitializer(nameRef, InitializerUtils.toDataDescriptor(fun, context())));
         return nameRef;
     }
@@ -155,6 +152,6 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         fun.getBody().getStatements().add(new JsReturn(classTranslator.translate(funContext)));
         JetClassBody body = declaration.getBody();
         assert body != null;
-        return new InnerObjectTranslator(funContext, fun).translate(createReference(fun), usageTracker.isUsed() ? outerClassRef : null, null);
+        return new InnerObjectTranslator(funContext, fun).translate(createReference(fun, descriptor), usageTracker.isUsed() ? outerClassRef : null, null);
     }
 }

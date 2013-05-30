@@ -27,6 +27,7 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
+import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.GenerationPlace;
@@ -39,7 +40,6 @@ import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator.createPlace;
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
 
@@ -83,7 +83,7 @@ public final class NamespaceTranslator {
                     @Override
                     @NotNull
                     public GenerationPlace compute() {
-                        return createPlace(visitor.getResult(), packageQualifiedName);
+                        return new GenerationPlace(visitor.getResult(), new LabelGenerator('f'), packageQualifiedName, true);
                     }
                 });
 

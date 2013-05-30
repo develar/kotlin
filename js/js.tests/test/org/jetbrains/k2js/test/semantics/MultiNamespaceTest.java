@@ -57,5 +57,9 @@ public class MultiNamespaceTest extends MultipleFilesTranslationTest {
     public void testCreateClassFromOtherNamespaceUsingImport() throws Exception {
         runMultiFileTest("createClassFromOtherNamespaceUsingImport", "a_foo", "box", true);
     }
+
+    public void testLiteralFunctions() throws Exception {
+        checkFooBoxIsTrue("literalFunctions");
+    }
 }
 
