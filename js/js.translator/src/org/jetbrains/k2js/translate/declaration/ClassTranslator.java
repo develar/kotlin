@@ -31,6 +31,7 @@ import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.expression.GenerationPlace;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.initializer.ClassInitializerTranslator;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
@@ -132,10 +133,10 @@ public final class ClassTranslator extends AbstractTranslator {
             staticProperties = null;
             qualifiedReference = null;
             declarationContext.literalFunctionTranslator().setDefinitionPlace(
-                    new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
+                    new NotNullLazyValue<GenerationPlace>() {
                         @Override
                         @NotNull
-                        public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
+                        public GenerationPlace compute() {
                             return createPlace(properties, context().getThisObject(descriptor));
                         }
                     });
@@ -144,10 +145,10 @@ public final class ClassTranslator extends AbstractTranslator {
             qualifiedReference = declarationContext.getQualifiedReference(descriptor);
             staticProperties = new SmartList<JsPropertyInitializer>();
             declarationContext.literalFunctionTranslator().setDefinitionPlace(
-                    new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
+                    new NotNullLazyValue<GenerationPlace>() {
                         @Override
                         @NotNull
-                        public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
+                        public GenerationPlace compute() {
                             return createPlace(staticProperties, qualifiedReference);
                         }
                     });

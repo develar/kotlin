@@ -22,7 +22,7 @@ import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.TypeConstructor;
 
 public interface ClassifierDescriptor extends DeclarationDescriptorNonRoot {
-    @NotNull
+    //@NotNull
     TypeConstructor getTypeConstructor();
 
     @NotNull

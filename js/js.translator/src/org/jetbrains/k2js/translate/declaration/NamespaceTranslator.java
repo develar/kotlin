@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.openapi.util.NotNullLazyValue;
-import com.intellij.openapi.util.Trinity;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,9 +27,9 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.expression.GenerationPlace;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
@@ -70,7 +69,7 @@ public final class NamespaceTranslator {
     }
 
     private static void translate(
-            @NotNull final NamespaceDescriptor descriptor,
+            @NotNull NamespaceDescriptor descriptor,
             @NotNull JetFile file,
             @NotNull List<JsStatement> result,
             @Nullable List<JsStatement> ecma3Initializers,
@@ -80,10 +79,10 @@ public final class NamespaceTranslator {
         // own package always JsNameRef (only inter-module references may be JsInvocation)
         final JsNameRef packageQualifiedName = (JsNameRef) context.getQualifiedReference(descriptor);
         context.literalFunctionTranslator().setDefinitionPlace(
-                new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
+                new NotNullLazyValue<GenerationPlace>() {
                     @Override
                     @NotNull
-                    public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
+                    public GenerationPlace compute() {
                         return createPlace(visitor.getResult(), packageQualifiedName);
                     }
                 });
