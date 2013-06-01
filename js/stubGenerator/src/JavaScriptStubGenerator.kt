@@ -360,7 +360,7 @@ class JavaScriptStubGenerator(packageName: String) {
         }
     }
 
-    private fun isOptional(element: Element) = if (methodParamMandatoryByDefault) element.getAttribute("optional") == "true" else element.getAttribute("mandatory") != "true"
+    private fun isOptional(element: Element) = if (methodParamMandatoryByDefault) element.getAttribute("optional") == "true" else element.getAttribute("optional") != "false"
 
     private fun processParameter(element: Element, typeName: String, builder: StringBuilder, optional: Boolean) {
         val rest = element.attribute("rest") == "true"

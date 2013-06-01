@@ -55,7 +55,7 @@ public trait Location {
 	public var search: String
 	public var target: String
 
-	public fun reload(): Unit
+	public fun reload(forceget: Boolean? = null): Unit
 	public fun replace(url: String): Unit
 
 	public fun assign(url: String? = null): Unit
@@ -210,7 +210,7 @@ public trait Window {
 	public val event: Event
 	public val navigator: Navigator
 	public val screen: Screen
-	public val location: Location
+	public var location: Any
 	public var console: Console
 	public var frameElement: Any
 	public var opener: Window
@@ -399,6 +399,15 @@ public trait HTMLElement : Element {
 
 	public fun showPopup(): Unit
 	public fun hidePopup(): Unit
+}
+
+public trait ClientRect {
+	public val bottom: Number
+	public val height: Number
+	public val left: Number
+	public val right: Number
+	public val top: Number
+	public val width: Number
 }
 
 public trait CSSStyleDeclaration {
@@ -985,7 +994,7 @@ public class XMLHttpRequest(vararg options: Any?) {
 
 	public fun abort(): Unit
 	public fun getAllResponseHeaders(): String?
-	public fun getResponseHeader(headerName: String): String
+	public fun getResponseHeader(headerName: String): String?
 	public fun overrideMimeType(mimeType: String): Unit
 	public fun open(method: String, url: String, async: Boolean? = null, user: String? = null, password: String? = null): Unit
 	public fun send(data: String? = null): Unit
@@ -1038,10 +1047,10 @@ public trait FileReader : EventTarget {
 	public var onerror: ()->Unit
 	public var onloadend: ()->Unit
 
-	public fun readAsArrayBuffer(blob: Blob? = null): Unit
-	public fun readAsBinaryString(blob: Blob? = null): Unit
-	public fun readAsText(blob: Blob? = null, encoding: String? = null): Unit
-	public fun readAsDataURL(blob: Blob? = null): Unit
+	public fun readAsArrayBuffer(blob: Blob): Unit
+	public fun readAsBinaryString(blob: Blob): Unit
+	public fun readAsText(blob: Blob, encoding: String? = null): Unit
+	public fun readAsDataURL(blob: Blob): Unit
 	public fun abort(): Unit
 }
 
@@ -1375,11 +1384,15 @@ public trait AbstractWorker {
 	public var onerror: ()->Unit
 }
 
-public trait Worker : AbstractWorker {
-	public var onmessage: ()->Unit
+public trait Transferable {
+}
+
+public class Worker(scriptURL: String) : AbstractWorker() {
+
+	public var onmessage: (org.w3c.dom.Event)->Unit
 
 	public fun terminate(): Unit
-	public fun postMessage(message: Any, ports: Array<Any>? = null): Unit
+	public fun postMessage(message: Any, transferList: Array<Transferable>? = null): Unit
 }
 
 public trait SharedWorker : AbstractWorker {
@@ -1579,13 +1592,13 @@ public trait PositionError {
 }
 
 public trait XMLHttpRequestEventTarget : EventTarget {
-	public val onloadstart: (org.w3c.dom.Event)->Unit
-	public val onprogress: (org.w3c.dom.Event)->Unit
-	public val onabort: (org.w3c.dom.Event)->Unit
-	public val onerror: (org.w3c.dom.Event)->Unit
-	public val onload: (org.w3c.dom.Event)->Unit
-	public val ontimeout: (org.w3c.dom.Event)->Unit
-	public val onloadend: (org.w3c.dom.Event)->Unit
+	public var onloadstart: (org.w3c.dom.Event)->Unit
+	public var onprogress: (org.w3c.dom.Event)->Unit
+	public var onabort: (org.w3c.dom.Event)->Unit
+	public var onerror: (org.w3c.dom.Event)->Unit
+	public var onload: (org.w3c.dom.Event)->Unit
+	public var ontimeout: (org.w3c.dom.Event)->Unit
+	public var onloadend: (org.w3c.dom.Event)->Unit
 }
 
 public trait XMLHttpRequestUpload : XMLHttpRequestEventTarget {
