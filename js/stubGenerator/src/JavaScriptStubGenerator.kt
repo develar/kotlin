@@ -201,6 +201,12 @@ class JavaScriptStubGenerator(packageName: String) {
             builder.append('\n')
         }
 
+        if (currentClassName == "Worker") {
+            builder.append('\n')
+            builder.append("override public var onerror: ()->Unit")
+            builder.append('\n')
+        }
+
         processProperties(properties, indent, builder)
         if (insertNewLineSeparator) {
             builder.append('\n')
@@ -252,7 +258,7 @@ class JavaScriptStubGenerator(packageName: String) {
                             genericType = "T: Any"
                         }
                         else {
-                            effectiveType = propertyType
+                            effectiveType = if (propertyType == "Object") "Any?" else propertyType
                         }
                         builder.append("\n${indent}\tpublic val ").append(propertyName!!).append(": ").append(effectiveType)
                     }

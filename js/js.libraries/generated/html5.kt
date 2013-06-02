@@ -1389,7 +1389,13 @@ public trait Transferable {
 
 public class Worker(scriptURL: String) : AbstractWorker() {
 
-	public var onmessage: (org.w3c.dom.Event)->Unit
+override public var onerror: ()->Unit
+
+
+	public abstract inner class MessageEvent : org.w3c.dom.Event {
+		public val data: Any?
+	}
+	public var onmessage: (event: MessageEvent)->Unit
 
 	public fun terminate(): Unit
 	public fun postMessage(message: Any, transferList: Array<Transferable>? = null): Unit
