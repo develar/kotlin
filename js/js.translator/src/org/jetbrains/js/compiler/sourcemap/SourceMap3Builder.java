@@ -122,7 +122,7 @@ public class SourceMap3Builder implements SourceMapBuilder {
             assert columnDiff != 0;
             textOutput.print('/');
             textOutput.print('*');
-            final String name = new File(source).getName();
+            String name = new File(source).getName();
             textOutput.print(name.substring(0, name.length() - 3));
             textOutput.print(' ');
             textOutput.print(sourceLine + 1);
@@ -147,7 +147,7 @@ public class SourceMap3Builder implements SourceMapBuilder {
 
     @Override
     public void addLink() {
-        textOutput.print("\n//@ sourceMappingURL=file://");
+        textOutput.print("\n//@ sourceMappingURL=");
         textOutput.print(generatedFile.getName());
         textOutput.print(".map");
     }
@@ -163,6 +163,7 @@ public class SourceMap3Builder implements SourceMapBuilder {
         // The continuation bit is the 6th bit.
         private static final int VLQ_CONTINUATION_BIT = VLQ_BASE;
 
+        @SuppressWarnings("SpellCheckingInspection")
         private static final char[] BASE64_MAP = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
 
         private Base64VLQ() {
