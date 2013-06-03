@@ -14,6 +14,7 @@ public class PredefinedAnnotationManager {
     private final ClassifierDescriptor nativeAnnotation;
     private final ClassifierDescriptor libraryAnnotation;
     private final ClassifierDescriptor enumerableAnnotation;
+    private final ClassifierDescriptor optionsArgAnnotation;
 
     public PredefinedAnnotationManager(@NotNull ModuleInfo module) {
         NamespaceDescriptor jsPackage = module.getModuleDescriptor().getNamespace(JS_PACKAGE_FQ_NAME);
@@ -22,6 +23,7 @@ public class PredefinedAnnotationManager {
         nativeAnnotation = jsPackage.getMemberScope().getClassifier(Name.identifier("native"));
         libraryAnnotation = jsPackage.getMemberScope().getClassifier(Name.identifier("library"));
         enumerableAnnotation = jsPackage.getMemberScope().getClassifier(Name.identifier("enumerable"));
+        optionsArgAnnotation = jsPackage.getMemberScope().getClassifier(Name.identifier("optionsArg"));
     }
 
     public boolean hasNative(@NotNull DeclarationDescriptor descriptor) {
@@ -30,6 +32,10 @@ public class PredefinedAnnotationManager {
 
     public boolean hasLibrary(@NotNull DeclarationDescriptor descriptor) {
         return findAnnotation(descriptor, libraryAnnotation, true) != null;
+    }
+
+    public boolean hasOptionsArg(@NotNull DeclarationDescriptor descriptor) {
+        return findAnnotation(descriptor, optionsArgAnnotation, false) != null;
     }
 
     public boolean isNativeOrLibrary(@NotNull AnnotationDescriptor annotation) {

@@ -141,7 +141,7 @@ public final class InlinedCallExpressionTranslator extends AbstractCallExpressio
     private TemporaryVariable createAliasForArgument(@NotNull ValueParameterDescriptor parameterDescriptor) {
         ResolvedValueArgument actualArgument = resolvedCall.getValueArgumentsByIndex().get(parameterDescriptor.getIndex());
         List<JsExpression> result = new SmartList<JsExpression>();
-        translateSingleArgument(actualArgument, result);
+        translateSingleArgument(actualArgument, result, null, null);
         assert result.size() == 1 : "We always wrap varargs in kotlin calls.";
         JsExpression translatedArgument = result.get(0);
         TemporaryVariable aliasForArgument = context().declareTemporary(translatedArgument);

@@ -17,6 +17,8 @@
 package org.jetbrains.k2js.translate.reference;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsPropertyInitializer;
+import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
@@ -29,16 +31,19 @@ import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedValueArgument;
 import org.jetbrains.jet.lang.resolve.calls.model.VariableAsFunctionResolvedCall;
 import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 import org.jetbrains.k2js.translate.utils.PsiUtils;
+import org.jetbrains.kotlin.compiler.PredefinedAnnotationManager;
 
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getCallee;
 
 public final class CallExpressionTranslator extends AbstractCallExpressionTranslator {
+    private final boolean isNative;
 
     @NotNull
     public static JsExpression translate(@NotNull JetCallExpression expression,
@@ -55,6 +60,7 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
             @Nullable JsExpression receiver,
             @NotNull CallType callType, @NotNull TranslationContext context) {
         super(expression, receiver, callType, context);
+        isNative = context.isNative(resolvedCall.getCandidateDescriptor());
     }
 
     @NotNull
@@ -105,18 +111,40 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
             return;
         }
 
+        PredefinedAnnotationManager annotationManager = context().predefinedAnnotationManager();
+        boolean funOptionsArg = isNative && annotationManager.hasOptionsArg(resolvedCall.getCandidateDescriptor());
+        List<JsPropertyInitializer> optionsObject = funOptionsArg ? new SmartList<JsPropertyInitializer>() : null;
+
         List<JsExpression> result = JsAstUtils.newList(valueParameters.size());
         List<ResolvedValueArgument> valueArgumentsByIndex = resolvedCall.getValueArgumentsByIndex();
         for (ValueParameterDescriptor parameterDescriptor : valueParameters) {
             ResolvedValueArgument argument = valueArgumentsByIndex.get(parameterDescriptor.getIndex());
-            if (argument instanceof DefaultValueArgument && isNative()) {
+            if (argument instanceof DefaultValueArgument && isNative) {
                 // see http://developer.chrome.com/extensions/windows.html
                 // chrome.windows.getLastFocused(optional object getInfo, function callback)
                 // getInfo is optional, but we don't need pass undefined, we can just skip parameter
                 continue;
             }
 
-            if (translateSingleArgument(argument, result)) {
+            boolean forceOptionsObject;
+            if (funOptionsArg) {
+                if (parameterDescriptor.hasDefaultValue()) {
+                    // last function is not property of options object
+                    forceOptionsObject = valueArgumentsByIndex.size() != (parameterDescriptor.getIndex() + 1) ||
+                                         !KotlinBuiltIns.getInstance().isFunctionType(parameterDescriptor.getType());
+                }
+                else {
+                    forceOptionsObject = parameterDescriptor.hasDefaultValue() || annotationManager.hasOptionsArg(parameterDescriptor);
+                }
+            }
+            else {
+                forceOptionsObject = isNative && annotationManager.hasOptionsArg(parameterDescriptor);
+                if (forceOptionsObject && optionsObject == null) {
+                    optionsObject = new SmartList<JsPropertyInitializer>();
+                }
+            }
+
+            if (translateSingleArgument(argument, result, optionsObject, forceOptionsObject ? parameterDescriptor : null)) {
                 callBuilder.invokeAsApply(true);
             }
         }
@@ -126,10 +154,6 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
 
     @Override
     public boolean shouldWrapVarargInArray() {
-        return !isNative();
-    }
-
-    private boolean isNative() {
-        return context().isNative(resolvedCall.getCandidateDescriptor());
+        return !isNative;
     }
 }

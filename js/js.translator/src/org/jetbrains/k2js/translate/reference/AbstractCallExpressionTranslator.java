@@ -16,17 +16,12 @@
 
 package org.jetbrains.k2js.translate.reference;
 
-import com.google.dart.compiler.backend.js.ast.JsArrayLiteral;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsLiteral;
+import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
-import org.jetbrains.jet.lang.psi.JetCallExpression;
-import org.jetbrains.jet.lang.psi.JetExpression;
-import org.jetbrains.jet.lang.psi.JetReferenceExpression;
-import org.jetbrains.jet.lang.psi.ValueArgument;
+import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.calls.model.*;
@@ -63,7 +58,12 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
 
     protected abstract boolean shouldWrapVarargInArray();
 
-    protected boolean translateSingleArgument(@NotNull ResolvedValueArgument argument, @NotNull List<JsExpression> result) {
+    protected boolean translateSingleArgument(
+            @NotNull ResolvedValueArgument argument,
+            @NotNull List<JsExpression> result,
+            @Nullable List<JsPropertyInitializer> optionsObject,
+            @Nullable ValueParameterDescriptor forceOptionsObject
+    ) {
         if (argument instanceof VarargValueArgument) {
             return translateVarargArgument(argument.getArguments(), result);
         }
@@ -75,9 +75,36 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
             assert valueArgument != null;
             JetExpression argumentExpression = valueArgument.getArgumentExpression();
             assert argumentExpression != null;
-            result.add(Translation.translateAsExpression(argumentExpression, context()));
+            JsExpression value = Translation.translateAsExpression(argumentExpression, context());
+            if (optionsObject != null) {
+                String name = getArgumentName(valueArgument, forceOptionsObject);
+                if (name != null) {
+                    // add options object as soon as first named arg added
+                    if (optionsObject.isEmpty()) {
+                        result.add(new JsObjectLiteral(optionsObject));
+                    }
+                    optionsObject.add(new JsPropertyInitializer(name, value));
+                    return false;
+                }
+            }
+            result.add(value);
         }
         return false;
+    }
+
+    @Nullable
+    private static String getArgumentName(@NotNull ValueArgument valueArgument, @Nullable ValueParameterDescriptor forceOptionsObject) {
+        JetValueArgumentName argumentName = valueArgument.getArgumentName();
+        if (argumentName != null) {
+            //noinspection ConstantConditions
+            return argumentName.getReferenceExpression().getReferencedName();
+        }
+        else if (forceOptionsObject != null) {
+            return forceOptionsObject.getName().asString();
+        }
+        else {
+            return null;
+        }
     }
 
     private boolean translateVarargArgument(@NotNull List<ValueArgument> arguments, @NotNull List<JsExpression> result) {

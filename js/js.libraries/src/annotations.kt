@@ -1,6 +1,6 @@
-package js;
+package js
 
-public annotation class native(name: String = "")
-public annotation class library(name: String = "")
-public annotation class enumerable()
-public annotation class optionsArg()
+public annotation class native(name: String? = null)
+public annotation class library(name: String? = null)
+public annotation class enumerable
+public annotation class optionsArg
