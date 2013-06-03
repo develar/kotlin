@@ -41,7 +41,7 @@ public final class Namer {
 
     public static final JsNameRef KOTLIN_OBJECT_NAME_REF = new JsNameRef("Kotlin");
     private static final String RECEIVER_PARAMETER_NAME = "$receiver";
-    private static final String CLASSES_OBJECT_NAME = "_c";
+    public static final String CLASSES_OBJECT_NAME = "_c";
     public static final JsNameRef THROW_NPE_FUN_NAME_REF = new JsNameRef("throwNPE", KOTLIN_OBJECT_NAME_REF);
     public static final JsNameRef NEW_EXCEPTION_FUN_NAME_REF = new JsNameRef("newException", KOTLIN_OBJECT_NAME_REF);
 
@@ -66,11 +66,6 @@ public final class Namer {
     @NotNull
     public static String superMethodName() {
         return SUPER_METHOD_NAME;
-    }
-
-    @NotNull
-    public static String nameForClassesVariable() {
-        return CLASSES_OBJECT_NAME;
     }
 
     @NotNull

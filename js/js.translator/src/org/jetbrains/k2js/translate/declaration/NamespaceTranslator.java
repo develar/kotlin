@@ -52,7 +52,7 @@ public final class NamespaceTranslator {
         JsObjectLiteral moduleRootMembers = new JsObjectLiteral(true);
         JsVars vars = new JsVars(true);
         result.add(vars);
-        vars.add(context.classDeclarationTranslator().getDeclaration());
+        vars.addIfHasInitializer(context.classDeclarationTranslator().getDeclaration());
         vars.add(new JsVars.JsVar(Namer.ROOT_PACKAGE_NAME, moduleRootMembers));
         for (JetFile file : files) {
             NamespaceDescriptor descriptor = BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.FILE_TO_NAMESPACE, file);
