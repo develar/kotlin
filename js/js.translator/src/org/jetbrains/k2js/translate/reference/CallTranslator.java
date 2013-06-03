@@ -34,7 +34,6 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
-import static org.jetbrains.kotlin.compiler.AnnotationsUtils.isLibraryObject;
 
 //TODO: write tests on calling backing fields as functions
 public final class CallTranslator extends AbstractTranslator {
@@ -117,7 +116,8 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     public HasArguments createConstructorCallExpression(@NotNull JsExpression constructorReference) {
         if (!context().isEcma5() ||
-            (context().isNative(resolvedCall.getCandidateDescriptor()) && !isLibraryObject(resolvedCall.getCandidateDescriptor()))) {
+            (context().isNative(resolvedCall.getCandidateDescriptor()) && !context().predefinedAnnotationManager()
+                    .hasLibrary(resolvedCall.getCandidateDescriptor()))) {
             return new JsNew(constructorReference, arguments);
         }
         else {

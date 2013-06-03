@@ -83,4 +83,8 @@ public final class NativeInteropTest extends SingleFileTranslationTest {
     public void testKt2323() throws Exception {
         fooBoxTest();
     }
+
+    public void testOptionsArgAnnotation() throws Exception {
+        fooBoxTest();
+    }
 }

@@ -20,15 +20,17 @@ import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
-import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
+import org.jetbrains.kotlin.compiler.PredefinedAnnotationManager;
 
 import java.util.Map;
 
@@ -237,6 +239,10 @@ public class TranslationContext {
     }
 
     public boolean isNative(DeclarationDescriptor descriptor) {
-        return staticContext.isFromNativeModule(descriptor) || AnnotationsUtils.isNativeByAnnotation(descriptor);
+        return staticContext.isFromNativeModule(descriptor) || staticContext.predefinedAnnotationManager.hasNative(descriptor);
+    }
+
+    public PredefinedAnnotationManager predefinedAnnotationManager() {
+        return staticContext.predefinedAnnotationManager;
     }
 }

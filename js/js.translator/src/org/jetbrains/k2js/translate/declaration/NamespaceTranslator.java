@@ -21,6 +21,7 @@ import com.intellij.openapi.util.NotNullLazyValue;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
@@ -35,7 +36,6 @@ import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
-import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,14 +52,13 @@ public final class NamespaceTranslator {
         JsObjectLiteral moduleRootMembers = new JsObjectLiteral(true);
         JsVars vars = new JsVars(true);
         result.add(vars);
-        vars.addIfHasInitializer(context.classDeclarationTranslator().getDeclaration());
         vars.add(new JsVars.JsVar(Namer.ROOT_PACKAGE_NAME, moduleRootMembers));
         for (JetFile file : files) {
             NamespaceDescriptor descriptor = BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.FILE_TO_NAMESPACE, file);
             translate(descriptor, file, result, initializers, context);
         }
         context.classDeclarationTranslator().generateDeclarations();
-
+        vars.addIfHasInitializer(context.classDeclarationTranslator().getDeclaration());
         if (initializers == null) {
             result.add(new JsInvocation(Namer.kotlin("finalize"), Namer.ROOT_PACKAGE_NAME_REF).asStatement());
         }
@@ -88,8 +87,9 @@ public final class NamespaceTranslator {
                 });
 
         for (JetDeclaration declaration : file.getDeclarations()) {
-            if (!AnnotationsUtils.isPredefinedObject(
-                    BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.DECLARATION_TO_DESCRIPTOR, declaration))) {
+            DeclarationDescriptor declarationDescriptor =
+                    BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.DECLARATION_TO_DESCRIPTOR, declaration);
+            if (!context.predefinedAnnotationManager().isNativeOrLibrary(declarationDescriptor)) {
                 declaration.accept(visitor, context);
             }
         }
@@ -162,7 +162,7 @@ public final class NamespaceTranslator {
                 if (value instanceof JsLiteral) {
                     result.add(new JsPropertyInitializer(context.getNameRefForDescriptor(propertyDescriptor),
                                                          context.isEcma5() ? JsAstUtils
-                                                                 .createPropertyDataDescriptor(propertyDescriptor, value) : value));
+                                                                 .createPropertyDataDescriptor(propertyDescriptor, value, context) : value));
                 }
                 else {
                     initializerStatements.add(generateInitializerForProperty(context, propertyDescriptor, value));

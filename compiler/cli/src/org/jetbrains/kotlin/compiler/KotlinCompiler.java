@@ -74,19 +74,6 @@ public class KotlinCompiler {
         }
     };
 
-    private static final Condition<Diagnostic> DIAGNOSTIC_CODE_FILTER = new Condition<Diagnostic>() {
-        @Override
-        public boolean value(Diagnostic diagnostic) {
-            if (diagnostic.getFactory() == Errors.UNUSED_PARAMETER) {
-                @SuppressWarnings("unchecked")
-                ValueParameterDescriptor parameterDescriptor =
-                        ((DiagnosticWithParameters1<PsiElement, ValueParameterDescriptor>) diagnostic).getA();
-                return !AnnotationsUtils.isNativeByAnnotation(parameterDescriptor.getContainingDeclaration());
-            }
-            return true;
-        }
-    };
-
     private final ModuleInfo moduleWithErrors;
 
     private final ModuleInfoProvider moduleInfoProvider;
@@ -223,7 +210,7 @@ public class KotlinCompiler {
         AnalyzeExhaust exhaust =
                 XAnalyzerFacade.analyzeFiles(moduleConfiguration, sources, new TopDownAnalysisParameters(analyzeCompletely), false);
         boolean hasErrors = reportDiagnostics(exhaust.getBindingContext(), messageCollector,
-                                              checkSyntax ? DIAGNOSTIC_CODE_FILTER : DIAGNOSTIC_LIBRARY_FILTER);
+                                              checkSyntax ? new DiagnosticCondition(moduleConfiguration) : DIAGNOSTIC_LIBRARY_FILTER);
         hasErrors |= reportIncompleteHierarchies(exhaust, messageCollector);
         return hasErrors ? null : moduleConfiguration;
     }
@@ -273,6 +260,25 @@ public class KotlinCompiler {
         @Override
         protected ModuleInfo compute() {
             return moduleInfo;
+        }
+    }
+
+    private static final class DiagnosticCondition implements Condition<Diagnostic> {
+        private final PredefinedAnnotationManager predefinedAnnotationManager;
+
+        public DiagnosticCondition(ModuleInfo moduleInfo) {
+            predefinedAnnotationManager = new PredefinedAnnotationManager(moduleInfo);
+        }
+
+        @Override
+        public boolean value(Diagnostic diagnostic) {
+            if (diagnostic.getFactory() == Errors.UNUSED_PARAMETER) {
+                @SuppressWarnings("unchecked")
+                ValueParameterDescriptor parameterDescriptor =
+                        ((DiagnosticWithParameters1<PsiElement, ValueParameterDescriptor>) diagnostic).getA();
+                return !predefinedAnnotationManager.hasNative(parameterDescriptor.getContainingDeclaration());
+            }
+            return true;
         }
     }
 

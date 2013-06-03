@@ -87,7 +87,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
         JsPropertyInitializer methodAsPropertyInitializer = FunctionTranslator.translate(false, expression, descriptor, context);
         if (context.isEcma5()) {
             JsExpression methodBodyExpression = methodAsPropertyInitializer.getValueExpr();
-            methodAsPropertyInitializer.setValueExpr(JsAstUtils.createPropertyDataDescriptor(descriptor, descriptor.getModality().isOverridable(), methodBodyExpression));
+            methodAsPropertyInitializer.setValueExpr(JsAstUtils.createPropertyDataDescriptor(descriptor, descriptor.getModality().isOverridable(), methodBodyExpression, context));
         }
         result.add(methodAsPropertyInitializer);
         return null;

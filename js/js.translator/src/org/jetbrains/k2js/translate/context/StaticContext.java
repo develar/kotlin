@@ -25,6 +25,7 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.descriptors.impl.LocalVariableDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
+import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lang.types.lang.PrimitiveType;
@@ -34,9 +35,8 @@ import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
-import org.jetbrains.kotlin.compiler.AnnotationsUtils;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
-import org.jetbrains.kotlin.compiler.PredefinedAnnotation;
+import org.jetbrains.kotlin.compiler.PredefinedAnnotationManager;
 import org.jetbrains.kotlin.compiler.TranslationException;
 
 import java.util.ArrayList;
@@ -44,11 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
-import static org.jetbrains.kotlin.compiler.AnnotationsUtils.*;
 
-/**
- * Aggregates all the static parts of the context.
- */
 public final class StaticContext {
     @NotNull
     private final JsProgram program;
@@ -71,6 +67,7 @@ public final class StaticContext {
     private final Map<DeclarationDescriptor, JsExpression> qualifierMap = new THashMap<DeclarationDescriptor, JsExpression>();
 
     final Config configuration;
+    final PredefinedAnnotationManager predefinedAnnotationManager;
 
     public StaticContext(@NotNull BindingContext bindingContext, @NotNull Config configuration) {
         this.program = new JsProgram();
@@ -78,6 +75,7 @@ public final class StaticContext {
         this.namer = Namer.newInstance(program.getRootScope());
         this.intrinsics = new Intrinsics();
         this.configuration = configuration;
+        predefinedAnnotationManager = new PredefinedAnnotationManager(configuration.getModule());
     }
 
     public void initTranslators(TranslationContext programContext) {
@@ -159,25 +157,36 @@ public final class StaticContext {
         return name;
     }
 
+    @Nullable
+    private static String getAnnotationStringParameter(@NotNull AnnotationDescriptor annotationDescriptor) {
+        //TODO: this is a quick fix for unsupported default args problem
+        if (annotationDescriptor.getAllValueArguments().isEmpty()) {
+            return null;
+        }
+        CompileTimeConstant<?> constant = annotationDescriptor.getAllValueArguments().values().iterator().next();
+        return constant == null ? null : (String) constant.getValue();
+    }
+
     @NotNull
     public JsNameRef getNameRefForDescriptor(@NotNull DeclarationDescriptor descriptor, @Nullable TranslationContext context) {
         if (descriptor instanceof ConstructorDescriptor) {
             descriptor = ((ConstructorDescriptor) descriptor).getContainingDeclaration();
         }
 
-        for (PredefinedAnnotation annotation : PredefinedAnnotation.values()) {
-            AnnotationDescriptor annotationDescriptor = AnnotationsUtils.getAnnotationByName(descriptor, annotation.getFQName());
-            String name = null;
-            if (annotationDescriptor == null) {
-                ClassDescriptor containingClass = DescriptorUtils.getContainingClass(descriptor);
-                if (containingClass == null || AnnotationsUtils.getAnnotationByName(containingClass, annotation.getFQName()) == null) {
-                    continue;
+        for (AnnotationDescriptor annotation : descriptor.getAnnotations()) {
+            if (predefinedAnnotationManager.isNativeOrLibrary(annotation)) {
+                String name = getAnnotationStringParameter(annotation);
+                return new JsNameRef(name == null ? descriptor.getName().asString() : name);
+            }
+        }
+
+        ClassDescriptor containingClass = DescriptorUtils.getContainingClass(descriptor);
+        if (containingClass != null) {
+            for (AnnotationDescriptor annotation : containingClass.getAnnotations()) {
+                if (predefinedAnnotationManager.isNativeOrLibrary(annotation)) {
+                    return new JsNameRef(descriptor.getName().asString());
                 }
             }
-            else {
-                name = getAnnotationStringParameter(annotationDescriptor);
-            }
-            return new JsNameRef(name == null ? descriptor.getName().asString() : name);
         }
 
         if (isFromNativeModule(descriptor)) {
@@ -247,7 +256,7 @@ public final class StaticContext {
             return null;
         }
 
-        if (isLibraryObject(descriptor)) {
+        if (predefinedAnnotationManager.hasLibrary(descriptor)) {
             return Namer.KOTLIN_OBJECT_NAME_REF;
         }
 
@@ -256,7 +265,7 @@ public final class StaticContext {
             return Namer.KOTLIN_OBJECT_NAME_REF;
         }
 
-        if (isNativeModule(module) || AnnotationsUtils.isNativeByAnnotation(descriptor)) {
+        if (isNativeModule(module) || predefinedAnnotationManager.hasNative(descriptor)) {
             return null;
         }
         return getPackageQualifiedName((NamespaceDescriptor) namespace, module);

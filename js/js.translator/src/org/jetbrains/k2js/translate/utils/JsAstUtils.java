@@ -196,11 +196,12 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsInvocation definePropertyDataDescriptor(@NotNull PropertyDescriptor descriptor,
+    public static JsInvocation definePropertyDataDescriptor(
+            @NotNull PropertyDescriptor descriptor,
             @NotNull JsExpression value,
-            @NotNull TranslationContext context) {
-        return defineProperty(createNameForProperty(descriptor, context), createPropertyDataDescriptor(descriptor, value)
-        );
+            @NotNull TranslationContext context
+    ) {
+        return defineProperty(createNameForProperty(descriptor, context), createPropertyDataDescriptor(descriptor, value, context));
     }
 
     @NotNull
@@ -227,17 +228,22 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsObjectLiteral createPropertyDataDescriptor(@NotNull PropertyDescriptor descriptor, @NotNull JsExpression value) {
-        return createPropertyDataDescriptor(descriptor, descriptor.isVar(), value);
+    public static JsObjectLiteral createPropertyDataDescriptor(
+            @NotNull PropertyDescriptor descriptor,
+            @NotNull JsExpression value,
+            @NotNull TranslationContext context
+    ) {
+        return createPropertyDataDescriptor(descriptor, descriptor.isVar(), value, context);
     }
 
     @NotNull
     public static JsObjectLiteral createPropertyDataDescriptor(
             @NotNull DeclarationDescriptor descriptor,
             boolean writable,
-            @NotNull JsExpression value
+            @NotNull JsExpression value,
+            TranslationContext context
     ) {
-        return createDataDescriptor(value, writable, JsAnnotations.isEnumerable(descriptor));
+        return createDataDescriptor(value, writable, context.predefinedAnnotationManager().isEnumerable(descriptor));
     }
 
     @NotNull
