@@ -23,7 +23,6 @@ import org.jetbrains.jet.jps.model.JpsKotlinCompilerOutputPackagingElement;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.utils.PathUtil;
 import org.jetbrains.jps.incremental.artifacts.ArtifactBuilderTestCase;
-import org.jetbrains.jps.incremental.artifacts.ModuleBuilder;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.model.JpsDummyElement;
 import org.jetbrains.jps.model.JpsModuleRootModificationUtil;
@@ -41,7 +40,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.intellij.util.io.TestFileSystemBuilder.fs;
-import static org.jetbrains.jps.incremental.artifacts.ModuleBuilder.createArtifact;
+import static org.jetbrains.jet.jps.build.ModuleBuilder.createArtifact;
 
 public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     // todo fix AbstractKotlinJpsBuildTestCase.TEST_DATA_PATH
@@ -72,7 +71,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
 
         rebuildAll();
 
-        final String aOutFilename = a.getName() + ".js";
+        String aOutFilename = a.getName() + ".js";
         assertOutput(a.getArtifact(), fs().file(aOutFilename));
         assertOutput(b.getArtifact(), fs().file(b.getName() + ".js"));
 
@@ -139,7 +138,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
     }
 
     private void copyProjectDir() throws IOException {
-        final File dir = new File(System.getProperty("user.home"), "test");
+        File dir = new File(System.getProperty("user.home"), "test");
         FileUtil.delete(dir);
         FileUtil.copyDir(new File(getAbsolutePath(".")), dir);
     }
