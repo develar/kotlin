@@ -77,13 +77,13 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
     public void buildFinished(CompileContext context) {
         DIRTY_MODULES.set(context, null);
 
-        final AtomicReference<Pair<Object, Method>> kotlinContextRef = CONTEXT.get(context);
+        AtomicReference<Pair<Object, Method>> kotlinContextRef = CONTEXT.get(context);
         if (kotlinContextRef == null) {
             return;
         }
 
         CONTEXT.set(context, null);
-        final Pair<Object, Method> kotlinContext = kotlinContextRef.getAndSet(null);
+        Pair<Object, Method> kotlinContext = kotlinContextRef.getAndSet(null);
         if (kotlinContext == null) {
             return;
         }
@@ -100,10 +100,10 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
 
     @Override
     public void build(
-            @NotNull final KotlinBuildTarget target,
+            @NotNull KotlinBuildTarget target,
             @NotNull DirtyFilesHolder<BuildRootDescriptor, KotlinBuildTarget> dirtyFilesHolder,
-            @NotNull final BuildOutputConsumer outputConsumer,
-            @NotNull final CompileContext context
+            @NotNull BuildOutputConsumer outputConsumer,
+            @NotNull CompileContext context
     ) throws ProjectBuildException, IOException {
         final List<File> filesToCompile = new ArrayList<File>();
         dirtyFilesHolder.processDirtyFiles(new FileProcessor<BuildRootDescriptor, KotlinBuildTarget>() {
@@ -137,8 +137,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
 
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
         compilerConfiguration.put(CompilerConfigurationKeys.MODULE_NAME, module.getName());
-        final File outputRoot = JpsKotlinCompilerPaths
-                .getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
+        File outputRoot = JpsKotlinCompilerPaths.getCompilerOutputRoot(target, context.getProjectDescriptor().dataManager.getDataPaths());
         compilerConfiguration.put(CompilerConfigurationKeys.OUTPUT_ROOT, outputRoot);
         // todo configurable
         compilerConfiguration.put(JsCompilerConfigurationKeys.TARGET, "5");

@@ -73,11 +73,9 @@ public class KotlinSourceFileCollector {
     }
 
     public static void logCompiledFiles(Collection<File> filesToCompile, CompileContext context, String builderName) throws IOException {
-        if (context.isMake()) {
-            ProjectBuilderLogger logger = context.getLoggingManager().getProjectBuilderLogger();
-            if (logger.isEnabled()) {
-                logger.logCompiledFiles(filesToCompile, builderName, "Compiling kotlin files:");
-            }
+        ProjectBuilderLogger logger = context.getLoggingManager().getProjectBuilderLogger();
+        if (logger.isEnabled()) {
+            logger.logCompiledFiles(filesToCompile, builderName, "Compiling kotlin files:");
         }
     }
 

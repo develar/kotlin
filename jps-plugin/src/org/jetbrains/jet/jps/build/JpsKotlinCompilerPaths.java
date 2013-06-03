@@ -25,7 +25,7 @@ public class JpsKotlinCompilerPaths {
     private JpsKotlinCompilerPaths() {
     }
 
-    public static File getCompilerOutputRoot(@NotNull KotlinBuildTarget target, final BuildDataPaths dataPaths) {
+    public static File getCompilerOutputRoot(@NotNull KotlinBuildTarget target, BuildDataPaths dataPaths) {
         return new File(dataPaths.getTargetDataRoot(target), "kotlin-output");
     }
 }
