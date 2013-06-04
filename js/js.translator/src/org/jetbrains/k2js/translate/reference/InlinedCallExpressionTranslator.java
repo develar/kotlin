@@ -112,7 +112,7 @@ public final class InlinedCallExpressionTranslator extends AbstractCallExpressio
     private TranslationContext createContextWithAliasForThisExpression(@NotNull TranslationContext contextForInlining) {
         TranslationContext contextWithAliasForThisExpression = contextForInlining;
         SimpleFunctionDescriptor functionDescriptor = getFunctionDescriptor();
-        CallParameters callParameters = new CallParametersResolver(receiver, null, functionDescriptor, resolvedCall, contextForInlining);
+        CallParameters callParameters = new CallParametersResolver(receiver, null, functionDescriptor, resolvedCall, contextForInlining, false);
         JsExpression receiver = callParameters.getReceiver();
         if (receiver != null) {
             contextWithAliasForThisExpression =

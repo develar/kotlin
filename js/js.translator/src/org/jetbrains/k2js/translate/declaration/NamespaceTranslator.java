@@ -89,7 +89,7 @@ public final class NamespaceTranslator {
         for (JetDeclaration declaration : file.getDeclarations()) {
             DeclarationDescriptor declarationDescriptor =
                     BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.DECLARATION_TO_DESCRIPTOR, declaration);
-            if (!context.predefinedAnnotationManager().isNative(declarationDescriptor)) {
+            if (!context.predefinedAnnotationManager().isNativeNotRecursive(declarationDescriptor)) {
                 declaration.accept(visitor, context);
             }
         }

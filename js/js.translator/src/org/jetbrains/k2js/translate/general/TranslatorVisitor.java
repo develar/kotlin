@@ -21,18 +21,16 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
 /**
- * This class is a base class for all visitors.
+ * This class is a base class for all visitors
  */
 public class TranslatorVisitor<T> extends JetVisitor<T, TranslationContext> {
-
     @Override
     @NotNull
     public T visitJetElement(JetElement expression, TranslationContext context) {
         throw new UnsupportedOperationException("Unsupported expression encountered:" + expression.toString());
     }
 
-    public final void traverseContainer(@NotNull JetDeclarationContainer jetClass,
-            @NotNull TranslationContext context) {
+    public final void traverseContainer(@NotNull JetDeclarationContainer jetClass, @NotNull TranslationContext context) {
         for (JetDeclaration declaration : jetClass.getDeclarations()) {
             declaration.accept(this, context);
         }

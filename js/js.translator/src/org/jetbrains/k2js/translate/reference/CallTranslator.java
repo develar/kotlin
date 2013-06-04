@@ -29,8 +29,6 @@ import org.jetbrains.k2js.translate.intrinsic.functions.basic.FunctionIntrinsic;
 import org.jetbrains.k2js.translate.utils.ErrorReportingUtils;
 import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
-import java.util.List;
-
 import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaration;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
@@ -38,35 +36,27 @@ import static org.jetbrains.k2js.translate.utils.JsAstUtils.setQualifier;
 //TODO: write tests on calling backing fields as functions
 public final class CallTranslator extends AbstractTranslator {
     @NotNull
-    private final List<JsExpression> arguments;
-    @NotNull
-    private final ResolvedCall<?> resolvedCall;
+    private final CallInfo callInfo;
     @NotNull
     private final CallableDescriptor descriptor;
-    @NotNull
-    private final CallType callType;
     @NotNull
     private final CallParameters callParameters;
 
     CallTranslator(
-            @NotNull List<JsExpression> arguments,
-            @NotNull ResolvedCall<? extends CallableDescriptor> resolvedCall,
-            @NotNull CallType callType,
+            @NotNull CallInfo callInfo,
             @NotNull CallParameters callParameters,
             @NotNull TranslationContext context
     ) {
         super(context);
 
-        this.arguments = arguments;
-        this.resolvedCall = resolvedCall;
-        this.callType = callType;
-        descriptor = callParameters.getDescriptor();
+        this.callInfo = callInfo;
         this.callParameters = callParameters;
+        descriptor = callParameters.getDescriptor();
     }
 
     @NotNull
     public ResolvedCall<? extends CallableDescriptor> getResolvedCall() {
-        return resolvedCall;
+        return callInfo.getResolvedCall();
     }
 
     @NotNull
@@ -81,10 +71,10 @@ public final class CallTranslator extends AbstractTranslator {
             return result;
         }
         if ((descriptor instanceof ConstructorDescriptor)) {
-            return createConstructorCallExpression(ReferenceTranslator.translateAsFQReference(descriptor, context()));
+            return createConstructorCallExpression(ReferenceTranslator.translateAsFQReference(descriptor, context()), false);
         }
-        if (resolvedCall.getReceiverArgument().exists()) {
-            if (context().isNative(descriptor)) {
+        if (callInfo.getResolvedCall().getReceiverArgument().exists()) {
+            if (callInfo.isNative()) {
                 return methodCall(callParameters.getReceiver());
             }
             return extensionFunctionCall(!(descriptor instanceof ExpressionAsFunctionDescriptor));
@@ -94,7 +84,7 @@ public final class CallTranslator extends AbstractTranslator {
 
     private boolean isExpressionAsFunction() {
         return descriptor instanceof ExpressionAsFunctionDescriptor ||
-               resolvedCall instanceof VariableAsFunctionResolvedCall;
+               callInfo.getResolvedCall() instanceof VariableAsFunctionResolvedCall;
     }
 
     @Nullable
@@ -103,7 +93,7 @@ public final class CallTranslator extends AbstractTranslator {
             try {
                 FunctionIntrinsic intrinsic = context().intrinsics().getFunctionIntrinsics().getIntrinsic((FunctionDescriptor) descriptor);
                 if (intrinsic != null) {
-                    return intrinsic.apply(this, arguments, context());
+                    return intrinsic.apply(this, callInfo.getArguments(), context());
                 }
             }
             catch (RuntimeException e) {
@@ -114,30 +104,32 @@ public final class CallTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    public HasArguments createConstructorCallExpression(@NotNull JsExpression constructorReference) {
+    public HasArguments createConstructorCallExpression(@NotNull JsExpression constructorReference, boolean forceKotlin) {
         if (!context().isEcma5() ||
-            context().predefinedAnnotationManager().isNativeButNotFromKotlin(resolvedCall.getCandidateDescriptor())) {
-            return new JsNew(constructorReference, arguments);
+            !forceKotlin &&
+            (callInfo.isNative() &&
+             context().predefinedAnnotationManager().isNativeButNotFromKotlin(callInfo.getResolvedCall().getCandidateDescriptor()))) {
+            return new JsNew(constructorReference, callInfo.getArguments());
         }
         else {
-            return new JsInvocation(constructorReference, arguments);
+            return new JsInvocation(constructorReference, callInfo.getArguments());
         }
     }
 
     @NotNull
     public JsExpression explicitInvokeCall() {
-        return callType.constructCall(callParameters.getThisObject(), new CallType.CallConstructor() {
+        return callInfo.getCallType().constructCall(callParameters.getThisObject(), new CallType.CallConstructor() {
             @NotNull
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
-                return new JsInvocation(receiver, arguments);
+                return new JsInvocation(receiver, callInfo.getArguments());
             }
         }, context());
     }
 
     @NotNull
     public JsExpression extensionFunctionCall(final boolean useThis) {
-        return callType.constructCall(callParameters.getReceiver(), new CallType.CallConstructor() {
+        return callInfo.getCallType().constructCall(callParameters.getReceiver(), new CallType.CallConstructor() {
             @NotNull
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
@@ -146,14 +138,14 @@ public final class CallTranslator extends AbstractTranslator {
                 if (useThis) {
                     setQualifier(functionReference, getThisObjectOrQualifier());
                 }
-                return new JsInvocation(functionReference, TranslationUtils.generateInvocationArguments(receiver, arguments));
+                return new JsInvocation(functionReference, TranslationUtils.generateInvocationArguments(receiver, callInfo.getArguments()));
             }
         }, context());
     }
 
     @NotNull
     private JsExpression methodCall(@Nullable JsExpression receiver) {
-        return callType.constructCall(receiver, new CallType.CallConstructor() {
+        return callInfo.getCallType().constructCall(receiver, new CallType.CallConstructor() {
             @NotNull
             @Override
             public JsExpression construct(@Nullable JsExpression receiver) {
@@ -166,9 +158,10 @@ public final class CallTranslator extends AbstractTranslator {
                     return directPropertyAccess(qualifiedCallee);
                 }
                 if (callParameters.invokeAsApply()) {
-                    return new JsInvocation(new JsNameRef("apply", qualifiedCallee), TranslationUtils.generateInvocationArguments(receiver == null ? JsLiteral.NULL : receiver, arguments));
+                    return new JsInvocation(new JsNameRef("apply", qualifiedCallee), TranslationUtils
+                            .generateInvocationArguments(receiver == null ? JsLiteral.NULL : receiver, callInfo.getArguments()));
                 }
-                return new JsInvocation(qualifiedCallee, arguments);
+                return new JsInvocation(qualifiedCallee, callInfo.getArguments());
             }
         }, context());
     }
@@ -176,13 +169,13 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression directPropertyAccess(@NotNull JsExpression callee) {
         if (descriptor instanceof PropertyGetterDescriptor) {
-            assert arguments.isEmpty();
+            assert callInfo.getArguments().isEmpty();
             return callee;
         }
         else {
             assert descriptor instanceof PropertySetterDescriptor;
-            assert arguments.size() == 1;
-            return assignment(callee, arguments.get(0));
+            assert callInfo.getArguments().size() == 1;
+            return assignment(callee, callInfo.getArguments().get(0));
         }
     }
 

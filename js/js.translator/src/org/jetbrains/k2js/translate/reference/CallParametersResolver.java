@@ -45,16 +45,18 @@ public final class CallParametersResolver implements CallParameters {
     @NotNull
     private final ResolvedCall<? extends CallableDescriptor> resolvedCall;
 
-    boolean invokeAsApply;
+    private final boolean invokeAsApply;
 
     public CallParametersResolver(@Nullable JsExpression qualifier,
             @Nullable JsExpression callee,
             @NotNull CallableDescriptor descriptor,
             @NotNull ResolvedCall<? extends CallableDescriptor> call,
-            @NotNull TranslationContext context) {
+            @NotNull TranslationContext context,
+            boolean invokeAsApply) {
         this.descriptor = descriptor;
         this.context = context;
         this.resolvedCall = call;
+        this.invokeAsApply = invokeAsApply;
 
         functionReference = callee;
 

@@ -403,18 +403,17 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
 
     @Override
     @NotNull
-    public JsNode visitObjectLiteralExpression(@NotNull JetObjectLiteralExpression expression,
-            @NotNull TranslationContext context) {
+    public JsNode visitObjectLiteralExpression(@NotNull JetObjectLiteralExpression expression, @NotNull TranslationContext context) {
         return ClassTranslator.generateObjectLiteral(expression.getObjectDeclaration(), context);
     }
 
     @Override
     @NotNull
-    public JsNode visitObjectDeclaration(@NotNull JetObjectDeclaration expression,
-            @NotNull TranslationContext context) {
+    public JsNode visitObjectDeclaration(@NotNull JetObjectDeclaration expression, @NotNull TranslationContext context) {
         JetObjectDeclarationName objectDeclarationName = getObjectDeclarationName(expression);
         VariableDescriptor descriptor = (VariableDescriptor) BindingContextUtils.getNotNull(context.bindingContext(),
-                                                                                            BindingContext.DECLARATION_TO_DESCRIPTOR, objectDeclarationName);
+                                                                                            BindingContext.DECLARATION_TO_DESCRIPTOR,
+                                                                                            objectDeclarationName);
         String propertyName = context.getNameForDescriptor(descriptor);
         JsExpression value = ClassTranslator.generateClassCreation(expression, context);
         return newVar(propertyName, value).source(expression);

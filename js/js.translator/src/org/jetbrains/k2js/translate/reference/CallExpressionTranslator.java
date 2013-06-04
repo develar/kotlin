@@ -22,6 +22,7 @@ import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
+import org.jetbrains.jet.lang.descriptors.ConstructorDescriptor;
 import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.psi.JetCallExpression;
 import org.jetbrains.jet.lang.psi.JetExpression;
@@ -46,19 +47,23 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
     private final boolean isNative;
 
     @NotNull
-    public static JsExpression translate(@NotNull JetCallExpression expression,
+    public static JsExpression translate(
+            @NotNull JetCallExpression expression,
             @Nullable JsExpression receiver,
             @NotNull CallType callType,
-            @NotNull TranslationContext context) {
+            @NotNull TranslationContext context
+    ) {
         if (InlinedCallExpressionTranslator.shouldBeInlined(expression, context)) {
             return InlinedCallExpressionTranslator.translate(expression, receiver, callType, context);
         }
         return (new CallExpressionTranslator(expression, receiver, callType, context)).translate();
     }
 
-    private CallExpressionTranslator(@NotNull JetCallExpression expression,
+    private CallExpressionTranslator(
+            @NotNull JetCallExpression expression,
             @Nullable JsExpression receiver,
-            @NotNull CallType callType, @NotNull TranslationContext context) {
+            @NotNull CallType callType, @NotNull TranslationContext context
+    ) {
         super(expression, receiver, callType, context);
         isNative = context.isNative(resolvedCall.getCandidateDescriptor());
     }
@@ -107,12 +112,29 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
 
     private void translateArguments(CallBuilder callBuilder) {
         List<ValueParameterDescriptor> valueParameters = resolvedCall.getResultingDescriptor().getValueParameters();
+        callBuilder.isNative(isNative);
         if (valueParameters.isEmpty()) {
             return;
         }
 
         PredefinedAnnotationManager annotationManager = context().predefinedAnnotationManager();
-        boolean funOptionsArg = isNative && annotationManager.hasOptionsArg(resolvedCall.getCandidateDescriptor());
+        boolean funOptionsArg;
+        boolean forceAnyOptionsObject;
+        if (isNative) {
+            CallableDescriptor descriptor = resolvedCall.getCandidateDescriptor();
+            forceAnyOptionsObject = descriptor instanceof ConstructorDescriptor;
+            if (forceAnyOptionsObject) {
+                funOptionsArg = annotationManager.hasOptionsArg(((ConstructorDescriptor) descriptor).getContainingDeclaration());
+            }
+            else {
+                funOptionsArg = annotationManager.hasOptionsArg(descriptor);
+            }
+        }
+        else {
+            funOptionsArg = false;
+            forceAnyOptionsObject = false;
+        }
+
         List<JsPropertyInitializer> optionsObject = funOptionsArg ? new SmartList<JsPropertyInitializer>() : null;
 
         List<JsExpression> result = JsAstUtils.newList(valueParameters.size());
@@ -127,7 +149,10 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
             }
 
             boolean forceOptionsObject;
-            if (funOptionsArg) {
+            if (forceAnyOptionsObject) {
+                forceOptionsObject = true;
+            }
+            else if (funOptionsArg) {
                 if (parameterDescriptor.hasDefaultValue()) {
                     // last function is not property of options object
                     forceOptionsObject = valueArgumentsByIndex.size() != (parameterDescriptor.getIndex() + 1) ||

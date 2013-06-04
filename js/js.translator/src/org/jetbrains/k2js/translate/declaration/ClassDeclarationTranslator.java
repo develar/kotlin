@@ -212,7 +212,10 @@ public final class ClassDeclarationTranslator extends AbstractTranslator {
         ClassDescriptor descriptor = getClassDescriptor(context().bindingContext(), declaration);
         JsExpression value;
         if (descriptor.getModality() == Modality.FINAL) {
-            value = new ClassTranslator(declaration, aliasingMap, context).translate(context);
+            if (context.predefinedAnnotationManager().hasOptionsArg(descriptor)) {
+                return null;
+            }
+            value = new ClassTranslator(declaration, descriptor, aliasingMap, context).translate(context);
         }
         else {
             String label = createNameForClass(descriptor);

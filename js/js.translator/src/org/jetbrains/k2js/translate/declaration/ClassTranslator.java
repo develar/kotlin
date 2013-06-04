@@ -45,7 +45,7 @@ import static org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator.
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 
 /**
- * Generates a definition of a single class.
+ * Generates a definition of a single class
  */
 public final class ClassTranslator extends AbstractTranslator {
     @NotNull
@@ -72,13 +72,14 @@ public final class ClassTranslator extends AbstractTranslator {
 
     @NotNull
     public static JsExpression generateObjectLiteral(
-            @NotNull JetObjectDeclaration objectDeclaration, @NotNull ClassDescriptor descriptor,
+            @NotNull JetObjectDeclaration objectDeclaration,
+            @NotNull ClassDescriptor descriptor,
             @NotNull TranslationContext context
     ) {
         return new ClassTranslator(objectDeclaration, descriptor, null, context).translateObjectLiteralExpression();
     }
 
-    ClassTranslator(
+    private ClassTranslator(
             @NotNull JetClassOrObject classDeclaration,
             @Nullable ClassAliasingMap aliasingMap,
             @NotNull TranslationContext context

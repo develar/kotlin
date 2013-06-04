@@ -74,7 +74,7 @@ public class PredefinedAnnotationManager {
         return nativeAnnotation.equals(annotation.getType().getConstructor().getDeclarationDescriptor());
     }
 
-    public boolean isNative(@NotNull DeclarationDescriptor declaration) {
+    public boolean isNativeNotRecursive(@NotNull DeclarationDescriptor declaration) {
         for (AnnotationDescriptor annotation : declaration.getAnnotations()) {
             if (isNative(annotation)) {
                 return true;
