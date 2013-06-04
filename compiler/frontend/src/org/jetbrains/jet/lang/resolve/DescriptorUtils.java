@@ -593,4 +593,22 @@ public class DescriptorUtils {
         }
         return allSuperclasses;
     }
+
+    @Nullable
+    public static ValueParameterDescriptor getValueParameterDescriptorForAnnotationParameter(
+            Name argumentName,
+            ClassDescriptor classDescriptor
+    ) {
+        Collection<ConstructorDescriptor> constructors = classDescriptor.getConstructors();
+        assert constructors.size() == 1 : "Annotation class descriptor must have only one constructor";
+        List<ValueParameterDescriptor> valueParameters = constructors.iterator().next().getValueParameters();
+
+        for (ValueParameterDescriptor parameter : valueParameters) {
+            Name parameterName = parameter.getName();
+            if (parameterName.equals(argumentName)) {
+                return parameter;
+            }
+        }
+        return null;
+    }
 }

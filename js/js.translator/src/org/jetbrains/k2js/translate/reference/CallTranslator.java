@@ -116,8 +116,7 @@ public final class CallTranslator extends AbstractTranslator {
     @NotNull
     public HasArguments createConstructorCallExpression(@NotNull JsExpression constructorReference) {
         if (!context().isEcma5() ||
-            (context().isNative(resolvedCall.getCandidateDescriptor()) && !context().predefinedAnnotationManager()
-                    .hasLibrary(resolvedCall.getCandidateDescriptor()))) {
+            context().predefinedAnnotationManager().isNativeButNotFromKotlin(resolvedCall.getCandidateDescriptor())) {
             return new JsNew(constructorReference, arguments);
         }
         else {

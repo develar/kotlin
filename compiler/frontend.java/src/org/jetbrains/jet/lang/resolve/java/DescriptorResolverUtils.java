@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.constants.StringValue;
 import org.jetbrains.jet.lang.resolve.java.kt.PsiAnnotationWithFlags;
 import org.jetbrains.jet.lang.resolve.java.wrapper.PsiClassWrapper;
@@ -34,7 +35,6 @@ import org.jetbrains.jet.lang.types.JetType;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 import static com.intellij.psi.util.PsiFormatUtilBase.*;
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassObjectName;
@@ -104,24 +104,6 @@ public final class DescriptorResolverUtils {
         return JavaDescriptorResolver.PACKAGE_VISIBILITY;
     }
 
-    @Nullable
-    public static ValueParameterDescriptor getValueParameterDescriptorForAnnotationParameter(
-            Name argumentName,
-            ClassDescriptor classDescriptor
-    ) {
-        Collection<ConstructorDescriptor> constructors = classDescriptor.getConstructors();
-        assert constructors.size() == 1 : "Annotation class descriptor must have only one constructor";
-        List<ValueParameterDescriptor> valueParameters = constructors.iterator().next().getValueParameters();
-
-        for (ValueParameterDescriptor parameter : valueParameters) {
-            Name parameterName = parameter.getName();
-            if (parameterName.equals(argumentName)) {
-                return parameter;
-            }
-        }
-        return null;
-    }
-
     public static Visibility getConstructorVisibility(ClassDescriptor classDescriptor) {
         Visibility containingClassVisibility = classDescriptor.getVisibility();
         if (containingClassVisibility == JavaDescriptorResolver.PROTECTED_STATIC_VISIBILITY) {
@@ -147,7 +129,8 @@ public final class DescriptorResolverUtils {
     public static AnnotationDescriptor getAnnotationDescriptorForJavaLangDeprecated(ClassDescriptor classDescriptor) {
         AnnotationDescriptor annotationDescriptor = new AnnotationDescriptor();
         annotationDescriptor.setAnnotationType(classDescriptor.getDefaultType());
-        ValueParameterDescriptor value = getValueParameterDescriptorForAnnotationParameter(Name.identifier("value"), classDescriptor);
+        ValueParameterDescriptor value = DescriptorUtils
+                .getValueParameterDescriptorForAnnotationParameter(Name.identifier("value"), classDescriptor);
         assert value != null : "jet.deprecated must have one parameter called value";
         annotationDescriptor.setValueArgument(value, new StringValue("Deprecated in Java"));
         return annotationDescriptor;

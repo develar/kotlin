@@ -1,7 +1,6 @@
 package java.lang
 
-native("Error")
-open public class Exception(message: jet.String? = null): Throwable() {
+open native("Error") public class Exception(message: jet.String? = null): Throwable() {
     public val stack: jet.String
 }
 
@@ -11,16 +10,13 @@ public class IllegalStateException(message: jet.String? = null): Exception()
 public class UnsupportedOperationException(message: jet.String? = null): Exception()
 public class NumberFormatException(message: jet.String? = null): Exception()
 
-library("RangeError")
-public class IndexOutOfBoundsException(message: jet.String? = null): Exception(message)
+public native("RangeError") class IndexOutOfBoundsException(message: jet.String? = null): Exception(message)
 
-library
-public trait Runnable {
+public native(qualifier = "Kotlin") trait Runnable {
     public open fun run(): Unit;
 }
 
-library
-public trait Comparable<T> {
+public native(qualifier = "Kotlin") trait Comparable<T> {
     public fun compareTo(that: T): Int
 }
 

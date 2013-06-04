@@ -39,7 +39,8 @@ public final class Namer {
     private static final String BACKING_FIELD_PREFIX = "$";
     private static final String SUPER_METHOD_NAME = "super_init";
 
-    public static final JsNameRef KOTLIN_OBJECT_NAME_REF = new JsNameRef("Kotlin");
+    public static final String KOTLIN_OBJECT_NAME = "Kotlin";
+    public static final JsNameRef KOTLIN_OBJECT_NAME_REF = new JsNameRef(KOTLIN_OBJECT_NAME);
     private static final String RECEIVER_PARAMETER_NAME = "$receiver";
     public static final String CLASSES_OBJECT_NAME = "_c";
     public static final JsNameRef THROW_NPE_FUN_NAME_REF = new JsNameRef("throwNPE", KOTLIN_OBJECT_NAME_REF);

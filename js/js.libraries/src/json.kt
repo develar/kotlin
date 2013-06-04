@@ -11,23 +11,20 @@ public open class Json() {
 //library("jsonFromTuples")
 //public fun json2(pairs: Array<Pair<String, Any?>>): Json = js.noImpl
 
-library("jsonAddProperties")
-public fun Json.add(other: Json): Json
+public native("jsonAddProperties", "Kotlin") fun Json.add(other: Json): Json
 
-public class JSON {
-    public class object {
-        public fun stringify(o: Any?): String
+public object JSON {
+    public fun stringify(o: Any?): String
 
-        public fun stringify(o: Any?, replacer: ((key: String, value: Any?)->Unit)?, space: Int? = null): String
+    public fun stringify(o: Any?, replacer: ((key: String, value: Any?)->Unit)?, space: Int? = null): String
 
-        public fun stringify(o: Any?, replacer: ((key: String, value: Any?)->Unit)?, space: String? = null): String
+    public fun stringify(o: Any?, replacer: ((key: String, value: Any?)->Unit)?, space: String? = null): String
 
-        public fun stringify(o: Any?, replacer: Array<String>?, space: Int?): String
+    public fun stringify(o: Any?, replacer: Array<String>?, space: Int?): String
 
-        public fun stringify(o: Any?, replacer: Array<String>?, space: String? = null): String
+    public fun stringify(o: Any?, replacer: Array<String>?, space: String? = null): String
 
-        public fun parse<T>(text: String, reviver: ((key: String, value: Any?)->Unit)? = null): T
-    }
+    public fun parse<T>(text: String, reviver: ((key: String, value: Any?)->Unit)? = null): T
 }
 
 public trait JsonSerializable {

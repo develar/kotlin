@@ -21,9 +21,9 @@ import com.intellij.psi.*;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
+import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.constants.*;
 import org.jetbrains.jet.lang.resolve.constants.StringValue;
-import org.jetbrains.jet.lang.resolve.java.DescriptorResolverUtils;
 import org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -100,7 +100,7 @@ public final class JavaCompileTimeConstResolver {
 
         //TODO: nullability issues
         ValueParameterDescriptor valueParameterDescriptor =
-                DescriptorResolverUtils.getValueParameterDescriptorForAnnotationParameter(valueName, classDescriptor);
+                DescriptorUtils.getValueParameterDescriptorForAnnotationParameter(valueName, classDescriptor);
         if (valueParameterDescriptor == null) {
             return null;
         }

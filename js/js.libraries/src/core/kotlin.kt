@@ -2,25 +2,24 @@ package kotlin
 
 import java.util.*
 
-library("comparator")
-public fun comparator<T>(f : (T, T) -> Int): Comparator<T> = js.noImpl
+public native("comparator", "Kotlin") fun comparator<T>(f: (T, T) -> Int): Comparator<T>
 
 public fun <T> array(vararg value: T): Array<T>
 
 // "constructors" for primitive types array
-public fun doubleArray(vararg content : Double): DoubleArray    = js.noImpl
+public fun doubleArray(vararg content: Double): DoubleArray
 
-public fun floatArray(vararg content : Float): FloatArray       = js.noImpl
+public fun floatArray(vararg content: Float): FloatArray
 
-public fun longArray(vararg content : Long): LongArray          = js.noImpl
+public fun longArray(vararg content: Long): LongArray
 
-public fun intArray(vararg content : Int): IntArray             = js.noImpl
+public fun intArray(vararg content: Int): IntArray
 
-public fun charArray(vararg content : Char): CharArray          = js.noImpl
+public fun charArray(vararg content: Char): CharArray
 
-public fun shortArray(vararg content : Short): ShortArray       = js.noImpl
+public fun shortArray(vararg content: Short): ShortArray
 
-public fun byteArray(vararg content : Byte): ByteArray          = js.noImpl
+public fun byteArray(vararg content: Byte): ByteArray
 
-public fun booleanArray(vararg content : Boolean): BooleanArray = js.noImpl
+public fun booleanArray(vararg content: Boolean): BooleanArray
 

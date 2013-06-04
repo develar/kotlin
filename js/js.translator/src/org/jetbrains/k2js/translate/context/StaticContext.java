@@ -25,7 +25,6 @@ import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
 import org.jetbrains.jet.lang.descriptors.impl.LocalVariableDescriptor;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lang.types.lang.PrimitiveType;
@@ -157,16 +156,6 @@ public final class StaticContext {
         return name;
     }
 
-    @Nullable
-    private static String getAnnotationStringParameter(@NotNull AnnotationDescriptor annotationDescriptor) {
-        //TODO: this is a quick fix for unsupported default args problem
-        if (annotationDescriptor.getAllValueArguments().isEmpty()) {
-            return null;
-        }
-        CompileTimeConstant<?> constant = annotationDescriptor.getAllValueArguments().values().iterator().next();
-        return constant == null ? null : (String) constant.getValue();
-    }
-
     @NotNull
     public JsNameRef getNameRefForDescriptor(@NotNull DeclarationDescriptor descriptor, @Nullable TranslationContext context) {
         if (descriptor instanceof ConstructorDescriptor) {
@@ -174,8 +163,8 @@ public final class StaticContext {
         }
 
         for (AnnotationDescriptor annotation : descriptor.getAnnotations()) {
-            if (predefinedAnnotationManager.isNativeOrLibrary(annotation)) {
-                String name = getAnnotationStringParameter(annotation);
+            if (predefinedAnnotationManager.isNative(annotation)) {
+                String name = predefinedAnnotationManager.getNativeName(annotation);
                 return new JsNameRef(name == null ? descriptor.getName().asString() : name);
             }
         }
@@ -183,7 +172,7 @@ public final class StaticContext {
         ClassDescriptor containingClass = DescriptorUtils.getContainingClass(descriptor);
         if (containingClass != null) {
             for (AnnotationDescriptor annotation : containingClass.getAnnotations()) {
-                if (predefinedAnnotationManager.isNativeOrLibrary(annotation)) {
+                if (predefinedAnnotationManager.isNative(annotation)) {
                     return new JsNameRef(descriptor.getName().asString());
                 }
             }
@@ -256,8 +245,13 @@ public final class StaticContext {
             return null;
         }
 
-        if (predefinedAnnotationManager.hasLibrary(descriptor)) {
-            return Namer.KOTLIN_OBJECT_NAME_REF;
+        AnnotationDescriptor nativeAnnotation = predefinedAnnotationManager.getNative(descriptor);
+        if (nativeAnnotation != null) {
+            String qualifier = predefinedAnnotationManager.getNativeQualifier(nativeAnnotation);
+            if (qualifier == null) {
+                return null;
+            }
+            return qualifier.equals(Namer.KOTLIN_OBJECT_NAME) ? Namer.KOTLIN_OBJECT_NAME_REF : new JsNameRef(qualifier);
         }
 
         ModuleDescriptor module = DescriptorUtils.getModuleDescriptor(namespace);
