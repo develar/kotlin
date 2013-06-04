@@ -39,24 +39,24 @@ public final class CallBuilder implements CallInfo {
     private boolean invokeAsApply;
     private ThreeState isNative = ThreeState.UNSURE;
 
-    public static CallBuilder build(@NotNull TranslationContext context) {
-        return new CallBuilder(context);
-    }
-
     @NotNull
     private final TranslationContext context;
     @Nullable
-    private /*var*/ JsExpression receiver = null;
+    private JsExpression receiver;
     @NotNull
     private List<JsExpression> args = Collections.emptyList();
     @NotNull
-    private /*var*/ CallType callType = CallType.NORMAL;
+    private CallType callType = CallType.NORMAL;
 
     private ResolvedCall<?> resolvedCall;
     @Nullable
-    private  /*var*/ CallableDescriptor descriptor = null;
+    private CallableDescriptor descriptor;
     @Nullable
-    private /*var*/ JsExpression callee = null;
+    private JsExpression callee;
+
+    public static CallBuilder build(@NotNull TranslationContext context) {
+        return new CallBuilder(context);
+    }
 
     private CallBuilder(@NotNull TranslationContext context) {
         this.context = context;
@@ -115,12 +115,6 @@ public final class CallBuilder implements CallInfo {
     }
 
     @NotNull
-    public CallBuilder isNative(boolean value) {
-        isNative = value ? ThreeState.YES : ThreeState.NO;
-        return this;
-    }
-
-    @NotNull
     @Override
     public List<JsExpression> getArguments() {
         return args;
@@ -136,11 +130,6 @@ public final class CallBuilder implements CallInfo {
     @Override
     public CallType getCallType() {
         return callType;
-    }
-
-    @Override
-    public boolean isOptionsObjectConstructor() {
-        return false;
     }
 
     @Override

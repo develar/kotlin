@@ -17,6 +17,7 @@
 package org.jetbrains.k2js.translate.reference;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsObjectLiteral;
 import com.google.dart.compiler.backend.js.ast.JsPropertyInitializer;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +45,7 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getCallee;
 
 public final class CallExpressionTranslator extends AbstractCallExpressionTranslator {
-    private final boolean isNative;
+    private boolean isNative;
 
     @NotNull
     public static JsExpression translate(
@@ -56,7 +57,7 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
         if (InlinedCallExpressionTranslator.shouldBeInlined(expression, context)) {
             return InlinedCallExpressionTranslator.translate(expression, receiver, callType, context);
         }
-        return (new CallExpressionTranslator(expression, receiver, callType, context)).translate();
+        return new CallExpressionTranslator(expression, receiver, callType, context).translate();
     }
 
     private CallExpressionTranslator(
@@ -65,7 +66,6 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
             @NotNull CallType callType, @NotNull TranslationContext context
     ) {
         super(expression, receiver, callType, context);
-        isNative = context.isNative(resolvedCall.getCandidateDescriptor());
     }
 
     @NotNull
@@ -75,46 +75,21 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
                 .callee(getCalleeExpression())
                 .resolvedCall(getResolvedCall())
                 .type(callType);
-        translateArguments(callBuilder);
-        return callBuilder.translate();
+        isNative = callBuilder.isNative();
+
+        List<JsPropertyInitializer> optionsConstructor = translateArguments(callBuilder);
+        if (optionsConstructor == null) {
+            return callBuilder.translate();
+        }
+        else {
+            return new JsObjectLiteral(optionsConstructor);
+        }
     }
 
-    @NotNull
-    private ResolvedCall<?> getResolvedCall() {
-        if (resolvedCall instanceof VariableAsFunctionResolvedCall) {
-            return ((VariableAsFunctionResolvedCall) resolvedCall).getFunctionCall();
-        }
-        return resolvedCall;
-    }
-
-    @Nullable
-    private JsExpression getCalleeExpression() {
-        CallableDescriptor candidateDescriptor = resolvedCall.getCandidateDescriptor();
-        if (candidateDescriptor instanceof ExpressionAsFunctionDescriptor) {
-            return Translation.translateAsExpression(getCallee(expression), context());
-        }
-        if (resolvedCall instanceof VariableAsFunctionResolvedCall) {
-            return translateVariableForVariableAsFunctionResolvedCall();
-        }
-        return null;
-    }
-
-    @NotNull
-    //TODO: looks hacky and should be modified soon
-    private JsExpression translateVariableForVariableAsFunctionResolvedCall() {
-        JetExpression callee = PsiUtils.getCallee(expression);
-        if (callee instanceof JetSimpleNameExpression) {
-            return ReferenceTranslator.getAccessTranslator((JetSimpleNameExpression) callee, receiver, context()).translateAsGet();
-        }
-        assert receiver != null;
-        return Translation.translateAsExpression(callee, context());
-    }
-
-    private void translateArguments(CallBuilder callBuilder) {
+    private List<JsPropertyInitializer> translateArguments(CallBuilder callBuilder) {
         List<ValueParameterDescriptor> valueParameters = resolvedCall.getResultingDescriptor().getValueParameters();
-        callBuilder.isNative(isNative);
         if (valueParameters.isEmpty()) {
-            return;
+            return null;
         }
 
         PredefinedAnnotationManager annotationManager = context().predefinedAnnotationManager();
@@ -122,12 +97,13 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
         boolean forceAnyOptionsObject;
         if (isNative) {
             CallableDescriptor descriptor = resolvedCall.getCandidateDescriptor();
-            forceAnyOptionsObject = descriptor instanceof ConstructorDescriptor;
-            if (forceAnyOptionsObject) {
+            if (descriptor instanceof ConstructorDescriptor) {
                 funOptionsArg = annotationManager.hasOptionsArg(((ConstructorDescriptor) descriptor).getContainingDeclaration());
+                forceAnyOptionsObject = funOptionsArg;
             }
             else {
                 funOptionsArg = annotationManager.hasOptionsArg(descriptor);
+                forceAnyOptionsObject = false;
             }
         }
         else {
@@ -137,7 +113,7 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
 
         List<JsPropertyInitializer> optionsObject = funOptionsArg ? new SmartList<JsPropertyInitializer>() : null;
 
-        List<JsExpression> result = JsAstUtils.newList(valueParameters.size());
+        List<JsExpression> result = forceAnyOptionsObject ? null : JsAstUtils.<JsExpression>newList(valueParameters.size());
         List<ResolvedValueArgument> valueArgumentsByIndex = resolvedCall.getValueArgumentsByIndex();
         for (ValueParameterDescriptor parameterDescriptor : valueParameters) {
             ResolvedValueArgument argument = valueArgumentsByIndex.get(parameterDescriptor.getIndex());
@@ -174,7 +150,44 @@ public final class CallExpressionTranslator extends AbstractCallExpressionTransl
             }
         }
 
-        callBuilder.args(result);
+        if (forceAnyOptionsObject) {
+            return optionsObject;
+        }
+        else {
+            callBuilder.args(result);
+            return null;
+        }
+    }
+
+    @NotNull
+    private ResolvedCall<?> getResolvedCall() {
+        if (resolvedCall instanceof VariableAsFunctionResolvedCall) {
+            return ((VariableAsFunctionResolvedCall) resolvedCall).getFunctionCall();
+        }
+        return resolvedCall;
+    }
+
+    @Nullable
+    private JsExpression getCalleeExpression() {
+        CallableDescriptor candidateDescriptor = resolvedCall.getCandidateDescriptor();
+        if (candidateDescriptor instanceof ExpressionAsFunctionDescriptor) {
+            return Translation.translateAsExpression(getCallee(expression), context());
+        }
+        if (resolvedCall instanceof VariableAsFunctionResolvedCall) {
+            return translateVariableForVariableAsFunctionResolvedCall();
+        }
+        return null;
+    }
+
+    @NotNull
+    //TODO: looks hacky and should be modified soon
+    private JsExpression translateVariableForVariableAsFunctionResolvedCall() {
+        JetExpression callee = PsiUtils.getCallee(expression);
+        if (callee instanceof JetSimpleNameExpression) {
+            return ReferenceTranslator.getAccessTranslator((JetSimpleNameExpression) callee, receiver, context()).translateAsGet();
+        }
+        assert receiver != null;
+        return Translation.translateAsExpression(callee, context());
     }
 
     @Override

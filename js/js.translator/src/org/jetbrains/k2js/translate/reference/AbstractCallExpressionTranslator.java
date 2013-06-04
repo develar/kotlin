@@ -60,15 +60,18 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
 
     protected boolean translateSingleArgument(
             @NotNull ResolvedValueArgument argument,
-            @NotNull List<JsExpression> result,
+            @Nullable List<JsExpression> result,
             @Nullable List<JsPropertyInitializer> optionsObject,
             @Nullable ValueParameterDescriptor forceOptionsObject
     ) {
         if (argument instanceof VarargValueArgument) {
+            assert result != null;
             return translateVarargArgument(argument.getArguments(), result);
         }
         else if (argument instanceof DefaultValueArgument) {
-            result.add(JsLiteral.UNDEFINED);
+            if (result != null && forceOptionsObject == null) {
+                result.add(JsLiteral.UNDEFINED);
+            }
         }
         else {
             ValueArgument valueArgument = ((ExpressionValueArgument) argument).getValueArgument();
@@ -80,13 +83,14 @@ public abstract class AbstractCallExpressionTranslator extends AbstractTranslato
                 String name = getArgumentName(valueArgument, forceOptionsObject);
                 if (name != null) {
                     // add options object as soon as first named arg added
-                    if (optionsObject.isEmpty()) {
+                    if (result != null && optionsObject.isEmpty()) {
                         result.add(new JsObjectLiteral(optionsObject));
                     }
                     optionsObject.add(new JsPropertyInitializer(name, value));
                     return false;
                 }
             }
+            assert result != null;
             result.add(value);
         }
         return false;

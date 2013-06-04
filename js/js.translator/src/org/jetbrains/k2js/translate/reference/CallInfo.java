@@ -17,6 +17,4 @@ public interface CallInfo {
     CallType getCallType();
 
     boolean isNative();
-
-    boolean isOptionsObjectConstructor();
 }
