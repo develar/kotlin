@@ -1,16 +1,21 @@
 <project name="Update Dependencies" default="update">
+    <property name="jb.buildserver.build.id" value="1864599"/>
+    <property name="public.buildserver.build.id" value="82629"/>
+    <property name="idea.archive.name" value="ideaIC-129.SNAPSHOT.win.zip"/>
+
     <property name="idea.sdk.fetch.needed" value="true"/>
 
     <target name="update" depends="fetch-third-party">
         <execute_update
-            base.url="http://teamcity.jetbrains.com/guestAuth/repository/download/bt410/80485:id"
-            build.zip="ideaIC-129.SNAPSHOT.win.zip"
+            base.url="http://teamcity.jetbrains.com/guestAuth/repository/download/bt410/${public.buildserver.build.id}:id"
+            build.zip="${idea.archive.name}"
         />
     </target>
+
     <target name="jb_update" depends="fetch-third-party">
         <execute_update
-            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt662/1898904:id"
-            build.zip="ideaIC-130.SNAPSHOT.win.zip"
+            base.url="http://buildserver.labs.intellij.net/guestAuth/repository/download/bt3498/${jb.buildserver.build.id}:id"
+            build.zip="${idea.archive.name}"
         />
     </target>
 
@@ -113,9 +118,7 @@
         -->
 
         <!-- Guava 12 sources-->
-        <get src="http://repository.jetbrains.com/remote-repos/com/google/guava/guava/12.0/guava-12.0-sources.jar"
-             dest="dependencies/download/guava-12.0-sources.jar" usetimestamp="true"/>
-        <copy file="dependencies/download/guava-12.0-sources.jar" tofile="dependencies/guava-12.0-sources.jar" overwrite="true"/>
+        <get-maven-library prefix="com/google/guava" lib="guava" version="12.0" bin="false"/>
 
         <!-- ASM 4 -->
         <get-asm4-and-rename-packages/>
@@ -123,17 +126,9 @@
 
     <macrodef name="get-asm4-and-rename-packages">
         <sequential>
-            <!-- Download vanilla ASM 4.0 & unzip the needed jars and sources -->
-            <get-maven-library prefix="org/ow2/asm" lib="asm-debug-all" version="4.0"/>
-
-            <!-- Rename packages in the jars -->
-            <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${basedir}/dependencies/jarjar.jar"/>
-
-            <jarjar jarfile="dependencies/jetbrains-asm-debug-all-4.0.jar">
-                <zipfileset src="dependencies/download/asm-debug-all-4.0.jar"/>
-
-                <rule pattern="org.objectweb.asm.**" result="org.jetbrains.asm4.@1"/>
-            </jarjar>
+            <!-- Download vanilla ASM 4.0 & unzip the needed jars and sources from idea13 build (with debug info and patched for java 8) -->
+            <get src="http://teamcity.jetbrains.com/guestAuth/repository/download/bt410/83470:id/jps/asm4-all.jar" dest="dependencies/jetbrains-asm-debug-all-4.0.jar" usetimestamp="true"/>
+            <get-maven-library prefix="org/ow2/asm" lib="asm-debug-all" version="4.0" bin="false"/>
 
             <!-- Rename packages in the sources -->
             <delete dir="dependencies/download/asm-src" failonerror="false"/>
@@ -183,7 +178,7 @@
                     <get src="@{base.url.for.core}/core/intellij-core.jar" dest="${core}/intellij-core.jar" usetimestamp="true"/>
                     <get src="@{base.url}/core/annotations.jar" dest="${core}/annotations.jar" usetimestamp="true"/>
                     <get src="@{base.url}/core/cli-parser-1.1.jar" dest="${core}/cli-parser-1.1.jar" usetimestamp="true"/>
-                    <get src="@{base.url}/core/guava-14.0.1.jar" dest="${core}/guava-14.0.1.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/core/guava-12.0.jar" dest="${core}/guava-12.0.jar" usetimestamp="true"/>
                     <get src="@{base.url}/core/picocontainer.jar" dest="${core}/picocontainer.jar" usetimestamp="true"/>
                     <get src="@{base.url}/core/trove4j.jar" dest="${core}/trove4j.jar" usetimestamp="true"/>
 
@@ -197,7 +192,7 @@
                     <get src="@{base.url}/jps/jps-model.jar" dest="${jps}/jps-model.jar" usetimestamp="true"/>
                     <get src="@{base.url}/jps/log4j.jar" dest="${jps}/log4j.jar" usetimestamp="true"/>
                     <get src="@{base.url}/jps/nanoxml-2.2.3.jar" dest="${jps}/nanoxml-2.2.3.jar" usetimestamp="true"/>
-                    <get src="@{base.url}/jps/protobuf-2.5.0.jar" dest="${jps}/protobuf-2.4.1.jar" usetimestamp="true"/>
+                    <get src="@{base.url}/jps/protobuf-2.4.1.jar" dest="${jps}/protobuf-2.4.1.jar" usetimestamp="true"/>
                     <get src="@{base.url}/jps/trove4j.jar" dest="${jps}/trove4j.jar" usetimestamp="true"/>
                     <get src="@{base.url}/jps/ui-designer-jps-plugin.jar" dest="${jps}/ui-designer-jps-plugin.jar" usetimestamp="true"/>
                     <get src="@{base.url}/jps/util.jar" dest="${jps}/util.jar" usetimestamp="true"/>
