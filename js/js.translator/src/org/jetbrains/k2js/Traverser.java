@@ -16,9 +16,9 @@ public class Traverser {
     }
 
     public static void addPsiFile(
-            final Collection<JetFile> result,
-            final PsiManager psiManager,
-            final VirtualFile file
+            Collection<JetFile> result,
+            PsiManager psiManager,
+            VirtualFile file
     ) {
         PsiFile psiFile = psiManager.findFile(file);
         assert psiFile != null;

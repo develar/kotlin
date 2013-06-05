@@ -16,35 +16,25 @@
 
 package org.jetbrains.jet.plugin.framework;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ProjectRootModificationTracker;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Key;
-import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.CachedValue;
 import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
-import com.intellij.util.PathUtil;
 import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.plugin.versions.KotlinRuntimeLibraryUtil;
-import org.jetbrains.k2js.config.EcmaVersion;
-
-import java.util.List;
-import java.util.Set;
 
 public class KotlinFrameworkDetector {
     private static final Key<CachedValue<Boolean>> IS_KOTLIN_JS_MODULE = Key.create("IS_KOTLIN_JS_MODULE");
@@ -78,48 +68,16 @@ public class KotlinFrameworkDetector {
         return result.getValue();
     }
 
-    public static Pair<List<String>, String> getLibLocationAndTargetForProject(final Module module) {
-        final Set<String> pathsToJSLib = Sets.newHashSet();
-
-        ApplicationManager.getApplication().runReadAction(new Runnable() {
-            @Override
-            public void run() {
-                ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
-                    @Override
-                    public boolean process(Library library) {
-                        if (LibraryPresentationProviderUtil.isDetected(JsHeaderLibraryPresentationProvider.getInstance(), library)) {
-                            for (VirtualFile file : library.getRootProvider().getFiles(OrderRootType.SOURCES)) {
-                                String path = PathUtil.getLocalPath(PathUtil.getLocalFile(file));
-                                if (path != null) {
-                                    pathsToJSLib.add(path);
-                                }
-                                else {
-                                    assert !file.isValid() : "Path is expected to be null only for invalid file: " + file;
-                                }
-                            }
-                        }
-
-                        return true;
-                    }
-                });
-            }
-        });
-
-        return Pair.<List<String>, String>create(Lists.newArrayList(pathsToJSLib), EcmaVersion.defaultVersion().toString());
-    }
-
-
     @Nullable
     private static Library getJSStandardLibrary(final Module module) {
         return ApplicationManager.getApplication().runReadAction(new Computable<Library>() {
             @Override
             public Library compute() {
                 final Ref<Library> jsLibrary = Ref.create();
-
                 ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
                     @Override
                     public boolean process(Library library) {
-                        if ((JsExternalizationConstants.JS_LIBRARY_NAME.equals(library.getName()) && library.getFiles(OrderRootType.SOURCES).length > 0) || LibraryPresentationProviderUtil.isDetected(JSLibraryStdPresentationProvider.getInstance(), library)) {
+                        if (JsExternalizationConstants.JS_LIBRARY_NAME.equals(library.getName())) {
                             jsLibrary.set(library);
                             return false;
                         }

@@ -65,14 +65,11 @@ class JSDeclarationsCacheProvider extends DeclarationsCacheProvider {
                     }
 
                     ModuleInfo info;
-                    if (anyJsModule != null) {
-                        ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
-                        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, JSAnalyzerFacadeForIDEA.getLibraryFiles(project,
-                                                                                                                         anyJsModule), false);
-                        info = JSAnalyzerFacadeForIDEA.createModuleInfo(project, libraryModuleConfiguration);
+                    if (anyJsModule == null) {
+                        info = new ModuleInfo(JSAnalyzerFacadeForIDEA.MODULE_NAME, project);
                     }
                     else {
-                        info = new ModuleInfo(JSAnalyzerFacadeForIDEA.MODULE_NAME, project);
+                        info = JSAnalyzerFacadeForIDEA.createModuleInfo(project, JSAnalyzerFacadeForIDEA.getLibModule(project));
                     }
 
                     AnalyzeExhaust analyzeExhaust = XAnalyzerFacade.analyzeFiles(info, JetFilesProvider.getInstance(project).allInScope(scope == null ? GlobalSearchScope.EMPTY_SCOPE : scope),

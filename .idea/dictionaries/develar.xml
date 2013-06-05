@@ -18,6 +18,7 @@
       <w>prefilled</w>
       <w>recurse</w>
       <w>sourcemap</w>
+      <w>unexported</w>
       <w>unmangled</w>
       <w>unnormalized</w>
       <w>unobfuscatable</w>

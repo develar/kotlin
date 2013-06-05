@@ -46,9 +46,6 @@ public class JetCompilerManager implements StartupActivity, DumbAware {
         manager.addTranslatingCompiler(new JetCompiler(),
                                        Collections.<FileType>singleton(JetFileType.INSTANCE),
                                        Collections.singleton(StdFileTypes.CLASS));
-        manager.addTranslatingCompiler(new K2JSCompiler(),
-                                       Collections.<FileType>singleton(JetFileType.INSTANCE),
-                                       Collections.<FileType>singleton(StdFileTypes.JS));
         manager.addCompilableFileType(JetFileType.INSTANCE);
 
         manager.addCompilationStatusListener(new CompilationStatusListener() {

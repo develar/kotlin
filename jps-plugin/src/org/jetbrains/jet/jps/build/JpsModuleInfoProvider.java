@@ -101,13 +101,13 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
 
     private static boolean isKotlinLibrary(JpsLibrary library) {
         return library.getType() instanceof JpsJavaLibraryType &&
-               !library.getRoots(JpsOrderRootType.SOURCES).isEmpty();
+               !library.getRoots(JpsOrderRootType.COMPILED).isEmpty();
     }
 
     @Override
     public void processSourceFiles(String name, @Nullable Object object, final Processor<File> processor) {
         if (object instanceof JpsLibrary) {
-            for (File file : ((JpsLibrary) object).getFiles(JpsOrderRootType.SOURCES)) {
+            for (File file : ((JpsLibrary) object).getFiles(JpsOrderRootType.COMPILED)) {
                 if (!processor.process(file)) {
                     return;
                 }

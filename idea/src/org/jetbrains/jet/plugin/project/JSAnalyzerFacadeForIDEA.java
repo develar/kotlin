@@ -19,20 +19,24 @@ package org.jetbrains.jet.plugin.project;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtilCore;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.ProjectRootModificationTracker;
 import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.util.CachedValue;
+import com.intellij.psi.util.CachedValueProvider;
+import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.util.Processor;
 import com.intellij.util.SingletonSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.analyzer.AnalyzerFacade;
 import org.jetbrains.jet.analyzer.AnalyzerFacadeForEverything;
-import org.jetbrains.jet.jps.model.JsExternalizationConstants;
 import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
@@ -43,6 +47,7 @@ import org.jetbrains.jet.lang.resolve.lazy.declarations.FileBasedDeclarationProv
 import org.jetbrains.jet.lang.resolve.lazy.storage.LockBasedStorageManager;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
 import org.jetbrains.k2js.Traverser;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
 import org.jetbrains.kotlin.lang.resolve.XAnalyzerFacade;
@@ -56,7 +61,37 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     INSTANCE;
     public static final Name MODULE_NAME = Name.special("<module>");
 
+    private static final Key<CachedValue<ModuleInfo>> LIB_MODULE_INFO = Key.create("KT_JS_LIB_MODULE");
+
     private JSAnalyzerFacadeForIDEA() {
+    }
+
+
+    // MUST BE PER MODULE
+    public static ModuleInfo getLibModule(@NotNull final Project project) {
+        CachedValue<ModuleInfo> result = project.getUserData(LIB_MODULE_INFO);
+        if (result == null) {
+            result = CachedValuesManager.getManager(project).createCachedValue(new CachedValueProvider<ModuleInfo>() {
+                @Override
+                public Result<ModuleInfo> compute() {
+                    Module anyJsModule = null;
+                    for (Module module : ModuleManager.getInstance(project).getModules()) {
+                        if (KotlinFrameworkDetector.isJsKotlinModule(module)) {
+                            anyJsModule = module;
+                        }
+                    }
+
+                    assert anyJsModule != null : "don't call if js module is not found";
+                    ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
+                    XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, anyJsModule), false);
+                    return Result.create(libraryModuleConfiguration, ProjectRootModificationTracker.getInstance(project));
+                }
+            }, false);
+
+            project.putUserData(LIB_MODULE_INFO, result);
+        }
+
+        return result.getValue();
     }
 
     @NotNull
@@ -67,10 +102,7 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             @NotNull List<AnalyzerScriptParameter> scriptParameters,
             @NotNull Predicate<PsiFile> filesToAnalyzeCompletely
     ) {
-        ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
-        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false);
-        ModuleInfo moduleConfiguration = createModuleInfo(project, libraryModuleConfiguration);
-        return XAnalyzerFacade.analyzeFilesAndStoreBodyContext(moduleConfiguration, files, false);
+        return XAnalyzerFacade.analyzeFilesAndStoreBodyContext(createModuleInfo(project, getLibModule(project)), files, false);
     }
 
     public static ModuleInfo createModuleInfo(Project project, ModuleInfo libraryModuleConfiguration) {
@@ -96,29 +128,9 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     @Override
     public ResolveSession getLazyResolveSession(@NotNull Project project, @NotNull Collection<JetFile> files) {
         LockBasedStorageManager storageManager = new LockBasedStorageManager();
-        ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
-        XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, files), false);
-
-        ModuleInfo lazyModule = createModuleInfo(project, libraryModuleConfiguration);
-
+        ModuleInfo lazyModule = createModuleInfo(project, getLibModule(project));
         return new ResolveSession(project, storageManager, lazyModule.getModuleDescriptor(),
                                   new FileBasedDeclarationProviderFactory(storageManager, files, Predicates.<FqName>alwaysFalse()));
-    }
-
-    private static List<JetFile> getLibraryFiles(Project project, Collection<JetFile> files) {
-        Module module = null;
-        for (JetFile file : files) {
-            module = ModuleUtilCore.findModuleForPsiElement(file);
-            if (module != null) {
-                break;
-            }
-        }
-
-        if (module == null) {
-            return Collections.emptyList();
-        }
-
-        return getLibraryFiles(project, module);
     }
 
     public static List<JetFile> getLibraryFiles(final Project project, Module module) {
@@ -126,14 +138,12 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
         ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
             @Override
             public boolean process(Library library) {
-                if (JsExternalizationConstants.JS_LIBRARY_NAME.equals(library.getName())) {
-                    VirtualFile[] libraryFiles = library.getFiles(OrderRootType.SOURCES);
-                    if (libraryFiles.length > 0) {
-                        for (VirtualFile file : libraryFiles) {
-                            Traverser.traverseFile(project, file, allFiles);
-                        }
-                        return false;
+                VirtualFile[] libraryFiles = library.getFiles(OrderRootType.CLASSES);
+                if (libraryFiles.length > 0) {
+                    for (VirtualFile file : libraryFiles) {
+                        Traverser.traverseFile(project, file, allFiles);
                     }
+                    return false;
                 }
                 return true;
             }
