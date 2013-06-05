@@ -56,14 +56,9 @@ public class PredefinedAnnotationManager {
         return qualifier == null ? null : (String) qualifier.getValue();
     }
 
-    public boolean isNativeButNotFromKotlin(@NotNull CallableDescriptor declaration) {
+    public boolean isKotlinDeclaration(@NotNull CallableDescriptor declaration) {
         AnnotationDescriptor annotation = findAnnotation(declaration, nativeAnnotation, false);
-        if (annotation != null) {
-            return !"Kotlin".equals(getNativeQualifier(annotation));
-        }
-
-        ClassDescriptor containingClass = DescriptorUtils.getContainingClass(declaration);
-        return containingClass != null && findAnnotation(containingClass, nativeAnnotation, true) != null;
+        return annotation != null && "Kotlin".equals(getNativeQualifier(annotation));
     }
 
     public boolean hasOptionsArg(@NotNull DeclarationDescriptor descriptor) {

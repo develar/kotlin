@@ -105,10 +105,17 @@ public final class CallTranslator extends AbstractTranslator {
 
     @NotNull
     public HasArguments createConstructorCallExpression(@NotNull JsExpression constructorReference, boolean forceKotlin) {
-        if (!context().isEcma5() ||
-            !forceKotlin &&
-            (callInfo.isNative() &&
-             context().predefinedAnnotationManager().isNativeButNotFromKotlin(callInfo.getResolvedCall().getCandidateDescriptor()))) {
+        boolean useNew;
+        if (context().isEcma5()) {
+            useNew = !forceKotlin &&
+                     (callInfo.isNative() &&
+                      !context().predefinedAnnotationManager().isKotlinDeclaration(callInfo.getResolvedCall().getCandidateDescriptor()));
+        }
+        else {
+            useNew = true;
+        }
+
+        if (useNew) {
             return new JsNew(constructorReference, callInfo.getArguments());
         }
         else {
