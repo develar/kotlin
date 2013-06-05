@@ -2,6 +2,7 @@
   <dictionary name="develar">
     <words>
       <w>builtins</w>
+      <w>ecma</w>
       <w>ecmascript</w>
       <w>ident</w>
       <w>inlined</w>
