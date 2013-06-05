@@ -30,7 +30,6 @@ import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.lang.types.lang.PrimitiveType;
 import org.jetbrains.k2js.config.Config;
 import org.jetbrains.k2js.config.EcmaVersion;
-import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
@@ -58,8 +57,6 @@ public final class StaticContext {
 
     @NotNull
     private LiteralFunctionTranslator literalFunctionTranslator;
-    @NotNull
-    private ClassDeclarationTranslator classDeclarationTranslator;
 
     private final OverloadedMemberNameGenerator overloadedMemberNameGenerator = new OverloadedMemberNameGenerator();
     private final Map<VariableDescriptor, String> nameMap = new THashMap<VariableDescriptor, String>();
@@ -79,17 +76,11 @@ public final class StaticContext {
 
     public void initTranslators(TranslationContext programContext) {
         literalFunctionTranslator = new LiteralFunctionTranslator(programContext);
-        classDeclarationTranslator = new ClassDeclarationTranslator(programContext);
     }
 
     @NotNull
     public LiteralFunctionTranslator getLiteralFunctionTranslator() {
         return literalFunctionTranslator;
-    }
-
-    @NotNull
-    public ClassDeclarationTranslator getClassDeclarationTranslator() {
-        return classDeclarationTranslator;
     }
 
     public boolean isEcma5() {
@@ -130,9 +121,15 @@ public final class StaticContext {
         }
 
         if (classDescriptor != null) {
-            JsNameRef reference = classDeclarationTranslator.getQualifiedReference((classDescriptor));
-            if (reference != null) {
-                return reference;
+            JsNameRef ref = getNameRefForDescriptor(classDescriptor, context);
+            ref.setQualifier(context.getQualifierForDescriptor(classDescriptor));
+            if (context.isEcma5() ||
+                context.isNative(classDescriptor) ||
+                DescriptorUtils.getModuleDescriptor(descriptor) == KotlinBuiltIns.getInstance().getBuiltInsModule()) {
+                return ref;
+            }
+            else {
+                return new JsInvocation(ref);
             }
         }
         if (descriptor instanceof NamespaceDescriptor) {
@@ -156,12 +153,7 @@ public final class StaticContext {
         return name;
     }
 
-    @NotNull
-    public JsNameRef getNameRefForDescriptor(@NotNull DeclarationDescriptor descriptor, @Nullable TranslationContext context) {
-        if (descriptor instanceof ConstructorDescriptor) {
-            descriptor = ((ConstructorDescriptor) descriptor).getContainingDeclaration();
-        }
-
+    private JsNameRef getNameIfNative(DeclarationDescriptor descriptor) {
         for (AnnotationDescriptor annotation : descriptor.getAnnotations()) {
             if (predefinedAnnotationManager.isNative(annotation)) {
                 String name = predefinedAnnotationManager.getNativeName(annotation);
@@ -180,6 +172,20 @@ public final class StaticContext {
 
         if (isFromNativeModule(descriptor)) {
             return new JsNameRef(descriptor.getName().asString());
+        }
+
+        return null;
+    }
+
+    @NotNull
+    public JsNameRef getNameRefForDescriptor(@NotNull DeclarationDescriptor descriptor, @Nullable TranslationContext context) {
+        if (descriptor instanceof ConstructorDescriptor) {
+            descriptor = ((ConstructorDescriptor) descriptor).getContainingDeclaration();
+        }
+
+        JsNameRef nameRef = getNameIfNative(descriptor);
+        if (nameRef != null) {
+            return nameRef;
         }
 
         // property cannot be overloaded, so, name collision is not possible, we don't need create extra JsName and keep generated ref

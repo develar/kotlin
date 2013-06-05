@@ -78,6 +78,10 @@ var Kotlin = {
     };
 
     Kotlin.createTrait = function () {
+        if (arguments.length == 0) {
+            return {};
+        }
+
         var result = arguments[0];
         for (var i = 1, n = arguments.length; i < n; i++) {
             copyProperties(result, arguments[i]);

@@ -23,7 +23,6 @@ import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
-import org.jetbrains.k2js.translate.utils.TranslationUtils;
 
 import java.util.List;
 
@@ -74,6 +73,6 @@ public final class InitializerUtils {
     }
 
     public static JsPropertyInitializer createPropertyInitializer(Named named, JsExpression value, TranslationContext context) {
-        return new JsPropertyInitializer(TranslationUtils.nameToLiteral(named), toDataDescriptor(value, context));
+        return new JsPropertyInitializer(named.getName().asString(), toDataDescriptor(value, context));
     }
 }

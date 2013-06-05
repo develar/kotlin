@@ -71,7 +71,7 @@ public final class PropertyTranslator extends AbstractTranslator {
         List<JsPropertyInitializer> to;
         if (context().isEcma5() && descriptor.getReceiverParameter() == null) {
             to = new SmartList<JsPropertyInitializer>();
-            result.add(new JsPropertyInitializer(TranslationUtils.nameToLiteral(descriptor), new JsObjectLiteral(to, true)));
+            result.add(new JsPropertyInitializer(descriptor.getName().asString(), new JsObjectLiteral(to, true)));
         }
         else {
             to = result;

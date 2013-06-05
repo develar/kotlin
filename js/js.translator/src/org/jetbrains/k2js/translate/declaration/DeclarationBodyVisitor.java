@@ -54,7 +54,11 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
     }
 
     @Override
-    public Void visitClass(@NotNull JetClass expression, @NotNull TranslationContext context) {
+    public Void visitClass(@NotNull JetClass declaration, @NotNull TranslationContext context) {
+        JsPropertyInitializer entry = ClassDeclarationTranslator.translate(declaration, context);
+        if (entry != null) {
+            result.add(entry);
+        }
         return null;
     }
 

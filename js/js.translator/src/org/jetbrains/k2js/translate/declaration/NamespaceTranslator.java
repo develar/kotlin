@@ -57,8 +57,6 @@ public final class NamespaceTranslator {
             NamespaceDescriptor descriptor = BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.FILE_TO_NAMESPACE, file);
             translate(descriptor, file, result, initializers, context);
         }
-        context.classDeclarationTranslator().generateDeclarations();
-        vars.addIfHasInitializer(context.classDeclarationTranslator().getDeclaration());
         if (initializers == null) {
             result.add(new JsInvocation(Namer.kotlin("finalize"), Namer.ROOT_PACKAGE_NAME_REF).asStatement());
         }
@@ -135,15 +133,6 @@ public final class NamespaceTranslator {
             initializerContext = context.contextWithScope(initializer);
             initializerStatements = initializer.getBody().getStatements();
             initializerVisitor = new InitializerVisitor(initializerStatements);
-        }
-
-        @Override
-        public Void visitClass(@NotNull JetClass declaration, @NotNull TranslationContext context) {
-            JsPropertyInitializer entry = context.classDeclarationTranslator().translate(declaration, context);
-            if (entry != null) {
-                result.add(entry);
-            }
-            return null;
         }
 
         @Override

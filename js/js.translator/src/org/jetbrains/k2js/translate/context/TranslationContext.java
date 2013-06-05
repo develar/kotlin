@@ -26,7 +26,6 @@ import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
-import org.jetbrains.k2js.translate.declaration.ClassDeclarationTranslator;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 import org.jetbrains.kotlin.compiler.ModuleInfo;
@@ -195,11 +194,6 @@ public class TranslationContext {
     @NotNull
     public LiteralFunctionTranslator literalFunctionTranslator() {
         return staticContext.getLiteralFunctionTranslator();
-    }
-
-    @NotNull
-    public ClassDeclarationTranslator classDeclarationTranslator() {
-        return staticContext.getClassDeclarationTranslator();
     }
 
     public void addStatementToCurrentBlock(@NotNull JsStatement statement) {

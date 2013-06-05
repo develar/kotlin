@@ -21,7 +21,6 @@ import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
-import org.jetbrains.jet.lang.descriptors.Named;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyGetterDescriptor;
 import org.jetbrains.jet.lang.psi.*;
@@ -38,9 +37,6 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescrip
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
 
 public final class TranslationUtils {
-    private static final JsStringLiteral GET = new JsStringLiteral("get");
-    private static final JsStringLiteral SET = new JsStringLiteral("set");
-
     private TranslationUtils() {
     }
 
@@ -80,7 +76,7 @@ public final class TranslationUtils {
             @NotNull FunctionDescriptor descriptor,
             @NotNull TranslationContext context) {
         if (descriptor.getReceiverParameter() == null) {
-            return new JsPropertyInitializer(descriptor instanceof PropertyGetterDescriptor ? GET : SET, function);
+            return new JsPropertyInitializer(descriptor instanceof PropertyGetterDescriptor ? "get" : "set", function);
         }
         else {
             return translateExtensionFunctionAsEcma5DataDescriptor(function, descriptor, context);
@@ -242,10 +238,5 @@ public final class TranslationUtils {
         argumentList.add(receiver);
         argumentList.addAll(arguments);
         return argumentList;
-    }
-
-    @NotNull
-    public static JsStringLiteral nameToLiteral(@NotNull Named named) {
-        return new JsStringLiteral(named.getName().asString());
     }
 }

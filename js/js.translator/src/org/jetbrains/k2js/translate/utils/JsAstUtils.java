@@ -34,8 +34,8 @@ public final class JsAstUtils {
     public static final JsNameRef CREATE_OBJECT = new JsNameRef("create");
 
     private static final JsNameRef VALUE = new JsNameRef("value");
-    private static final JsPropertyInitializer WRITABLE = new JsPropertyInitializer(new JsNameRef("writable"), JsLiteral.TRUE);
-    private static final JsPropertyInitializer ENUMERABLE = new JsPropertyInitializer(new JsNameRef("enumerable"), JsLiteral.TRUE);
+    public static final JsPropertyInitializer WRITABLE = new JsPropertyInitializer(new JsNameRef("writable"), JsLiteral.TRUE);
+    public static final JsPropertyInitializer ENUMERABLE = new JsPropertyInitializer(new JsNameRef("enumerable"), JsLiteral.TRUE);
 
     public static final String LENDS_JS_DOC_TAG = "lends";
 
@@ -205,7 +205,7 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsInvocation defineProperty(@NotNull String name, @NotNull JsObjectLiteral value) {
+    public static JsInvocation defineProperty(@NotNull String name, @NotNull JsExpression value) {
         return new JsInvocation(DEFINE_PROPERTY, JsLiteral.THIS, new JsStringLiteral(name), value);
     }
 

@@ -16,11 +16,11 @@
 
 package org.jetbrains.k2js.translate.declaration;
 
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 
 public interface ClassAliasingMap {
     @Nullable
-    JsNameRef get(ClassDescriptor descriptor, ClassDescriptor referencedDescriptor);
+    JsExpression get(ClassDescriptor descriptor, ClassDescriptor referencedDescriptor);
 }
