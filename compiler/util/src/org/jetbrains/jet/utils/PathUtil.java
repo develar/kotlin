@@ -31,6 +31,7 @@ public class PathUtil {
     public static final String JS_LIB_JAR_NAME = "kotlin-js-lib.zip";
     public static final String JS_LIB_JS_NAME = "kotlin-es5.js";
     public static final String JDK_ANNOTATIONS_JAR = "kotlin-jdk-annotations.jar";
+    public static final String ANDROID_SDK_ANNOTATIONS_JAR = "kotlin-android-sdk-annotations.jar";
     public static final String KOTLIN_JAVA_RUNTIME_JAR = "kotlin-runtime.jar";
     public static final String HOME_FOLDER_NAME = "kotlinc";
 
