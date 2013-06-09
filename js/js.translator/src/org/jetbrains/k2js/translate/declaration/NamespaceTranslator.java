@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
@@ -32,16 +31,10 @@ import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.GenerationPlace;
-import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.k2js.translate.initializer.InitializerUtils;
-import org.jetbrains.k2js.translate.initializer.InitializerVisitor;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
 
 public final class NamespaceTranslator {
     private NamespaceTranslator() {
@@ -119,50 +112,5 @@ public final class NamespaceTranslator {
         defineArguments.add(new JsObjectLiteral(visitor.getResult(), true));
         result.add(new JsDocComment("name", packageQualifiedName));
         result.add(new JsInvocation(context.namer().packageDefinitionMethodReference(), defineArguments).asStatement());
-    }
-
-    private static final class FileDeclarationVisitor extends DeclarationBodyVisitor {
-        private final JsFunction initializer;
-        private final TranslationContext initializerContext;
-        private final List<JsStatement> initializerStatements;
-        private final InitializerVisitor initializerVisitor;
-
-        private FileDeclarationVisitor(TranslationContext context) {
-            super(context);
-
-            initializer = JsAstUtils.createFunctionWithEmptyBody(context.scope());
-            initializerContext = context.contextWithScope(initializer);
-            initializerStatements = initializer.getBody().getStatements();
-            initializerVisitor = new InitializerVisitor(initializerStatements, initializerContext);
-        }
-
-        @Override
-        public void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration) {
-            InitializerUtils.generate(declaration, initializerStatements, context);
-        }
-
-        @Override
-        public void visitProperty(@NotNull JetProperty property) {
-            super.visitProperty(property);
-
-            JetExpression initializer = property.getInitializer();
-            if (initializer != null) {
-                JsExpression value = Translation.translateAsExpression(initializer, initializerContext);
-                PropertyDescriptor propertyDescriptor = getPropertyDescriptor(context.bindingContext(), property);
-                if (value instanceof JsLiteral) {
-                    result.add(new JsPropertyInitializer(context.getNameRefForDescriptor(propertyDescriptor),
-                                                         context.isEcma5() ? JsAstUtils
-                                                                 .createPropertyDataDescriptor(propertyDescriptor, value, context) : value));
-                }
-                else {
-                    initializerStatements.add(generateInitializerForProperty(context, propertyDescriptor, value));
-                }
-            }
-        }
-
-        @Override
-        public void visitAnonymousInitializer(@NotNull JetClassInitializer expression) {
-            expression.accept(initializerVisitor);
-        }
     }
 }
