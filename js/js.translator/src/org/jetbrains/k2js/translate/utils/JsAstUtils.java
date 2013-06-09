@@ -33,9 +33,8 @@ public final class JsAstUtils {
     private static final JsNameRef DEFINE_PROPERTY = new JsNameRef("defineProperty");
     public static final JsNameRef CREATE_OBJECT = new JsNameRef("create");
 
-    private static final JsNameRef VALUE = new JsNameRef("value");
-    public static final JsPropertyInitializer WRITABLE = new JsPropertyInitializer(new JsNameRef("writable"), JsLiteral.TRUE);
-    public static final JsPropertyInitializer ENUMERABLE = new JsPropertyInitializer(new JsNameRef("enumerable"), JsLiteral.TRUE);
+    public static final JsPropertyInitializer WRITABLE = new JsPropertyInitializer("writable", JsLiteral.TRUE);
+    public static final JsPropertyInitializer ENUMERABLE = new JsPropertyInitializer("enumerable", JsLiteral.TRUE);
 
     public static final String LENDS_JS_DOC_TAG = "lends";
 
@@ -217,7 +216,7 @@ public final class JsAstUtils {
     @NotNull
     public static JsObjectLiteral createDataDescriptor(@NotNull JsExpression value, boolean writable, boolean enumerable) {
         JsObjectLiteral dataDescriptor = new JsObjectLiteral();
-        dataDescriptor.getPropertyInitializers().add(new JsPropertyInitializer(VALUE, value));
+        dataDescriptor.getPropertyInitializers().add(new JsPropertyInitializer("value", value));
         if (writable) {
             dataDescriptor.getPropertyInitializers().add(WRITABLE);
         }

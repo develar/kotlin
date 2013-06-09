@@ -23,11 +23,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.psi.JetDeclaration;
+import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.GenerationPlace;
@@ -66,13 +66,11 @@ public final class NamespaceTranslator {
             @NotNull TranslationContext context
     ) {
         final FileDeclarationVisitor visitor = new FileDeclarationVisitor(context);
-        // own package always JsNameRef (only inter-module references may be JsInvocation)
-        final JsNameRef packageQualifiedName = (JsNameRef) context.getQualifiedReference(descriptor);
         context.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
             @Override
             @NotNull
             public GenerationPlace compute() {
-                return new GenerationPlace(visitor.getResult(), new LabelGenerator('f'), packageQualifiedName, true);
+                return visitor.createGenerationPlace();
             }
         });
 
@@ -85,8 +83,10 @@ public final class NamespaceTranslator {
         }
         context.literalFunctionTranslator().popDefinitionPlace();
 
+        // own package always JsNameRef (only inter-module references may be JsInvocation)
+        JsNameRef packageQualifiedName = (JsNameRef) context.getQualifiedReference(descriptor);
         JsExpression initializer;
-        if (visitor.initializerStatements.isEmpty()) {
+        if (visitor.finalizeInitializerStatements()) {
             initializer = null;
         }
         else {

@@ -28,7 +28,6 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.FunctionTranslator;
 import org.jetbrains.k2js.translate.general.TranslatorVisitor;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
-import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +35,8 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.expression.FunctionTranslator.createDefaultValueGetterName;
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.createDataDescriptor;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.createPropertyDataDescriptor;
 
 public class DeclarationBodyVisitor extends TranslatorVisitor {
     protected final List<JsPropertyInitializer> result;
@@ -79,7 +80,8 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
                 JetExpression parameter = FunctionTranslator.getDefaultValue(context.bindingContext(), valueParameter);
                 JsFunction fun = new JsFunction(context.scope(), new JsBlock(new JsReturn(translateAsExpression(parameter, context))));
                 fun.setParameters(Collections.<JsParameter>emptyList());
-                result.add(new JsPropertyInitializer(createDefaultValueGetterName(descriptor, valueParameter, context), context.isEcma5() ? JsAstUtils.createDataDescriptor(fun, false, false) : fun));
+                defineFunction(createDefaultValueGetterName(descriptor, valueParameter, context),
+                               context.isEcma5() ? createDataDescriptor(fun, false, false) : fun);
             }
 
             if (descriptor.getModality() == Modality.ABSTRACT) {
@@ -87,12 +89,18 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
             }
         }
 
-        JsPropertyInitializer methodAsPropertyInitializer = FunctionTranslator.translate(false, expression, descriptor, context);
+        JsFunction value = FunctionTranslator.translate(expression, descriptor, context);
+        String name = context.getNameRefForDescriptor(descriptor).getName();
         if (context.isEcma5()) {
-            JsExpression methodBodyExpression = methodAsPropertyInitializer.getValueExpr();
-            methodAsPropertyInitializer.setValueExpr(JsAstUtils.createPropertyDataDescriptor(descriptor, descriptor.getModality().isOverridable(), methodBodyExpression, context));
+            defineFunction(name, createPropertyDataDescriptor(descriptor, descriptor.getModality().isOverridable(), value, context));
         }
-        result.add(methodAsPropertyInitializer);
+        else {
+            defineFunction(name, value);
+        }
+    }
+
+    protected void defineFunction(String name, JsExpression value) {
+        result.add(new JsPropertyInitializer(name, value));
     }
 
     @Override

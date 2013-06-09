@@ -87,7 +87,7 @@ public final class TranslationUtils {
     private static JsPropertyInitializer translateExtensionFunctionAsEcma5DataDescriptor(@NotNull JsFunction function,
             @NotNull FunctionDescriptor descriptor, @NotNull TranslationContext context) {
         JsObjectLiteral meta = createDataDescriptor(function, descriptor.getModality().isOverridable(), false);
-        return new JsPropertyInitializer(context.getNameRefForDescriptor(descriptor), meta);
+        return new JsPropertyInitializer(context.getNameRefForDescriptor(descriptor).getName(), meta);
     }
 
     @NotNull

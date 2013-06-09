@@ -71,8 +71,4 @@ public final class InitializerUtils {
     public static JsExpression toDataDescriptor(JsExpression value, TranslationContext context) {
         return context.isEcma5() ? JsAstUtils.createDataDescriptor(value) : value;
     }
-
-    public static JsPropertyInitializer createPropertyInitializer(Named named, JsExpression value, TranslationContext context) {
-        return new JsPropertyInitializer(named.getName().asString(), toDataDescriptor(value, context));
-    }
 }

@@ -52,7 +52,7 @@ public final class FunctionTranslator {
     private FunctionTranslator() {
     }
 
-    private static JsFunction translate(@NotNull JetDeclarationWithBody expression, @NotNull FunctionDescriptor descriptor,  @NotNull TranslationContext context) {
+    public static JsFunction translate(@NotNull JetDeclarationWithBody expression, @NotNull FunctionDescriptor descriptor,  @NotNull TranslationContext context) {
         JsFunction function = new JsFunction(context.scope(), new JsBlock());
         AliasingContext aliasingContext;
         ReceiverParameterDescriptor receiverParameter = descriptor.getReceiverParameter();
@@ -86,7 +86,7 @@ public final class FunctionTranslator {
             return TranslationUtils.translateFunctionAsEcma5PropertyDescriptor(function, descriptor, context);
         }
         else {
-            return new JsPropertyInitializer(context.getNameRefForDescriptor(descriptor), function);
+            return new JsPropertyInitializer(context.getNameRefForDescriptor(descriptor).getName(), function);
         }
     }
 

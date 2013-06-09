@@ -32,7 +32,6 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.context.UsageTracker;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
-import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 
 import java.util.List;
 
@@ -48,7 +47,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
     }
 
     public static GenerationPlace createPlace(@NotNull List<JsPropertyInitializer> list, @NotNull JsExpression reference) {
-        return new GenerationPlace(list, new LabelGenerator('f'), reference);
+        return new GenerationPlaceImpl(list, new LabelGenerator('f'), reference);
     }
 
     public void popDefinitionPlace() {
@@ -126,10 +125,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
     }
 
     private JsNameRef createReference(JsFunction fun, MemberDescriptor descriptor) {
-        GenerationPlace place = definitionPlace.getValue();
-        JsNameRef nameRef = new JsNameRef(place.generateLabel(descriptor), place.getExpression());
-        place.getPropertyInitializers().add(new JsPropertyInitializer(nameRef, InitializerUtils.toDataDescriptor(fun, context())));
-        return nameRef;
+        return definitionPlace.getValue().createReference(fun, descriptor, context());
     }
 
     private JsFunction createFunction() {

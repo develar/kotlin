@@ -132,7 +132,7 @@ var Kotlin = Object.create(null, {
     Kotlin.p = function (m, name, initializer, members) {
         var current = name === null ? m : m[name];
         if (current === undefined) {
-            // m can contains members for root namespace, so, we need to track registered package name
+            // module can contains members for root namespace, so, we need to keep registered package name in separated list
             var packageNames = m.$packageNames$;
             if (packageNames == null) {
                 packageNames = [name];
@@ -153,7 +153,7 @@ var Kotlin = Object.create(null, {
             }
             if (initializer !== null) {
                 var currentInitializers = current.$initializers$;
-                if (currentInitializers === null) {
+                if (currentInitializers === null || currentInitializers === undefined) {
                     current.$initializers$ = initializer;
                 }
                 else if (Array.isArray(currentInitializers)) {
@@ -168,31 +168,29 @@ var Kotlin = Object.create(null, {
 
     Kotlin.finalize = function(m) {
         var packageNames = m.$packageNames$;
-        if (packageNames === undefined) {
-            return;
-        }
-
-        for (var i = 0, n = packageNames.length; i < n; i++) {
-            var name = packageNames[i];
-            var p = m[name];
-            // pending initialization is not supported for root package
-            if (name === "$initializers$") {
-                invokeInitializers(p, m);
-                continue;
-            }
-
-            var initializers = p.$initializers$;
-            if (initializers == null) {
-                m[name] = p.$members$;
-            }
-            else {
-                var getter = createPackageGetter(p.$members$, initializers);
-                Object.freeze(getter);
-                Object.defineProperty(m, name, {get: getter});
+        if (packageNames !== undefined) {
+            delete m.$packageNames$;
+            for (var i = 0, n = packageNames.length; i < n; i++) {
+                var name = packageNames[i];
+                var p = m[name];
+                var initializers = p.$initializers$;
+                if (initializers == null) {
+                    m[name] = p.$members$;
+                }
+                else {
+                    var getter = createPackageGetter(p.$members$, initializers);
+                    Object.freeze(getter);
+                    Object.defineProperty(m, name, {get: getter});
+                }
             }
         }
 
-        delete m.$packageNames$;
+        var rootInitializers = m.$initializers$;
+        // pending initialization is not supported for root package
+        if (rootInitializers !== undefined) {
+            delete m.$initializers$;
+            invokeInitializers(rootInitializers, m);
+        }
     };
 
     function invokeInitializers(tmp, instance) {
