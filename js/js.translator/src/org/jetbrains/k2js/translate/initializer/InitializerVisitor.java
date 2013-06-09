@@ -29,39 +29,35 @@ import static org.jetbrains.k2js.translate.general.Translation.translateAsStatem
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getPropertyDescriptor;
 
-public final class InitializerVisitor extends TranslatorVisitor<Void> {
+public final class InitializerVisitor extends TranslatorVisitor {
     private final List<JsStatement> result;
 
-    public InitializerVisitor(List<JsStatement> result) {
+    public InitializerVisitor(List<JsStatement> result, TranslationContext context) {
+        super(context);
         this.result = result;
     }
 
     @Override
-    public final Void visitProperty(@NotNull JetProperty property, @NotNull TranslationContext context) {
+    public final void visitProperty(@NotNull JetProperty property) {
         JetExpression initializer = property.getInitializer();
         if (initializer != null) {
             result.add(generateInitializerForProperty(context, getPropertyDescriptor(context.bindingContext(), property),
                                                       Translation.translateAsExpression(initializer, context)));
         }
-
-        return null;
     }
 
     @Override
-    public Void visitAnonymousInitializer(@NotNull JetClassInitializer initializer, @NotNull TranslationContext context) {
+    public void visitAnonymousInitializer(@NotNull JetClassInitializer initializer) {
         result.add(translateAsStatement(initializer.getBody(), context));
-        return null;
     }
 
-    @Override
     // Not interested in other types of declarations, they do not contain initializers.
-    public Void visitDeclaration(@NotNull JetDeclaration expression, @NotNull TranslationContext context) {
-        return null;
+    @Override
+    public void visitDeclaration(@NotNull JetDeclaration expression) {
     }
 
     @Override
-    public Void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
+    public void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration) {
         InitializerUtils.generate(declaration, result, context);
-        return null;
     }
 }

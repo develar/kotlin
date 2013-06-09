@@ -157,7 +157,7 @@ public final class ClassTranslator extends AbstractTranslator {
         }
 
         translatePropertiesAsConstructorParameters(declarationContext, properties);
-        new DeclarationBodyVisitor(properties).traverseContainer(classDeclaration, declarationContext);
+        new DeclarationBodyVisitor(properties, declarationContext).traverseContainer(classDeclaration);
 
         if (isTopLevelDeclaration) {
             declarationContext.literalFunctionTranslator().popDefinitionPlace();

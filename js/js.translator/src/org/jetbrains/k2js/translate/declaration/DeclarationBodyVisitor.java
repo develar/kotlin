@@ -37,14 +37,15 @@ import static org.jetbrains.k2js.translate.expression.FunctionTranslator.createD
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 
-public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
+public class DeclarationBodyVisitor extends TranslatorVisitor {
     protected final List<JsPropertyInitializer> result;
 
-    public DeclarationBodyVisitor() {
-        this(new SmartList<JsPropertyInitializer>());
+    public DeclarationBodyVisitor(TranslationContext context) {
+        this(new SmartList<JsPropertyInitializer>(), context);
     }
 
-    public DeclarationBodyVisitor(List<JsPropertyInitializer> result) {
+    public DeclarationBodyVisitor(List<JsPropertyInitializer> result, TranslationContext context) {
+        super(context);
         this.result = result;
     }
 
@@ -54,22 +55,20 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
     }
 
     @Override
-    public Void visitClass(@NotNull JetClass declaration, @NotNull TranslationContext context) {
+    public void visitClass(@NotNull JetClass declaration) {
         JsPropertyInitializer entry = ClassDeclarationTranslator.translate(declaration, context);
         if (entry != null) {
             result.add(entry);
         }
-        return null;
     }
 
     @Override
-    public Void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
+    public void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration) {
         // parsed it in initializer visitor => no additional actions are needed
-        return null;
     }
 
     @Override
-    public Void visitNamedFunction(@NotNull JetNamedFunction expression, @NotNull TranslationContext context) {
+    public void visitNamedFunction(@NotNull JetNamedFunction expression) {
         FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
         if (descriptor.getModality().isOverridable()) {
             for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
@@ -84,7 +83,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
             }
 
             if (descriptor.getModality() == Modality.ABSTRACT) {
-                return null;
+                return;
             }
         }
 
@@ -94,19 +93,16 @@ public class DeclarationBodyVisitor extends TranslatorVisitor<Void> {
             methodAsPropertyInitializer.setValueExpr(JsAstUtils.createPropertyDataDescriptor(descriptor, descriptor.getModality().isOverridable(), methodBodyExpression, context));
         }
         result.add(methodAsPropertyInitializer);
-        return null;
     }
 
     @Override
-    public Void visitProperty(@NotNull JetProperty expression, @NotNull TranslationContext context) {
+    public void visitProperty(@NotNull JetProperty expression) {
         PropertyDescriptor propertyDescriptor = BindingUtils.getPropertyDescriptor(context.bindingContext(), expression);
         PropertyTranslator.translateAccessors(propertyDescriptor, expression, result, context);
-        return null;
     }
 
     @Override
-    public Void visitAnonymousInitializer(@NotNull JetClassInitializer expression, @NotNull TranslationContext context) {
+    public void visitAnonymousInitializer(@NotNull JetClassInitializer expression) {
         // parsed it in initializer visitor => no additional actions are needed
-        return null;
     }
 }

@@ -34,7 +34,6 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import org.jetbrains.k2js.translate.expression.foreach.ForTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.k2js.translate.general.TranslatorVisitor;
 import org.jetbrains.k2js.translate.operation.BinaryOperationTranslator;
 import org.jetbrains.k2js.translate.operation.UnaryOperationTranslator;
 import org.jetbrains.k2js.translate.reference.*;
@@ -56,7 +55,7 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.sure;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.mutator.LastExpressionMutator.mutateLastExpression;
 
-public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
+public final class ExpressionVisitor extends JetVisitor<JsNode, TranslationContext> {
     @Override
     @NotNull
     public JsNode visitConstantExpression(@NotNull JetConstantExpression expression,

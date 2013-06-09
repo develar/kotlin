@@ -42,7 +42,6 @@ public final class Namer {
     public static final String KOTLIN_OBJECT_NAME = "Kotlin";
     public static final JsNameRef KOTLIN_OBJECT_NAME_REF = new JsNameRef(KOTLIN_OBJECT_NAME);
     private static final String RECEIVER_PARAMETER_NAME = "$receiver";
-    public static final String CLASSES_OBJECT_NAME = "_c";
     public static final JsNameRef THROW_NPE_FUN_NAME_REF = new JsNameRef("throwNPE", KOTLIN_OBJECT_NAME_REF);
     public static final JsNameRef NEW_EXCEPTION_FUN_NAME_REF = new JsNameRef("newException", KOTLIN_OBJECT_NAME_REF);
 

@@ -17,22 +17,27 @@
 package org.jetbrains.k2js.translate.general;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.psi.JetDeclaration;
+import org.jetbrains.jet.lang.psi.JetDeclarationContainer;
+import org.jetbrains.jet.lang.psi.JetElement;
+import org.jetbrains.jet.lang.psi.JetVisitorVoid;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
-/**
- * This class is a base class for all visitors
- */
-public class TranslatorVisitor<T> extends JetVisitor<T, TranslationContext> {
+public abstract class TranslatorVisitor extends JetVisitorVoid {
+    protected final TranslationContext context;
+
+    public TranslatorVisitor(TranslationContext context) {
+        this.context = context;
+    }
+
     @Override
-    @NotNull
-    public T visitJetElement(JetElement expression, TranslationContext context) {
+    public void visitJetElement(JetElement expression) {
         throw new UnsupportedOperationException("Unsupported expression encountered:" + expression.toString());
     }
 
-    public final void traverseContainer(@NotNull JetDeclarationContainer jetClass, @NotNull TranslationContext context) {
+    public final void traverseContainer(@NotNull JetDeclarationContainer jetClass) {
         for (JetDeclaration declaration : jetClass.getDeclarations()) {
-            declaration.accept(this, context);
+            declaration.accept(this);
         }
     }
 }

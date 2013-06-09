@@ -75,20 +75,19 @@ public final class NamespaceTranslator {
         final FileDeclarationVisitor visitor = new FileDeclarationVisitor(context);
         // own package always JsNameRef (only inter-module references may be JsInvocation)
         final JsNameRef packageQualifiedName = (JsNameRef) context.getQualifiedReference(descriptor);
-        context.literalFunctionTranslator().setDefinitionPlace(
-                new NotNullLazyValue<GenerationPlace>() {
-                    @Override
-                    @NotNull
-                    public GenerationPlace compute() {
-                        return new GenerationPlace(visitor.getResult(), new LabelGenerator('f'), packageQualifiedName, true);
-                    }
-                });
+        context.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
+            @Override
+            @NotNull
+            public GenerationPlace compute() {
+                return new GenerationPlace(visitor.getResult(), new LabelGenerator('f'), packageQualifiedName, true);
+            }
+        });
 
         for (JetDeclaration declaration : file.getDeclarations()) {
             DeclarationDescriptor declarationDescriptor =
                     BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.DECLARATION_TO_DESCRIPTOR, declaration);
             if (!context.predefinedAnnotationManager().isNativeNotRecursive(declarationDescriptor)) {
-                declaration.accept(visitor, context);
+                declaration.accept(visitor);
             }
         }
         context.literalFunctionTranslator().popDefinitionPlace();
@@ -129,21 +128,23 @@ public final class NamespaceTranslator {
         private final InitializerVisitor initializerVisitor;
 
         private FileDeclarationVisitor(TranslationContext context) {
+            super(context);
+
             initializer = JsAstUtils.createFunctionWithEmptyBody(context.scope());
             initializerContext = context.contextWithScope(initializer);
             initializerStatements = initializer.getBody().getStatements();
-            initializerVisitor = new InitializerVisitor(initializerStatements);
+            initializerVisitor = new InitializerVisitor(initializerStatements, initializerContext);
         }
 
         @Override
-        public Void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
+        public void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration) {
             InitializerUtils.generate(declaration, initializerStatements, context);
-            return null;
         }
 
         @Override
-        public Void visitProperty(@NotNull JetProperty property, @NotNull TranslationContext context) {
-            super.visitProperty(property, context);
+        public void visitProperty(@NotNull JetProperty property) {
+            super.visitProperty(property);
+
             JetExpression initializer = property.getInitializer();
             if (initializer != null) {
                 JsExpression value = Translation.translateAsExpression(initializer, initializerContext);
@@ -157,13 +158,11 @@ public final class NamespaceTranslator {
                     initializerStatements.add(generateInitializerForProperty(context, propertyDescriptor, value));
                 }
             }
-            return null;
         }
 
         @Override
-        public Void visitAnonymousInitializer(@NotNull JetClassInitializer expression, @NotNull TranslationContext context) {
-            expression.accept(initializerVisitor, initializerContext);
-            return null;
+        public void visitAnonymousInitializer(@NotNull JetClassInitializer expression) {
+            expression.accept(initializerVisitor);
         }
     }
 }

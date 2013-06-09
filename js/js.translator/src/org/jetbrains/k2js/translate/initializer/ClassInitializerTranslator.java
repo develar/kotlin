@@ -73,7 +73,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         // for properties declared as constructor parameters
         translatePrimaryConstructorParameters(initializerFunction.getParameters());
 
-        new InitializerVisitor(initializerStatements).traverseContainer(declaration, context());
+        new InitializerVisitor(initializerStatements, context()).traverseContainer(declaration);
 
         List<JsStatement> funStatements = initializerFunction.getBody().getStatements();
         for (JsStatement statement : initializerStatements) {
