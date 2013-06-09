@@ -16,9 +16,10 @@
 
 package org.jetbrains.k2js.translate.context;
 
-import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.JsScope;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
@@ -149,19 +150,6 @@ public final class Namer {
         }
         else {
             return descriptor.getName().asString();
-        }
-    }
-
-    @NotNull
-    public JsInvocation classCreateInvocation(@NotNull ClassDescriptor descriptor) {
-        switch (descriptor.getKind()) {
-            case TRAIT:
-                return new JsInvocation(traitCreationMethodReference());
-            case OBJECT:
-                return new JsInvocation(objectCreationMethodReference());
-
-            default:
-                return new JsInvocation(classCreationMethodReference());
         }
     }
 }

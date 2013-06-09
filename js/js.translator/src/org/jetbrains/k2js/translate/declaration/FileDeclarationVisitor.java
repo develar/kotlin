@@ -3,9 +3,11 @@ package org.jetbrains.k2js.translate.declaration;
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.MemberDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
-import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.psi.JetClassInitializer;
+import org.jetbrains.jet.lang.psi.JetExpression;
+import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
+import org.jetbrains.jet.lang.psi.JetProperty;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.GenerationPlace;
 import org.jetbrains.k2js.translate.general.Translation;
@@ -37,31 +39,15 @@ final class FileDeclarationVisitor extends DeclarationBodyVisitor {
         initializerVisitor = new InitializerVisitor(initializerStatements, initializerContext);
     }
 
+    public GenerationPlace createGenerationPlace() {
+        return new ClosureBackedGenerationPlace(initializerStatements);
+    }
+
     public boolean finalizeInitializerStatements() {
         if (propertyDefineStatements != null) {
             initializerStatements.addAll(propertyDefineStatements);
         }
         return initializerStatements.isEmpty();
-    }
-
-    GenerationPlace createGenerationPlace() {
-        return new MyGenerationPlace();
-    }
-
-    private final class MyGenerationPlace implements GenerationPlace {
-        private int nameCounter;
-
-        @Override
-        public JsNameRef createReference(
-                @NotNull JsFunction fun, @NotNull MemberDescriptor descriptor, @NotNull TranslationContext context
-        ) {
-            String name = "$f" + Integer.toString(nameCounter++, 36);
-            JsNameRef nameRef = new JsNameRef(name);
-            assert fun.getName() == null;
-            fun.setName(name);
-            initializerStatements.add(fun.asStatement());
-            return nameRef;
-        }
     }
 
     @Override

@@ -62,13 +62,13 @@ var Kotlin = Object.create(null, {
         return proto;
     }
 
-    Kotlin.createTrait = function (bases, properties, staticProperties) {
-        return createClass(bases, null, properties, staticProperties, false);
+    Kotlin.createTrait = function (bases, properties) {
+        return createClass(bases, null, properties, false);
     };
 
-    Kotlin.createClass = function (bases, initializer, properties, staticProperties) {
+    Kotlin.createClass = function (bases, initializer, properties) {
         // proto must be created for class even if it is not needed (requires for is operator)
-        return createClass(bases, initializer === null ? function () {} : initializer, properties, staticProperties, true);
+        return createClass(bases, initializer === null ? function () {} : initializer, properties, true);
     };
 
     function computeProto2(bases, properties) {
@@ -90,7 +90,7 @@ var Kotlin = Object.create(null, {
         return o;
     };
 
-    function createClass(bases, initializer, properties, staticProperties, isClass) {
+    function createClass(bases, initializer, properties, isClass) {
         var proto;
         var baseInitializer;
         if (bases === null) {
@@ -119,10 +119,6 @@ var Kotlin = Object.create(null, {
 
             Object.defineProperty(initializer, "baseInitializer", {value: baseInitializer});
             Object.freeze(initializer);
-        }
-
-        if (staticProperties !== null && staticProperties !== undefined) {
-            Object.defineProperties(constructor, staticProperties);
         }
 
         Object.freeze(constructor);

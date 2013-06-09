@@ -108,7 +108,7 @@ var Kotlin = {
         function subclass() {
         }
 
-        function create(parent, properties, staticProperties) {
+        function create(parent, properties) {
             var traits = null;
             if (parent instanceof Array) {
                 traits = parent;
@@ -163,9 +163,6 @@ var Kotlin = {
             }
 
             klass.prototype.constructor = klass;
-            if (staticProperties !== null && staticProperties !== undefined) {
-                copyProperties(klass, staticProperties);
-            }
             return klass;
         }
 
