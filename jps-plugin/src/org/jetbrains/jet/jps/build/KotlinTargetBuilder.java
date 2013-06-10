@@ -20,7 +20,7 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
 import com.intellij.util.Consumer;
-import com.intellij.util.containers.ConcurrentHashSet;
+import com.intellij.util.containers.StripedLockConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.compiler.runner.CompilerRunnerUtil;
@@ -42,19 +42,18 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, KotlinBuildTarget> {
     private static final Key<AtomicReference<Pair<Object, Method>>> CONTEXT = GlobalContextKey.create("kotlinBuildContext");
     // dirty because some dependencies was changed, but not because some source file was changed
-    private static final Key<Set<JpsModule>> DIRTY_MODULES = GlobalContextKey.create("kotlinDirtyModules");
+    private static final Key<Map<JpsModule, Long>> DIRTY_MODULES = GlobalContextKey.create("kotlinDirtyModules");
 
     private final String outputLanguageName;
     private final String subCompilerClassName;
+
+    private static final short FORMAT_VERSION = 1;
 
     public KotlinTargetBuilder(KotlinBuildTargetType targetType) {
         super(Collections.singletonList(targetType));
@@ -70,7 +69,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
 
     @Override
     public void buildStarted(CompileContext context) {
-        DIRTY_MODULES.set(context, new ConcurrentHashSet<JpsModule>());
+        DIRTY_MODULES.set(context, new StripedLockConcurrentHashMap<JpsModule, Long>());
     }
 
     @Override
@@ -98,6 +97,33 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
         super.buildFinished(context);
     }
 
+    private static boolean hasDirtyDependencies(
+            KotlinBuildTarget target,
+            CompileContext context,
+            Map<JpsModule, Long> dirtyModules,
+            TargetTimestamps timestamps
+    ) throws IOException {
+        for (BuildTarget<?> buildTarget : context.getProjectDescriptor().getBuildTargetIndex().getDependencies(target, context)) {
+            KotlinBuildTarget thatTarget = (KotlinBuildTarget) buildTarget;
+            Long cachedThatTargetTimestamp = dirtyModules.get(thatTarget.getModule());
+            long thatTargetTimestamp;
+            if (cachedThatTargetTimestamp == null) {
+                thatTargetTimestamp = new TargetTimestamps(context, thatTarget).getTimestamp();
+                dirtyModules.put(thatTarget.getModule(), thatTargetTimestamp);
+            }
+            else {
+                thatTargetTimestamp = cachedThatTargetTimestamp;
+            }
+
+            if (thatTargetTimestamp > timestamps.getTimestamp()) {
+                // todo don't reanalyze if public API was not changed (i.e. changes affect only internal code)
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public void build(
             @NotNull KotlinBuildTarget target,
@@ -114,24 +140,26 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
             }
         });
 
-        Set<JpsModule> dirtyModules = DIRTY_MODULES.get(context);
+        TargetTimestamps timestamps = new TargetTimestamps(context, target);
+        Map<JpsModule, Long> dirtyModules = DIRTY_MODULES.get(context);
         assert dirtyModules != null;
         boolean analyzeOnly = false;
-        if (filesToCompile.isEmpty() && !dirtyFilesHolder.hasRemovedFiles()) {
-            boolean dirty = false;
-            for (BuildTarget<?> buildTarget : context.getProjectDescriptor().getBuildTargetIndex().getDependencies(target, context)) {
-                if (dirtyModules.contains(((KotlinBuildTarget) buildTarget).getModule())) {
-                    dirty = true;
-                    analyzeOnly = true;
-                    break;
-                }
+        if (filesToCompile.isEmpty() && !dirtyFilesHolder.hasRemovedFiles() && timestamps.getFormatVersion() == FORMAT_VERSION) {
+            if (hasDirtyDependencies(target, context, dirtyModules, timestamps)) {
+                analyzeOnly = true;
             }
-            if (!dirty) {
+            else {
                 return;
             }
         }
 
         JpsModule module = target.getModule();
+
+        // we must reanalyze all dependents if something was changed
+        // todo don't reanalyze if public API was not changed (i.e. changes affect only internal code)
+        dirtyModules.put(module, context.getCompilationStartStamp());
+        timestamps.set(context.getCompilationStartStamp(), FORMAT_VERSION);
+
         context.processMessage(new ProgressMessage("Compiling Kotlin module '" + module.getName() + "' to " + outputLanguageName));
         KotlinSourceFileCollector.logCompiledFiles(filesToCompile, context, JsBuildTargetType.BUILDER_NAME);
 
@@ -151,10 +179,6 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
 
         compile(outputConsumer, context, compilerConfiguration);
         context.checkCanceled();
-
-        // we must reanalyze all dependents if something was changed
-        // todo don't reanalyze if public API was not changed (i.e. changes affect only internal code)
-        dirtyModules.add(module);
     }
 
     private void compile(final BuildOutputConsumer outputConsumer, CompileContext context, CompilerConfiguration compilerConfiguration)
