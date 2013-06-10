@@ -3007,9 +3007,19 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/inner"), Pattern.compile("^(.+)\\.kt$"), true);
             }
             
+            @TestMetadata("classesInClassObjectHeader.kt")
+            public void testClassesInClassObjectHeader() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inner/classesInClassObjectHeader.kt");
+            }
+            
             @TestMetadata("constructorAccess.kt")
             public void testConstructorAccess() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/inner/constructorAccess.kt");
+            }
+            
+            @TestMetadata("deepInnerClass.kt")
+            public void testDeepInnerClass() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inner/deepInnerClass.kt");
             }
             
             @TestMetadata("enumEntries.kt")
@@ -3025,6 +3035,21 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("illegalModifier.kt")
             public void testIllegalModifier() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/inner/illegalModifier.kt");
+            }
+            
+            @TestMetadata("innerClassesInStaticParameters.kt")
+            public void testInnerClassesInStaticParameters() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inner/innerClassesInStaticParameters.kt");
+            }
+            
+            @TestMetadata("innerErrorForClassObjects.kt")
+            public void testInnerErrorForClassObjects() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inner/innerErrorForClassObjects.kt");
+            }
+            
+            @TestMetadata("innerErrorForObjects.kt")
+            public void testInnerErrorForObjects() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inner/innerErrorForObjects.kt");
             }
             
             @TestMetadata("innerThisSuper.kt")
@@ -3085,6 +3110,16 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             @TestMetadata("outerSuperClassMember.kt")
             public void testOuterSuperClassMember() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/inner/outerSuperClassMember.kt");
+            }
+            
+            @TestMetadata("resolvePackageClassInObjects.kt")
+            public void testResolvePackageClassInObjects() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inner/resolvePackageClassInObjects.kt");
+            }
+            
+            @TestMetadata("selfAnnotationForClassObject.kt")
+            public void testSelfAnnotationForClassObject() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/inner/selfAnnotationForClassObject.kt");
             }
             
             @TestMetadata("traits.kt")

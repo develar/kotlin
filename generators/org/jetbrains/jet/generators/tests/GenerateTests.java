@@ -43,6 +43,7 @@ import org.jetbrains.jet.plugin.codeInsight.surroundWith.AbstractSurroundWithTes
 import org.jetbrains.jet.plugin.folding.AbstractKotlinFoldingTest;
 import org.jetbrains.jet.plugin.hierarchy.AbstractHierarchyTest;
 import org.jetbrains.jet.plugin.highlighter.AbstractDeprecatedHighlightingTest;
+import org.jetbrains.jet.plugin.navigation.JetAbstractGotoSuperTest;
 import org.jetbrains.jet.plugin.quickfix.AbstractQuickFixMultiFileTest;
 import org.jetbrains.jet.plugin.quickfix.AbstractQuickFixTest;
 import org.jetbrains.jet.resolve.AbstractResolveTest;
@@ -283,6 +284,12 @@ public class GenerateTests {
                 testModel("idea/testData/completion/basic/custom", false, "doTestWithJar"));
 
         generateTest(
+                "idea/tests",
+                "JetGotoSuperTestGenerated",
+                JetAbstractGotoSuperTest.class,
+                testModel("idea/testData/navigation/gotoSuper", false, "test", "doTest"));
+
+        generateTest(
                 "idea/tests/",
                 "QuickFixMultiFileTestGenerated",
                 AbstractQuickFixMultiFileTest.class,
@@ -330,6 +337,8 @@ public class GenerateTests {
                 testModel("idea/testData/codeInsight/codeTransformations/branched/folding/whenToReturn", "doTestFoldWhenToReturn"),
                 testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/assignmentToIf", "doTestUnfoldAssignmentToIf"),
                 testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/assignmentToWhen", "doTestUnfoldAssignmentToWhen"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/propertyToIf", "doTestUnfoldPropertyToIf"),
+                testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/propertyToWhen", "doTestUnfoldPropertyToWhen"),
                 testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/returnToIf", "doTestUnfoldReturnToIf"),
                 testModel("idea/testData/codeInsight/codeTransformations/branched/unfolding/returnToWhen", "doTestUnfoldReturnToWhen"),
                 testModel("idea/testData/codeInsight/codeTransformations/branched/ifWhen/ifToWhen", "doTestIfToWhen"),
