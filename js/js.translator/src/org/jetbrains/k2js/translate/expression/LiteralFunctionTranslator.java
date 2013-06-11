@@ -136,8 +136,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
             @NotNull ClassDescriptor outerClass,
             @NotNull TranslationContext outerClassContext,
             @NotNull JetClassOrObject declaration,
-            @NotNull ClassDescriptor descriptor,
-            @NotNull ClassTranslator classTranslator
+            @NotNull ClassDescriptor descriptor
     ) {
         JsFunction fun = createFunction();
         JsNameRef outerClassRef = new JsNameRef(fun.getScope().declareName(Namer.OUTER_CLASS_NAME));
@@ -145,7 +144,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         TranslationContext funContext = outerClassContext.newFunctionBody(fun, outerClassContext.aliasingContext().inner(outerClass, outerClassRef),
                                                                           usageTracker);
 
-        fun.getBody().getStatements().add(new JsReturn(classTranslator.translate(funContext)));
+        fun.getBody().getStatements().add(new JsReturn(ClassTranslator.translate(declaration, descriptor, funContext, outerClassContext)));
         JetClassBody body = declaration.getBody();
         assert body != null;
         return new InnerObjectTranslator(funContext, fun).translate(createReference(fun, descriptor), usageTracker.isUsed() ? outerClassRef : null, null);

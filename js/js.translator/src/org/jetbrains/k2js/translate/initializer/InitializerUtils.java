@@ -52,7 +52,7 @@ public final class InitializerUtils {
             @NotNull TranslationContext context
     ) {
         ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);
-        JsExpression value = ClassTranslator.generateObjectLiteral(declaration, descriptor, context);
+        JsExpression value = ClassTranslator.translateObjectDeclaration(declaration, descriptor, context);
         initializers.add(create(descriptor, !(descriptor.getContainingDeclaration() instanceof NamespaceDescriptor), value, context));
     }
 

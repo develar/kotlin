@@ -23,9 +23,6 @@ import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lexer.JetToken;
 import org.jetbrains.jet.lexer.JetTokens;
 
-import java.util.Collections;
-import java.util.List;
-
 public final class PsiUtils {
 
     private PsiUtils() {
@@ -112,22 +109,6 @@ public final class PsiUtils {
         JetParameter loopParameter = expression.getLoopParameter();
         assert loopParameter != null;
         return loopParameter;
-    }
-
-    @NotNull
-    public static List<JetParameter> getPrimaryConstructorParameters(@NotNull JetClassOrObject classDeclaration) {
-        if (classDeclaration instanceof JetClass) {
-            return ((JetClass) classDeclaration).getPrimaryConstructorParameters();
-        }
-        return Collections.emptyList();
-    }
-
-    @NotNull
-    public static JetObjectDeclarationName getObjectDeclarationName(@NotNull JetObjectDeclaration objectDeclaration) {
-        //TODO: util
-        JetObjectDeclarationName nameAsDeclaration = objectDeclaration.getNameAsDeclaration();
-        assert nameAsDeclaration != null;
-        return nameAsDeclaration;
     }
 
     @NotNull

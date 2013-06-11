@@ -50,7 +50,6 @@ import static org.jetbrains.k2js.translate.utils.ErrorReportingUtils.message;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.convertToExpression;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getBaseExpression;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.getObjectDeclarationName;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.sure;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.mutator.LastExpressionMutator.mutateLastExpression;
@@ -402,17 +401,17 @@ public final class ExpressionVisitor extends JetVisitor<JsNode, TranslationConte
     @Override
     @NotNull
     public JsNode visitObjectLiteralExpression(@NotNull JetObjectLiteralExpression expression, @NotNull TranslationContext context) {
-        return ClassTranslator.generateObjectLiteral(expression.getObjectDeclaration(), context);
+        return ClassTranslator.translateObjectDeclaration(expression.getObjectDeclaration(), context).source(expression);
     }
 
     @Override
     @NotNull
     public JsNode visitObjectDeclaration(@NotNull JetObjectDeclaration expression, @NotNull TranslationContext context) {
-        JetObjectDeclarationName objectDeclarationName = getObjectDeclarationName(expression);
+        JetObjectDeclarationName nameAsDeclaration = expression.getNameAsDeclaration();
+        assert nameAsDeclaration != null;
         VariableDescriptor descriptor = (VariableDescriptor) getNotNull(context.bindingContext(),
                                                                         BindingContext.DECLARATION_TO_DESCRIPTOR,
-                                                                        objectDeclarationName);
-        JsExpression value = ClassTranslator.generateClassCreation(expression, context);
-        return newVar(context.getNameForDescriptor(descriptor), value).source(expression);
+                                                                        nameAsDeclaration);
+        return newVar(context.getNameForDescriptor(descriptor), ClassTranslator.translateObjectDeclaration(expression, context)).source(expression);
     }
 }

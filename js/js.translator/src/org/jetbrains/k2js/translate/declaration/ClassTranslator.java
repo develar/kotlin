@@ -29,7 +29,6 @@ import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.GenerationPlace;
-import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.initializer.ClassInitializerTranslator;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
@@ -46,91 +45,67 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor
 /**
  * Generates a definition of a single class
  */
-public final class ClassTranslator extends AbstractTranslator {
-    @NotNull
-    private final JetClassOrObject classDeclaration;
-
-    @NotNull
-    private final ClassDescriptor descriptor;
-
-    @NotNull
-    public static JsInvocation generateClassCreation(@NotNull JetClassOrObject classDeclaration, @NotNull TranslationContext context) {
-        return new ClassTranslator(classDeclaration, context).translate(context);
+public final class ClassTranslator {
+    private ClassTranslator() {
     }
 
     @NotNull
-    public static JsExpression generateObjectLiteral(
-            @NotNull JetObjectDeclaration objectDeclaration,
-            @NotNull TranslationContext context
-    ) {
-        return new ClassTranslator(objectDeclaration, context).translateObjectLiteralExpression();
+    public static JsInvocation translateClass(@NotNull JetClassOrObject declaration, @NotNull TranslationContext context) {
+        return translate(declaration, getClassDescriptor(context.bindingContext(), declaration), context, context);
+    }
+
+    public static JsExpression translateObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
+        return translateObjectDeclaration(declaration, getClassDescriptor(context.bindingContext(), declaration), context);
     }
 
     @NotNull
-    public static JsExpression generateObjectLiteral(
+    public static JsExpression translateObjectDeclaration(
             @NotNull JetObjectDeclaration objectDeclaration,
             @NotNull ClassDescriptor descriptor,
             @NotNull TranslationContext context
     ) {
-        return new ClassTranslator(objectDeclaration, descriptor, context).translateObjectLiteralExpression();
-    }
-
-    private ClassTranslator(
-            @NotNull JetClassOrObject classDeclaration,
-            @NotNull TranslationContext context
-    ) {
-        this(classDeclaration, getClassDescriptor(context.bindingContext(), classDeclaration), context);
-    }
-
-    ClassTranslator(@NotNull JetClassOrObject classDeclaration,
-            @NotNull ClassDescriptor descriptor,
-            @NotNull TranslationContext context) {
-        super(context);
-        this.descriptor = descriptor;
-        this.classDeclaration = classDeclaration;
-    }
-
-    @NotNull
-    private JsExpression translateObjectLiteralExpression() {
         ClassDescriptor containingClass = DescriptorUtils.getContainingClass(descriptor);
         if (containingClass == null) {
-            return translate(context());
+            return translate(objectDeclaration, descriptor, context, context);
         }
-        return context().literalFunctionTranslator().translate(containingClass, context(), classDeclaration, descriptor, this);
+        return context.literalFunctionTranslator().translate(containingClass, context, objectDeclaration, descriptor);
     }
 
     @NotNull
-    private JsExpression classCreateInvocation(@NotNull ClassDescriptor descriptor) {
+    private static JsExpression classCreateInvocation(@NotNull ClassDescriptor descriptor, @NotNull TranslationContext containingContext) {
         switch (descriptor.getKind()) {
             case TRAIT:
-                return context().namer().traitCreationMethodReference();
+                return containingContext.namer().traitCreationMethodReference();
             case OBJECT:
-                return context().namer().objectCreationMethodReference();
+                return containingContext.namer().objectCreationMethodReference();
 
             default:
-                return context().namer().classCreationMethodReference();
+                return containingContext.namer().classCreationMethodReference();
         }
     }
 
     @NotNull
-    public JsInvocation translate(@NotNull TranslationContext declarationContext) {
+    public static JsInvocation translate(@NotNull JetClassOrObject declaration, @NotNull ClassDescriptor descriptor, @NotNull TranslationContext declarationContext, @NotNull TranslationContext containingContext) {
         JsFunction closure = JsAstUtils.createFunctionWithEmptyBody(declarationContext.scope());
         TranslationContext context = declarationContext.contextWithScope(closure);
-        JsInvocation createInvocation = new JsInvocation(classCreateInvocation(descriptor));
+        JsInvocation createInvocation = new JsInvocation(classCreateInvocation(descriptor, containingContext));
 
-        boolean isTopLevelDeclaration = context() == declarationContext;
+        boolean isTopLevelDeclaration = containingContext == declarationContext;
 
         addSuperclassReferences(descriptor, createInvocation, context);
-        addClassOwnDeclarations(createInvocation.getArguments(), context, closure, isTopLevelDeclaration);
+        addClassOwnDeclarations(declaration, descriptor, createInvocation.getArguments(), context, containingContext, closure, isTopLevelDeclaration);
 
         closure.getBody().getStatements().add(new JsReturn(createInvocation));
 
         return new JsInvocation(new JsInvocation(new JsNameRef(""), closure), Collections.<JsExpression>emptyList());
     }
 
-    private void addClassOwnDeclarations(
+    private static void addClassOwnDeclarations(
+            @NotNull JetClassOrObject declaration,
+            @NotNull final ClassDescriptor descriptor,
             @NotNull List<JsExpression> invocationArguments,
             @NotNull TranslationContext declarationContext,
+            @NotNull final TranslationContext containingContext,
             final JsFunction closure,
             boolean isTopLevelDeclaration
     ) {
@@ -145,7 +120,7 @@ public final class ClassTranslator extends AbstractTranslator {
                 @Override
                 @NotNull
                 public GenerationPlace compute() {
-                    return createPlace(properties, context().getThisObject(descriptor));
+                    return createPlace(properties, containingContext.getThisObject(descriptor));
                 }
             });
         }
@@ -161,8 +136,8 @@ public final class ClassTranslator extends AbstractTranslator {
         }
 
         if (!descriptor.getKind().equals(ClassKind.TRAIT)) {
-            JsFunction initializer = ClassInitializerTranslator.translateInitializerFunction(classDeclaration, descriptor, declarationContext);
-            if (context().isEcma5()) {
+            JsFunction initializer = ClassInitializerTranslator.translateInitializerFunction(declaration, descriptor, declarationContext);
+            if (containingContext.isEcma5()) {
                 invocationArguments.add(initializer.getBody().getStatements().isEmpty() ? JsLiteral.NULL : initializer);
             }
             else {
@@ -171,7 +146,7 @@ public final class ClassTranslator extends AbstractTranslator {
         }
 
         translatePropertiesAsConstructorParameters(descriptor, declarationContext, properties);
-        new DeclarationBodyVisitor(properties, declarationContext).traverseContainer(classDeclaration);
+        new DeclarationBodyVisitor(properties, declarationContext).traverseContainer(declaration);
 
         if (isTopLevelDeclaration) {
             declarationContext.literalFunctionTranslator().popDefinitionPlace();

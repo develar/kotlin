@@ -45,7 +45,7 @@ public final class ClassDeclarationTranslator {
             return null;
         }
 
-        JsExpression value = new ClassTranslator(declaration, descriptor, context).translate(context);
+        JsExpression value = ClassTranslator.translate(declaration, descriptor, context, context);
         JsExpression valueGetter;
         if (context.isEcma5()) {
             if (hasSupertypes(descriptor, context)) {
