@@ -90,7 +90,7 @@ public final class NamespaceTranslator {
             initializer = null;
         }
         else {
-            initializer = visitor.initializer;
+            initializer = visitor.getInitializer();
             if (ecma3Initializers != null) {
                 ecma3Initializers.add(
                         new JsInvocation(new JsNameRef("call", initializer), packageQualifiedName).asStatement());

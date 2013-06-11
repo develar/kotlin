@@ -20,10 +20,10 @@ import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.openapi.util.NotNullLazyValue;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.context.Namer;
@@ -130,8 +130,17 @@ public final class ClassTranslator {
             });
         }
 
-        if (!descriptor.getKind().equals(ClassKind.TRAIT)) {
-            JsFunction initializer = ClassInitializerTranslator.translateInitializerFunction(declaration, descriptor, declarationContext);
+        DeclarationBodyVisitor visitor = new DeclarationBodyVisitor(properties, declarationContext);
+        JsFunction initializer = visitor.getInitializer();
+        boolean isTrait = descriptor.getKind().equals(ClassKind.TRAIT);
+        if (!isTrait) {
+            // must be before visitor.traverseContainer - visitAnonymousInitializer will add anonymous initializer, but this statement can use constructor properties,
+            // so, we should process constructor properties first of all
+            ClassInitializerTranslator initializerTranslator = new ClassInitializerTranslator(declaration, descriptor);
+            initializer.setParameters(initializerTranslator.translate(visitor.getInitializerContext(), initializer, properties, declarationContext));
+        }
+        visitor.traverseContainer(declaration);
+        if (!isTrait) {
             if (containingContext.isEcma5()) {
                 invocationArguments.add(initializer.getBody().getStatements().isEmpty() ? JsLiteral.NULL : initializer);
             }
@@ -139,9 +148,6 @@ public final class ClassTranslator {
                 properties.add(new JsPropertyInitializer(Namer.INITIALIZE_METHOD_NAME, initializer));
             }
         }
-
-        translatePropertiesAsConstructorParameters(descriptor, declarationContext, properties);
-        new DeclarationBodyVisitor(properties, declarationContext).traverseContainer(declaration);
 
         if (isTopLevelDeclaration) {
             declarationContext.literalFunctionTranslator().popDefinitionPlace();
@@ -226,24 +232,5 @@ public final class ClassTranslator {
     @NotNull
     private static JsExpression getClassReference(@NotNull ClassDescriptor superClassDescriptor, TranslationContext context) {
         return context.getQualifiedReference(superClassDescriptor);
-    }
-
-    private static void translatePropertiesAsConstructorParameters(
-            @NotNull ClassDescriptor descriptor,
-            @NotNull TranslationContext context,
-            @NotNull List<JsPropertyInitializer> result
-    ) {
-        ConstructorDescriptor primaryConstructor = descriptor.getUnsubstitutedPrimaryConstructor();
-        if (primaryConstructor == null || primaryConstructor.getValueParameters().isEmpty()) {
-            return;
-        }
-
-        for (ValueParameterDescriptor parameter : primaryConstructor.getValueParameters()) {
-            PropertyDescriptor property =
-                    context.bindingContext().get(BindingContext.VALUE_PARAMETER_AS_PROPERTY, parameter);
-            if (property != null) {
-                PropertyTranslator.translateAccessors(property, result, context);
-            }
-        }
     }
 }

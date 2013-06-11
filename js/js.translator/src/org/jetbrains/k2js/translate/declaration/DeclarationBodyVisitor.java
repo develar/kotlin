@@ -26,7 +26,9 @@ import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.FunctionTranslator;
+import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.general.TranslatorVisitor;
+import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 
 import java.util.Collections;
@@ -34,12 +36,19 @@ import java.util.List;
 
 import static org.jetbrains.k2js.translate.expression.FunctionTranslator.createDefaultValueGetterName;
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
+import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
+import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.createDataDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.createPropertyDataDescriptor;
 
 public class DeclarationBodyVisitor extends TranslatorVisitor {
+    private final JsFunction initializer;
+
     protected final List<JsPropertyInitializer> result;
+    protected final List<JsStatement> initializerStatements;
+
+    protected final TranslationContext initializerContext;
 
     public DeclarationBodyVisitor(TranslationContext context) {
         this(new SmartList<JsPropertyInitializer>(), context);
@@ -48,6 +57,18 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
     public DeclarationBodyVisitor(List<JsPropertyInitializer> result, TranslationContext context) {
         super(context);
         this.result = result;
+        initializerStatements = new SmartList<JsStatement>();
+
+        initializer = new JsFunction(context.scope(), new JsBlock(initializerStatements));
+        initializerContext = context.newFunctionBody(initializer, null, null);
+    }
+
+    public JsFunction getInitializer() {
+        return initializer;
+    }
+
+    public TranslationContext getInitializerContext() {
+        return initializerContext;
     }
 
     @NotNull
@@ -65,7 +86,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
 
     @Override
     public void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration) {
-        // parsed it in initializer visitor => no additional actions are needed
+        InitializerUtils.generate(declaration, initializerStatements, context);
     }
 
     @Override
@@ -107,10 +128,19 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
     public void visitProperty(@NotNull JetProperty expression) {
         PropertyDescriptor propertyDescriptor = BindingUtils.getPropertyDescriptor(context.bindingContext(), expression);
         PropertyTranslator.translateAccessors(propertyDescriptor, expression, result, context);
+
+        JetExpression initializer = expression.getInitializer();
+        if (initializer != null) {
+            visitPropertyWithInitializer(propertyDescriptor, Translation.translateAsExpression(initializer, initializerContext));
+        }
+    }
+
+    protected void visitPropertyWithInitializer(PropertyDescriptor descriptor, JsExpression value) {
+        initializerStatements.add(generateInitializerForProperty(initializerContext, descriptor, value));
     }
 
     @Override
     public void visitAnonymousInitializer(@NotNull JetClassInitializer expression) {
-        // parsed it in initializer visitor => no additional actions are needed
+        initializerStatements.add(translateAsStatement(expression.getBody(), initializerContext));
     }
 }
