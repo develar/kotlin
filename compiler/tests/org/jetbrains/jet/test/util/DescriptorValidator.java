@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
+import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
 import org.jetbrains.jet.lang.types.ErrorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 
@@ -348,7 +349,7 @@ public class DescriptorValidator {
         public Void visitNamespaceDescriptor(
                 NamespaceDescriptor descriptor, JetScope scope
         ) {
-            assertFound(scope, descriptor, scope.getNamespace(descriptor.getName()));
+            assertFound(scope, descriptor, JetScopeUtils.findFirst(scope, descriptor.getName()));
             return null;
         }
 
