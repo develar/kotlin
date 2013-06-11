@@ -39,7 +39,6 @@ import java.util.List;
 
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorForType;
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isNotAny;
-import static org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator.createPlace;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 
 /**
@@ -97,30 +96,17 @@ public final class ClassTranslator {
 
     private static void addClassOwnDeclarations(
             @NotNull JetClassOrObject declaration,
-            @NotNull final ClassDescriptor descriptor,
+            @NotNull ClassDescriptor descriptor,
             @NotNull List<JsExpression> invocationArguments,
             @NotNull TranslationContext declarationContext,
-            @NotNull final TranslationContext containingContext,
+            @NotNull TranslationContext containingContext,
             final JsFunction closure,
             boolean isTopLevelDeclaration
     ) {
-        final List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
+        List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
         JsExpression qualifiedReference;
-        if (!isTopLevelDeclaration) {
-            qualifiedReference = null;
-        }
-        else if (descriptor.getKind().isObject()) {
-            qualifiedReference = null;
-            declarationContext.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
-                @Override
-                @NotNull
-                public GenerationPlace compute() {
-                    return createPlace(properties, containingContext.getThisObject(descriptor));
-                }
-            });
-        }
-        else {
-            qualifiedReference = declarationContext.getQualifiedReference(descriptor);
+        if (isTopLevelDeclaration) {
+            qualifiedReference = descriptor.getKind().isObject() ? null : declarationContext.getQualifiedReference(descriptor);
             declarationContext.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
                 @Override
                 @NotNull
@@ -128,6 +114,9 @@ public final class ClassTranslator {
                     return new ClosureBackedGenerationPlace(closure.getBody().getStatements());
                 }
             });
+        }
+        else {
+            qualifiedReference = null;
         }
 
         DeclarationBodyVisitor visitor = new DeclarationBodyVisitor(properties, declarationContext);
@@ -137,7 +126,8 @@ public final class ClassTranslator {
             // must be before visitor.traverseContainer - visitAnonymousInitializer will add anonymous initializer, but this statement can use constructor properties,
             // so, we should process constructor properties first of all
             ClassInitializerTranslator initializerTranslator = new ClassInitializerTranslator(declaration, descriptor);
-            initializer.setParameters(initializerTranslator.translate(visitor.getInitializerContext(), initializer, properties, declarationContext));
+            initializer.setParameters(
+                    initializerTranslator.translate(visitor.getInitializerContext(), initializer, properties, declarationContext));
         }
         visitor.traverseContainer(declaration);
         if (!isTrait) {

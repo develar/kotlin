@@ -25,15 +25,12 @@ import org.jetbrains.jet.lang.psi.JetClassBody;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetDeclarationWithBody;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
-import org.jetbrains.k2js.translate.LabelGenerator;
 import org.jetbrains.k2js.translate.context.AliasingContext;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.context.UsageTracker;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
-
-import java.util.List;
 
 import static org.jetbrains.k2js.translate.expression.FunctionTranslator.addRegularParameters;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
@@ -44,10 +41,6 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
 
     public LiteralFunctionTranslator(@NotNull TranslationContext context) {
         super(context);
-    }
-
-    public static GenerationPlace createPlace(@NotNull List<JsPropertyInitializer> list, @NotNull JsExpression reference) {
-        return new GenerationPlaceImpl(list, new LabelGenerator('f'), reference);
     }
 
     public void popDefinitionPlace() {

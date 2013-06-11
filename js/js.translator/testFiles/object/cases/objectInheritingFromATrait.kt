@@ -10,7 +10,7 @@ trait Foo {
 
 object foo : Foo {
     override fun execute(onlyIfAttached: Boolean, handler: ()->Unit) {
-        handler()
+        { handler() }()
     }
 }
 
