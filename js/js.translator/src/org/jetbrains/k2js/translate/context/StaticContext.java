@@ -49,8 +49,6 @@ public final class StaticContext {
 
     @NotNull
     private final BindingContext bindingContext;
-    @NotNull
-    private final Namer namer;
 
     @NotNull
     private final Intrinsics intrinsics;
@@ -68,7 +66,6 @@ public final class StaticContext {
     public StaticContext(@NotNull BindingContext bindingContext, @NotNull Config configuration) {
         this.program = new JsProgram();
         this.bindingContext = bindingContext;
-        this.namer = Namer.newInstance(program.getRootScope());
         this.intrinsics = new Intrinsics();
         this.configuration = configuration;
         predefinedAnnotationManager = new PredefinedAnnotationManager(configuration.getModule());
@@ -100,11 +97,6 @@ public final class StaticContext {
     @NotNull
     public Intrinsics getIntrinsics() {
         return intrinsics;
-    }
-
-    @NotNull
-    public Namer getNamer() {
-        return namer;
     }
 
     @NotNull

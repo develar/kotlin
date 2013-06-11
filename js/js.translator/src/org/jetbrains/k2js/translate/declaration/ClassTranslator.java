@@ -49,11 +49,6 @@ public final class ClassTranslator {
     private ClassTranslator() {
     }
 
-    @NotNull
-    public static JsInvocation translateClass(@NotNull JetClassOrObject declaration, @NotNull TranslationContext context) {
-        return translate(declaration, getClassDescriptor(context.bindingContext(), declaration), context, context);
-    }
-
     public static JsExpression translateObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
         return translateObjectDeclaration(declaration, getClassDescriptor(context.bindingContext(), declaration), context);
     }
@@ -72,15 +67,15 @@ public final class ClassTranslator {
     }
 
     @NotNull
-    private static JsExpression classCreateInvocation(@NotNull ClassDescriptor descriptor, @NotNull TranslationContext containingContext) {
+    private static JsExpression classCreateInvocation(@NotNull ClassDescriptor descriptor) {
         switch (descriptor.getKind()) {
             case TRAIT:
-                return containingContext.namer().traitCreationMethodReference();
+                return Namer.CREATE_TRAIT;
             case OBJECT:
-                return containingContext.namer().objectCreationMethodReference();
+                return Namer.CREATE_OBJECT;
 
             default:
-                return containingContext.namer().classCreationMethodReference();
+                return Namer.CREATE_CLASS;
         }
     }
 
@@ -88,7 +83,7 @@ public final class ClassTranslator {
     public static JsInvocation translate(@NotNull JetClassOrObject declaration, @NotNull ClassDescriptor descriptor, @NotNull TranslationContext declarationContext, @NotNull TranslationContext containingContext) {
         JsFunction closure = JsAstUtils.createFunctionWithEmptyBody(declarationContext.scope());
         TranslationContext context = declarationContext.contextWithScope(closure);
-        JsInvocation createInvocation = new JsInvocation(classCreateInvocation(descriptor, containingContext));
+        JsInvocation createInvocation = new JsInvocation(classCreateInvocation(descriptor));
 
         boolean isTopLevelDeclaration = containingContext == declarationContext;
 
@@ -141,7 +136,7 @@ public final class ClassTranslator {
                 invocationArguments.add(initializer.getBody().getStatements().isEmpty() ? JsLiteral.NULL : initializer);
             }
             else {
-                properties.add(new JsPropertyInitializer(Namer.initializeMethodReference(), initializer));
+                properties.add(new JsPropertyInitializer(Namer.INITIALIZE_METHOD_NAME, initializer));
             }
         }
 

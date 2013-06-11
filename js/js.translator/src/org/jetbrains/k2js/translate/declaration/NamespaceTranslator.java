@@ -111,6 +111,6 @@ public final class NamespaceTranslator {
         }
         defineArguments.add(new JsObjectLiteral(visitor.getResult(), true));
         result.add(new JsDocComment("name", packageQualifiedName));
-        result.add(new JsInvocation(context.namer().packageDefinitionMethodReference(), defineArguments).asStatement());
+        result.add(new JsInvocation(Namer.DEFINE_PACKAGE, defineArguments).asStatement());
     }
 }

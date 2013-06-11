@@ -166,11 +166,6 @@ public class TranslationContext {
     }
 
     @NotNull
-    public Namer namer() {
-        return staticContext.getNamer();
-    }
-
-    @NotNull
     public Intrinsics intrinsics() {
         return staticContext.getIntrinsics();
     }

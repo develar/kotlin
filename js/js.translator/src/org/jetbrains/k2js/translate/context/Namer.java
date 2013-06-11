@@ -16,9 +16,7 @@
 
 package org.jetbrains.k2js.translate.context;
 
-import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
-import com.google.dart.compiler.backend.js.ast.JsScope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
@@ -31,10 +29,8 @@ public final class Namer {
     public static final String CALLEE_NAME = "$fun";
     public static final String OUTER_CLASS_NAME = "$outer";
 
-    private static final String INITIALIZE_METHOD_NAME = "initialize";
-    private static final String CLASS_OBJECT_NAME = "createClass";
-    private static final String TRAIT_OBJECT_NAME = "createTrait";
-    private static final String OBJECT_OBJECT_NAME = "createObject";
+    public static final String INITIALIZE_METHOD_NAME = "initialize";
+
     private static final String SETTER_PREFIX = "set_";
     private static final String GETTER_PREFIX = "get_";
     private static final String BACKING_FIELD_PREFIX = "$";
@@ -49,19 +45,20 @@ public final class Namer {
     public static final String ROOT_PACKAGE_NAME = "_";
     public static final JsNameRef ROOT_PACKAGE_NAME_REF = new JsNameRef(ROOT_PACKAGE_NAME);
 
+    public static final JsNameRef IS_TYPE_FUN_NAME_REF = new JsNameRef("isType", KOTLIN_OBJECT_NAME_REF);
+
+    public static final JsNameRef CREATE_CLASS = new JsNameRef("createClass", KOTLIN_OBJECT_NAME_REF);
+    public static final JsNameRef CREATE_TRAIT = new JsNameRef("createTrait", KOTLIN_OBJECT_NAME_REF);
+    public static final JsNameRef CREATE_OBJECT = new JsNameRef("createObject", KOTLIN_OBJECT_NAME_REF);
+
+    public static final JsNameRef DEFINE_PACKAGE = new JsNameRef("p", KOTLIN_OBJECT_NAME_REF);
+
+    private Namer() {
+    }
+
     @NotNull
     public static String getReceiverParameterName() {
         return RECEIVER_PARAMETER_NAME;
-    }
-
-    @NotNull
-    public static String getRootNamespaceName() {
-        return ROOT_PACKAGE_NAME;
-    }
-
-    @NotNull
-    public static JsNameRef initializeMethodReference() {
-        return new JsNameRef(INITIALIZE_METHOD_NAME);
     }
 
     @NotNull
@@ -71,66 +68,13 @@ public final class Namer {
 
     @NotNull
     public static String getNameForAccessor(@NotNull String propertyName, boolean isGetter) {
-        return getNameWithPrefix(propertyName, isGetter ? GETTER_PREFIX : SETTER_PREFIX);
+        String prefix = isGetter ? GETTER_PREFIX : SETTER_PREFIX;
+        return prefix + propertyName;
     }
 
     @NotNull
     public static String getKotlinBackingFieldName(@NotNull String propertyName) {
-        return getNameWithPrefix(propertyName, BACKING_FIELD_PREFIX);
-    }
-
-    @NotNull
-    private static String getNameWithPrefix(@NotNull String name, @NotNull String prefix) {
-        return prefix + name;
-    }
-
-    public static Namer newInstance(@NotNull JsScope rootScope) {
-        return new Namer(rootScope);
-    }
-
-    @NotNull
-    private final String className;
-    @NotNull
-    private final String traitName;
-    @NotNull
-    private final JsNameRef definePackage;
-    @NotNull
-    private final String objectName;
-
-    @NotNull
-    private final String isTypeName;
-
-    private Namer(@NotNull JsScope rootScope) {
-        rootScope.declareName("Kotlin");
-        JsScope kotlinScope = new JsScope(rootScope, "Kotlin standard object");
-        traitName = kotlinScope.declareName(TRAIT_OBJECT_NAME);
-
-        definePackage = kotlin("p");
-
-        className = kotlinScope.declareName(CLASS_OBJECT_NAME);
-        objectName = kotlinScope.declareName(OBJECT_OBJECT_NAME);
-
-        isTypeName = kotlinScope.declareName("isType");
-    }
-
-    @NotNull
-    public JsExpression classCreationMethodReference() {
-        return kotlin(className);
-    }
-
-    @NotNull
-    public JsExpression traitCreationMethodReference() {
-        return kotlin(traitName);
-    }
-
-    @NotNull
-    public JsExpression packageDefinitionMethodReference() {
-        return definePackage;
-    }
-
-    @NotNull
-    public JsExpression objectCreationMethodReference() {
-        return kotlin(objectName);
+        return BACKING_FIELD_PREFIX + propertyName;
     }
 
     @NotNull
@@ -139,14 +83,9 @@ public final class Namer {
     }
 
     @NotNull
-    public JsExpression isOperationReference() {
-        return kotlin(isTypeName);
-    }
-
-    @NotNull
     static String generateNamespaceName(DeclarationDescriptor descriptor) {
         if (DescriptorUtils.isRootNamespace((NamespaceDescriptor) descriptor)) {
-            return getRootNamespaceName();
+            return ROOT_PACKAGE_NAME;
         }
         else {
             return descriptor.getName().asString();

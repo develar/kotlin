@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 JetBrains s.r.o.
+ * Copyright 2010-2013 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,10 @@
 package org.jetbrains.js.compiler;
 
 import com.google.dart.compiler.backend.js.JsToStringGenerationVisitor;
-import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.JsBlock;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.JsNode;
+import com.google.dart.compiler.backend.js.ast.JsProgram;
 import com.google.dart.compiler.util.TextOutput;
 import org.jetbrains.annotations.Nullable;
 
@@ -85,7 +88,7 @@ public class JsSourceGenerationVisitor extends JsToStringGenerationVisitor imple
 
     @Override
     public void visitProgram(JsProgram program) {
-        program.acceptChildren(this);
+        visitBlock(program);
         if (sourceMapBuilder != null) {
             sourceMapBuilder.addLink();
         }

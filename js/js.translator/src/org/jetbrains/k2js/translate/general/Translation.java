@@ -170,10 +170,10 @@ public final class Translation {
             Config config,
             MainCallParameters mainCallParameters
     ) {
-        JsFunction definitionFunction = new JsFunction(staticContext.getProgram().getScope(), new JsBlock());
-        List<JsStatement> statements = definitionFunction.getBody().getStatements();
+        List<JsStatement> statements = new ArrayList<JsStatement>();
         statements.add(new JsStringLiteral("use strict").asStatement());
 
+        JsFunction definitionFunction = new JsFunction(null, new JsBlock(statements));
         TranslationContext context = TranslationContext.rootContext(staticContext, definitionFunction);
         staticContext.initTranslators(context);
         NamespaceTranslator.translateFiles(files, statements, context);
@@ -185,12 +185,16 @@ public final class Translation {
             }
         }
         mayBeGenerateTests(files, config, definitionFunction.getBody(), context);
-        statements.add(new JsReturn(new JsNameRef(Namer.getRootNamespaceName())));
+        statements.add(new JsReturn(Namer.ROOT_PACKAGE_NAME_REF));
         return definitionFunction;
     }
 
-    private static void mayBeGenerateTests(@NotNull Collection<JetFile> files, @NotNull Config config,
-            @NotNull JsBlock rootBlock, @NotNull TranslationContext context) {
+    private static void mayBeGenerateTests(
+            @NotNull Collection<JetFile> files,
+            @NotNull Config config,
+            @NotNull JsBlock rootBlock,
+            @NotNull TranslationContext context
+    ) {
         JSTester tester = config.getTester();
         if (tester != null) {
             tester.initialize(context, rootBlock);

@@ -36,7 +36,7 @@ public final class ExamplesTest extends SingleFileTranslationTest {
 
     @Override
     public void runTest() throws Exception {
-        runFunctionOutputTest(filename, Namer.getRootNamespaceName(), "box", "OK");
+        runFunctionOutputTest(filename, Namer.ROOT_PACKAGE_NAME, "box", "OK");
     }
 
     public static Test suite() throws Exception {

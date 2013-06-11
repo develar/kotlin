@@ -26,6 +26,7 @@ import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetIsExpression;
 import org.jetbrains.jet.lang.psi.JetTypeReference;
 import org.jetbrains.jet.lang.resolve.name.Name;
+import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
@@ -72,8 +73,8 @@ public final class PatternTranslator extends AbstractTranslator {
     @NotNull
     private JsExpression translateAsIsCheck(@NotNull JsExpression expressionToMatch,
                                             @NotNull JetTypeReference typeReference) {
-        JsInvocation isCheck = new JsInvocation(context().namer().isOperationReference(),
-                                                     expressionToMatch, getClassNameReference(typeReference));
+        JsInvocation isCheck = new JsInvocation(Namer.IS_TYPE_FUN_NAME_REF,
+                                                expressionToMatch, getClassNameReference(typeReference));
         if (isNullable(typeReference)) {
             return addNullCheck(expressionToMatch, isCheck);
         }
