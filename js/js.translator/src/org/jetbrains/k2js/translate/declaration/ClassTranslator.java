@@ -101,8 +101,6 @@ public final class ClassTranslator {
             final JsFunction closure
     ) {
         List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
-        JsExpression qualifiedReference;
-        qualifiedReference = descriptor.getKind().isObject() ? null : declarationContext.getQualifiedReference(descriptor);
         declarationContext.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
             @Override
             @NotNull
@@ -138,9 +136,10 @@ public final class ClassTranslator {
                 invocationArguments.add(JsLiteral.NULL);
             }
             else {
-                if (qualifiedReference != null) {
+                if (!descriptor.getKind().isObject()) {
                     // about "prototype" — see http://code.google.com/p/jsdoc-toolkit/wiki/TagLends
-                    invocationArguments.add(new JsDocComment(JsAstUtils.LENDS_JS_DOC_TAG, new JsNameRef("prototype", qualifiedReference)));
+                    invocationArguments.add(new JsDocComment(JsAstUtils.LENDS_JS_DOC_TAG, new JsNameRef("prototype", declarationContext
+                            .getQualifiedReference(descriptor))));
                 }
                 invocationArguments.add(new JsObjectLiteral(properties, true));
             }
