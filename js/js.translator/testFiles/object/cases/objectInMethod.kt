@@ -6,9 +6,9 @@ class A() {
             val c = true;
         }
         val z = object {
-            val c = true
+            val c = { { true }() }
         }
-        return t.c && z.c
+        return t.c && z.c()
     }
 }
 

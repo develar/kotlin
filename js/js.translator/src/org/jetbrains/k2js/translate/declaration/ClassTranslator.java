@@ -84,10 +84,8 @@ public final class ClassTranslator {
         TranslationContext context = declarationContext.contextWithScope(closure);
         JsInvocation createInvocation = new JsInvocation(classCreateInvocation(descriptor));
 
-        boolean isTopLevelDeclaration = containingContext == declarationContext;
-
         addSuperclassReferences(descriptor, createInvocation, context);
-        addClassOwnDeclarations(declaration, descriptor, createInvocation.getArguments(), context, containingContext, closure, isTopLevelDeclaration);
+        addClassOwnDeclarations(declaration, descriptor, createInvocation.getArguments(), context, containingContext, closure);
 
         closure.getBody().getStatements().add(new JsReturn(createInvocation));
 
@@ -100,24 +98,18 @@ public final class ClassTranslator {
             @NotNull List<JsExpression> invocationArguments,
             @NotNull TranslationContext declarationContext,
             @NotNull TranslationContext containingContext,
-            final JsFunction closure,
-            boolean isTopLevelDeclaration
+            final JsFunction closure
     ) {
         List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
         JsExpression qualifiedReference;
-        if (isTopLevelDeclaration) {
-            qualifiedReference = descriptor.getKind().isObject() ? null : declarationContext.getQualifiedReference(descriptor);
-            declarationContext.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
-                @Override
-                @NotNull
-                public GenerationPlace compute() {
-                    return new ClosureBackedGenerationPlace(closure.getBody().getStatements());
-                }
-            });
-        }
-        else {
-            qualifiedReference = null;
-        }
+        qualifiedReference = descriptor.getKind().isObject() ? null : declarationContext.getQualifiedReference(descriptor);
+        declarationContext.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
+            @Override
+            @NotNull
+            public GenerationPlace compute() {
+                return new ClosureBackedGenerationPlace(closure.getBody().getStatements());
+            }
+        });
 
         DeclarationBodyVisitor visitor = new DeclarationBodyVisitor(properties, declarationContext);
         JsFunction initializer = visitor.getInitializer();
@@ -139,9 +131,7 @@ public final class ClassTranslator {
             }
         }
 
-        if (isTopLevelDeclaration) {
-            declarationContext.literalFunctionTranslator().popDefinitionPlace();
-        }
+        declarationContext.literalFunctionTranslator().popDefinitionPlace();
 
         if (!properties.isEmpty()) {
             if (properties.isEmpty()) {
