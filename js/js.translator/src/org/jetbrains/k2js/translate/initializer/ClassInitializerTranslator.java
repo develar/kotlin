@@ -32,6 +32,8 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.FunctionTranslator;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateArgumentList;
@@ -69,9 +71,9 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
     }
 
     private void translate() {
-        //NOTE: while we translate constructor parameters we also add property initializer statements
+        // NOTE: while we translate constructor parameters we also add property initializer statements
         // for properties declared as constructor parameters
-        translatePrimaryConstructorParameters(initializerFunction.getParameters());
+        initializerFunction.setParameters(translatePrimaryConstructorParameters());
 
         new InitializerVisitor(initializerStatements, context()).traverseContainer(declaration);
 
@@ -125,7 +127,7 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         return null;
     }
 
-    private void translatePrimaryConstructorParameters(List<JsParameter> result) {
+    private List<JsParameter> translatePrimaryConstructorParameters() {
         ConstructorDescriptor primaryConstructor = descriptor.getUnsubstitutedPrimaryConstructor();
         List<ValueParameterDescriptor> parameters;
         if (primaryConstructor == null) {
@@ -139,17 +141,20 @@ public final class ClassInitializerTranslator extends AbstractTranslator {
         mayBeAddCallToSuperMethod(initializerFunction);
 
         if (parameters == null || parameters.isEmpty()) {
-            return;
+            return Collections.emptyList();
         }
 
-        for (ValueParameterDescriptor parameter : parameters) {
+        JsParameter[] result = new JsParameter[parameters.size()];
+        for (int i = 0; i < parameters.size(); i++) {
+            ValueParameterDescriptor parameter = parameters.get(i);
             JsParameter jsParameter = new JsParameter(context().getNameForDescriptor(parameter));
             PropertyDescriptor propertyDescriptor = bindingContext().get(BindingContext.VALUE_PARAMETER_AS_PROPERTY, parameter);
             if (propertyDescriptor != null) {
                 initializerStatements.add(InitializerUtils.generateInitializerForProperty(context(), propertyDescriptor,
                                                                                           new JsNameRef(jsParameter.getName())));
             }
-            result.add(jsParameter);
+            result[i] = jsParameter;
         }
+        return Arrays.asList(result);
     }
 }
