@@ -33,15 +33,12 @@ import java.util.List;
 
 public class DescriptorValidator {
 
-    public static final ValidationVisitor FORBID_ERROR_TYPES = new ValidationVisitor(false);
-    public static final ValidationVisitor ALLOW_ERROR_TYPES = new ValidationVisitor(true);
-
     public static void validate(DeclarationDescriptor... descriptors) {
-        validate(FORBID_ERROR_TYPES, Arrays.asList(descriptors));
+        validate(ValidationVisitor.FORBID_ERROR_TYPES, Arrays.asList(descriptors));
     }
 
-    public static void validateIgnoringErrorTypes(DeclarationDescriptor... descriptors) {
-        validate(ALLOW_ERROR_TYPES, Arrays.asList(descriptors));
+    public static void validate(@NotNull ValidationVisitor validationStrategy, DeclarationDescriptor... descriptors) {
+        validate(validationStrategy, Arrays.asList(descriptors));
     }
 
     public static void validate(@NotNull ValidationVisitor validator, @NotNull Collection<DeclarationDescriptor> descriptors) {
@@ -61,14 +58,16 @@ public class DescriptorValidator {
     }
 
     private static void report(@NotNull DiagnosticCollector collector, @NotNull DeclarationDescriptor descriptor, @NotNull String message) {
-        collector.report(new Diagnostic(descriptor, message));
+        collector.report(new ValidationDiagnostic(descriptor, message));
     }
 
     public interface DiagnosticCollector {
-        void report(@NotNull Diagnostic diagnostic);
+        void report(@NotNull ValidationDiagnostic diagnostic);
     }
 
     public static class ValidationVisitor implements DeclarationDescriptorVisitor<Boolean, DiagnosticCollector> {
+        public static final ValidationVisitor FORBID_ERROR_TYPES = new ValidationVisitor(false);
+        public static final ValidationVisitor ALLOW_ERROR_TYPES = new ValidationVisitor(true);
 
         private final boolean allowErrorTypes;
 
@@ -150,13 +149,28 @@ public class DescriptorValidator {
             }
         }
 
+        private static <T> void assertEqualTypes(
+                DeclarationDescriptor descriptor,
+                DiagnosticCollector collector,
+                String name,
+                JetType expected,
+                JetType actual
+        ) {
+            if (ErrorUtils.isErrorType(expected) && ErrorUtils.isErrorType(actual)) {
+                assertEquals(descriptor, collector, name, expected.toString(), actual.toString());
+            }
+            else if (!expected.equals(actual)) {
+                report(collector, descriptor, "Wrong " + name + ": " + actual + " must be " + expected);
+            }
+        }
+
         private static void validateAccessor(
                 PropertyDescriptor descriptor,
                 DiagnosticCollector collector,
                 PropertyAccessorDescriptor accessor,
                 String name
         ) {
-            // TODO
+            // TODO: fix the discrepancies in descriptor construction and enable these checks
             //assertEquals(accessor, collector, name + " visibility", descriptor.getVisibility(), accessor.getVisibility());
             //assertEquals(accessor, collector, name + " modality", descriptor.getModality(), accessor.getModality());
             assertEquals(accessor, collector, "corresponding property", descriptor, accessor.getCorrespondingProperty());
@@ -191,6 +205,9 @@ public class DescriptorValidator {
                 TypeParameterDescriptor descriptor, DiagnosticCollector collector
         ) {
             validateTypes(descriptor, collector, descriptor.getUpperBounds());
+
+            validateType(descriptor, descriptor.getDefaultType(), collector);
+
             return true;
         }
 
@@ -239,7 +256,7 @@ public class DescriptorValidator {
         ) {
             visitFunctionDescriptor(constructorDescriptor, collector);
 
-            assertEquals(constructorDescriptor, collector,
+            assertEqualTypes(constructorDescriptor, collector,
                          "return type",
                          constructorDescriptor.getContainingDeclaration().getDefaultType(),
                          constructorDescriptor.getReturnType());
@@ -262,14 +279,15 @@ public class DescriptorValidator {
 
             PropertyGetterDescriptor getter = descriptor.getGetter();
             if (getter != null) {
-                assertEquals(getter, collector, "getter return type", descriptor.getType(), getter.getReturnType());
+                assertEqualTypes(getter, collector, "getter return type", descriptor.getType(), getter.getReturnType());
                 validateAccessor(descriptor, collector, getter, "getter");
             }
 
             PropertySetterDescriptor setter = descriptor.getSetter();
             if (setter != null) {
                 assertEquals(setter, collector, "setter parameter count", 1, setter.getValueParameters().size());
-                assertEquals(setter, collector, "setter parameter type", descriptor.getType(), setter.getValueParameters().get(0).getType());
+                assertEqualTypes(setter, collector, "setter parameter type", descriptor.getType(), setter.getValueParameters().get(0).getType());
+                assertEquals(setter, collector, "corresponding property", descriptor, setter.getCorrespondingProperty());
             }
 
             return true;
@@ -279,8 +297,7 @@ public class DescriptorValidator {
         public Boolean visitValueParameterDescriptor(
                 ValueParameterDescriptor descriptor, DiagnosticCollector collector
         ) {
-            visitVariableDescriptor(descriptor, collector);
-            return true;
+            return visitVariableDescriptor(descriptor, collector);
         }
 
         @Override
@@ -453,13 +470,13 @@ public class DescriptorValidator {
         }
     }
 
-    public static class Diagnostic {
+    public static class ValidationDiagnostic {
 
         private final DeclarationDescriptor descriptor;
         private final String message;
         private final Throwable stackTrace;
 
-        private Diagnostic(@NotNull DeclarationDescriptor descriptor, @NotNull String message) {
+        private ValidationDiagnostic(@NotNull DeclarationDescriptor descriptor, @NotNull String message) {
             this.descriptor = descriptor;
             this.message = message;
             this.stackTrace = new Throwable();
@@ -496,7 +513,7 @@ public class DescriptorValidator {
         private boolean errorsFound = false;
 
         @Override
-        public void report(@NotNull Diagnostic diagnostic) {
+        public void report(@NotNull ValidationDiagnostic diagnostic) {
             diagnostic.printStackTrace(System.err);
             errorsFound = true;
         }
