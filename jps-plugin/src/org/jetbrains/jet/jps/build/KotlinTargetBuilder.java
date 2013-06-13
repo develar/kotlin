@@ -53,7 +53,7 @@ public class KotlinTargetBuilder extends TargetBuilder<BuildRootDescriptor, Kotl
     private final String outputLanguageName;
     private final String subCompilerClassName;
 
-    private static final short FORMAT_VERSION = 1;
+    private static final short FORMAT_VERSION = 2;
 
     public KotlinTargetBuilder(KotlinBuildTargetType targetType) {
         super(Collections.singletonList(targetType));

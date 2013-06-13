@@ -80,16 +80,39 @@ public final class ClassTranslator {
 
     @NotNull
     public static JsInvocation translate(@NotNull JetClassOrObject declaration, @NotNull ClassDescriptor descriptor, @NotNull TranslationContext declarationContext, @NotNull TranslationContext containingContext) {
-        JsFunction closure = JsAstUtils.createFunctionWithEmptyBody(declarationContext.scope());
-        TranslationContext context = declarationContext.contextWithScope(closure);
+        final JsFunction closure;
+        TranslationContext context;
+        if (descriptor.getKind().isObject()) {
+            closure = null;
+            context = declarationContext;
+        }
+        else {
+            closure = JsAstUtils.createFunctionWithEmptyBody(declarationContext.scope());
+            context = declarationContext.contextWithScope(closure);
+        }
+
         JsInvocation createInvocation = new JsInvocation(classCreateInvocation(descriptor));
 
         addSuperclassReferences(descriptor, createInvocation, context);
-        addClassOwnDeclarations(declaration, descriptor, createInvocation.getArguments(), context, containingContext, closure);
 
-        closure.getBody().getStatements().add(new JsReturn(createInvocation));
-
-        return new JsInvocation(new JsInvocation(new JsNameRef(""), closure), Collections.<JsExpression>emptyList());
+        if (closure != null) {
+            declarationContext.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
+                @Override
+                @NotNull
+                public GenerationPlace compute() {
+                    return new ClosureBackedGenerationPlace(closure.getBody().getStatements());
+                }
+            });
+        }
+        addClassOwnDeclarations(declaration, descriptor, createInvocation.getArguments(), context, containingContext);
+        if (closure != null) {
+            declarationContext.literalFunctionTranslator().popDefinitionPlace();
+            closure.getBody().getStatements().add(new JsReturn(createInvocation));
+            return new JsInvocation(new JsInvocation(new JsNameRef(""), closure), Collections.<JsExpression>emptyList());
+        }
+        else {
+            return createInvocation;
+        }
     }
 
     private static void addClassOwnDeclarations(
@@ -97,27 +120,16 @@ public final class ClassTranslator {
             @NotNull ClassDescriptor descriptor,
             @NotNull List<JsExpression> invocationArguments,
             @NotNull TranslationContext declarationContext,
-            @NotNull TranslationContext containingContext,
-            final JsFunction closure
+            @NotNull TranslationContext containingContext
     ) {
         List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
-        declarationContext.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
-            @Override
-            @NotNull
-            public GenerationPlace compute() {
-                return new ClosureBackedGenerationPlace(closure.getBody().getStatements());
-            }
-        });
-
         DeclarationBodyVisitor visitor = new DeclarationBodyVisitor(properties, declarationContext);
         JsFunction initializer = visitor.getInitializer();
         boolean isTrait = descriptor.getKind().equals(ClassKind.TRAIT);
         if (!isTrait) {
             // must be before visitor.traverseContainer - visitAnonymousInitializer will add anonymous initializer, but this statement can use constructor properties,
             // so, we should process constructor properties first of all
-            ClassInitializerTranslator initializerTranslator = new ClassInitializerTranslator(declaration, descriptor);
-            initializer.setParameters(
-                    initializerTranslator.translate(visitor.getInitializerContext(), initializer, properties, declarationContext));
+            initializer.setParameters(ClassInitializerTranslator.translate(declaration, descriptor, visitor.getInitializerContext(), initializer, properties, declarationContext));
         }
         visitor.traverseContainer(declaration);
         if (!isTrait) {
@@ -128,8 +140,6 @@ public final class ClassTranslator {
                 properties.add(new JsPropertyInitializer(Namer.INITIALIZE_METHOD_NAME, initializer));
             }
         }
-
-        declarationContext.literalFunctionTranslator().popDefinitionPlace();
 
         if (!properties.isEmpty()) {
             if (properties.isEmpty()) {

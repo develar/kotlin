@@ -18,7 +18,6 @@ package org.jetbrains.k2js.translate.initializer;
 
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetDelegationSpecifier;
@@ -39,25 +38,23 @@ import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generate
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateArgumentList;
 
 public final class ClassInitializerTranslator {
-    @NotNull
-    private final JetClassOrObject declaration;
-    private final ClassDescriptor descriptor;
-
-    public ClassInitializerTranslator(
-            @NotNull JetClassOrObject declaration,
-            @NotNull ClassDescriptor descriptor
-    ) {
-        this.declaration = declaration;
-        this.descriptor = descriptor;
+    private ClassInitializerTranslator() {
     }
 
-    private void mayBeAddCallToSuperMethod(JsFunction initializer, TranslationContext context) {
+    private static void mayBeAddCallToSuperMethod(
+            ClassDescriptor descriptor,
+            JetClassOrObject declaration,
+            JsFunction initializer,
+            TranslationContext context
+    ) {
         for (JetType type : descriptor.getTypeConstructor().getSupertypes()) {
             ClassDescriptor superClassDescriptor = DescriptorUtils.getClassDescriptorForType(type);
             if (superClassDescriptor.getKind() == ClassKind.CLASS) {
-                JetDelegatorToSuperCall superCall = getSuperCall();
-                if (superCall != null) {
-                    addCallToSuperMethod(superCall, initializer, context);
+                for (JetDelegationSpecifier specifier : declaration.getDelegationSpecifiers()) {
+                    if (specifier instanceof JetDelegatorToSuperCall) {
+                        addCallToSuperMethod((JetDelegatorToSuperCall) specifier, initializer, context);
+                        return;
+                    }
                 }
                 return;
             }
@@ -84,21 +81,13 @@ public final class ClassInitializerTranslator {
         initializer.getBody().getStatements().add(call.asStatement());
     }
 
-    @Nullable
-    private JetDelegatorToSuperCall getSuperCall() {
-        for (JetDelegationSpecifier specifier : declaration.getDelegationSpecifiers()) {
-            if (specifier instanceof JetDelegatorToSuperCall) {
-                return (JetDelegatorToSuperCall) specifier;
-            }
-        }
-        return null;
-    }
-
-    public List<JsParameter> translate(
+    public static List<JsParameter> translate(
+            @NotNull JetClassOrObject declaration,
+            @NotNull ClassDescriptor descriptor,
             @NotNull TranslationContext context,
             @NotNull JsFunction initializer,
-            List<JsPropertyInitializer> properties,
-            TranslationContext declarationContext
+            @NotNull List<JsPropertyInitializer> properties,
+            @NotNull TranslationContext declarationContext
     ) {
         ConstructorDescriptor primaryConstructor = descriptor.getUnsubstitutedPrimaryConstructor();
         List<ValueParameterDescriptor> parameters;
@@ -111,7 +100,7 @@ public final class ClassInitializerTranslator {
             FunctionTranslator.translateDefaultParametersInitialization(primaryConstructor, context, statements);
         }
 
-        mayBeAddCallToSuperMethod(initializer, context);
+        mayBeAddCallToSuperMethod(descriptor, declaration, initializer, context);
 
         if (parameters == null || parameters.isEmpty()) {
             return Collections.emptyList();
