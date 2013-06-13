@@ -303,7 +303,14 @@ public class KotlinCompiler {
                 result = analyzeProjectModule(name, sources, analyzeCompletely);
             }
             else {
-                result = analyzeModule(name, sources, false, null, null, false);
+                // todo how we should provide dependencies for library?
+                NotNullLazyValue<ModuleInfo> kotlinJsRuntime = name.equals("KotlinJsRuntime") ? null : analyzedModules.get("KotlinJsRuntime");
+                if (kotlinJsRuntime != null) {
+                    result = analyzeModule(name, sources, false, Collections.singletonList(kotlinJsRuntime.getValue()), Collections.singleton(kotlinJsRuntime.getValue()), false);
+                }
+                else {
+                    result = analyzeModule(name, sources, false, null, null, false);
+                }
             }
             return result == null ? moduleWithErrors : result;
         }

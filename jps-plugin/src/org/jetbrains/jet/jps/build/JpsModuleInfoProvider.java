@@ -48,8 +48,7 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
 
     @Override
     public boolean processDependencies(String moduleName, DependenciesProcessor processor) {
-        JpsModule module = getModule(moduleName);
-        return processModuleDependencies(processor, module);
+        return processModuleDependencies(processor, getModule(moduleName));
     }
 
     private static boolean processModuleDependencies(DependenciesProcessor consumer, JpsModule dependentModule) {
@@ -121,7 +120,6 @@ public class JpsModuleInfoProvider extends ModuleInfoProvider {
                 List<BuildRootDescriptor> roots = buildRootIndex.getTargetRoots(buildTarget, context);
                 for (BuildRootDescriptor root : roots) {
                     final FileFilter fileFilter = root.createFileFilter();
-                    //noinspection UnnecessaryFullyQualifiedName
                     FileUtil.processFilesRecursively(root.getRootFile(), new Processor<File>() {
                         @Override
                         public boolean process(File file) {

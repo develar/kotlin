@@ -33,6 +33,7 @@ import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.util.Processor;
 import com.intellij.util.SingletonSet;
+import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.analyzer.AnalyzerFacade;
@@ -56,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
     INSTANCE;
@@ -74,16 +76,16 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
             result = CachedValuesManager.getManager(project).createCachedValue(new CachedValueProvider<ModuleInfo>() {
                 @Override
                 public Result<ModuleInfo> compute() {
-                    Module anyJsModule = null;
+                    List<JetFile> allFiles = new ArrayList<JetFile>();
+                    Set<Library> processedLibraries = new THashSet<Library>();
                     for (Module module : ModuleManager.getInstance(project).getModules()) {
                         if (KotlinFrameworkDetector.isJsKotlinModule(module)) {
-                            anyJsModule = module;
+                            getLibraryFiles(allFiles, project, module, processedLibraries);
                         }
                     }
 
-                    assert anyJsModule != null : "don't call if js module is not found";
                     ModuleInfo libraryModuleConfiguration = new ModuleInfo(ModuleInfo.STUBS_MODULE_NAME, project);
-                    XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, getLibraryFiles(project, anyJsModule), false);
+                    XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, allFiles, false);
                     return Result.create(libraryModuleConfiguration, ProjectRootModificationTracker.getInstance(project));
                 }
             }, false);
@@ -133,17 +135,24 @@ public enum JSAnalyzerFacadeForIDEA implements AnalyzerFacade {
                                   new FileBasedDeclarationProviderFactory(storageManager, files, Predicates.<FqName>alwaysFalse()));
     }
 
-    public static List<JetFile> getLibraryFiles(final Project project, Module module) {
-        final List<JetFile> allFiles = new ArrayList<JetFile>();
+    private static List<JetFile> getLibraryFiles(
+            final List<JetFile> allFiles,
+            final Project project,
+            Module module,
+            final Set<Library> processedLibraries
+    ) {
         ModuleRootManager.getInstance(module).orderEntries().librariesOnly().forEachLibrary(new Processor<Library>() {
             @Override
             public boolean process(Library library) {
+                if (!processedLibraries.add(library)) {
+                    return true;
+                }
+
                 VirtualFile[] libraryFiles = library.getFiles(OrderRootType.CLASSES);
                 if (libraryFiles.length > 0) {
                     for (VirtualFile file : libraryFiles) {
                         Traverser.traverseFile(project, file, allFiles);
                     }
-                    return false;
                 }
                 return true;
             }
