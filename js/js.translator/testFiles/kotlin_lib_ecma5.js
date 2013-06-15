@@ -36,8 +36,6 @@ var Kotlin = Object.create(null, {
                     initializer.apply(o, arguments);
                 }
             }
-
-            Object.seal(o);
             return o;
         };
     }
@@ -62,10 +60,6 @@ var Kotlin = Object.create(null, {
         return proto;
     }
 
-    Kotlin.createTrait = function (bases, properties) {
-        return createClass(bases, null, properties, false);
-    };
-
     Kotlin.createClass = function (bases, initializer, properties) {
         // proto must be created for class even if it is not needed (requires for is operator)
         return createClass(bases, initializer === null ? function () {} : initializer, properties, true);
@@ -86,7 +80,6 @@ var Kotlin = Object.create(null, {
             }
             initializer.call(o);
         }
-        Object.seal(o);
         return o;
     };
 
@@ -118,10 +111,7 @@ var Kotlin = Object.create(null, {
             Object.defineProperty(constructor, "initializer", {value: initializer});
 
             Object.defineProperty(initializer, "baseInitializer", {value: baseInitializer});
-            Object.freeze(initializer);
         }
-
-        Object.freeze(constructor);
         return constructor;
     }
 
@@ -175,7 +165,6 @@ var Kotlin = Object.create(null, {
                 }
                 else {
                     var getter = createPackageGetter(p.$members$, initializers);
-                    Object.freeze(getter);
                     Object.defineProperty(m, name, {get: getter});
                 }
             }
@@ -206,7 +195,6 @@ var Kotlin = Object.create(null, {
                 var tmp = initializers;
                 initializers = null;
                 invokeInitializers(tmp, instance);
-                Object.seal(instance);
             }
             return instance;
         };
@@ -253,6 +241,6 @@ var Kotlin = Object.create(null, {
     };
 
     Kotlin.doDefineModule = function (id, declaration) {
-        Kotlin.modules[id] = Object.freeze(declaration);
+        Kotlin.modules[id] = declaration;
     };
 })();

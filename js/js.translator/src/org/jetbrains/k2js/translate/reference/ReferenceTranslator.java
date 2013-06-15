@@ -41,10 +41,12 @@ public final class ReferenceTranslator {
     }
 
     @NotNull
-    public static JsExpression translateAsFQReference(@NotNull DeclarationDescriptor referencedDescriptor,
-            @NotNull TranslationContext context) {
+    public static JsExpression translateAsFQReference(
+            @NotNull DeclarationDescriptor referencedDescriptor,
+            @NotNull TranslationContext context
+    ) {
         JsExpression alias = context.getAliasForDescriptor(referencedDescriptor);
-        return alias != null ? alias : context.getQualifiedReference(referencedDescriptor);
+        return alias == null ? context.getQualifiedReference(referencedDescriptor) : alias;
     }
 
     @NotNull

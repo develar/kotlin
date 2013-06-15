@@ -115,14 +115,8 @@ public final class StaticContext {
         if (classDescriptor != null) {
             JsNameRef ref = getNameRefForDescriptor(classDescriptor, context);
             ref.setQualifier(context.getQualifierForDescriptor(classDescriptor));
-            if (context.isEcma5() ||
-                context.isNative(classDescriptor) ||
-                DescriptorUtils.getModuleDescriptor(descriptor) == KotlinBuiltIns.getInstance().getBuiltInsModule()) {
-                return ref;
-            }
-            else {
-                return new JsInvocation(ref);
-            }
+            return ref;
+
         }
         if (descriptor instanceof NamespaceDescriptor) {
             return getPackageQualifiedName((NamespaceDescriptor) descriptor, null);

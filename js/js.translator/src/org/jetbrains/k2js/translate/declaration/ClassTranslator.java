@@ -17,35 +17,53 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.intellij.openapi.util.NotNullLazyValue;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.ClassKind;
-import org.jetbrains.jet.lang.psi.JetClassOrObject;
-import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
+import org.jetbrains.jet.lang.descriptors.*;
+import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
+import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.expression.GenerationPlace;
-import org.jetbrains.k2js.translate.initializer.ClassInitializerTranslator;
+import org.jetbrains.k2js.translate.expression.FunctionTranslator;
+import org.jetbrains.k2js.translate.general.Translation;
+import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorForType;
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isNotAny;
+import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 
-/**
- * Generates a definition of a single class
- */
 public final class ClassTranslator {
-    private ClassTranslator() {
+    private static final JsNameRef DESCRIPTOR_VAR_REF = new JsNameRef("classDescriptor$");
+    private static final JsNameRef INITIALIZED_VAR_REF = new JsNameRef("classInitialized$");
+    private static final JsNameRef PROTO_VAR_REF = new JsNameRef("proto$");
+    private static final List<JsParameter> INIT_INHERITOR_FUN_PARAMETERS =
+            Collections.singletonList(new JsParameter(PROTO_VAR_REF.getName()));
+
+    private static final JsInvocation CREATE_EMPTY_PROTO_OBJECT_ES5 = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL);
+    private static final JsObjectLiteral CREATE_EMPTY_PROTO_OBJECT_ES3 = new JsObjectLiteral(Collections.<JsPropertyInitializer>emptyList());
+
+    private static final String INIT_INHERITOR_FUN_NAME = "initInheritor$";
+
+    private final JetClassOrObject declaration;
+    private final ClassDescriptor descriptor;
+    private final JsFunction closure;
+
+    private int classPrototypeInitStatementIndex;
+    private final JsNameRef constructorFunRef;
+
+    private ClassTranslator(JetClassOrObject declaration, ClassDescriptor descriptor, JsFunction closure) {
+        this.declaration = declaration;
+        this.descriptor = descriptor;
+        this.closure = closure;
+        constructorFunRef = new JsNameRef(descriptor.getName().asString());
     }
 
     public static JsExpression translateObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
@@ -60,27 +78,18 @@ public final class ClassTranslator {
     ) {
         ClassDescriptor containingClass = DescriptorUtils.getContainingClass(descriptor);
         if (containingClass == null) {
-            return translate(objectDeclaration, descriptor, context, context);
+            return translate(objectDeclaration, descriptor, context);
         }
         return context.literalFunctionTranslator().translate(containingClass, context, objectDeclaration, descriptor);
     }
 
     @NotNull
-    private static JsExpression classCreateInvocation(@NotNull ClassDescriptor descriptor) {
-        switch (descriptor.getKind()) {
-            case TRAIT:
-                return Namer.CREATE_TRAIT;
-            case OBJECT:
-                return Namer.CREATE_OBJECT;
-
-            default:
-                return Namer.CREATE_CLASS;
-        }
-    }
-
-    @NotNull
-    public static JsInvocation translate(@NotNull JetClassOrObject declaration, @NotNull ClassDescriptor descriptor, @NotNull TranslationContext declarationContext, @NotNull TranslationContext containingContext) {
-        final JsFunction closure;
+    public static JsInvocation translate(
+            @NotNull JetClassOrObject declaration,
+            @NotNull ClassDescriptor descriptor,
+            @NotNull TranslationContext declarationContext
+    ) {
+        JsFunction closure;
         TranslationContext context;
         if (descriptor.getKind().isObject()) {
             closure = null;
@@ -91,69 +100,171 @@ public final class ClassTranslator {
             context = declarationContext.contextWithScope(closure);
         }
 
-        JsInvocation createInvocation = new JsInvocation(classCreateInvocation(descriptor));
-
-        addSuperclassReferences(descriptor, createInvocation, context);
-
         if (closure != null) {
-            declarationContext.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
-                @Override
-                @NotNull
-                public GenerationPlace compute() {
-                    return new ClosureBackedGenerationPlace(closure.getBody().getStatements());
-                }
-            });
+            declarationContext.literalFunctionTranslator().setDefinitionPlace(new ClosureBackedGenerationPlace(closure.getBody().getStatements()));
         }
-        addClassOwnDeclarations(declaration, descriptor, createInvocation.getArguments(), context, containingContext);
-        if (closure != null) {
-            declarationContext.literalFunctionTranslator().popDefinitionPlace();
-            closure.getBody().getStatements().add(new JsReturn(createInvocation));
-            return new JsInvocation(new JsInvocation(new JsNameRef(""), closure), Collections.<JsExpression>emptyList());
+        ClassTranslator classTranslator = new ClassTranslator(declaration, descriptor, closure);
+        classTranslator.addClassOwnDeclarations(context);
+        if (closure == null) {
+            JsInvocation createInvocation = new JsInvocation(Namer.CREATE_OBJECT);
+            addSuperclassReferences(descriptor, createInvocation, context);
+            return createInvocation;
         }
         else {
-            return createInvocation;
+            declarationContext.literalFunctionTranslator().popDefinitionPlace();
+            closure.add(new JsReturn(InitializerUtils.toDataDescriptor(classTranslator.constructorFunRef, context)));
+            return new JsInvocation(new JsInvocation(null, closure), Collections.<JsExpression>emptyList());
         }
     }
 
-    private static void addClassOwnDeclarations(
-            @NotNull JetClassOrObject declaration,
-            @NotNull ClassDescriptor descriptor,
-            @NotNull List<JsExpression> invocationArguments,
-            @NotNull TranslationContext declarationContext,
-            @NotNull TranslationContext containingContext
-    ) {
-        List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
-        DeclarationBodyVisitor visitor = new DeclarationBodyVisitor(properties, declarationContext);
-        JsFunction initializer = visitor.getInitializer();
+    private void addClassOwnDeclarations(@NotNull TranslationContext declarationContext) {
+        List<JsPropertyInitializer> members = new SmartList<JsPropertyInitializer>();
+        DeclarationBodyVisitor visitor = new DeclarationBodyVisitor(members, declarationContext);
+        JsFunction constructor = visitor.getInitializer();
         boolean isTrait = descriptor.getKind().equals(ClassKind.TRAIT);
         if (!isTrait) {
-            // must be before visitor.traverseContainer - visitAnonymousInitializer will add anonymous initializer, but this statement can use constructor properties,
+            List<JsStatement> constructorStatements = constructor.getBody().getStatements();
+            classPrototypeInitStatementIndex = constructorStatements.size();
+            constructorStatements.add(JsStatement.EMPTY);
+
+            // must be before visitor.traverseContainer - visitAnonymousInitializer will add anonymous constructor, but such statement can use constructor properties,
             // so, we should process constructor properties first of all
-            initializer.setParameters(ClassInitializerTranslator.translate(declaration, descriptor, visitor.getInitializerContext(), initializer, properties, declarationContext));
+            constructor.setParameters(translateConstructorParameters(visitor.getInitializerContext(), constructor, members,
+                                                                     declarationContext));
         }
         visitor.traverseContainer(declaration);
-        if (!isTrait) {
-            if (containingContext.isEcma5()) {
-                invocationArguments.add(initializer.getBody().getStatements().isEmpty() ? JsLiteral.NULL : initializer);
+
+        JsExpression membersDescriptor;
+        if (members.isEmpty()) {
+            membersDescriptor = JsLiteral.NULL;
+        }
+        else {
+            // todo jsdoc lends
+            //if (!descriptor.getKind().isObject()) {
+            //    // about "prototype" — see http://code.google.com/p/jsdoc-toolkit/wiki/TagLends
+            //    invocationArguments.add(new JsDocComment(JsAstUtils.LENDS_JS_DOC_TAG, new JsNameRef("prototype", declarationContext
+            //            .getQualifiedReference(descriptor))));
+            //}
+            membersDescriptor = new JsObjectLiteral(members, true);
+        }
+
+        if (isTrait) {
+            assert closure != null;
+            closure.add(new JsVars(new JsVar(DESCRIPTOR_VAR_REF.getName(), membersDescriptor)));
+        }
+        else if (closure != null) {
+            constructor.setName(descriptor.getName().asString());
+            addClassInitialization(constructor, membersDescriptor, declarationContext);
+        }
+    }
+
+    /**
+     * We use classDescriptor$ as init marker (classDescriptor$ !== null) if:
+     * 1) class is final;
+     * 2) class has members.
+     * Otherwise we use classInitialized$.
+     *
+     * But if class doesn't have members and supertypes - we don't use these variables
+     */
+    private void addClassInitialization(
+            JsFunction constructor,
+            JsExpression membersDescriptor,
+            TranslationContext context
+    ) {
+        List<JsStatement> constructorStatements = constructor.getBody().getStatements();
+        List<JsStatement> initStatements = null;
+        SmartList<JsVar> closureVars = new SmartList<JsVar>();
+        ClassDescriptor anyClass = KotlinBuiltIns.getInstance().getAny();
+        boolean useProtoDescriptorAsInitMarker = true;
+        JsExpression lastInitStatement = null;
+        for (JetType type : descriptor.getTypeConstructor().getSupertypes()) {
+            ClassDescriptor superClass = DescriptorUtils.getClassDescriptorForType(type);
+            if (superClass.equals(anyClass)) {
+                continue;
             }
-            else {
-                properties.add(new JsPropertyInitializer(Namer.INITIALIZE_METHOD_NAME, initializer));
+
+            if (initStatements == null) {
+                initStatements = new ArrayList<JsStatement>();
+
+                if (descriptor.getModality() != Modality.FINAL || membersDescriptor == JsLiteral.NULL) {
+                    closureVars.add(new JsVar(INITIALIZED_VAR_REF.getName(), JsLiteral.FALSE));
+                    useProtoDescriptorAsInitMarker = false;
+                    lastInitStatement = assignment(INITIALIZED_VAR_REF, JsLiteral.TRUE);
+                }
+                else {
+                    lastInitStatement = assignment(DESCRIPTOR_VAR_REF, JsLiteral.NULL);
+                }
+
+                initStatements.add(new JsVars(new JsVar(PROTO_VAR_REF.getName(),
+                                                        context.isEcma5() ? CREATE_EMPTY_PROTO_OBJECT_ES5 : CREATE_EMPTY_PROTO_OBJECT_ES3)));
+            }
+
+            initStatements.add(new JsInvocation(new JsNameRef(INIT_INHERITOR_FUN_NAME,
+                                                              context.getQualifiedReference(superClass)), PROTO_VAR_REF).asStatement());
+
+            if (superClass.getKind() == ClassKind.CLASS) {
+                for (JetDelegationSpecifier specifier : declaration.getDelegationSpecifiers()) {
+                    if (specifier instanceof JetDelegatorToSuperCall) {
+                        //addCallToSuperMethod((JetDelegatorToSuperCall) specifier, superClass, initializer, context);
+                        break;
+                    }
+                }
             }
         }
 
-        if (!properties.isEmpty()) {
-            if (properties.isEmpty()) {
-                invocationArguments.add(JsLiteral.NULL);
+        if (membersDescriptor != JsLiteral.NULL && (descriptor.getModality() != Modality.FINAL || initStatements != null)) {
+            closureVars.add(new JsVar(DESCRIPTOR_VAR_REF.getName(), membersDescriptor));
+        }
+
+        if (!closureVars.isEmpty()) {
+            closure.add(new JsVars(closureVars));
+        }
+
+        JsNameRef funProtoRef = new JsNameRef("prototype", constructorFunRef);
+        JsFunction initInheritorFun = null;
+        if (initStatements == null) {
+            JsExpression prototype;
+            if (descriptor.getModality() == Modality.FINAL) {
+                prototype = membersDescriptor;
             }
             else {
-                if (!descriptor.getKind().isObject()) {
-                    // about "prototype" — see http://code.google.com/p/jsdoc-toolkit/wiki/TagLends
-                    invocationArguments.add(new JsDocComment(JsAstUtils.LENDS_JS_DOC_TAG, new JsNameRef("prototype", declarationContext
-                            .getQualifiedReference(descriptor))));
-                }
-                invocationArguments.add(new JsObjectLiteral(properties, true));
+                prototype = DESCRIPTOR_VAR_REF;
+                initInheritorFun = createInitInheritorFun(Collections.singletonList(
+                        new JsInvocation(JsAstUtils.DEFINE_PROPERTIES, PROTO_VAR_REF, prototype).asStatement()));
             }
+
+            if (context.isEcma5()) {
+                prototype = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL, prototype);
+            }
+            closure.add(constructor.asStatement());
+            closure.add(assignment(funProtoRef, prototype).asStatement());
         }
+        else {
+            initStatements.add(new JsInvocation(JsAstUtils.DEFINE_PROPERTIES, PROTO_VAR_REF, DESCRIPTOR_VAR_REF).asStatement());
+
+            if (descriptor.getModality() != Modality.FINAL) {
+                initInheritorFun = createInitInheritorFun(initStatements.subList(1, initStatements.size()));
+            }
+            initStatements.add(lastInitStatement.asStatement());
+
+            initStatements.add(assignment(new JsNameRef("__proto__", JsLiteral.THIS), assignment(funProtoRef, PROTO_VAR_REF)).asStatement());
+
+            JsExpression isNotInitialized = useProtoDescriptorAsInitMarker
+                                            ? JsAstUtils.inequality(DESCRIPTOR_VAR_REF, JsLiteral.NULL)
+                                            : JsAstUtils.not(INITIALIZED_VAR_REF);
+            constructorStatements.set(classPrototypeInitStatementIndex, new JsIf(isNotInitialized, new JsBlock(initStatements)));
+            closure.add(constructor.asStatement());
+        }
+
+        if (initInheritorFun != null) {
+            closure.add(assignment(new JsNameRef(INIT_INHERITOR_FUN_NAME, constructorFunRef), initInheritorFun).asStatement());
+        }
+    }
+
+    private static JsFunction createInitInheritorFun(List<JsStatement> statements) {
+        JsFunction initInheritorFun = new JsFunction(null, new JsBlock(statements));
+        initInheritorFun.setParameters(INIT_INHERITOR_FUN_PARAMETERS);
+        return initInheritorFun;
     }
 
     private static void addSuperclassReferences(ClassDescriptor descriptor, @NotNull JsInvocation jsClassDeclaration, TranslationContext context) {
@@ -194,13 +305,13 @@ public final class ClassTranslator {
             if (isNotAny(result) && !context.isNative(result)) {
                 switch (result.getKind()) {
                     case CLASS:
-                        base = getClassReference(result, context);
+                        base = context.getQualifiedReference(result);
                         break;
                     case TRAIT:
                         if (list == null) {
                             list = new ArrayList<JsExpression>();
                         }
-                        list.add(getClassReference(result, context));
+                        list.add(context.getQualifiedReference(result));
                         break;
 
                     default:
@@ -218,8 +329,86 @@ public final class ClassTranslator {
         return list;
     }
 
-    @NotNull
-    private static JsExpression getClassReference(@NotNull ClassDescriptor superClassDescriptor, TranslationContext context) {
-        return context.getQualifiedReference(superClassDescriptor);
+    private static void mayBeAddCallToSuperMethod(
+            ClassDescriptor descriptor,
+            JetClassOrObject declaration,
+            JsFunction initializer,
+            TranslationContext context
+    ) {
+        for (JetType type : descriptor.getTypeConstructor().getSupertypes()) {
+            ClassDescriptor superClassDescriptor = DescriptorUtils.getClassDescriptorForType(type);
+            if (superClassDescriptor.getKind() == ClassKind.CLASS) {
+                for (JetDelegationSpecifier specifier : declaration.getDelegationSpecifiers()) {
+                    if (specifier instanceof JetDelegatorToSuperCall) {
+                        addCallToSuperMethod((JetDelegatorToSuperCall) specifier, superClassDescriptor, initializer, context);
+                        return;
+                    }
+                }
+                return;
+            }
+        }
+    }
+
+    private static void addCallToSuperMethod(
+            @NotNull JetDelegatorToSuperCall superCall,
+            @NotNull ClassDescriptor superClassDescriptor,
+            @NotNull JsFunction constructor,
+            @NotNull TranslationContext context
+    ) {
+        List<? extends ValueArgument> arguments = superCall.getValueArguments();
+        List<JsExpression> callArguments;
+        if (arguments.isEmpty()) {
+            callArguments = Collections.<JsExpression>singletonList(JsLiteral.THIS);
+        }
+        else {
+            JsExpression[] callArgumentsArray = new JsExpression[arguments.size() + 1];
+            callArgumentsArray[0] = JsLiteral.THIS;
+            for (int i = 0; i < arguments.size(); i++) {
+                JetExpression jetExpression = arguments.get(i).getArgumentExpression();
+                assert jetExpression != null : "Argument with no expression";
+                callArgumentsArray[i + 1] = Translation.translateAsExpression(jetExpression, context);
+            }
+            callArguments = Arrays.asList(callArgumentsArray);
+        }
+
+        JsInvocation call = new JsInvocation(new JsNameRef("call", context.getQualifiedReference(superClassDescriptor)), callArguments);
+        constructor.getBody().getStatements().add(call.asStatement());
+    }
+
+    public List<JsParameter> translateConstructorParameters(
+            @NotNull TranslationContext context,
+            @NotNull JsFunction initializer,
+            @NotNull List<JsPropertyInitializer> properties,
+            @NotNull TranslationContext declarationContext
+    ) {
+        ConstructorDescriptor primaryConstructor = descriptor.getUnsubstitutedPrimaryConstructor();
+        List<ValueParameterDescriptor> parameters;
+        List<JsStatement> statements = initializer.getBody().getStatements();
+        if (primaryConstructor == null) {
+            parameters = null;
+        }
+        else {
+            parameters = primaryConstructor.getValueParameters();
+            FunctionTranslator.translateDefaultParametersInitialization(primaryConstructor, context, statements);
+        }
+
+        mayBeAddCallToSuperMethod(descriptor, declaration, initializer, context);
+
+        if (parameters == null || parameters.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        JsParameter[] result = new JsParameter[parameters.size()];
+        for (int i = 0; i < parameters.size(); i++) {
+            ValueParameterDescriptor parameter = parameters.get(i);
+            JsParameter jsParameter = new JsParameter(context.getNameForDescriptor(parameter));
+            PropertyDescriptor propertyDescriptor = context.bindingContext().get(BindingContext.VALUE_PARAMETER_AS_PROPERTY, parameter);
+            if (propertyDescriptor != null) {
+                PropertyTranslator.translateAccessors(propertyDescriptor, properties, declarationContext);
+                statements.add(generateInitializerForProperty(context, propertyDescriptor, new JsNameRef(jsParameter.getName())));
+            }
+            result[i] = jsParameter;
+        }
+        return Arrays.asList(result);
     }
 }

@@ -30,7 +30,8 @@ import java.util.Collections;
 import java.util.List;
 
 public final class JsAstUtils {
-    private static final JsNameRef DEFINE_PROPERTY = new JsNameRef("defineProperty");
+    public static final JsNameRef DEFINE_PROPERTY = new JsNameRef("defineProperty");
+    public static final JsNameRef DEFINE_PROPERTIES = new JsNameRef("defineProperties");
     public static final JsNameRef CREATE_OBJECT = new JsNameRef("create");
 
     public static final JsPropertyInitializer WRITABLE = new JsPropertyInitializer("writable", JsLiteral.TRUE);
@@ -41,6 +42,7 @@ public final class JsAstUtils {
     static {
         JsNameRef globalObjectReference = new JsNameRef("Object");
         DEFINE_PROPERTY.setQualifier(globalObjectReference);
+        DEFINE_PROPERTIES.setQualifier(globalObjectReference);
         CREATE_OBJECT.setQualifier(globalObjectReference);
     }
 
@@ -79,7 +81,9 @@ public final class JsAstUtils {
     public static void setQualifier(@NotNull JsExpression selector, @Nullable JsExpression receiver) {
         assert (selector instanceof JsInvocation || selector instanceof JsNameRef);
         if (selector instanceof JsInvocation) {
-            setQualifier(((JsInvocation) selector).getQualifier(), receiver);
+            JsExpression qualifier = ((JsInvocation) selector).getQualifier();
+            assert qualifier != null;
+            setQualifier(qualifier, receiver);
             return;
         }
         setQualifierForNameRef((JsNameRef) selector, receiver);
@@ -142,7 +146,7 @@ public final class JsAstUtils {
 
     @NotNull
     public static JsVars newVar(@NotNull String name, @Nullable JsExpression expr) {
-        return new JsVars(new JsVars.JsVar(name, expr));
+        return new JsVars(new JsVar(name, expr));
     }
 
     @NotNull

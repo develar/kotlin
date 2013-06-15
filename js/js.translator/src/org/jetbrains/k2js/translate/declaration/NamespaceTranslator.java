@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.intellij.openapi.util.NotNullLazyValue;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +29,6 @@ import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.expression.GenerationPlace;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
@@ -45,7 +43,7 @@ public final class NamespaceTranslator {
         JsObjectLiteral moduleRootMembers = new JsObjectLiteral(true);
         JsVars vars = new JsVars(true);
         result.add(vars);
-        vars.add(new JsVars.JsVar(Namer.ROOT_PACKAGE_NAME, moduleRootMembers));
+        vars.add(new JsVar(Namer.ROOT_PACKAGE_NAME, moduleRootMembers));
         for (JetFile file : files) {
             NamespaceDescriptor descriptor = BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.FILE_TO_NAMESPACE, file);
             translate(descriptor, file, result, initializers, context);
@@ -65,14 +63,8 @@ public final class NamespaceTranslator {
             @Nullable List<JsStatement> ecma3Initializers,
             @NotNull TranslationContext context
     ) {
-        final FileDeclarationVisitor visitor = new FileDeclarationVisitor(context);
-        context.literalFunctionTranslator().setDefinitionPlace(new NotNullLazyValue<GenerationPlace>() {
-            @Override
-            @NotNull
-            public GenerationPlace compute() {
-                return visitor.createGenerationPlace();
-            }
-        });
+        FileDeclarationVisitor visitor = new FileDeclarationVisitor(context);
+        context.literalFunctionTranslator().setDefinitionPlace(visitor.createGenerationPlace());
 
         for (JetDeclaration declaration : file.getDeclarations()) {
             DeclarationDescriptor declarationDescriptor =

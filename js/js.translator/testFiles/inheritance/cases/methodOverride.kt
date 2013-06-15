@@ -9,7 +9,7 @@ class D() : C() {
 }
 
 fun box(): Boolean {
-    val d : C = D()
+    val d: C = D()
     if(d.f() != "D f") return false
     return true
 }

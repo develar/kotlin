@@ -38,7 +38,7 @@ public class JsSourceGenerationVisitor extends JsToStringGenerationVisitor imple
 
     @Override
     public void visitBlock(JsBlock x) {
-        printJsBlock(x, false, true);
+        printBlock(x, false, true);
     }
 
     @Override

@@ -71,7 +71,7 @@ public final class CallTranslator extends AbstractTranslator {
             return result;
         }
         if ((descriptor instanceof ConstructorDescriptor)) {
-            return createConstructorCallExpression(ReferenceTranslator.translateAsFQReference(descriptor, context()), false);
+            return createConstructorCallExpression(ReferenceTranslator.translateAsFQReference(descriptor, context()));
         }
         if (callInfo.getResolvedCall().getReceiverArgument().exists()) {
             if (callInfo.isNative()) {
@@ -104,23 +104,8 @@ public final class CallTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    public HasArguments createConstructorCallExpression(@NotNull JsExpression constructorReference, boolean forceKotlin) {
-        boolean useNew;
-        if (context().isEcma5()) {
-            useNew = !forceKotlin &&
-                     (callInfo.isNative() &&
-                      !context().predefinedAnnotationManager().isKotlinDeclaration(callInfo.getResolvedCall().getCandidateDescriptor()));
-        }
-        else {
-            useNew = true;
-        }
-
-        if (useNew) {
-            return new JsNew(constructorReference, callInfo.getArguments());
-        }
-        else {
-            return new JsInvocation(constructorReference, callInfo.getArguments());
-        }
+    public HasArguments createConstructorCallExpression(@NotNull JsExpression constructorReference) {
+        return new JsNew(constructorReference, callInfo.getArguments());
     }
 
     @NotNull

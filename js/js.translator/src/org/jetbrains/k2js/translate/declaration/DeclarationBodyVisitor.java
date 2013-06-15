@@ -19,10 +19,7 @@ package org.jetbrains.k2js.translate.declaration;
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
-import org.jetbrains.jet.lang.descriptors.Modality;
-import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
-import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.FunctionTranslator;
@@ -38,6 +35,7 @@ import static org.jetbrains.k2js.translate.expression.FunctionTranslator.createD
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
 import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
+import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.createDataDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.createPropertyDataDescriptor;
@@ -78,10 +76,13 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
 
     @Override
     public void visitClass(@NotNull JetClass declaration) {
-        JsPropertyInitializer entry = ClassDeclarationTranslator.translate(declaration, context);
-        if (entry != null) {
-            result.add(entry);
+        ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);
+        if (context.predefinedAnnotationManager().hasOptionsArg(descriptor)) {
+            return;
         }
+
+        JsExpression value = ClassTranslator.translate(declaration, descriptor, context);
+        result.add(new JsPropertyInitializer(descriptor.getName().asString(), value));
     }
 
     @Override

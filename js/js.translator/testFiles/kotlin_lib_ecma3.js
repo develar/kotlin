@@ -77,18 +77,6 @@ var Kotlin = {
         return true;
     };
 
-    Kotlin.createTrait = function () {
-        if (arguments.length == 0) {
-            return {};
-        }
-
-        var result = arguments[0];
-        for (var i = 1, n = arguments.length; i < n; i++) {
-            copyProperties(result, arguments[i]);
-        }
-        return result;
-    };
-
     Kotlin.p = function (m, name, members) {
         if (name === null) {
             copyProperties(m, members);

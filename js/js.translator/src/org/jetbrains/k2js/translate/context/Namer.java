@@ -29,12 +29,9 @@ public final class Namer {
     public static final String CALLEE_NAME = "$fun";
     public static final String OUTER_CLASS_NAME = "$outer";
 
-    public static final String INITIALIZE_METHOD_NAME = "initialize";
-
     private static final String SETTER_PREFIX = "set_";
     private static final String GETTER_PREFIX = "get_";
     private static final String BACKING_FIELD_PREFIX = "$";
-    private static final String SUPER_METHOD_NAME = "super_init";
 
     public static final String KOTLIN_OBJECT_NAME = "Kotlin";
     public static final JsNameRef KOTLIN_OBJECT_NAME_REF = new JsNameRef(KOTLIN_OBJECT_NAME);
@@ -47,8 +44,6 @@ public final class Namer {
 
     public static final JsNameRef IS_TYPE_FUN_NAME_REF = new JsNameRef("isType", KOTLIN_OBJECT_NAME_REF);
 
-    public static final JsNameRef CREATE_CLASS = new JsNameRef("createClass", KOTLIN_OBJECT_NAME_REF);
-    public static final JsNameRef CREATE_TRAIT = new JsNameRef("createTrait", KOTLIN_OBJECT_NAME_REF);
     public static final JsNameRef CREATE_OBJECT = new JsNameRef("createObject", KOTLIN_OBJECT_NAME_REF);
 
     public static final JsNameRef DEFINE_PACKAGE = new JsNameRef("p", KOTLIN_OBJECT_NAME_REF);
@@ -59,11 +54,6 @@ public final class Namer {
     @NotNull
     public static String getReceiverParameterName() {
         return RECEIVER_PARAMETER_NAME;
-    }
-
-    @NotNull
-    public static String superMethodName() {
-        return SUPER_METHOD_NAME;
     }
 
     @NotNull

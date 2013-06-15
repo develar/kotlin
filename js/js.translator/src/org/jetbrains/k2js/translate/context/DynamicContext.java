@@ -21,8 +21,6 @@ import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
-
 //TODO: consider renaming to scoping context
 public final class DynamicContext {
     @NotNull

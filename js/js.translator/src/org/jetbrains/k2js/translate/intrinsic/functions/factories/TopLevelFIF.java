@@ -314,7 +314,7 @@ public final class TopLevelFIF extends CompositeFIF {
                 collectionClassName = isSet ? "ComplexHashSet" : "ComplexHashMap";
             }
 
-            return callTranslator.createConstructorCallExpression(Namer.kotlin(collectionClassName), true);
+            return callTranslator.createConstructorCallExpression(Namer.kotlin(collectionClassName));
         }
     }
 }

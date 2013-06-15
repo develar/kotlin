@@ -17,7 +17,7 @@
 package org.jetbrains.k2js.translate.general;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.google.dart.compiler.backend.js.ast.JsVars.JsVar;
+import com.google.dart.compiler.backend.js.ast.JsVar;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.util.SmartList;
 import gnu.trove.THashMap;

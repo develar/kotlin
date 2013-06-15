@@ -60,14 +60,14 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    public static Pair<JsVars.JsVar, JsExpression> createTemporaryIfNeed(@NotNull JsExpression expression,
+    public static Pair<JsVar, JsExpression> createTemporaryIfNeed(@NotNull JsExpression expression,
             @NotNull TranslationContext context) {
         // don't create temp variable for simple expression
         if (isCacheNeeded(expression)) {
             return context.dynamicContext().createTemporary(expression);
         }
         else {
-            return new Pair<JsVars.JsVar, JsExpression>(null, expression);
+            return new Pair<JsVar, JsExpression>(null, expression);
         }
     }
 
@@ -138,26 +138,6 @@ public final class TranslationUtils {
         }
 
         return new JsConditional(testExpression, thenExpression, elseExpression);
-    }
-
-    public static void translateArgumentList(
-            @NotNull TranslationContext context,
-            @NotNull List<? extends ValueArgument> jetArguments, List<JsExpression> result
-    ) {
-        if (jetArguments.isEmpty()) {
-            return;
-        }
-
-        for (ValueArgument argument : jetArguments) {
-            result.add(translateArgument(context, argument));
-        }
-    }
-
-    @NotNull
-    private static JsExpression translateArgument(@NotNull TranslationContext context, @NotNull ValueArgument argument) {
-        JetExpression jetExpression = argument.getArgumentExpression();
-        assert jetExpression != null : "Argument with no expression";
-        return Translation.translateAsExpression(jetExpression, context);
     }
 
     @NotNull
