@@ -16,6 +16,7 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
+import com.intellij.util.SmartList;
 import com.intellij.util.containers.Stack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -121,7 +122,9 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
     }
 
     private JsFunction createFunction() {
-        return new JsFunction(context().scope(), new JsBlock());
+        JsFunction fun = new JsFunction(context().scope(), new JsBlock());
+        fun.setParameters(new SmartList<JsParameter>());
+        return fun;
     }
 
     public JsExpression translate(
