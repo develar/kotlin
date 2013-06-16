@@ -101,7 +101,7 @@ public final class FunctionTranslator {
             @NotNull TranslationContext context
     ) {
         JsNode node = translateBody(descriptor, declaration, context);
-        List<JsStatement> statements = function.getBody().getStatements();
+        List<JsNode> statements = function.getBody().getStatements();
 
         translateDefaultParametersInitialization(descriptor, context, statements);
 
@@ -116,7 +116,7 @@ public final class FunctionTranslator {
     public static void translateDefaultParametersInitialization(
             @NotNull FunctionDescriptor descriptor,
             @NotNull TranslationContext context,
-            @NotNull List<JsStatement> statements
+            @NotNull List<JsNode> statements
     ) {
         for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
             if (!valueParameter.hasDefaultValue()) {

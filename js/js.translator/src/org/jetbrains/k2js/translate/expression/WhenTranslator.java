@@ -61,7 +61,7 @@ public final class WhenTranslator extends AbstractTranslator {
 
     @NotNull
     public JsNode translate() {
-        List<JsStatement> statements = new SmartList<JsStatement>();
+        List<JsNode> statements = new SmartList<JsNode>();
         translate(statements);
         if (result == null) {
             return new JsBlock(statements);
@@ -72,7 +72,7 @@ public final class WhenTranslator extends AbstractTranslator {
         }
     }
 
-    public void translate(List<JsStatement> statements) {
+    public void translate(List<JsNode> statements) {
         addTempVarsStatement(statements);
 
         JsIf prevIf = null;
@@ -100,7 +100,7 @@ public final class WhenTranslator extends AbstractTranslator {
         }
     }
 
-    private void addTempVarsStatement(List<JsStatement> statements) {
+    private void addTempVarsStatement(List<JsNode> statements) {
         JsVars vars = new JsVars();
         if (expressionToMatch != null && expressionToMatch.first != null) {
             vars.add(expressionToMatch.first);

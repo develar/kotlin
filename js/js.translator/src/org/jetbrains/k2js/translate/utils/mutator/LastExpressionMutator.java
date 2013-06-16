@@ -66,7 +66,7 @@ public final class LastExpressionMutator {
 
     @NotNull
     private JsNode applyToBlock(@NotNull JsBlock node) {
-        List<JsStatement> statements = node.getStatements();
+        List<JsNode> statements = node.getStatements();
 
         if (statements.isEmpty()) return node;
 

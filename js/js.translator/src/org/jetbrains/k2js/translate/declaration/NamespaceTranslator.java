@@ -38,8 +38,8 @@ public final class NamespaceTranslator {
     private NamespaceTranslator() {
     }
 
-    public static void translateFiles(Iterable<JetFile> files, List<JsStatement> result, TranslationContext context) {
-        List<JsStatement> initializers = context.isEcma5() ? null : new SmartList<JsStatement>();
+    public static void translateFiles(Iterable<JetFile> files, List<JsNode> result, TranslationContext context) {
+        List<JsNode> initializers = context.isEcma5() ? null : new SmartList<JsNode>();
         JsObjectLiteral moduleRootMembers = new JsObjectLiteral(true);
         JsVars vars = new JsVars(true);
         result.add(vars);
@@ -49,7 +49,7 @@ public final class NamespaceTranslator {
             translate(descriptor, file, result, initializers, context);
         }
         if (initializers == null) {
-            result.add(new JsInvocation(Namer.kotlin("finalize"), Namer.ROOT_PACKAGE_NAME_REF).asStatement());
+            result.add(new JsInvocation(Namer.kotlin("finalize"), Namer.ROOT_PACKAGE_NAME_REF));
         }
         else {
             result.addAll(initializers);
@@ -59,8 +59,8 @@ public final class NamespaceTranslator {
     private static void translate(
             @NotNull NamespaceDescriptor descriptor,
             @NotNull JetFile file,
-            @NotNull List<JsStatement> result,
-            @Nullable List<JsStatement> ecma3Initializers,
+            @NotNull List<JsNode> result,
+            @Nullable List<JsNode> ecma3Initializers,
             @NotNull TranslationContext context
     ) {
         FileDeclarationVisitor visitor = new FileDeclarationVisitor(context);
@@ -85,7 +85,7 @@ public final class NamespaceTranslator {
             initializer = visitor.getInitializer();
             if (ecma3Initializers != null) {
                 ecma3Initializers.add(
-                        new JsInvocation(new JsNameRef("call", initializer), packageQualifiedName).asStatement());
+                        new JsInvocation(new JsNameRef("call", initializer), packageQualifiedName));
             }
         }
 
@@ -103,6 +103,6 @@ public final class NamespaceTranslator {
         }
         defineArguments.add(new JsObjectLiteral(visitor.getResult(), true));
         result.add(new JsDocComment("name", packageQualifiedName));
-        result.add(new JsInvocation(Namer.DEFINE_PACKAGE, defineArguments).asStatement());
+        result.add(new JsInvocation(Namer.DEFINE_PACKAGE, defineArguments));
     }
 }

@@ -170,7 +170,7 @@ public final class Translation {
             Config config,
             MainCallParameters mainCallParameters
     ) {
-        List<JsStatement> statements = new ArrayList<JsStatement>();
+        List<JsNode> statements = new ArrayList<JsNode>();
         statements.add(new JsStringLiteral("use strict").asStatement());
 
         JsFunction definitionFunction = new JsFunction(null, new JsBlock(statements));

@@ -1,9 +1,6 @@
 package org.jetbrains.k2js.translate.declaration;
 
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsLiteral;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
-import com.google.dart.compiler.backend.js.ast.JsStatement;
+import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.util.SmartList;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -16,7 +13,7 @@ import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generate
 
 final class FileDeclarationVisitor extends DeclarationBodyVisitor {
     // property define statements must be after function define statements
-    private List<JsStatement> propertyDefineStatements;
+    private List<JsNode> propertyDefineStatements;
 
     FileDeclarationVisitor(TranslationContext context) {
         super(context);
@@ -48,7 +45,7 @@ final class FileDeclarationVisitor extends DeclarationBodyVisitor {
     @Override
     protected void visitPropertyWithInitializer(PropertyDescriptor descriptor, JsExpression value) {
         if (propertyDefineStatements == null) {
-            propertyDefineStatements = new SmartList<JsStatement>();
+            propertyDefineStatements = new SmartList<JsNode>();
         }
 
         if (value instanceof JsLiteral) {
@@ -62,7 +59,7 @@ final class FileDeclarationVisitor extends DeclarationBodyVisitor {
             else {
                 defineExpression = JsAstUtils.assignment(new JsNameRef(name.getName(), JsLiteral.THIS), value);
             }
-            propertyDefineStatements.add(defineExpression.asStatement());
+            propertyDefineStatements.add(defineExpression);
         }
         else {
             propertyDefineStatements.add(generateInitializerForProperty(context, descriptor, value));

@@ -48,7 +48,7 @@ public final class InitializerUtils {
 
     public static void generate(
             @NotNull JetObjectDeclaration declaration,
-            @NotNull List<JsStatement> initializers,
+            @NotNull List<JsNode> initializers,
             @NotNull TranslationContext context
     ) {
         ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);

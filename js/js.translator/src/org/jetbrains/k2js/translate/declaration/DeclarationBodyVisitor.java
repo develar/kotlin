@@ -44,7 +44,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
     private final JsFunction initializer;
 
     protected final List<JsPropertyInitializer> result;
-    protected final List<JsStatement> initializerStatements;
+    protected final List<JsNode> initializerStatements;
 
     protected final TranslationContext initializerContext;
 
@@ -55,7 +55,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
     public DeclarationBodyVisitor(List<JsPropertyInitializer> result, TranslationContext context) {
         super(context);
         this.result = result;
-        initializerStatements = new SmartList<JsStatement>();
+        initializerStatements = new SmartList<JsNode>();
 
         initializer = new JsFunction(context.scope(), new JsBlock(initializerStatements));
         initializerContext = context.newFunctionBody(initializer, null, null);

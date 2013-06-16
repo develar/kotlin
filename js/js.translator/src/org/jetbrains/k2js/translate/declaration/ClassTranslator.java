@@ -123,7 +123,7 @@ public final class ClassTranslator {
         JsFunction constructor = visitor.getInitializer();
         boolean isTrait = descriptor.getKind().equals(ClassKind.TRAIT);
         if (!isTrait) {
-            List<JsStatement> constructorStatements = constructor.getBody().getStatements();
+            List<JsNode> constructorStatements = constructor.getBody().getStatements();
             classPrototypeInitStatementIndex = constructorStatements.size();
             constructorStatements.add(JsStatement.EMPTY);
 
@@ -148,13 +148,13 @@ public final class ClassTranslator {
             membersDescriptor = new JsObjectLiteral(members, true);
         }
 
-        if (isTrait) {
-            assert closure != null;
-            closure.add(new JsVars(new JsVar(DESCRIPTOR_VAR_REF.getName(), membersDescriptor)));
-        }
-        else if (closure != null) {
+        if (closure != null) {
             constructor.setName(descriptor.getName().asString());
-            addClassInitialization(constructor, membersDescriptor, declarationContext);
+            List<JsNode> statements = closure.getBody().getStatements();
+            int beforeConstructorIndex = statements.size();
+            statements.add(JsStatement.EMPTY);
+            statements.add(constructor);
+            addClassInitialization(constructor, membersDescriptor, declarationContext, beforeConstructorIndex);
         }
     }
 
@@ -169,10 +169,11 @@ public final class ClassTranslator {
     private void addClassInitialization(
             JsFunction constructor,
             JsExpression membersDescriptor,
-            TranslationContext context
+            TranslationContext context,
+            int beforeConstructorIndex
     ) {
-        List<JsStatement> constructorStatements = constructor.getBody().getStatements();
-        List<JsStatement> initStatements = null;
+        List<JsNode> constructorStatements = constructor.getBody().getStatements();
+        List<JsNode> initStatements = null;
         SmartList<JsVar> closureVars = new SmartList<JsVar>();
         ClassDescriptor anyClass = KotlinBuiltIns.getInstance().getAny();
         boolean useProtoDescriptorAsInitMarker = true;
@@ -184,19 +185,26 @@ public final class ClassTranslator {
             }
 
             if (initStatements == null) {
-                initStatements = new ArrayList<JsStatement>();
-
-                if (descriptor.getModality() != Modality.FINAL || membersDescriptor == JsLiteral.NULL) {
-                    closureVars.add(new JsVar(INITIALIZED_VAR_REF.getName(), JsLiteral.FALSE));
-                    useProtoDescriptorAsInitMarker = false;
-                    lastInitStatement = assignment(INITIALIZED_VAR_REF, JsLiteral.TRUE);
+                if (descriptor.getKind() == ClassKind.TRAIT) {
+                    initStatements = new SmartList<JsNode>();
                 }
                 else {
-                    lastInitStatement = assignment(DESCRIPTOR_VAR_REF, JsLiteral.NULL);
-                }
+                    initStatements = new ArrayList<JsNode>();
+                    if (descriptor.getModality() != Modality.FINAL || membersDescriptor == JsLiteral.NULL) {
+                        closureVars.add(new JsVar(INITIALIZED_VAR_REF.getName(), JsLiteral.FALSE));
+                        useProtoDescriptorAsInitMarker = false;
+                        lastInitStatement = assignment(INITIALIZED_VAR_REF, JsLiteral.TRUE);
+                    }
+                    else {
+                        lastInitStatement = assignment(DESCRIPTOR_VAR_REF, JsLiteral.NULL);
+                    }
 
-                initStatements.add(new JsVars(new JsVar(PROTO_VAR_REF.getName(),
-                                                        context.isEcma5() ? CREATE_EMPTY_PROTO_OBJECT_ES5 : CREATE_EMPTY_PROTO_OBJECT_ES3)));
+
+                    initStatements.add(new JsVars(new JsVar(PROTO_VAR_REF.getName(),
+                                                            context.isEcma5()
+                                                            ? CREATE_EMPTY_PROTO_OBJECT_ES5
+                                                            : CREATE_EMPTY_PROTO_OBJECT_ES3)));
+                }
             }
 
             initStatements.add(new JsInvocation(new JsNameRef(INIT_INHERITOR_FUN_NAME,
@@ -212,59 +220,67 @@ public final class ClassTranslator {
             }
         }
 
-        if (membersDescriptor != JsLiteral.NULL && (descriptor.getModality() != Modality.FINAL || initStatements != null)) {
+        boolean hasMembers = membersDescriptor != JsLiteral.NULL;
+        if (hasMembers && (descriptor.getModality() != Modality.FINAL || initStatements != null)) {
             closureVars.add(new JsVar(DESCRIPTOR_VAR_REF.getName(), membersDescriptor));
         }
 
         if (!closureVars.isEmpty()) {
-            closure.add(new JsVars(closureVars));
+            closure.getBody().getStatements().set(beforeConstructorIndex, new JsVars(closureVars));
         }
 
         JsNameRef funProtoRef = new JsNameRef("prototype", constructorFunRef);
-        JsFunction initInheritorFun = null;
+        List<JsNode> initInheritorFunStatements = null;
         if (initStatements == null) {
-            JsExpression prototype;
-            if (descriptor.getModality() == Modality.FINAL) {
-                prototype = membersDescriptor;
-            }
-            else {
-                prototype = DESCRIPTOR_VAR_REF;
-                initInheritorFun = createInitInheritorFun(Collections.singletonList(
-                        new JsInvocation(JsAstUtils.DEFINE_PROPERTIES, PROTO_VAR_REF, prototype).asStatement()));
-            }
+            if (hasMembers) {
+                JsExpression prototype;
+                if (descriptor.getModality() == Modality.FINAL) {
+                    prototype = membersDescriptor;
+                }
+                else {
+                    prototype = DESCRIPTOR_VAR_REF;
+                    initInheritorFunStatements =
+                            Collections.<JsNode>singletonList(new JsInvocation(JsAstUtils.DEFINE_PROPERTIES, PROTO_VAR_REF, prototype));
+                }
 
-            if (context.isEcma5()) {
-                prototype = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL, prototype);
+                if (context.isEcma5()) {
+                    prototype = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL, prototype);
+                }
+                closure.add(assignment(funProtoRef, prototype).asStatement());
             }
-            closure.add(constructor.asStatement());
-            closure.add(assignment(funProtoRef, prototype).asStatement());
+            else if (descriptor.getModality() != Modality.FINAL) {
+                initInheritorFunStatements = Collections.emptyList();
+            }
         }
         else {
-            initStatements.add(new JsInvocation(JsAstUtils.DEFINE_PROPERTIES, PROTO_VAR_REF, DESCRIPTOR_VAR_REF).asStatement());
-
-            if (descriptor.getModality() != Modality.FINAL) {
-                initInheritorFun = createInitInheritorFun(initStatements.subList(1, initStatements.size()));
+            if (hasMembers) {
+                initStatements.add(new JsInvocation(JsAstUtils.DEFINE_PROPERTIES, PROTO_VAR_REF, DESCRIPTOR_VAR_REF));
             }
-            initStatements.add(lastInitStatement.asStatement());
 
-            initStatements.add(assignment(new JsNameRef("__proto__", JsLiteral.THIS), assignment(funProtoRef, PROTO_VAR_REF)).asStatement());
+            if (descriptor.getKind() == ClassKind.TRAIT) {
+                initInheritorFunStatements = initStatements;
+            }
+            else {
+                int initInheritorSubListSize = initStatements.size();
+                initStatements.add(lastInitStatement);
+                initStatements.add(assignment(new JsNameRef("__proto__", JsLiteral.THIS), assignment(funProtoRef, PROTO_VAR_REF)));
 
-            JsExpression isNotInitialized = useProtoDescriptorAsInitMarker
-                                            ? JsAstUtils.inequality(DESCRIPTOR_VAR_REF, JsLiteral.NULL)
-                                            : JsAstUtils.not(INITIALIZED_VAR_REF);
-            constructorStatements.set(classPrototypeInitStatementIndex, new JsIf(isNotInitialized, new JsBlock(initStatements)));
-            closure.add(constructor.asStatement());
+                JsExpression isNotInitialized = useProtoDescriptorAsInitMarker
+                                                ? JsAstUtils.inequality(DESCRIPTOR_VAR_REF, JsLiteral.NULL)
+                                                : JsAstUtils.not(INITIALIZED_VAR_REF);
+                constructorStatements.set(classPrototypeInitStatementIndex, new JsIf(isNotInitialized, new JsBlock(initStatements)));
+
+                if (descriptor.getModality() != Modality.FINAL) {
+                    initInheritorFunStatements = initStatements.subList(1, initInheritorSubListSize);
+                }
+            }
         }
 
-        if (initInheritorFun != null) {
-            closure.add(assignment(new JsNameRef(INIT_INHERITOR_FUN_NAME, constructorFunRef), initInheritorFun).asStatement());
+        if (initInheritorFunStatements != null) {
+            JsFunction initInheritorFun = new JsFunction(null, new JsBlock(initInheritorFunStatements));
+            initInheritorFun.setParameters(INIT_INHERITOR_FUN_PARAMETERS);
+            closure.add(assignment(new JsNameRef(INIT_INHERITOR_FUN_NAME, constructorFunRef), initInheritorFun));
         }
-    }
-
-    private static JsFunction createInitInheritorFun(List<JsStatement> statements) {
-        JsFunction initInheritorFun = new JsFunction(null, new JsBlock(statements));
-        initInheritorFun.setParameters(INIT_INHERITOR_FUN_PARAMETERS);
-        return initInheritorFun;
     }
 
     private static void addSuperclassReferences(ClassDescriptor descriptor, @NotNull JsInvocation jsClassDeclaration, TranslationContext context) {
@@ -383,7 +399,7 @@ public final class ClassTranslator {
     ) {
         ConstructorDescriptor primaryConstructor = descriptor.getUnsubstitutedPrimaryConstructor();
         List<ValueParameterDescriptor> parameters;
-        List<JsStatement> statements = initializer.getBody().getStatements();
+        List<JsNode> statements = initializer.getBody().getStatements();
         if (primaryConstructor == null) {
             parameters = null;
         }

@@ -2,7 +2,7 @@ package org.jetbrains.k2js.translate.declaration;
 
 import com.google.dart.compiler.backend.js.ast.JsFunction;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
-import com.google.dart.compiler.backend.js.ast.JsStatement;
+import com.google.dart.compiler.backend.js.ast.JsNode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.MemberDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -12,9 +12,9 @@ import java.util.List;
 
 public class ClosureBackedGenerationPlace implements GenerationPlace {
     private int nameCounter;
-    private final List<JsStatement> statements;
+    private final List<JsNode> statements;
 
-    public ClosureBackedGenerationPlace(List<JsStatement> statements) {
+    public ClosureBackedGenerationPlace(List<JsNode> statements) {
         this.statements = statements;
     }
 
