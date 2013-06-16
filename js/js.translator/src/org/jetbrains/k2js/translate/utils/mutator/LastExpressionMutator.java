@@ -56,10 +56,10 @@ public final class LastExpressionMutator {
 
     @NotNull
     private JsNode applyToIf(@NotNull JsIf node) {
-        node.setThenStatement(apply(node.getThenStatement()).asStatement());
-        JsStatement elseStmt = node.getElseStatement();
+        node.setThen(apply(node.getThen()));
+        JsNode elseStmt = node.getElse();
         if (elseStmt != null) {
-            node.setElseStatement(apply(elseStmt).asStatement());
+            node.setElse(apply(elseStmt));
         }
         return node;
     }

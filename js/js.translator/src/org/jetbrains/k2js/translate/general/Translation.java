@@ -171,7 +171,7 @@ public final class Translation {
             MainCallParameters mainCallParameters
     ) {
         List<JsNode> statements = new ArrayList<JsNode>();
-        statements.add(new JsStringLiteral("use strict").asStatement());
+        statements.add(new JsStringLiteral("use strict"));
 
         JsFunction definitionFunction = new JsFunction(null, new JsBlock(statements));
         TranslationContext context = TranslationContext.rootContext(staticContext, definitionFunction);

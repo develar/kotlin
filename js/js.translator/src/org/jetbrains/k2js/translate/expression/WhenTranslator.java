@@ -83,7 +83,7 @@ public final class WhenTranslator extends AbstractTranslator {
                     statements.add(statement);
                 }
                 else {
-                    prevIf.setElseStatement(statement);
+                    prevIf.setElse(statement);
                 }
                 break;
             }
@@ -94,7 +94,7 @@ public final class WhenTranslator extends AbstractTranslator {
                 statements.add(prevIf);
             }
             else {
-                prevIf.setElseStatement(ifStatement);
+                prevIf.setElse(ifStatement);
                 prevIf = ifStatement;
             }
         }

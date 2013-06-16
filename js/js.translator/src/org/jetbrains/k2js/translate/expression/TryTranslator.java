@@ -33,7 +33,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.general.Translation.translateAsBlock;
-import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
+import static org.jetbrains.k2js.translate.general.Translation.translateExpression;
 
 public final class TryTranslator {
     private TryTranslator() {
@@ -101,20 +101,20 @@ public final class TryTranslator {
 
                 JsIf ifStatement = new JsIf();
                 if (errorName != null) {
-                    ifStatement.setIfExpression(JsAstUtils.equality(new JsNameRef("name", catchIdentRef), new JsStringLiteral(errorName)));
+                    ifStatement.setIf(JsAstUtils.equality(new JsNameRef("name", catchIdentRef), new JsStringLiteral(errorName)));
                 }
                 else {
                     // todo is check
                     throw new UnsupportedOperationException("catch clause translator");
                 }
 
-                ifStatement.setThenStatement(translateAsStatement(catchBody, context));
+                ifStatement.setThen(translateExpression(catchBody, context));
                 if (prevIf == null) {
                     prevIf = ifStatement;
                     jsCatch.setBody(new JsBlock(prevIf));
                 }
                 else {
-                    prevIf.setElseStatement(ifStatement);
+                    prevIf.setElse(ifStatement);
                     prevIf = ifStatement;
                 }
             }
