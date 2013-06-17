@@ -8,21 +8,6 @@ var Kotlin = Object.create(null, {
 (function () {
     "use strict";
 
-    Kotlin.isType = function (object, type) {
-        if (object === null || object === undefined) {
-            return false;
-        }
-
-        var proto = Object.getPrototypeOf(object);
-        // todo test nested class
-        //noinspection RedundantIfStatementJS
-        if (proto == type.proto) {
-            return true;
-        }
-
-        return false;
-    };
-
     // as separated function to reduce scope
     function createConstructor() {
         return function $fun() {

@@ -62,21 +62,6 @@ var Kotlin = {
         }
     }
 
-    Kotlin.isType = function (object, klass) {
-        if (object === null || object === undefined) {
-            return false;
-        }
-
-        var current = object.get_class();
-        while (current !== klass) {
-            if (current === null) {
-                return false;
-            }
-            current = current.superclass;
-        }
-        return true;
-    };
-
     Kotlin.p = function (m, name, members) {
         if (name === null) {
             copyProperties(m, members);

@@ -39,7 +39,7 @@ final class FileDeclarationVisitor extends DeclarationBodyVisitor {
         else {
             defineExpression = JsAstUtils.assignment(new JsNameRef(name, JsLiteral.THIS), value);
         }
-        initializerStatements.add(defineExpression.asStatement());
+        initializerStatements.add(defineExpression);
     }
 
     @Override

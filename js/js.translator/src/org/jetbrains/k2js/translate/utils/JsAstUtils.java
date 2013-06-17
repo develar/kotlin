@@ -54,7 +54,7 @@ public final class JsAstUtils {
         if (jsNode instanceof JsBlock) {
             return (JsBlock) jsNode;
         }
-        return new JsBlock(jsNode.asStatement());
+        return new JsBlock(jsNode);
     }
 
     @NotNull

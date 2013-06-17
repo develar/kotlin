@@ -42,7 +42,7 @@ public final class Namer {
     public static final String ROOT_PACKAGE_NAME = "_";
     public static final JsNameRef ROOT_PACKAGE_NAME_REF = new JsNameRef(ROOT_PACKAGE_NAME);
 
-    public static final JsNameRef IS_TYPE_FUN_NAME_REF = new JsNameRef("isType", KOTLIN_OBJECT_NAME_REF);
+    public static final JsNameRef IS_TYPE_FUN_NAME_REF = new JsNameRef("isType", new JsNameRef("kotlin"));
 
     public static final JsNameRef CREATE_OBJECT = new JsNameRef("createObject", KOTLIN_OBJECT_NAME_REF);
 

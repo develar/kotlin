@@ -32,8 +32,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.k2js.translate.expression.FunctionTranslator.createDefaultValueGetterName;
+import static org.jetbrains.k2js.translate.general.Translation.translate;
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
-import static org.jetbrains.k2js.translate.general.Translation.translateAsStatement;
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
@@ -142,6 +142,6 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
 
     @Override
     public void visitAnonymousInitializer(@NotNull JetClassInitializer expression) {
-        initializerStatements.add(translateAsStatement(expression.getBody(), initializerContext));
+        initializerStatements.add(translate(expression.getBody(), initializerContext));
     }
 }

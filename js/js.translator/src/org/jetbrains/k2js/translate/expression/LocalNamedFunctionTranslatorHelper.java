@@ -69,7 +69,7 @@ class LocalNamedFunctionTranslatorHelper {
         }
         else {
             context.addStatementToCurrentBlock(new JsVars(new JsVar(referenceName), funVar));
-            context.addStatementToCurrentBlock(assignment(referenceNameRef, new JsNameRef(name)).asStatement());
+            context.addStatementToCurrentBlock(assignment(referenceNameRef, new JsNameRef(name)));
         }
     }
 }

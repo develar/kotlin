@@ -174,6 +174,9 @@ public final class ClassTranslator {
     ) {
         List<JsNode> constructorStatements = constructor.getBody().getStatements();
         List<JsNode> initStatements = null;
+
+        List<JsExpression> superTypeRefs = null;
+
         SmartList<JsVar> closureVars = new SmartList<JsVar>();
         ClassDescriptor anyClass = KotlinBuiltIns.getInstance().getAny();
         boolean useProtoDescriptorAsInitMarker = true;
@@ -205,10 +208,13 @@ public final class ClassTranslator {
                                                             ? CREATE_EMPTY_PROTO_OBJECT_ES5
                                                             : CREATE_EMPTY_PROTO_OBJECT_ES3)));
                 }
+
+                superTypeRefs = new SmartList<JsExpression>();
             }
 
-            initStatements.add(new JsInvocation(new JsNameRef(INIT_INHERITOR_FUN_NAME,
-                                                              context.getQualifiedReference(superClass)), PROTO_VAR_REF).asStatement());
+            JsExpression superTypeRef = context.getQualifiedReference(superClass);
+            superTypeRefs.add(superTypeRef);
+            initStatements.add(new JsInvocation(new JsNameRef(INIT_INHERITOR_FUN_NAME, superTypeRef), PROTO_VAR_REF));
 
             if (superClass.getKind() == ClassKind.CLASS) {
                 for (JetDelegationSpecifier specifier : declaration.getDelegationSpecifiers()) {
@@ -225,8 +231,9 @@ public final class ClassTranslator {
             closureVars.add(new JsVar(DESCRIPTOR_VAR_REF.getName(), membersDescriptor));
         }
 
+        List<JsNode> closureNodes = closure.getBody().getStatements();
         if (!closureVars.isEmpty()) {
-            closure.getBody().getStatements().set(beforeConstructorIndex, new JsVars(closureVars));
+            closureNodes.set(beforeConstructorIndex, new JsVars(closureVars));
         }
 
         JsNameRef funProtoRef = new JsNameRef("prototype", constructorFunRef);
@@ -246,11 +253,12 @@ public final class ClassTranslator {
                 if (context.isEcma5()) {
                     prototype = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL, prototype);
                 }
-                closure.add(assignment(funProtoRef, prototype).asStatement());
+                closureNodes.add(assignment(funProtoRef, prototype));
             }
             else if (descriptor.getModality() != Modality.FINAL) {
                 initInheritorFunStatements = Collections.emptyList();
             }
+            closureNodes.add(assignment(new JsNameRef("superTypes$", constructorFunRef), JsLiteral.NULL));
         }
         else {
             if (hasMembers) {
@@ -264,6 +272,8 @@ public final class ClassTranslator {
                 int initInheritorSubListSize = initStatements.size();
                 initStatements.add(lastInitStatement);
                 initStatements.add(assignment(new JsNameRef("__proto__", JsLiteral.THIS), assignment(funProtoRef, PROTO_VAR_REF)));
+
+                initStatements.add(assignment(new JsNameRef("superTypes$", constructorFunRef), new JsArrayLiteral(superTypeRefs)));
 
                 JsExpression isNotInitialized = useProtoDescriptorAsInitMarker
                                                 ? JsAstUtils.inequality(DESCRIPTOR_VAR_REF, JsLiteral.NULL)
@@ -279,7 +289,7 @@ public final class ClassTranslator {
         if (initInheritorFunStatements != null) {
             JsFunction initInheritorFun = new JsFunction(null, new JsBlock(initInheritorFunStatements));
             initInheritorFun.setParameters(INIT_INHERITOR_FUN_PARAMETERS);
-            closure.add(assignment(new JsNameRef(INIT_INHERITOR_FUN_NAME, constructorFunRef), initInheritorFun));
+            closureNodes.add(assignment(new JsNameRef(INIT_INHERITOR_FUN_NAME, constructorFunRef), initInheritorFun));
         }
     }
 
@@ -388,7 +398,7 @@ public final class ClassTranslator {
         }
 
         JsInvocation call = new JsInvocation(new JsNameRef("call", context.getQualifiedReference(superClassDescriptor)), callArguments);
-        constructor.getBody().getStatements().add(call.asStatement());
+        constructor.getBody().getStatements().add(call);
     }
 
     public List<JsParameter> translateConstructorParameters(

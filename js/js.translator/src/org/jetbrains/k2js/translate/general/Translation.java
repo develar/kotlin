@@ -126,15 +126,14 @@ public final class Translation {
     }
 
     @NotNull
-    public static JsStatement translateAsStatement(@NotNull JetExpression expression,
-            @NotNull TranslationContext context) {
-        return translateExpression(expression, context).asStatement();
+    public static JsNode translate(@NotNull JetExpression expression, @NotNull TranslationContext context) {
+        return translateExpression(expression, context);
     }
 
     @NotNull
     public static JsBlock translateAsBlock(@NotNull JetExpression expression, @NotNull TranslationContext context) {
         JsNode result = translateExpression(expression, context);
-        return result instanceof JsBlock ? (JsBlock) result : new JsBlock(result.asStatement());
+        return result instanceof JsBlock ? (JsBlock) result : new JsBlock(result);
     }
 
     @NotNull
@@ -146,7 +145,7 @@ public final class Translation {
         StaticContext staticContext = new StaticContext(bindingContext, config);
         JsFunction definitionFunction = generateDefinitionFunction(staticContext, files, config, mainCallParameters);
         JsProgram program = staticContext.getProgram();
-        program.getStatements().add(generateDefineModuleInvocation(config, definitionFunction).asStatement());
+        program.getStatements().add(generateDefineModuleInvocation(config, definitionFunction));
         return program;
     }
 
@@ -179,7 +178,7 @@ public final class Translation {
         NamespaceTranslator.translateFiles(files, statements, context);
 
         if (mainCallParameters.shouldBeGenerated()) {
-            JsStatement statement = generateCallToMain(context, files, mainCallParameters.arguments());
+            JsNode statement = generateCallToMain(context, files, mainCallParameters.arguments());
             if (statement != null) {
                 statements.add(statement);
             }
@@ -204,7 +203,7 @@ public final class Translation {
     }
 
     @Nullable
-    private static JsStatement generateCallToMain(@NotNull TranslationContext context, @NotNull Collection<JetFile> files,
+    private static JsNode generateCallToMain(@NotNull TranslationContext context, @NotNull Collection<JetFile> files,
             @NotNull List<String> arguments) {
         JetNamedFunction mainFunction = getMainFunction(files);
         if (mainFunction == null) {
@@ -212,6 +211,6 @@ public final class Translation {
         }
         FunctionDescriptor functionDescriptor = getFunctionDescriptor(context.bindingContext(), mainFunction);
         return CallBuilder.build(context).args(new JsArrayLiteral(toStringLiteralList(arguments))).
-                descriptor(functionDescriptor).translate().asStatement();
+                descriptor(functionDescriptor).translate();
     }
 }

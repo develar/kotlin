@@ -22,8 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public final class LastExpressionMutator {
-    public static JsStatement mutateLastExpression(@NotNull JsNode node, @NotNull Mutator mutator) {
-        return new LastExpressionMutator(mutator).apply(node).asStatement();
+    public static JsNode mutateLastExpression(@NotNull JsNode node, @NotNull Mutator mutator) {
+        return new LastExpressionMutator(mutator).apply(node);
     }
 
     @NotNull
@@ -51,7 +51,7 @@ public final class LastExpressionMutator {
 
     @NotNull
     private JsNode applyToStatement(@NotNull JsExpressionStatement node) {
-        return apply(node.getExpression()).asStatement();
+        return apply(node.getExpression());
     }
 
     @NotNull
@@ -71,7 +71,7 @@ public final class LastExpressionMutator {
         if (statements.isEmpty()) return node;
 
         int size = statements.size();
-        statements.set(size - 1, apply(statements.get(size - 1)).asStatement());
+        statements.set(size - 1, apply(statements.get(size - 1)));
         return node;
     }
 }

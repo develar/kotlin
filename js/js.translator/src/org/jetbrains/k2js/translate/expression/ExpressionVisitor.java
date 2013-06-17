@@ -102,7 +102,7 @@ public final class ExpressionVisitor extends JetVisitor<JsNode, TranslationConte
                                                             "should be of type JetExpression";
                 JsNode jsNode = statement.accept(this, blockContext);
                 if (jsNode != null) {
-                    jsBlock.getStatements().add(jsNode.asStatement());
+                    jsBlock.getStatements().add(jsNode);
                 }
             }
         }
@@ -171,7 +171,7 @@ public final class ExpressionVisitor extends JetVisitor<JsNode, TranslationConte
             return new JsConditional(testExpression, convertToExpression(thenNode), convertToExpression(elseNode)).source(expression);
         }
         else {
-            JsIf ifStatement = new JsIf(testExpression, thenNode.asStatement(), elseNode == null ? null : elseNode.asStatement());
+            JsIf ifStatement = new JsIf(testExpression, thenNode, elseNode == null ? null : elseNode);
             ifStatement.setSource(expression);
             if (isKotlinStatement) {
                 return ifStatement;
@@ -192,12 +192,12 @@ public final class ExpressionVisitor extends JetVisitor<JsNode, TranslationConte
     }
 
     @NotNull
-    private JsStatement translateNullableExpressionAsNotNullStatement(@Nullable JetExpression nullableExpression,
+    private JsNode translateNullableExpressionAsNotNullStatement(@Nullable JetExpression nullableExpression,
             @NotNull TranslationContext context) {
         if (nullableExpression == null) {
             return JsStatement.EMPTY;
         }
-        return nullableExpression.accept(this, context).asStatement();
+        return nullableExpression.accept(this, context);
     }
 
     @NotNull
@@ -231,7 +231,7 @@ public final class ExpressionVisitor extends JetVisitor<JsNode, TranslationConte
 
     private JsNode createWhile(@NotNull JsWhile result, @NotNull JetWhileExpressionBase expression, @NotNull TranslationContext context) {
         result.setCondition(translateConditionExpression(expression.getCondition(), context));
-        result.setBody(translateNullableExpressionAsNotNullStatement(expression.getBody(), context));
+        result.setBody(translateNullableExpressionAsNotNullStatement(expression.getBody(), context).asStatement());
         return result.source(expression);
     }
 

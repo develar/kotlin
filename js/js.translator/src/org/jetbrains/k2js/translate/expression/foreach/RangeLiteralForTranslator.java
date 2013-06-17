@@ -35,7 +35,6 @@ import static org.jetbrains.k2js.translate.utils.TemporariesUtils.temporariesIni
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateLeftExpression;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateRightExpression;
 
-
 // TODO: implement reverse semantics
 public final class RangeLiteralForTranslator extends ForTranslator {
 
@@ -79,7 +78,7 @@ public final class RangeLiteralForTranslator extends ForTranslator {
     @NotNull
     private JsBlock translate() {
         List<JsNode> blockStatements = Lists.newArrayList();
-        blockStatements.add(temporariesInitialization(rangeEnd).asStatement());
+        blockStatements.add(temporariesInitialization(rangeEnd));
         blockStatements.add(new JsFor(initExpression(), getCondition(), getIncrExpression(), translateOriginalBodyExpression()));
         return new JsBlock(blockStatements);
     }

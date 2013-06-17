@@ -109,7 +109,7 @@ public final class FunctionTranslator {
             statements.addAll(((JsBlock) node).getStatements());
         }
         else {
-            statements.add(node.asStatement());
+            statements.add(node);
         }
     }
 
@@ -136,15 +136,14 @@ public final class FunctionTranslator {
                 JetExpression parameter = getDefaultValue(context.bindingContext(), valueParameter);
                 JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
                 statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
-                                        assignment(parameterRef, translateAsExpression(parameter, context)).asStatement()));
+                                        assignment(parameterRef, translateAsExpression(parameter, context))));
                 continue;
             }
 
             JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
             String defaultParameterFunName = createDefaultValueGetterName(descriptor, declarator, context);
             statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
-                                    assignment(parameterRef, new JsInvocation(new JsNameRef(defaultParameterFunName, JsLiteral.THIS)))
-                                            .asStatement()));
+                                    assignment(parameterRef, new JsInvocation(new JsNameRef(defaultParameterFunName, JsLiteral.THIS)))));
         }
     }
 

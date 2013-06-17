@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.expression.foreach;
 
 import com.google.dart.compiler.backend.js.ast.JsBlock;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsNode;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetForExpression;
@@ -58,14 +59,14 @@ public abstract class ForTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    protected JsStatement translateOriginalBodyExpression() {
-        return Translation.translateAsStatement(getLoopBody(expression), context());
+    protected JsNode translateOriginalBodyExpression() {
+        return Translation.translate(getLoopBody(expression), context());
     }
 
     @NotNull
     protected JsStatement translateBody(JsExpression itemValue) {
         JsStatement currentVar = newVar(parameterName, itemValue);
-        JsStatement realBody = translateOriginalBodyExpression();
+        JsNode realBody = translateOriginalBodyExpression();
         if (realBody instanceof JsBlock) {
             JsBlock block = (JsBlock) realBody;
             block.getStatements().add(0, currentVar);

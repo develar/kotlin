@@ -35,14 +35,16 @@ public final class InitializerUtils {
     }
 
     @NotNull
-    public static JsStatement generateInitializerForProperty(@NotNull TranslationContext context,
+    public static JsNode generateInitializerForProperty(
+            @NotNull TranslationContext context,
             @NotNull PropertyDescriptor descriptor,
-            @NotNull JsExpression value) {
+            @NotNull JsExpression value
+    ) {
         if (context.isEcma5()) {
-            return JsAstUtils.definePropertyDataDescriptor(descriptor, value, context).asStatement();
+            return JsAstUtils.definePropertyDataDescriptor(descriptor, value, context);
         }
         else {
-            return assignmentToBackingField(context, descriptor, value).asStatement();
+            return assignmentToBackingField(context, descriptor, value);
         }
     }
 
@@ -56,7 +58,7 @@ public final class InitializerUtils {
         initializers.add(create(descriptor, !(descriptor.getContainingDeclaration() instanceof NamespaceDescriptor), value, context));
     }
 
-    private static JsStatement create(DeclarationDescriptor descriptor, boolean enumerable, JsExpression value, TranslationContext context) {
+    private static JsExpression create(DeclarationDescriptor descriptor, boolean enumerable, JsExpression value, TranslationContext context) {
         JsExpression expression;
         if (context.isEcma5()) {
             expression = JsAstUtils.defineProperty(descriptor.getName().asString(), JsAstUtils.createDataDescriptor(value, false, enumerable));
@@ -64,7 +66,7 @@ public final class InitializerUtils {
         else {
             expression = assignment(new JsNameRef(descriptor.getName().asString(), JsLiteral.THIS), value);
         }
-        return expression.asStatement();
+        return expression;
     }
 
 

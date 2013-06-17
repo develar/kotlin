@@ -26,7 +26,7 @@ public class ClosureBackedGenerationPlace implements GenerationPlace {
         JsNameRef nameRef = new JsNameRef(name);
         assert fun.getName() == null;
         fun.setName(name);
-        statements.add(fun.asStatement());
+        statements.add(fun);
         return nameRef;
     }
 }

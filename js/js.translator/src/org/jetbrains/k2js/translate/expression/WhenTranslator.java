@@ -77,7 +77,7 @@ public final class WhenTranslator extends AbstractTranslator {
 
         JsIf prevIf = null;
         for (JetWhenEntry entry : whenExpression.getEntries()) {
-            JsStatement statement = withReturnValueCaptured(translateEntryExpression(entry));
+            JsNode statement = withReturnValueCaptured(translateEntryExpression(entry));
             if (entry.isElse()) {
                 if (prevIf == null) {
                     statements.add(statement);
@@ -115,9 +115,9 @@ public final class WhenTranslator extends AbstractTranslator {
     }
 
     @NotNull
-    JsStatement withReturnValueCaptured(@NotNull JsNode node) {
+    JsNode withReturnValueCaptured(@NotNull JsNode node) {
         return result == null
-               ? node.asStatement()
+               ? node
                : LastExpressionMutator.mutateLastExpression(node, new AssignToExpressionMutator(result.second));
     }
 

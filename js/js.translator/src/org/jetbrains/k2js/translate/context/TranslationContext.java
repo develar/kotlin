@@ -190,7 +190,7 @@ public class TranslationContext {
         return staticContext.getLiteralFunctionTranslator();
     }
 
-    public void addStatementToCurrentBlock(@NotNull JsStatement statement) {
+    public void addStatementToCurrentBlock(@NotNull JsNode statement) {
         dynamicContext.jsBlock().getStatements().add(statement);
     }
 
