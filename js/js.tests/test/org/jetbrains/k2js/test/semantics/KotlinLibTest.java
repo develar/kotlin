@@ -28,11 +28,6 @@ public final class KotlinLibTest extends SingleFileTranslationTest {
         super("kotlinLib/");
     }
 
-    public void testIsSameType() throws Exception {
-        runJavascriptTest("isSameType.js");
-    }
-
-
     public void testIsAncestorType() throws Exception {
         runJavascriptTest("isAncestorType.js");
     }
