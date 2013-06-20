@@ -21,7 +21,6 @@ import com.intellij.util.containers.Stack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
-import org.jetbrains.jet.lang.psi.JetClassBody;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
 import org.jetbrains.jet.lang.psi.JetDeclarationWithBody;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
@@ -139,9 +138,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         TranslationContext funContext = outerClassContext.newFunctionBody(fun, outerClassContext.aliasingContext().inner(outerClass, outerClassRef),
                                                                           usageTracker);
 
-        fun.getBody().getStatements().add(new JsReturn(ClassTranslator.translate(declaration, descriptor, funContext)));
-        JetClassBody body = declaration.getBody();
-        assert body != null;
+        fun.add(new JsReturn(ClassTranslator.translate(declaration, descriptor, funContext)));
         return new InnerObjectTranslator(funContext, fun).translate(createReference(fun, descriptor), usageTracker.isUsed() ? outerClassRef : null, null);
     }
 }

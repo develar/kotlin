@@ -43,15 +43,7 @@ public final class LastExpressionMutator {
         if (node instanceof JsIf) {
             return applyToIf((JsIf) node);
         }
-        if (node instanceof JsExpressionStatement) {
-            return applyToStatement((JsExpressionStatement) node);
-        }
         return mutator.mutate(node);
-    }
-
-    @NotNull
-    private JsNode applyToStatement(@NotNull JsExpressionStatement node) {
-        return apply(node.getExpression());
     }
 
     @NotNull
@@ -67,8 +59,9 @@ public final class LastExpressionMutator {
     @NotNull
     private JsNode applyToBlock(@NotNull JsBlock node) {
         List<JsNode> statements = node.getStatements();
-
-        if (statements.isEmpty()) return node;
+        if (statements.isEmpty()) {
+            return node;
+        }
 
         int size = statements.size();
         statements.set(size - 1, apply(statements.get(size - 1)));

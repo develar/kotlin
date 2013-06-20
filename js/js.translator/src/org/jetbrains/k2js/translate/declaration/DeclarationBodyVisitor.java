@@ -90,6 +90,10 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
         InitializerUtils.generate(declaration, initializerStatements, context);
     }
 
+    protected boolean asEcma5PropertyDescriptor() {
+        return context.isEcma5();
+    }
+
     @Override
     public void visitNamedFunction(@NotNull JetNamedFunction expression) {
         FunctionDescriptor descriptor = getFunctionDescriptor(context.bindingContext(), expression);
@@ -103,7 +107,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
                 JsFunction fun = new JsFunction(context.scope(), new JsBlock(new JsReturn(translateAsExpression(parameter, context))));
                 fun.setParameters(Collections.<JsParameter>emptyList());
                 defineFunction(createDefaultValueGetterName(descriptor, valueParameter, context),
-                               context.isEcma5() ? createDataDescriptor(fun, false, false) : fun);
+                               asEcma5PropertyDescriptor() ? createDataDescriptor(fun, false, false) : fun);
             }
 
             if (descriptor.getModality() == Modality.ABSTRACT) {
@@ -113,7 +117,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
 
         JsFunction value = FunctionTranslator.translate(expression, descriptor, context);
         String name = context.getNameRefForDescriptor(descriptor).getName();
-        if (context.isEcma5()) {
+        if (asEcma5PropertyDescriptor()) {
             defineFunction(name, createPropertyDataDescriptor(descriptor, descriptor.getModality().isOverridable(), value, context));
         }
         else {

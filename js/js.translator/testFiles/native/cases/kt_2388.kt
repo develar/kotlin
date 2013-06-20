@@ -1,7 +1,6 @@
 package foo
 
-native
-fun _setTimeout(callback:()->Unit):Unit = noImpl
+native fun _setTimeout(callback:()->Unit):Unit = noImpl
 
 var done = false
 

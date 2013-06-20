@@ -19,6 +19,11 @@ final class FileDeclarationVisitor extends DeclarationBodyVisitor {
         super(context);
     }
 
+    @Override
+    protected boolean asEcma5PropertyDescriptor() {
+        return false;
+    }
+
     public GenerationPlace createGenerationPlace() {
         return new ClosureBackedGenerationPlace(initializerStatements);
     }
@@ -32,14 +37,7 @@ final class FileDeclarationVisitor extends DeclarationBodyVisitor {
 
     @Override
     protected void defineFunction(String name, JsExpression value) {
-        JsExpression defineExpression;
-        if (context.isEcma5()) {
-            defineExpression = JsAstUtils.defineProperty(name, value);
-        }
-        else {
-            defineExpression = JsAstUtils.assignment(new JsNameRef(name, JsLiteral.THIS), value);
-        }
-        initializerStatements.add(defineExpression);
+        initializerStatements.add(JsAstUtils.assignment(new JsNameRef(name, JsLiteral.THIS), value));
     }
 
     @Override
@@ -49,17 +47,9 @@ final class FileDeclarationVisitor extends DeclarationBodyVisitor {
         }
 
         if (value instanceof JsLiteral) {
-            JsNameRef name = context.getNameRefForDescriptor(descriptor);
-            JsExpression defineExpression;
-            if (context.isEcma5()) {
-                defineExpression = JsAstUtils.defineProperty(name.getName(), JsAstUtils.createDataDescriptor(value,
-                                                                                                             descriptor.isVar(),
-                                                                                                             false));
-            }
-            else {
-                defineExpression = JsAstUtils.assignment(new JsNameRef(name.getName(), JsLiteral.THIS), value);
-            }
-            propertyDefineStatements.add(defineExpression);
+            JsNameRef nameRef = context.getNameRefForDescriptor(descriptor);
+            nameRef.setQualifier(JsLiteral.THIS);
+            propertyDefineStatements.add(JsAstUtils.assignment(nameRef, value));
         }
         else {
             propertyDefineStatements.add(generateInitializerForProperty(context, descriptor, value));

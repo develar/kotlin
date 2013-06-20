@@ -231,7 +231,7 @@ public final class ExpressionVisitor extends JetVisitor<JsNode, TranslationConte
 
     private JsNode createWhile(@NotNull JsWhile result, @NotNull JetWhileExpressionBase expression, @NotNull TranslationContext context) {
         result.setCondition(translateConditionExpression(expression.getCondition(), context));
-        result.setBody(translateNullableExpressionAsNotNullStatement(expression.getBody(), context).asStatement());
+        result.setBody(translateNullableExpressionAsNotNullStatement(expression.getBody(), context));
         return result.source(expression);
     }
 
@@ -263,7 +263,7 @@ public final class ExpressionVisitor extends JetVisitor<JsNode, TranslationConte
             JetExpression baseExpression = expression.getBaseExpression();
             assert baseExpression != null;
             return new JsLabel(context.scope().declareName(getReferencedName(operationReference)),
-                               baseExpression.accept(this, context).asStatement()).source(expression);
+                               baseExpression.accept(this, context)).source(expression);
         }
         else {
             return UnaryOperationTranslator.translate(expression, operationToken, context).source(expression);
