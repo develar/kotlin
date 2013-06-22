@@ -1,6 +1,9 @@
 package org.jetbrains.k2js.translate.declaration;
 
-import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsLiteral;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.JsNode;
 import com.intellij.util.SmartList;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -9,7 +12,7 @@ import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.List;
 
-import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
+import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBackingField;
 
 final class FileDeclarationVisitor extends DeclarationBodyVisitor {
     // property define statements must be after function define statements
@@ -52,7 +55,7 @@ final class FileDeclarationVisitor extends DeclarationBodyVisitor {
             propertyDefineStatements.add(JsAstUtils.assignment(nameRef, value));
         }
         else {
-            propertyDefineStatements.add(generateInitializerForProperty(context, descriptor, value));
+            propertyDefineStatements.add(assignmentToBackingField(context, descriptor, value));
         }
     }
 }

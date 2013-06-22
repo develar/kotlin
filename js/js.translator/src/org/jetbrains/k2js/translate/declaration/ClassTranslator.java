@@ -25,20 +25,19 @@ import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
-import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.FunctionTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
-import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorForType;
-import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isNotAny;
-import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
+import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBackingField;
 
 public final class ClassTranslator {
     private static final JsNameRef DESCRIPTOR_VAR_REF = new JsNameRef("classDescriptor$");
@@ -78,7 +77,7 @@ public final class ClassTranslator {
     ) {
         ClassDescriptor containingClass = DescriptorUtils.getContainingClass(descriptor);
         if (containingClass == null) {
-            return translate(objectDeclaration, descriptor, context);
+            return new JsNew(translate(objectDeclaration, descriptor, context, false));
         }
         return context.literalFunctionTranslator().translate(containingClass, context, objectDeclaration, descriptor);
     }
@@ -87,34 +86,18 @@ public final class ClassTranslator {
     public static JsInvocation translate(
             @NotNull JetClassOrObject declaration,
             @NotNull ClassDescriptor descriptor,
-            @NotNull TranslationContext declarationContext
+            @NotNull TranslationContext declarationContext,
+            boolean asDataDescriptor
     ) {
-        JsFunction closure;
-        TranslationContext context;
-        if (descriptor.getKind().isObject()) {
-            closure = null;
-            context = declarationContext;
-        }
-        else {
-            closure = JsAstUtils.createFunctionWithEmptyBody(declarationContext.scope());
-            context = declarationContext.contextWithScope(closure);
-        }
+        JsFunction closure = JsAstUtils.createFunctionWithEmptyBody(declarationContext.scope());
+        TranslationContext context = declarationContext.contextWithScope(closure);
 
-        if (closure != null) {
-            declarationContext.literalFunctionTranslator().setDefinitionPlace(new ClosureBackedGenerationPlace(closure.getBody().getStatements()));
-        }
+        declarationContext.literalFunctionTranslator().setDefinitionPlace(new ClosureBackedGenerationPlace(closure.getBody().getStatements()));
         ClassTranslator classTranslator = new ClassTranslator(declaration, descriptor, closure);
         classTranslator.addClassOwnDeclarations(context);
-        if (closure == null) {
-            JsInvocation createInvocation = new JsInvocation(Namer.CREATE_OBJECT);
-            addSuperclassReferences(descriptor, createInvocation, context);
-            return createInvocation;
-        }
-        else {
-            declarationContext.literalFunctionTranslator().popDefinitionPlace();
-            closure.add(new JsReturn(InitializerUtils.toDataDescriptor(classTranslator.constructorFunRef, context)));
-            return new JsInvocation(new JsInvocation(null, closure), Collections.<JsExpression>emptyList());
-        }
+        declarationContext.literalFunctionTranslator().popDefinitionPlace();
+        closure.add(new JsReturn(asDataDescriptor ? JsAstUtils.toDataDescriptor(classTranslator.constructorFunRef, context) : classTranslator.constructorFunRef));
+        return new JsInvocation(new JsInvocation(null, closure), Collections.<JsExpression>emptyList());
     }
 
     private void addClassOwnDeclarations(@NotNull TranslationContext declarationContext) {
@@ -293,68 +276,6 @@ public final class ClassTranslator {
         }
     }
 
-    private static void addSuperclassReferences(ClassDescriptor descriptor, @NotNull JsInvocation jsClassDeclaration, TranslationContext context) {
-        List<JsExpression> superClassReferences = getSupertypesNameReferences(descriptor, context);
-        if (superClassReferences.isEmpty()) {
-            if (!descriptor.getKind().equals(ClassKind.TRAIT) || context.isEcma5()) {
-                jsClassDeclaration.getArguments().add(JsLiteral.NULL);
-            }
-            return;
-        }
-
-        List<JsExpression> expressions;
-        if (superClassReferences.size() > 1) {
-            JsArrayLiteral arrayLiteral = new JsArrayLiteral();
-            jsClassDeclaration.getArguments().add(arrayLiteral);
-            expressions = arrayLiteral.getExpressions();
-        }
-        else {
-            expressions = jsClassDeclaration.getArguments();
-        }
-
-        for (JsExpression superClassReference : superClassReferences) {
-            expressions.add(superClassReference);
-        }
-    }
-
-    @NotNull
-    private static List<JsExpression> getSupertypesNameReferences(ClassDescriptor descriptor, TranslationContext context) {
-        Collection<JetType> supertypes = descriptor.getTypeConstructor().getSupertypes();
-        if (supertypes.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        JsExpression base = null;
-        List<JsExpression> list = null;
-        for (JetType type : supertypes) {
-            ClassDescriptor result = getClassDescriptorForType(type);
-            if (isNotAny(result) && !context.isNative(result)) {
-                switch (result.getKind()) {
-                    case CLASS:
-                        base = context.getQualifiedReference(result);
-                        break;
-                    case TRAIT:
-                        if (list == null) {
-                            list = new ArrayList<JsExpression>();
-                        }
-                        list.add(context.getQualifiedReference(result));
-                        break;
-
-                    default:
-                        throw new UnsupportedOperationException("unsupported super class kind " + result.getKind().name());
-                }
-            }
-        }
-
-        if (list == null) {
-            return base == null ? Collections.<JsExpression>emptyList() : Collections.singletonList(base);
-        }
-        else if (base != null) {
-            list.add(0, base);
-        }
-        return list;
-    }
-
     private static void mayBeAddCallToSuperMethod(
             ClassDescriptor descriptor,
             JetClassOrObject declaration,
@@ -431,7 +352,7 @@ public final class ClassTranslator {
             PropertyDescriptor propertyDescriptor = context.bindingContext().get(BindingContext.VALUE_PARAMETER_AS_PROPERTY, parameter);
             if (propertyDescriptor != null) {
                 PropertyTranslator.translateAccessors(propertyDescriptor, properties, declarationContext);
-                statements.add(generateInitializerForProperty(context, propertyDescriptor, new JsNameRef(jsParameter.getName())));
+                statements.add(assignmentToBackingField(context, propertyDescriptor, new JsNameRef(jsParameter.getName())));
             }
             result[i] = jsParameter;
         }

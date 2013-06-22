@@ -42,6 +42,10 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         super(context);
     }
 
+    public GenerationPlace getPackageLevelDefinitionPlace() {
+        return definitionPlaces.get(0);
+    }
+
     public void popDefinitionPlace() {
         definitionPlaces.pop();
         definitionPlace = definitionPlaces.isEmpty() ? null : definitionPlaces.peek();
@@ -138,7 +142,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         TranslationContext funContext = outerClassContext.newFunctionBody(fun, outerClassContext.aliasingContext().inner(outerClass, outerClassRef),
                                                                           usageTracker);
 
-        fun.add(new JsReturn(ClassTranslator.translate(declaration, descriptor, funContext)));
+        fun.add(new JsReturn(ClassTranslator.translate(declaration, descriptor, funContext, true)));
         return new InnerObjectTranslator(funContext, fun).translate(createReference(fun, descriptor), usageTracker.isUsed() ? outerClassRef : null, null);
     }
 }

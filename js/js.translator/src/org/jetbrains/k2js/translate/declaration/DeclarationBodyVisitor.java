@@ -34,12 +34,10 @@ import java.util.List;
 import static org.jetbrains.k2js.translate.expression.FunctionTranslator.createDefaultValueGetterName;
 import static org.jetbrains.k2js.translate.general.Translation.translate;
 import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
-import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.createDataDescriptor;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.createPropertyDataDescriptor;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.*;
+import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBackingField;
 
 public class DeclarationBodyVisitor extends TranslatorVisitor {
     private final JsFunction initializer;
@@ -82,8 +80,8 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
             return;
         }
 
-        JsExpression value = ClassTranslator.translate(declaration, descriptor, context);
-        result.add(new JsPropertyInitializer(descriptor.getName().asString(), value));
+        result.add(new JsPropertyInitializer(descriptor.getName().asString(),
+                                             ClassTranslator.translate(declaration, descriptor, context, true)));
     }
 
     @Override
@@ -152,7 +150,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
     }
 
     protected void visitPropertyWithInitializer(PropertyDescriptor descriptor, JsExpression value) {
-        initializerStatements.add(generateInitializerForProperty(initializerContext, descriptor, value));
+        initializerStatements.add(assignmentToBackingField(initializerContext, descriptor, value));
     }
 
     @Override

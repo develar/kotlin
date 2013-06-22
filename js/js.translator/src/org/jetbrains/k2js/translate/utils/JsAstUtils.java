@@ -258,4 +258,8 @@ public final class JsAstUtils {
     public static JsObjectLiteral wrapValue(@NotNull JsExpression label, @NotNull JsExpression value) {
         return new JsObjectLiteral(Collections.singletonList(new JsPropertyInitializer(label, value)));
     }
+
+    public static JsExpression toDataDescriptor(JsExpression value, TranslationContext context) {
+        return context.isEcma5() ? createDataDescriptor(value) : value;
+    }
 }
