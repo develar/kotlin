@@ -43,10 +43,6 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         super(context);
     }
 
-    public DefinitionPlace getPackageLevelDefinitionPlace() {
-        return definitionPlaces.get(0);
-    }
-
     public void popDefinitionPlace() {
         definitionPlaces.pop();
         definitionPlace = definitionPlaces.isEmpty() ? null : definitionPlaces.peek();
@@ -115,14 +111,14 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
             return fun;
         }
         else {
-            JsExpression result = new InnerFunctionTranslator(descriptor, funContext, fun).translate(createReference(fun, descriptor), outerContext, namedFunctionTranslatorHelper);
+            JsExpression result = new InnerFunctionTranslator(descriptor, funContext, fun).translate(createReference(fun), outerContext, namedFunctionTranslatorHelper);
             addRegularParameters(descriptor, fun.getParameters(), funContext, receiverName);
             return result;
         }
     }
 
-    private JsNameRef createReference(JsFunction fun, MemberDescriptor descriptor) {
-        return definitionPlace.createReference(fun, descriptor, context());
+    private JsNameRef createReference(JsFunction fun) {
+        return definitionPlace.createReference(fun);
     }
 
     private JsFunction createFunction() {
@@ -143,8 +139,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         TranslationContext funContext = outerClassContext.newFunctionBody(fun, outerClassContext.aliasingContext().inner(outerClass, outerClassRef),
                                                                           usageTracker);
 
-        //getPackageLevelDefinitionPlace().createReference()
-        new ClassTranslator(declaration, descriptor, fun).translate(funContext, false);
-        return new InnerObjectTranslator(funContext, fun).translate(createReference(fun, descriptor), usageTracker.isUsed() ? outerClassRef : null, null);
+        JsNameRef classRef = definitionPlace.addInnerClass(new ClassTranslator(declaration, descriptor, fun).translate(funContext, false), descriptor);
+        return new InnerObjectTranslator(funContext, fun).translate(classRef, usageTracker.isUsed() ? outerClassRef : null, null);
     }
 }

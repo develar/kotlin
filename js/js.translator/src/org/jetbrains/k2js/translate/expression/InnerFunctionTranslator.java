@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
@@ -47,8 +46,8 @@ class InnerFunctionTranslator extends InnerDeclarationTranslator {
     }
 
     @Override
-    protected JsInvocation createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
-        return new JsInvocation(new JsNameRef("bind", nameRef), new SmartList<JsExpression>(self));
+    protected JsInvocation createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self, int additionalArgumentCount) {
+        return new JsInvocation(new JsNameRef("bind", nameRef), createArgumentList(additionalArgumentCount, self));
     }
 
     @NotNull

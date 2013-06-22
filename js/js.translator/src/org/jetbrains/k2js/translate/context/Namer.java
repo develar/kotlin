@@ -26,6 +26,8 @@ import org.jetbrains.jet.lang.resolve.DescriptorUtils;
  * Encapsulates different types of constants and naming conventions.
  */
 public final class Namer {
+    private static final JsNameRef NEW_KOTLIN_PACKAGE_REF = new JsNameRef("kotlin");
+
     public static final String CALLEE_NAME = "$fun";
     public static final String OUTER_CLASS_NAME = "$outer";
 
@@ -37,14 +39,12 @@ public final class Namer {
     public static final JsNameRef KOTLIN_OBJECT_NAME_REF = new JsNameRef(KOTLIN_OBJECT_NAME);
     private static final String RECEIVER_PARAMETER_NAME = "$receiver";
     public static final JsNameRef THROW_NPE_FUN_NAME_REF = new JsNameRef("throwNPE", KOTLIN_OBJECT_NAME_REF);
-    public static final JsNameRef NEW_EXCEPTION_FUN_NAME_REF = new JsNameRef("newException", KOTLIN_OBJECT_NAME_REF);
+    public static final JsNameRef NEW_EXCEPTION_FUN_NAME_REF = new JsNameRef("newException", NEW_KOTLIN_PACKAGE_REF);
 
     public static final String ROOT_PACKAGE_NAME = "_";
     public static final JsNameRef ROOT_PACKAGE_NAME_REF = new JsNameRef(ROOT_PACKAGE_NAME);
 
-    public static final JsNameRef IS_TYPE_FUN_NAME_REF = new JsNameRef("isType", new JsNameRef("kotlin"));
-
-    public static final JsNameRef CREATE_OBJECT = new JsNameRef("createObject", KOTLIN_OBJECT_NAME_REF);
+    public static final JsNameRef IS_TYPE_FUN_NAME_REF = new JsNameRef("isType", NEW_KOTLIN_PACKAGE_REF);
 
     public static final JsNameRef DEFINE_PACKAGE = new JsNameRef("p", KOTLIN_OBJECT_NAME_REF);
 

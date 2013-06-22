@@ -57,10 +57,13 @@ public final class ClassTranslator {
     private int classPrototypeInitStatementIndex;
     private final JsNameRef constructorFunRef;
 
+    private final List<JsNode> definitionNodes;
+
     public ClassTranslator(JetClassOrObject declaration, ClassDescriptor descriptor, JsFunction closure) {
         this.declaration = declaration;
         this.descriptor = descriptor;
         this.closure = closure;
+        this.definitionNodes = closure.getBody().getStatements();
         constructorFunRef = new JsNameRef(descriptor.getName().isSpecial() ? "A$" : descriptor.getName().asString());
     }
 
@@ -93,19 +96,13 @@ public final class ClassTranslator {
     }
 
     public JsInvocation translate(TranslationContext declarationContext, boolean asDataDescriptor) {
-        if (!descriptor.getKind().isObject()) {
-            declarationContext.literalFunctionTranslator().setDefinitionPlace(new DefinitionPlace(closure.getBody().getStatements()));
-        }
-
+        declarationContext.literalFunctionTranslator().setDefinitionPlace(new DefinitionPlace(definitionNodes));
         addClassOwnDeclarations(declarationContext);
+        declarationContext.literalFunctionTranslator().popDefinitionPlace();
 
-        if (!descriptor.getKind().isObject()) {
-            declarationContext.literalFunctionTranslator().popDefinitionPlace();
-        }
-
-        closure.add(new JsReturn(asDataDescriptor
-                                 ? JsAstUtils.toDataDescriptor(constructorFunRef, declarationContext)
-                                 : constructorFunRef));
+        definitionNodes.add(new JsReturn(asDataDescriptor
+                                         ? JsAstUtils.toDataDescriptor(constructorFunRef, declarationContext)
+                                         : constructorFunRef));
         return new JsInvocation(new JsInvocation(null, closure), Collections.<JsExpression>emptyList());
     }
 
@@ -140,14 +137,11 @@ public final class ClassTranslator {
             membersDescriptor = new JsObjectLiteral(members, true);
         }
 
-        if (closure != null) {
-            constructor.setName(constructorFunRef.getName());
-            List<JsNode> statements = closure.getBody().getStatements();
-            int beforeConstructorIndex = statements.size();
-            statements.add(JsStatement.EMPTY);
-            statements.add(constructor);
-            addClassInitialization(constructor, membersDescriptor, declarationContext, beforeConstructorIndex);
-        }
+        constructor.setName(constructorFunRef.getName());
+        int beforeConstructorIndex = definitionNodes.size();
+        definitionNodes.add(JsStatement.EMPTY);
+        definitionNodes.add(constructor);
+        addClassInitialization(constructor, membersDescriptor, declarationContext, beforeConstructorIndex);
     }
 
     /**
@@ -220,9 +214,8 @@ public final class ClassTranslator {
             closureVars.add(new JsVar(DESCRIPTOR_VAR_REF.getName(), membersDescriptor));
         }
 
-        List<JsNode> closureNodes = closure.getBody().getStatements();
         if (!closureVars.isEmpty()) {
-            closureNodes.set(beforeConstructorIndex, new JsVars(closureVars));
+            definitionNodes.set(beforeConstructorIndex, new JsVars(closureVars));
         }
 
         JsNameRef funProtoRef = new JsNameRef("prototype", constructorFunRef);
@@ -242,12 +235,12 @@ public final class ClassTranslator {
                 if (context.isEcma5()) {
                     prototype = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL, prototype);
                 }
-                closureNodes.add(assignment(funProtoRef, prototype));
+                definitionNodes.add(assignment(funProtoRef, prototype));
             }
             else if (descriptor.getModality() != Modality.FINAL) {
                 initInheritorFunStatements = Collections.emptyList();
             }
-            closureNodes.add(assignment(new JsNameRef("superTypes$", constructorFunRef), JsLiteral.NULL));
+            definitionNodes.add(assignment(new JsNameRef("superTypes$", constructorFunRef), JsLiteral.NULL));
         }
         else {
             if (hasMembers) {
@@ -278,7 +271,7 @@ public final class ClassTranslator {
         if (initInheritorFunStatements != null) {
             JsFunction initInheritorFun = new JsFunction(null, new JsBlock(initInheritorFunStatements));
             initInheritorFun.setParameters(INIT_INHERITOR_FUN_PARAMETERS);
-            closureNodes.add(assignment(new JsNameRef(INIT_INHERITOR_FUN_NAME, constructorFunRef), initInheritorFun));
+            definitionNodes.add(assignment(new JsNameRef(INIT_INHERITOR_FUN_NAME, constructorFunRef), initInheritorFun));
         }
     }
 

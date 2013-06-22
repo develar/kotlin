@@ -1,20 +1,26 @@
 "use strict";
 
-var kotlin = {"isType": function (object, type) {
-    if (object instanceof type) {
-        return true;
-    }
-    if (object == null) {
-        return false;
-    }
-    var proto = object.__proto__;
-    if (proto === undefined) {
-        return false
-    }
-    var objectType = proto.constructor;
-    return objectType === type ||
-           (objectType !== undefined && objectType.superTypes$ !== null && objectType.superTypes$.indexOf(type) !== -1);
-}};
+var kotlin = {
+    "isType": function (object, type) {
+        if (object instanceof type) {
+            return true;
+        }
+        if (object == null) {
+            return false;
+        }
+        var proto = object.__proto__;
+        if (proto === undefined) {
+            return false
+        }
+        var objectType = proto.constructor;
+        return objectType === type ||
+               (objectType !== undefined && objectType.superTypes$ !== null && objectType.superTypes$.indexOf(type) !== -1);
+    },
+    newException: function (message, name) {
+        var error = new Error(message);
+        error.name = name;
+        return error;
+    }};
 
 (function () {
     Kotlin.equals = function (obj1, obj2) {
@@ -58,12 +64,6 @@ var kotlin = {"isType": function (object, type) {
         var error = new ReferenceError();
         error.name = "NullPointerException";
         throw error;
-    };
-
-    Kotlin.newException = function (message, name) {
-        var error = new Error(message);
-        error.name = name;
-        return error;
     };
 
     function throwAbstractFunctionInvocationError(funName) {

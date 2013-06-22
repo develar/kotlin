@@ -21,8 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
-import java.util.Collections;
-
 class InnerObjectTranslator extends InnerDeclarationTranslator {
     public InnerObjectTranslator(
             @NotNull TranslationContext context,
@@ -33,17 +31,17 @@ class InnerObjectTranslator extends InnerDeclarationTranslator {
 
     @Override
     protected JsExpression createExpression(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
-        return createInvocation(nameRef, self);
+        return createInvocation(nameRef, self, 0);
     }
 
     @Override
-    protected HasArguments createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
+    protected HasArguments createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self, int additionalArgumentCount) {
         if (self == null) {
-            return new JsNew(nameRef);
+            return new JsNew(nameRef, createArgumentList(additionalArgumentCount, null));
         }
         else {
             fun.getParameters().add(new JsParameter(((JsNameRef) self).getName()));
-            return new JsNew(nameRef, Collections.<JsExpression>singletonList(JsLiteral.THIS));
+            return new JsNew(nameRef, createArgumentList(additionalArgumentCount, JsLiteral.THIS));
         }
     }
 }

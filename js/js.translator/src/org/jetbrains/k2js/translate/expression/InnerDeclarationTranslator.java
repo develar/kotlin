@@ -23,7 +23,10 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 abstract class InnerDeclarationTranslator {
@@ -38,14 +41,18 @@ abstract class InnerDeclarationTranslator {
         this.fun = fun;
     }
 
-    public JsExpression translate(@NotNull JsNameRef nameRef, @Nullable JsExpression self, @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper) {
+    public JsExpression translate(
+            @NotNull JsNameRef nameRef,
+            @Nullable JsExpression self,
+            @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper
+    ) {
         //noinspection ConstantConditions
         OrderedSet<CallableDescriptor> captured = context.usageTracker().getCapturedVariables();
         if (captured == null && self == JsLiteral.NULL) {
             return createExpression(nameRef, self);
         }
 
-        HasArguments invocation = createInvocation(nameRef, self);
+        HasArguments invocation = createInvocation(nameRef, self, captured == null ? 0 : captured.size());
         if (captured != null) {
             List<JsExpression> expressions = invocation.getArguments();
             for (CallableDescriptor descriptor : captured) {
@@ -70,7 +77,23 @@ abstract class InnerDeclarationTranslator {
         return invocation;
     }
 
+    protected static List<JsExpression> createArgumentList(int additionalArgumentCount, @Nullable JsExpression firstExpression) {
+        if (firstExpression == null) {
+            return additionalArgumentCount == 0
+                   ? Collections.<JsExpression>emptyList()
+                   : JsAstUtils.<JsExpression>newList(additionalArgumentCount);
+        }
+        else if (additionalArgumentCount == 0) {
+            return Collections.<JsExpression>singletonList(JsLiteral.THIS);
+        }
+        else {
+            List<JsExpression> arguments = new ArrayList<JsExpression>(additionalArgumentCount + 1);
+            arguments.add(JsLiteral.THIS);
+            return arguments;
+        }
+    }
+
     protected abstract JsExpression createExpression(@NotNull JsNameRef nameRef, @Nullable JsExpression self);
 
-    protected abstract HasArguments createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self);
+    protected abstract HasArguments createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self, int additionalArgumentCount);
 }
