@@ -29,20 +29,21 @@ import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.context.UsageTracker;
 import org.jetbrains.k2js.translate.declaration.ClassTranslator;
+import org.jetbrains.k2js.translate.declaration.DefinitionPlace;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 
 import static org.jetbrains.k2js.translate.expression.FunctionTranslator.addRegularParameters;
 import static org.jetbrains.k2js.translate.utils.JsDescriptorUtils.getExpectedReceiverDescriptor;
 
 public class LiteralFunctionTranslator extends AbstractTranslator {
-    private final Stack<GenerationPlace> definitionPlaces = new Stack<GenerationPlace>();
-    private GenerationPlace definitionPlace;
+    private final Stack<DefinitionPlace> definitionPlaces = new Stack<DefinitionPlace>();
+    private DefinitionPlace definitionPlace;
 
     public LiteralFunctionTranslator(@NotNull TranslationContext context) {
         super(context);
     }
 
-    public GenerationPlace getPackageLevelDefinitionPlace() {
+    public DefinitionPlace getPackageLevelDefinitionPlace() {
         return definitionPlaces.get(0);
     }
 
@@ -51,7 +52,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         definitionPlace = definitionPlaces.isEmpty() ? null : definitionPlaces.peek();
     }
 
-    public void setDefinitionPlace(@NotNull GenerationPlace place) {
+    public void setDefinitionPlace(@NotNull DefinitionPlace place) {
         definitionPlaces.push(place);
         definitionPlace = place;
     }
@@ -142,7 +143,8 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         TranslationContext funContext = outerClassContext.newFunctionBody(fun, outerClassContext.aliasingContext().inner(outerClass, outerClassRef),
                                                                           usageTracker);
 
-        fun.add(new JsReturn(ClassTranslator.translate(declaration, descriptor, funContext, true)));
+        //getPackageLevelDefinitionPlace().createReference()
+        new ClassTranslator(declaration, descriptor, fun).translate(funContext, false);
         return new InnerObjectTranslator(funContext, fun).translate(createReference(fun, descriptor), usageTracker.isUsed() ? outerClassRef : null, null);
     }
 }

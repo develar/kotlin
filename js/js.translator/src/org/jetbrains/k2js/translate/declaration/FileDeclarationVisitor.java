@@ -7,7 +7,6 @@ import com.google.dart.compiler.backend.js.ast.JsNode;
 import com.intellij.util.SmartList;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.expression.GenerationPlace;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.List;
@@ -27,8 +26,8 @@ final class FileDeclarationVisitor extends DeclarationBodyVisitor {
         return false;
     }
 
-    public GenerationPlace createGenerationPlace() {
-        return new ClosureBackedGenerationPlace(initializerStatements);
+    public DefinitionPlace createGenerationPlace() {
+        return new DefinitionPlace(initializerStatements);
     }
 
     public boolean finalizeInitializerStatements() {

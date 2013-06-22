@@ -6,19 +6,21 @@ import com.google.dart.compiler.backend.js.ast.JsNode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.MemberDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.expression.GenerationPlace;
 
 import java.util.List;
 
-public class ClosureBackedGenerationPlace implements GenerationPlace {
+public class DefinitionPlace {
     private int nameCounter;
-    private final List<JsNode> statements;
+    private final List<JsNode> nodes;
 
-    public ClosureBackedGenerationPlace(List<JsNode> statements) {
-        this.statements = statements;
+    public DefinitionPlace(List<JsNode> nodes) {
+        this.nodes = nodes;
     }
 
-    @Override
+    public List<JsNode> getNodes() {
+        return nodes;
+    }
+
     public JsNameRef createReference(
             @NotNull JsFunction fun, @NotNull MemberDescriptor descriptor, @NotNull TranslationContext context
     ) {
@@ -26,7 +28,7 @@ public class ClosureBackedGenerationPlace implements GenerationPlace {
         JsNameRef nameRef = new JsNameRef(name);
         assert fun.getName() == null;
         fun.setName(name);
-        statements.add(fun);
+        nodes.add(fun);
         return nameRef;
     }
 }

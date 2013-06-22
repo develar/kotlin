@@ -57,7 +57,7 @@ public final class ClassTranslator {
     private int classPrototypeInitStatementIndex;
     private final JsNameRef constructorFunRef;
 
-    private ClassTranslator(JetClassOrObject declaration, ClassDescriptor descriptor, JsFunction closure) {
+    public ClassTranslator(JetClassOrObject declaration, ClassDescriptor descriptor, JsFunction closure) {
         this.declaration = declaration;
         this.descriptor = descriptor;
         this.closure = closure;
@@ -85,17 +85,27 @@ public final class ClassTranslator {
     public static JsInvocation translate(
             @NotNull JetClassOrObject declaration,
             @NotNull ClassDescriptor descriptor,
-            @NotNull TranslationContext declarationContext,
+            @NotNull TranslationContext context,
             boolean asDataDescriptor
     ) {
-        JsFunction closure = JsAstUtils.createFunctionWithEmptyBody(declarationContext.scope());
-        TranslationContext context = declarationContext.contextWithScope(closure);
+        JsFunction closure = JsAstUtils.createFunctionWithEmptyBody(context.scope());
+        return new ClassTranslator(declaration, descriptor, closure).translate(context.contextWithScope(closure), asDataDescriptor);
+    }
 
-        declarationContext.literalFunctionTranslator().setDefinitionPlace(new ClosureBackedGenerationPlace(closure.getBody().getStatements()));
-        ClassTranslator classTranslator = new ClassTranslator(declaration, descriptor, closure);
-        classTranslator.addClassOwnDeclarations(context);
-        declarationContext.literalFunctionTranslator().popDefinitionPlace();
-        closure.add(new JsReturn(asDataDescriptor ? JsAstUtils.toDataDescriptor(classTranslator.constructorFunRef, context) : classTranslator.constructorFunRef));
+    public JsInvocation translate(TranslationContext declarationContext, boolean asDataDescriptor) {
+        if (!descriptor.getKind().isObject()) {
+            declarationContext.literalFunctionTranslator().setDefinitionPlace(new DefinitionPlace(closure.getBody().getStatements()));
+        }
+
+        addClassOwnDeclarations(declarationContext);
+
+        if (!descriptor.getKind().isObject()) {
+            declarationContext.literalFunctionTranslator().popDefinitionPlace();
+        }
+
+        closure.add(new JsReturn(asDataDescriptor
+                                 ? JsAstUtils.toDataDescriptor(constructorFunRef, declarationContext)
+                                 : constructorFunRef));
         return new JsInvocation(new JsInvocation(null, closure), Collections.<JsExpression>emptyList());
     }
 

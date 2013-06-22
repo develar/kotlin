@@ -45,7 +45,7 @@ abstract class InnerDeclarationTranslator {
             return createExpression(nameRef, self);
         }
 
-        JsInvocation invocation = createInvocation(nameRef, self);
+        HasArguments invocation = createInvocation(nameRef, self);
         if (captured != null) {
             List<JsExpression> expressions = invocation.getArguments();
             for (CallableDescriptor descriptor : captured) {
@@ -72,5 +72,5 @@ abstract class InnerDeclarationTranslator {
 
     protected abstract JsExpression createExpression(@NotNull JsNameRef nameRef, @Nullable JsExpression self);
 
-    protected abstract JsInvocation createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self);
+    protected abstract HasArguments createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self);
 }
