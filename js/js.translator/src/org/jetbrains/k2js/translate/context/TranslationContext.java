@@ -171,11 +171,6 @@ public class TranslationContext {
     }
 
     @NotNull
-    public JsProgram program() {
-        return staticContext.getProgram();
-    }
-
-    @NotNull
     public JsScope scope() {
         return dynamicContext.getScope();
     }

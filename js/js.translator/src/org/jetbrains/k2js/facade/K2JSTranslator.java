@@ -16,7 +16,7 @@
 
 package org.jetbrains.k2js.facade;
 
-import com.google.dart.compiler.backend.js.ast.JsProgram;
+import com.google.dart.compiler.backend.js.ast.JsGlobalBlock;
 import com.google.dart.compiler.util.TextOutputImpl;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.util.Consumer;
@@ -102,7 +102,7 @@ public final class K2JSTranslator {
             @NotNull List<JetFile> files,
             @NotNull Config config
     ) {
-        final ModuleInfo libraryModuleConfiguration = new ModuleInfo(config.getProject());
+        ModuleInfo libraryModuleConfiguration = new ModuleInfo(config.getProject());
         // todo fix web demo
         AnalyzeExhaust libraryExhaust = XAnalyzerFacade.analyzeFiles(libraryModuleConfiguration, Collections.<JetFile>emptyList(), false);
         libraryExhaust.throwIfError();
@@ -113,7 +113,7 @@ public final class K2JSTranslator {
                 true).getBindingContext();
     }
 
-    private static String toSource(TextOutputImpl output, SourceMapBuilder sourceMapBuilder, JsProgram program) {
+    private static String toSource(TextOutputImpl output, SourceMapBuilder sourceMapBuilder, JsGlobalBlock program) {
         JsSourceGenerationVisitor sourceGenerator = new JsSourceGenerationVisitor(output, sourceMapBuilder);
         program.accept(sourceGenerator);
         return output.toString();

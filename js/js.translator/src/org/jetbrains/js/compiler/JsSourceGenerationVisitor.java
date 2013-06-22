@@ -20,7 +20,6 @@ import com.google.dart.compiler.backend.js.JsToStringGenerationVisitor;
 import com.google.dart.compiler.backend.js.ast.JsBlock;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
 import com.google.dart.compiler.backend.js.ast.JsNode;
-import com.google.dart.compiler.backend.js.ast.JsProgram;
 import com.google.dart.compiler.util.TextOutput;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,8 +36,11 @@ public class JsSourceGenerationVisitor extends JsToStringGenerationVisitor imple
     }
 
     @Override
-    public void visitBlock(JsBlock x) {
-        printBlock(x, false, true);
+    public void visitBlock(JsBlock block) {
+        printBlock(block, false, true);
+        if (block.isGlobalBlock() && sourceMapBuilder != null) {
+            sourceMapBuilder.addLink();
+        }
     }
 
     @Override
@@ -84,13 +86,5 @@ public class JsSourceGenerationVisitor extends JsToStringGenerationVisitor imple
     @Override
     protected void beforeNodePrinted(JsNode node) {
         mapSource(node);
-    }
-
-    @Override
-    public void visitProgram(JsProgram program) {
-        visitBlock(program);
-        if (sourceMapBuilder != null) {
-            sourceMapBuilder.addLink();
-        }
     }
 }

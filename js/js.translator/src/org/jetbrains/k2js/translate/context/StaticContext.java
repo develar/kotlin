@@ -45,9 +45,6 @@ import static org.jetbrains.k2js.translate.utils.BindingUtils.isObjectDeclaratio
 
 public final class StaticContext {
     @NotNull
-    private final JsProgram program;
-
-    @NotNull
     private final BindingContext bindingContext;
 
     @NotNull
@@ -64,7 +61,6 @@ public final class StaticContext {
     final PredefinedAnnotationManager predefinedAnnotationManager;
 
     public StaticContext(@NotNull BindingContext bindingContext, @NotNull Config configuration) {
-        this.program = new JsProgram();
         this.bindingContext = bindingContext;
         this.intrinsics = new Intrinsics();
         this.configuration = configuration;
@@ -82,11 +78,6 @@ public final class StaticContext {
 
     public boolean isEcma5() {
         return configuration.getTarget() == EcmaVersion.v5;
-    }
-
-    @NotNull
-    public JsProgram getProgram() {
-        return program;
     }
 
     @NotNull

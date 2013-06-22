@@ -137,16 +137,14 @@ public final class Translation {
     }
 
     @NotNull
-    public static JsProgram generateAst(
-            @NotNull BindingContext bindingContext, @NotNull Collection<JetFile> files,
+    public static JsGlobalBlock generateAst(
+            @NotNull BindingContext bindingContext,
+            @NotNull Collection<JetFile> files,
             @NotNull MainCallParameters mainCallParameters,
             @NotNull Config config
     ) {
-        StaticContext staticContext = new StaticContext(bindingContext, config);
-        JsFunction definitionFunction = generateDefinitionFunction(staticContext, files, config, mainCallParameters);
-        JsProgram program = staticContext.getProgram();
-        program.getStatements().add(generateDefineModuleInvocation(config, definitionFunction));
-        return program;
+        JsFunction definitionFunction = generateDefinitionFunction(new StaticContext(bindingContext, config), files, config, mainCallParameters);
+        return new JsGlobalBlock(generateDefineModuleInvocation(config, definitionFunction));
     }
 
     private static JsInvocation generateDefineModuleInvocation(Config config, JsFunction definitionFunction) {
