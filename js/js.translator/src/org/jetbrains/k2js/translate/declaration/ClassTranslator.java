@@ -61,7 +61,7 @@ public final class ClassTranslator {
         this.declaration = declaration;
         this.descriptor = descriptor;
         this.closure = closure;
-        constructorFunRef = new JsNameRef(descriptor.getName().asString());
+        constructorFunRef = new JsNameRef(descriptor.getName().isSpecial() ? "A$" : descriptor.getName().asString());
     }
 
     public static JsExpression translateObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
@@ -131,7 +131,7 @@ public final class ClassTranslator {
         }
 
         if (closure != null) {
-            constructor.setName(descriptor.getName().asString());
+            constructor.setName(constructorFunRef.getName());
             List<JsNode> statements = closure.getBody().getStatements();
             int beforeConstructorIndex = statements.size();
             statements.add(JsStatement.EMPTY);

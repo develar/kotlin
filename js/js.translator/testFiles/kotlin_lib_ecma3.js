@@ -162,9 +162,4 @@ var Kotlin = {
             return o;
         };
     };
-
-    Kotlin.createObject = function () {
-        var singletonClass = Kotlin.createClass.apply(null, arguments);
-        return new singletonClass();
-    };
 })();

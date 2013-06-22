@@ -50,24 +50,6 @@ var Kotlin = Object.create(null, {
         return createClass(bases, initializer === null ? function () {} : initializer, properties, true);
     };
 
-    function computeProto2(bases, properties) {
-        if (bases === null) {
-            return Object.prototype;
-        }
-        return Array.isArray(bases) ? computeProto(bases, properties) : bases.proto;
-    }
-
-    Kotlin.createObject = function (bases, initializer, properties) {
-        var o = Object.create(computeProto2(bases, properties), properties || undefined);
-        if (initializer !== null) {
-            if (bases !== null) {
-                Object.defineProperty(initializer, "baseInitializer", {value: Array.isArray(bases) ? bases[0].initializer : bases.initializer});
-            }
-            initializer.call(o);
-        }
-        return o;
-    };
-
     function createClass(bases, initializer, properties, isClass) {
         var proto;
         var baseInitializer;
