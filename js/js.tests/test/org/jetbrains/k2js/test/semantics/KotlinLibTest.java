@@ -28,15 +28,6 @@ public final class KotlinLibTest extends SingleFileTranslationTest {
         super("kotlinLib/");
     }
 
-    public void testIsAncestorType() throws Exception {
-        runJavascriptTest("isAncestorType.js");
-    }
-
-
-    public void testIsComplexTest() throws Exception {
-        runJavascriptTest("isComplexTest.js");
-    }
-
     public void testArray() throws Exception {
         runJavascriptTest("array.js");
     }
