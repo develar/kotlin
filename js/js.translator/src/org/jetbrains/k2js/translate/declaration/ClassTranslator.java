@@ -46,8 +46,7 @@ public final class ClassTranslator {
     private static final List<JsParameter> INIT_INHERITOR_FUN_PARAMETERS =
             Collections.singletonList(new JsParameter(PROTO_VAR_REF.getName()));
 
-    private static final JsInvocation CREATE_EMPTY_PROTO_OBJECT_ES5 = new JsInvocation(JsAstUtils.CREATE_OBJECT, JsLiteral.NULL);
-    private static final JsObjectLiteral CREATE_EMPTY_PROTO_OBJECT_ES3 = new JsObjectLiteral(Collections.<JsPropertyInitializer>emptyList());
+    private static final JsObjectLiteral CREATE_EMPTY_PROTO_OBJECT = new JsObjectLiteral(Collections.<JsPropertyInitializer>emptyList());
 
     private static final String INIT_INHERITOR_FUN_NAME = "initInheritor$";
 
@@ -186,10 +185,7 @@ public final class ClassTranslator {
                     }
 
 
-                    initStatements.add(new JsVars(new JsVar(PROTO_VAR_REF.getName(),
-                                                            context.isEcma5()
-                                                            ? CREATE_EMPTY_PROTO_OBJECT_ES5
-                                                            : CREATE_EMPTY_PROTO_OBJECT_ES3)));
+                    initStatements.add(new JsVars(new JsVar(PROTO_VAR_REF.getName(), CREATE_EMPTY_PROTO_OBJECT)));
                 }
 
                 superTypeRefs = new SmartList<JsExpression>();

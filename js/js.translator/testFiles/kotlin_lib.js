@@ -1,7 +1,10 @@
 "use strict";
 
 var kotlin = {"isType": function (object, type) {
-    if (object === null || object === undefined) {
+    if (object instanceof type) {
+        return true;
+    }
+    if (object == null) {
         return false;
     }
     var proto = object.__proto__;
@@ -15,8 +18,8 @@ var kotlin = {"isType": function (object, type) {
 
 (function () {
     Kotlin.equals = function (obj1, obj2) {
-        if (obj1 === null || obj1 === undefined) {
-            return obj2 === null || obj2 === undefined;
+        if (obj1 == null) {
+            return obj2 == null;
         }
 
         if (Array.isArray(obj1)) {
@@ -26,7 +29,6 @@ var kotlin = {"isType": function (object, type) {
         if (typeof obj1 == "object" && "equals" in obj1) {
             return obj1.equals(obj2);
         }
-
         return obj1 === obj2;
     };
     Kotlin.stringify = function (o) {
@@ -474,8 +476,8 @@ var kotlin = {"isType": function (object, type) {
         if (id in Kotlin.modules) {
             throw new Error("Module " + id + " is already defined");
         }
-        Kotlin.doDefineModule(id, definitionFunction())
-    }
+        Kotlin.modules[id] = definitionFunction();
+    };
 })();
 
 Kotlin.assignOwner = function(f, o) {

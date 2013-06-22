@@ -167,8 +167,4 @@ var Kotlin = {
         var singletonClass = Kotlin.createClass.apply(null, arguments);
         return new singletonClass();
     };
-
-    Kotlin.doDefineModule = function (id, declaration) {
-        Kotlin.modules[id] = declaration;
-    };
 })();

@@ -224,8 +224,4 @@ var Kotlin = Object.create(null, {
 
         return Kotlin.createClass(parent || null, initializer, descriptors);
     };
-
-    Kotlin.doDefineModule = function (id, declaration) {
-        Kotlin.modules[id] = declaration;
-    };
 })();
