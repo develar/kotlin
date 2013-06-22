@@ -16,10 +16,7 @@
 
 package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
-import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
-import com.google.dart.compiler.backend.js.ast.JsExpression;
-import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.*;
 import com.google.dart.compiler.util.AstUtil;
 import com.intellij.openapi.util.Pair;
 import com.intellij.util.containers.MostlySingularMultiMap;
@@ -79,7 +76,7 @@ public final class NumberConversionFIF extends CompositeFIF {
             assert arguments.isEmpty();
             JsNameRef toConvertReference = context.declareTemporary(null).reference();
             JsBinaryOperation fractional =
-                    new JsBinaryOperation(JsBinaryOperator.MOD, toConvertReference, context.program().getNumberLiteral(1));
+                    new JsBinaryOperation(JsBinaryOperator.MOD, toConvertReference, new JsNumberLiteral(1));
             return subtract(assignment(toConvertReference, receiver), fractional);
         }
     };

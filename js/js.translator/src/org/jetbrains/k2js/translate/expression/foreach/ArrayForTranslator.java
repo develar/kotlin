@@ -49,7 +49,7 @@ public final class ArrayForTranslator extends ForTranslator {
 
         JsExpression length = CompositeFIF.LENGTH_PROPERTY_INTRINSIC.apply(loopRange.second, Collections.<JsExpression>emptyList(), context());
         end = context.dynamicContext().createTemporary(length);
-        index = context.dynamicContext().createTemporary(program().getNumberLiteral(0));
+        index = context.dynamicContext().createTemporary(JsNumberLiteral.V_0);
     }
 
     @NotNull

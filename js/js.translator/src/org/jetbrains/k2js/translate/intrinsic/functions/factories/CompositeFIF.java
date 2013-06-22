@@ -18,6 +18,7 @@ package org.jetbrains.k2js.translate.intrinsic.functions.factories;
 
 import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.JsNumberLiteral;
 import com.intellij.openapi.util.Pair;
 import com.intellij.util.containers.MostlySingularMultiMap;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +42,7 @@ public abstract class CompositeFIF {
                 @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
         ) {
             assert receiver != null;
-            return JsAstUtils.equality(new JsNameRef("length", receiver), context.program().getNumberLiteral(0));
+            return JsAstUtils.equality(new JsNameRef("length", receiver), JsNumberLiteral.V_0);
         }
     };
     @NotNull

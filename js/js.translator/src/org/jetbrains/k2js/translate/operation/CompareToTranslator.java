@@ -19,6 +19,7 @@ package org.jetbrains.k2js.translate.operation;
 import com.google.dart.compiler.backend.js.ast.JsBinaryOperation;
 import com.google.dart.compiler.backend.js.ast.JsBinaryOperator;
 import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsNumberLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.psi.JetBinaryExpression;
@@ -65,6 +66,6 @@ public final class CompareToTranslator extends AbstractTranslator {
     private JsExpression translate() {
         JsBinaryOperator correspondingOperator = OperatorTable.getBinaryOperator(getOperationToken(expression));
         JsExpression methodCall = BinaryOperationTranslator.translateAsOverloadedCall(expression, context());
-        return new JsBinaryOperation(correspondingOperator, methodCall, context().program().getNumberLiteral(0));
+        return new JsBinaryOperation(correspondingOperator, methodCall, JsNumberLiteral.V_0);
     }
 }

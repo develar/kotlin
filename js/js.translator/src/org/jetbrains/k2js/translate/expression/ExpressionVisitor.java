@@ -70,17 +70,14 @@ public final class ExpressionVisitor extends JetVisitor<JsNode, TranslationConte
         }
 
         Object value = compileTimeValue.getValue();
-        if (value instanceof Integer || value instanceof Short || value instanceof Byte) {
-            return context.program().getNumberLiteral(((Number) value).intValue());
-        }
-        else if (value instanceof Number) {
-            return context.program().getNumberLiteral(((Number) value).doubleValue());
-        }
-        else if (value instanceof CharSequence) {
+        if (value instanceof CharSequence) {
             return JsStringLiteral.unescaped((CharSequence) value);
         }
         else if (value instanceof Character) {
             return new JsStringLiteral(value.toString());
+        }
+        else if (value instanceof Number) {
+            return new JsNumberLiteral((Number) value);
         }
         else {
             throw new AssertionError(message(expression, "Unsupported constant expression"));

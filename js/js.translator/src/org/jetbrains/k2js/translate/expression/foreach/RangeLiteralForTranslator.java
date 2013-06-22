@@ -72,7 +72,7 @@ public final class RangeLiteralForTranslator extends ForTranslator {
     @NotNull
     private JsExpression getRangeEnd(@NotNull JetBinaryExpression loopRangeAsBinary) {
         JsExpression rightExpression = translateRightExpression(context(), loopRangeAsBinary);
-        return new JsBinaryOperation(JsBinaryOperator.ADD, rightExpression, program().getNumberLiteral(1));
+        return new JsBinaryOperation(JsBinaryOperator.ADD, rightExpression, new JsNumberLiteral(1));
     }
 
     @NotNull

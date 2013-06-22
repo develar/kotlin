@@ -120,16 +120,13 @@ public class SourceMap3Builder implements SourceMapBuilder {
         int columnDiff = textOutput.getColumn() - previousGeneratedColumn;
         if (debug) {
             assert columnDiff != 0;
-            textOutput.print('/');
-            textOutput.print('*');
+            StringBuilder builder = textOutput.getBuilder();
+            int size = builder.length();
+            builder.append('/').append('*');
             String name = new File(source).getName();
-            textOutput.print(name.substring(0, name.length() - 3));
-            textOutput.print(' ');
-            textOutput.print(sourceLine + 1);
-            textOutput.print(':');
-            textOutput.print(sourceColumn);
-            textOutput.print('*');
-            textOutput.print('/');
+            builder.append(name, 0, name.length() - 3);
+            builder.append(' ').append(sourceLine + 1).append(':').append(sourceColumn).append('*').append('/');
+            textOutput.builderProduced(builder.length() - size);
         }
 
         Base64VLQ.encode(out, columnDiff);

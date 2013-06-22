@@ -138,7 +138,7 @@ public final class ArrayFIF extends CompositeFIF {
                     @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
             ) {
                 assert receiver != null;
-                return new JsInvocation(new JsNameRef("slice", receiver), context.program().getNumberLiteral(0));
+                return new JsInvocation(new JsNameRef("slice", receiver), JsNumberLiteral.V_0);
             }
         });
         add("contains", list, new FunctionIntrinsic() {
@@ -149,7 +149,7 @@ public final class ArrayFIF extends CompositeFIF {
             ) {
                 assert receiver != null && arguments.size() == 1;
                 return inequality(new JsInvocation(Namer.kotlin("arrayIndexOf"), receiver, arguments.get(0)),
-                                  context.program().getNumberLiteral(-1));
+                                  JsNumberLiteral.V_M1);
             }
         });
 
@@ -173,7 +173,7 @@ public final class ArrayFIF extends CompositeFIF {
                     @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
             ) {
                 assert receiver != null;
-                return assignment(new JsNameRef("length", receiver), context.program().getNumberLiteral(0));
+                return assignment(new JsNameRef("length", receiver), JsNumberLiteral.V_0);
             }
         });
 

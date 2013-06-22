@@ -55,7 +55,7 @@ public final class StringOperationFIF extends CompositeFIF {
                 assert receiver != null;
                 Pair<JsExpression, JsExpression> a = TranslationUtils.wrapAsTemporaryIfNeed(receiver, context);
                 Pair<JsExpression, JsExpression> b = TranslationUtils.wrapAsTemporaryIfNeed(arguments.get(0), context);
-                return JsAstUtils.inequality(new JsInvocation(new JsNameRef("indexOf", a.first), Arrays.asList(b.first, JsAstUtils.subtract(new JsNameRef("length", a.second), new JsNameRef("length", b.second)))), context.program().getNumberLiteral(-1));
+                return JsAstUtils.inequality(new JsInvocation(new JsNameRef("indexOf", a.first), Arrays.asList(b.first, JsAstUtils.subtract(new JsNameRef("length", a.second), new JsNameRef("length", b.second)))), JsNumberLiteral.V_M1);
             }
         });
         add("isEmpty", kotlinWithReceiver, IS_EMPTY_INTRINSIC);
@@ -86,7 +86,7 @@ public final class StringOperationFIF extends CompositeFIF {
         ) {
             return new JsBinaryOperation(contains ? JsBinaryOperator.REF_NEQ : JsBinaryOperator.REF_EQ,
                                          new JsInvocation(new JsNameRef("indexOf", receiver), arguments),
-                                         context.program().getNumberLiteral(contains ? -1 : 0));
+                                         contains ? JsNumberLiteral.V_M1 : JsNumberLiteral.V_0);
         }
     }
 }
