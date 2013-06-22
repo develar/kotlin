@@ -25,8 +25,8 @@ import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.expression.FunctionTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.general.TranslatorVisitor;
-import org.jetbrains.k2js.translate.initializer.InitializerUtils;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
+import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +37,7 @@ import static org.jetbrains.k2js.translate.general.Translation.translateAsExpres
 import static org.jetbrains.k2js.translate.initializer.InitializerUtils.generateInitializerForProperty;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
 import static org.jetbrains.k2js.translate.utils.BindingUtils.getFunctionDescriptor;
+import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.createDataDescriptor;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.createPropertyDataDescriptor;
 
@@ -87,7 +88,17 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
 
     @Override
     public void visitObjectDeclaration(@NotNull JetObjectDeclaration declaration) {
-        InitializerUtils.generate(declaration, initializerStatements, context);
+        ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);
+        JsExpression value = ClassTranslator.translateObjectDeclaration(declaration, descriptor, context);
+        JsExpression expression;
+        if (asEcma5PropertyDescriptor()) {
+            boolean enumerable = !(descriptor.getContainingDeclaration() instanceof NamespaceDescriptor);
+            expression = JsAstUtils.defineProperty(descriptor.getName().asString(), createDataDescriptor(value, false, enumerable));
+        }
+        else {
+            expression = assignment(new JsNameRef(descriptor.getName().asString(), JsLiteral.THIS), value);
+        }
+        initializerStatements.add(expression);
     }
 
     protected boolean asEcma5PropertyDescriptor() {

@@ -16,18 +16,13 @@
 
 package org.jetbrains.k2js.translate.initializer;
 
-import com.google.dart.compiler.backend.js.ast.*;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsNode;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.*;
-import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
+import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.declaration.ClassTranslator;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
-import java.util.List;
-
-import static org.jetbrains.k2js.translate.utils.BindingUtils.getClassDescriptor;
-import static org.jetbrains.k2js.translate.utils.JsAstUtils.assignment;
 import static org.jetbrains.k2js.translate.utils.TranslationUtils.assignmentToBackingField;
 
 public final class InitializerUtils {
@@ -46,27 +41,6 @@ public final class InitializerUtils {
         else {
             return assignmentToBackingField(context, descriptor, value);
         }
-    }
-
-    public static void generate(
-            @NotNull JetObjectDeclaration declaration,
-            @NotNull List<JsNode> initializers,
-            @NotNull TranslationContext context
-    ) {
-        ClassDescriptor descriptor = getClassDescriptor(context.bindingContext(), declaration);
-        JsExpression value = ClassTranslator.translateObjectDeclaration(declaration, descriptor, context);
-        initializers.add(create(descriptor, !(descriptor.getContainingDeclaration() instanceof NamespaceDescriptor), value, context));
-    }
-
-    private static JsExpression create(DeclarationDescriptor descriptor, boolean enumerable, JsExpression value, TranslationContext context) {
-        JsExpression expression;
-        if (context.isEcma5()) {
-            expression = JsAstUtils.defineProperty(descriptor.getName().asString(), JsAstUtils.createDataDescriptor(value, false, enumerable));
-        }
-        else {
-            expression = assignment(new JsNameRef(descriptor.getName().asString(), JsLiteral.THIS), value);
-        }
-        return expression;
     }
 
 
