@@ -105,13 +105,6 @@ public final class PsiUtils {
     }
 
     @NotNull
-    public static JetParameter getLoopParameter(@NotNull JetForExpression expression) {
-        JetParameter loopParameter = expression.getLoopParameter();
-        assert loopParameter != null;
-        return loopParameter;
-    }
-
-    @NotNull
     public static JetExpression getLoopRange(@NotNull JetForExpression expression) {
         JetExpression rangeExpression = expression.getLoopRange();
         assert rangeExpression != null;

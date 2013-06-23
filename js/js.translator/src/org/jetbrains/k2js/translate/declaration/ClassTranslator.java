@@ -59,12 +59,18 @@ public final class ClassTranslator {
 
     private final List<JsNode> definitionNodes;
 
+    private JsFunction constructor;
+
     public ClassTranslator(JetClassOrObject declaration, ClassDescriptor descriptor, JsFunction closure) {
         this.declaration = declaration;
         this.descriptor = descriptor;
         this.closure = closure;
         this.definitionNodes = closure.getBody().getStatements();
         constructorFunRef = new JsNameRef(descriptor.getName().isSpecial() ? "A$" : descriptor.getName().asString());
+    }
+
+    public JsFunction getConstructor() {
+        return constructor;
     }
 
     public static JsExpression translateObjectDeclaration(@NotNull JetObjectDeclaration declaration, @NotNull TranslationContext context) {
@@ -109,7 +115,7 @@ public final class ClassTranslator {
     private void addClassOwnDeclarations(@NotNull TranslationContext declarationContext) {
         List<JsPropertyInitializer> members = new SmartList<JsPropertyInitializer>();
         DeclarationBodyVisitor visitor = new DeclarationBodyVisitor(members, declarationContext);
-        JsFunction constructor = visitor.getInitializer();
+        constructor = visitor.getInitializer();
         boolean isTrait = descriptor.getKind().equals(ClassKind.TRAIT);
         if (!isTrait) {
             List<JsNode> constructorStatements = constructor.getBody().getStatements();
@@ -141,7 +147,7 @@ public final class ClassTranslator {
         int beforeConstructorIndex = definitionNodes.size();
         definitionNodes.add(JsStatement.EMPTY);
         definitionNodes.add(constructor);
-        addClassInitialization(constructor, membersDescriptor, declarationContext, beforeConstructorIndex);
+        addClassInitialization(membersDescriptor, declarationContext, beforeConstructorIndex);
     }
 
     /**
@@ -153,7 +159,6 @@ public final class ClassTranslator {
      * But if class doesn't have members and supertypes - we don't use these variables
      */
     private void addClassInitialization(
-            JsFunction constructor,
             JsExpression membersDescriptor,
             TranslationContext context,
             int beforeConstructorIndex

@@ -31,30 +31,26 @@ import java.util.List;
 
 abstract class InnerDeclarationTranslator {
     protected final TranslationContext context;
-    protected final JsFunction fun;
 
-    public InnerDeclarationTranslator(
-            @NotNull TranslationContext context,
-            @NotNull JsFunction fun
-    ) {
+    public InnerDeclarationTranslator(@NotNull TranslationContext context) {
         this.context = context;
-        this.fun = fun;
     }
 
     public JsExpression translate(
             @NotNull JsNameRef nameRef,
+            @NotNull List<JsParameter> functionParameters,
             @Nullable JsExpression self,
             @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper
     ) {
         //noinspection ConstantConditions
         OrderedSet<CallableDescriptor> captured = context.usageTracker().getCapturedVariables();
         if (captured == null && self == JsLiteral.NULL) {
-            return createExpression(nameRef, self);
+            return createExpression(nameRef, self, functionParameters);
         }
 
-        HasArguments invocation = createInvocation(nameRef, self, captured == null ? 0 : captured.size());
+        HasArguments invocation = createInvocation(nameRef, functionParameters, self, captured == null ? 0 : captured.size());
         if (captured != null) {
-            List<JsExpression> expressions = invocation.getArguments();
+            List<JsExpression> arguments = invocation.getArguments();
             for (CallableDescriptor descriptor : captured) {
                 String name;
                 JsExpression expression = null;
@@ -70,8 +66,8 @@ abstract class InnerDeclarationTranslator {
                         expression = namedFunctionTranslatorHelper.transform(descriptor);
                     }
                 }
-                fun.getParameters().add(new JsParameter(name));
-                expressions.add(expression == null ? new JsNameRef(name) : expression);
+                functionParameters.add(new JsParameter(name));
+                arguments.add(expression == null ? new JsNameRef(name) : expression);
             }
         }
         return invocation;
@@ -93,7 +89,16 @@ abstract class InnerDeclarationTranslator {
         }
     }
 
-    protected abstract JsExpression createExpression(@NotNull JsNameRef nameRef, @Nullable JsExpression self);
+    protected abstract JsExpression createExpression(
+            @NotNull JsNameRef nameRef,
+            @Nullable JsExpression self,
+            List<JsParameter> functionParameters
+    );
 
-    protected abstract HasArguments createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self, int additionalArgumentCount);
+    protected abstract HasArguments createInvocation(
+            @NotNull JsNameRef nameRef,
+            List<JsParameter> functionParameters,
+            @Nullable JsExpression self,
+            int additionalArgumentCount
+    );
 }

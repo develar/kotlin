@@ -37,7 +37,7 @@ public class JsSourceGenerationVisitor extends JsToStringGenerationVisitor imple
 
     @Override
     public void visitBlock(JsBlock block) {
-        printBlock(block, false, true);
+        printBlock(block, false);
         if (block.isGlobalBlock() && sourceMapBuilder != null) {
             sourceMapBuilder.addLink();
         }

@@ -23,30 +23,41 @@ import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
+import java.util.List;
+
 class InnerFunctionTranslator extends InnerDeclarationTranslator {
     private final FunctionDescriptor descriptor;
 
     public InnerFunctionTranslator(
             @NotNull FunctionDescriptor descriptor,
-            @NotNull TranslationContext context,
-            @NotNull JsFunction fun
+            @NotNull TranslationContext context
     ) {
-        super(context, fun);
+        super(context);
+
         this.descriptor = descriptor;
     }
 
-    @SuppressWarnings("MethodOverloadsMethodOfSuperclass")
-    public JsExpression translate(@NotNull JsNameRef nameRef, @NotNull TranslationContext outerContext, @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper) {
-        return translate(nameRef, getThis(outerContext), namedFunctionTranslatorHelper);
+    public JsExpression translate(
+            @NotNull JsNameRef nameRef,
+            @NotNull List<JsParameter> functionParameters,
+            @NotNull TranslationContext outerContext,
+            @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper
+    ) {
+        return translate(nameRef, functionParameters, getThis(outerContext), namedFunctionTranslatorHelper);
     }
 
     @Override
-    protected JsExpression createExpression(@NotNull JsNameRef nameRef, JsExpression self) {
+    protected JsExpression createExpression(@NotNull JsNameRef nameRef, JsExpression self, List<JsParameter> functionParameters) {
         return nameRef;
     }
 
     @Override
-    protected JsInvocation createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self, int additionalArgumentCount) {
+    protected JsInvocation createInvocation(
+            @NotNull JsNameRef nameRef,
+            List<JsParameter> functionParameters,
+            @Nullable JsExpression self,
+            int additionalArgumentCount
+    ) {
         return new JsInvocation(new JsNameRef("bind", nameRef), createArgumentList(additionalArgumentCount, self));
     }
 

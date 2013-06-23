@@ -21,26 +21,30 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
+import java.util.List;
+
 class InnerObjectTranslator extends InnerDeclarationTranslator {
-    public InnerObjectTranslator(
-            @NotNull TranslationContext context,
-            @NotNull JsFunction fun
+    public InnerObjectTranslator(@NotNull TranslationContext context) {
+        super(context);
+    }
+
+    @Override
+    protected JsExpression createExpression(@NotNull JsNameRef nameRef, @Nullable JsExpression self, List<JsParameter> functionParameters) {
+        return createInvocation(nameRef, functionParameters, self, 0);
+    }
+
+    @Override
+    protected HasArguments createInvocation(
+            @NotNull JsNameRef nameRef,
+            List<JsParameter> functionParameters,
+            @Nullable JsExpression self,
+            int additionalArgumentCount
     ) {
-        super(context, fun);
-    }
-
-    @Override
-    protected JsExpression createExpression(@NotNull JsNameRef nameRef, @Nullable JsExpression self) {
-        return createInvocation(nameRef, self, 0);
-    }
-
-    @Override
-    protected HasArguments createInvocation(@NotNull JsNameRef nameRef, @Nullable JsExpression self, int additionalArgumentCount) {
         if (self == null) {
             return new JsNew(nameRef, createArgumentList(additionalArgumentCount, null));
         }
         else {
-            fun.getParameters().add(new JsParameter(((JsNameRef) self).getName()));
+            functionParameters.add(new JsParameter(((JsNameRef) self).getName()));
             return new JsNew(nameRef, createArgumentList(additionalArgumentCount, JsLiteral.THIS));
         }
     }

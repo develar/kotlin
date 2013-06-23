@@ -22,13 +22,15 @@ import com.google.dart.compiler.backend.js.ast.JsNode;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetForExpression;
+import org.jetbrains.jet.lang.psi.JetParameter;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 import org.jetbrains.k2js.translate.general.AbstractTranslator;
 import org.jetbrains.k2js.translate.general.Translation;
 
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopBody;
-import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopParameter;
 
 public abstract class ForTranslator extends AbstractTranslator {
 
@@ -55,7 +57,11 @@ public abstract class ForTranslator extends AbstractTranslator {
     protected ForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
         super(context);
         this.expression = forExpression;
-        this.parameterName = context().getNameForElement(getLoopParameter(expression));
+
+        JetParameter loopParameter = expression.getLoopParameter();
+        assert loopParameter != null;
+        this.parameterName = context().getNameForDescriptor(
+                BindingContextUtils.getNotNull(context().bindingContext(), BindingContext.VALUE_PARAMETER, loopParameter));
     }
 
     @NotNull

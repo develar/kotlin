@@ -17,7 +17,6 @@
 package org.jetbrains.k2js.translate.context;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
@@ -25,7 +24,6 @@ import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
 import org.jetbrains.k2js.translate.intrinsic.Intrinsics;
 import org.jetbrains.kotlin.compiler.PredefinedAnnotationManager;
@@ -132,12 +130,6 @@ public class TranslationContext {
     @NotNull
     public BindingContext bindingContext() {
         return staticContext.getBindingContext();
-    }
-
-    @NotNull
-    public String getNameForElement(@NotNull PsiElement element) {
-        return getNameForDescriptor(
-                (VariableDescriptor) BindingContextUtils.getNotNull(bindingContext(), BindingContext.DECLARATION_TO_DESCRIPTOR, element));
     }
 
     @NotNull
