@@ -19,11 +19,13 @@ package org.jetbrains.k2js.translate.utils;
 import com.google.dart.compiler.backend.js.ast.*;
 import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
 import org.jetbrains.jet.lang.descriptors.PropertyGetterDescriptor;
-import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.psi.JetBinaryExpression;
+import org.jetbrains.jet.lang.psi.JetExpression;
+import org.jetbrains.jet.lang.psi.JetOperationExpression;
+import org.jetbrains.jet.lang.psi.JetUnaryExpression;
 import org.jetbrains.k2js.translate.context.Namer;
 import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
@@ -153,16 +155,6 @@ public final class TranslationUtils {
             @NotNull PropertyDescriptor descriptor,
             @NotNull JsExpression assignTo) {
         return assignment(backingFieldReference(context, descriptor), assignTo);
-    }
-
-    @Nullable
-    public static JsExpression translateInitializerForProperty(@NotNull JetProperty declaration,
-            @NotNull TranslationContext context) {
-        JetExpression initializer = declaration.getInitializer();
-        if (initializer != null) {
-            return Translation.translateAsExpression(initializer, context);
-        }
-        return null;
     }
 
     @NotNull

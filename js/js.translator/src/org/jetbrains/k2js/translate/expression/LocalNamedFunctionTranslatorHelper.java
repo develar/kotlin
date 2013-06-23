@@ -38,7 +38,7 @@ class LocalNamedFunctionTranslatorHelper {
         this.descriptor = descriptor;
         this.context = context;
 
-        name = context.scope().declareFreshName(descriptor.getName().asString());
+        name = context.getName(descriptor);
         context.aliasingContext().registerAlias(descriptor, new JsNameRef(name));
     }
 
@@ -48,17 +48,17 @@ class LocalNamedFunctionTranslatorHelper {
         }
 
         assert referenceName == null;
-        referenceName = createReferenceName(context.scope());
+        referenceName = createReferenceName();
         referenceNameRef = new JsNameRef("r", referenceName);
         return assignment(new JsNameRef(referenceName), JsAstUtils.wrapValue(referenceNameRef, JsLiteral.NULL));
     }
 
-    private String createReferenceName(JsScope funScope) {
-        return funScope.declareFreshName(descriptor.getName().asString() + "$ref");
+    private String createReferenceName() {
+        return context.getName(descriptor) + "$ref";
     }
 
-    public AliasingContext createAliasingContext(JsScope funScope) {
-        return context.aliasingContext().inner(descriptor, new JsNameRef("r", createReferenceName(funScope)));
+    public AliasingContext createAliasingContext() {
+        return context.aliasingContext().inner(descriptor, new JsNameRef("r", createReferenceName()));
     }
 
     public void createResult(JetNamedFunction expression, JsExpression funValue) {

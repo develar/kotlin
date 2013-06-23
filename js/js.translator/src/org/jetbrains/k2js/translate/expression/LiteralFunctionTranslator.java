@@ -89,7 +89,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
             asInner = DescriptorUtils.isTopLevelDeclaration(descriptor);
 
             if (aliasingContext == null && namedFunctionTranslatorHelper != null) {
-                aliasingContext = namedFunctionTranslatorHelper.createAliasingContext(fun.getScope());
+                aliasingContext = namedFunctionTranslatorHelper.createAliasingContext();
             }
         }
 

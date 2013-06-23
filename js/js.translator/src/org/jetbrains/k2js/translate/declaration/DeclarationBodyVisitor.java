@@ -80,6 +80,7 @@ public class DeclarationBodyVisitor extends TranslatorVisitor {
             return;
         }
 
+        context.clearNameMapping();
         result.add(new JsPropertyInitializer(descriptor.getName().asString(),
                                              ClassTranslator.translate(declaration, descriptor, context, true)));
     }

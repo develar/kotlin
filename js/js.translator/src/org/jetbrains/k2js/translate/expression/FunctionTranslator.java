@@ -134,13 +134,13 @@ public final class FunctionTranslator {
             }
             else if (!descriptor.getModality().isOverridable()) {
                 JetExpression parameter = getDefaultValue(context.bindingContext(), valueParameter);
-                JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
+                JsNameRef parameterRef = new JsNameRef(context.getName(valueParameter));
                 statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
                                         assignment(parameterRef, translateAsExpression(parameter, context))));
                 continue;
             }
 
-            JsNameRef parameterRef = new JsNameRef(context.getNameForDescriptor(valueParameter));
+            JsNameRef parameterRef = new JsNameRef(context.getName(valueParameter));
             String defaultParameterFunName = createDefaultValueGetterName(descriptor, declarator, context);
             statements.add(new JsIf(equality(parameterRef, JsLiteral.UNDEFINED),
                                     assignment(parameterRef, new JsInvocation(new JsNameRef(defaultParameterFunName, JsLiteral.THIS)))));
@@ -192,7 +192,7 @@ public final class FunctionTranslator {
             parameters.add(new JsParameter(receiverName));
         }
         for (ValueParameterDescriptor valueParameter : descriptor.getValueParameters()) {
-            parameters.add(new JsParameter(funContext.getNameForDescriptor(valueParameter)));
+            parameters.add(new JsParameter(funContext.getName(valueParameter)));
         }
     }
 

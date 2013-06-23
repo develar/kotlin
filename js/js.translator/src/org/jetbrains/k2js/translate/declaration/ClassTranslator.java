@@ -352,7 +352,7 @@ public final class ClassTranslator {
         JsParameter[] result = new JsParameter[parameters.size()];
         for (int i = 0; i < parameters.size(); i++) {
             ValueParameterDescriptor parameter = parameters.get(i);
-            JsParameter jsParameter = new JsParameter(context.getNameForDescriptor(parameter));
+            JsParameter jsParameter = new JsParameter(context.getName(parameter));
             PropertyDescriptor propertyDescriptor = context.bindingContext().get(BindingContext.VALUE_PARAMETER_AS_PROPERTY, parameter);
             if (propertyDescriptor != null) {
                 PropertyTranslator.translateAccessors(propertyDescriptor, properties, declarationContext);

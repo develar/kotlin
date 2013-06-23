@@ -16,7 +16,12 @@
 
 package org.jetbrains.k2js.translate.context;
 
-import com.google.dart.compiler.backend.js.ast.*;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
+import com.google.dart.compiler.backend.js.ast.JsExpression;
+import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.JsStringLiteral;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,7 +59,7 @@ public final class StaticContext {
     private LiteralFunctionTranslator literalFunctionTranslator;
 
     private final OverloadedMemberNameGenerator overloadedMemberNameGenerator = new OverloadedMemberNameGenerator();
-    private final Map<VariableDescriptor, String> nameMap = new THashMap<VariableDescriptor, String>();
+    private final BiMap<DeclarationDescriptor, String> nameMap = HashBiMap.create();
     private final Map<DeclarationDescriptor, JsExpression> qualifierMap = new THashMap<DeclarationDescriptor, JsExpression>();
 
     final Config configuration;
@@ -104,7 +109,7 @@ public final class StaticContext {
         }
 
         if (classDescriptor != null) {
-            JsNameRef ref = getNameRefForDescriptor(classDescriptor, context);
+            JsNameRef ref = getNameRef(classDescriptor);
             ref.setQualifier(context.getQualifierForDescriptor(classDescriptor));
             return ref;
 
@@ -113,18 +118,24 @@ public final class StaticContext {
             return getPackageQualifiedName((NamespaceDescriptor) descriptor, null);
         }
 
-        JsNameRef ref = getNameRefForDescriptor(descriptor, context);
+        JsNameRef ref = getNameRef(descriptor);
         ref.setQualifier(getQualifierForDescriptor(descriptor));
         return ref;
     }
 
     @NotNull
-    public String getNameForDescriptor(@NotNull VariableDescriptor descriptor, @Nullable TranslationContext context) {
-        assert descriptor instanceof LocalVariableDescriptor || descriptor instanceof ValueParameterDescriptor;
+    public String getName(@NotNull DeclarationDescriptor descriptor) {
+        assert descriptor instanceof LocalVariableDescriptor ||
+               descriptor instanceof ValueParameterDescriptor ||
+               descriptor instanceof SimpleFunctionDescriptor /* only local named function */;
+
         String name = nameMap.get(descriptor);
         if (name == null) {
-            assert context != null;
-            name = context.scope().declareFreshName(descriptor.getName().asString());
+            String suggestedName = name = descriptor.getName().asString();
+            int counter = 0;
+            while (nameMap.containsValue(name)) {
+                name = suggestedName + '_' + counter++;
+            }
             nameMap.put(descriptor, name);
         }
         return name;
@@ -155,7 +166,7 @@ public final class StaticContext {
     }
 
     @NotNull
-    public JsNameRef getNameRefForDescriptor(@NotNull DeclarationDescriptor descriptor, @Nullable TranslationContext context) {
+    public JsNameRef getNameRef(@NotNull DeclarationDescriptor descriptor) {
         if (descriptor instanceof ConstructorDescriptor) {
             descriptor = ((ConstructorDescriptor) descriptor).getContainingDeclaration();
         }
@@ -195,7 +206,7 @@ public final class StaticContext {
             return new JsNameRef(Namer.generateNamespaceName(descriptor));
         }
 
-        return new JsNameRef(getNameForDescriptor((VariableDescriptor) descriptor, context));
+        return new JsNameRef(getName(descriptor));
     }
 
     @Nullable
@@ -296,5 +307,9 @@ public final class StaticContext {
             }
             return new JsArrayAccess(Namer.kotlin("modules"), new JsStringLiteral(dependency.getName()));
         }
+    }
+
+    public void clearNameMapping() {
+        nameMap.clear();
     }
 }

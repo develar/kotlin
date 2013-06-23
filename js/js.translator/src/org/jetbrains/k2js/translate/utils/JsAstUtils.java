@@ -199,15 +199,6 @@ public final class JsAstUtils {
     }
 
     @NotNull
-    public static JsInvocation definePropertyDataDescriptor(
-            @NotNull PropertyDescriptor descriptor,
-            @NotNull JsExpression value,
-            @NotNull TranslationContext context
-    ) {
-        return defineProperty(createNameForProperty(descriptor, context), createPropertyDataDescriptor(descriptor, value, context));
-    }
-
-    @NotNull
     public static JsInvocation defineProperty(@NotNull String name, @NotNull JsExpression value) {
         return new JsInvocation(DEFINE_PROPERTY, JsLiteral.THIS, new JsStringLiteral(name), value);
     }

@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.k2js.translate.expression.LiteralFunctionTranslator;
@@ -133,13 +132,18 @@ public class TranslationContext {
     }
 
     @NotNull
-    public String getNameForDescriptor(@NotNull VariableDescriptor descriptor) {
-        return staticContext.getNameForDescriptor(descriptor, this);
+    public String getName(@NotNull DeclarationDescriptor descriptor) {
+        return staticContext.getName(descriptor);
+    }
+
+    // clearing name mappings is not required, but we do it to reset duplicated name counter
+    public void clearNameMapping() {
+        staticContext.clearNameMapping();
     }
 
     @NotNull
     public JsNameRef getNameRefForDescriptor(@NotNull DeclarationDescriptor descriptor) {
-        return staticContext.getNameRefForDescriptor(descriptor, this);
+        return staticContext.getNameRef(descriptor);
     }
 
     @NotNull

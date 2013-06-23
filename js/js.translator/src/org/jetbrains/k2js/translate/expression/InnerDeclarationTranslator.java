@@ -55,7 +55,7 @@ abstract class InnerDeclarationTranslator {
                 String name;
                 JsExpression expression = null;
                 if (descriptor instanceof VariableDescriptor) {
-                    name = context.getNameForDescriptor((VariableDescriptor) descriptor);
+                    name = context.getName((VariableDescriptor) descriptor);
                 }
                 else {
                     JsNameRef aliasForDescriptor = (JsNameRef) context.getAliasForDescriptor(descriptor);

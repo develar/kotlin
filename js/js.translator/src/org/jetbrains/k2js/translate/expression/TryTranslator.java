@@ -66,7 +66,7 @@ public final class TryTranslator {
             return Collections.emptyList();
         }
 
-        String catchIdent = outerContext.scope().declareFreshName("e");
+        String catchIdent = outerContext.scope().declareFreshName("e$");
         JsNameRef catchIdentRef = new JsNameRef(catchIdent);
         JsCatch jsCatch = new JsCatch(catchIdent);
         if (clauses.size() == 1) {

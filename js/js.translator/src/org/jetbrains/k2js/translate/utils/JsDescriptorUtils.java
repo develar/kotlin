@@ -25,17 +25,11 @@ import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue;
 import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.expressions.OperatorConventions;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.k2js.translate.context.TranslationContext;
 
 public final class JsDescriptorUtils {
-
     private JsDescriptorUtils() {
-    }
-
-    public static boolean isCompareTo(@NotNull FunctionDescriptor functionDescriptor) {
-        return (functionDescriptor.getName().equals(OperatorConventions.COMPARE_TO));
     }
 
     @Nullable

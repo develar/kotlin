@@ -60,8 +60,8 @@ public abstract class ForTranslator extends AbstractTranslator {
 
         JetParameter loopParameter = expression.getLoopParameter();
         assert loopParameter != null;
-        this.parameterName = context().getNameForDescriptor(
-                BindingContextUtils.getNotNull(context().bindingContext(), BindingContext.VALUE_PARAMETER, loopParameter));
+        this.parameterName =
+                context.getName(BindingContextUtils.getNotNull(context().bindingContext(), BindingContext.VALUE_PARAMETER, loopParameter));
     }
 
     @NotNull

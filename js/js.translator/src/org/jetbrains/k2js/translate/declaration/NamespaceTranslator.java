@@ -47,6 +47,7 @@ public final class NamespaceTranslator {
         for (JetFile file : files) {
             NamespaceDescriptor descriptor = BindingContextUtils.getNotNull(context.bindingContext(), BindingContext.FILE_TO_NAMESPACE, file);
             translate(descriptor, file, result, initializers, context);
+            context.clearNameMapping();
         }
         if (initializers == null) {
             result.add(new JsInvocation(Namer.kotlin("finalize"), Namer.ROOT_PACKAGE_NAME_REF));
