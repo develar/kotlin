@@ -102,7 +102,7 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
                 UsageTracker usageTracker = funContext.usageTracker();
                 assert usageTracker != null;
                 if (usageTracker.isUsed()) {
-                    return new JsInvocation(Namer.kotlin("assignOwner"), fun, JsLiteral.THIS);
+                    return new JsInvocation(Namer.ASSIGN_OWNER_FUN_NAME_REF, fun, JsLiteral.THIS);
                 }
                 else {
                     fun.setName(null);

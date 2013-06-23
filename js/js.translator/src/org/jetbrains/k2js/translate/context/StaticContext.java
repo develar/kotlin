@@ -305,7 +305,7 @@ public final class StaticContext {
             if (dependency == null) {
                 throw new TranslationException("Missed module dependency " + ModuleInfo.getNormalName(moduleDescriptor));
             }
-            return new JsArrayAccess(Namer.kotlin("modules"), new JsStringLiteral(dependency.getName()));
+            return new JsArrayAccess(Namer.MODULES_NAME_REF, new JsStringLiteral(dependency.getName()));
         }
     }
 

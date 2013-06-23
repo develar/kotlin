@@ -40,6 +40,8 @@ public final class Namer {
     private static final String RECEIVER_PARAMETER_NAME = "$receiver";
     public static final JsNameRef THROW_NPE_FUN_NAME_REF = new JsNameRef("throwNPE", KOTLIN_OBJECT_NAME_REF);
     public static final JsNameRef NEW_EXCEPTION_FUN_NAME_REF = new JsNameRef("newException", NEW_KOTLIN_PACKAGE_REF);
+    public static final JsNameRef ASSIGN_OWNER_FUN_NAME_REF = new JsNameRef("assignOwner", NEW_KOTLIN_PACKAGE_REF);
+    public static final JsNameRef MODULES_NAME_REF = new JsNameRef("modules", NEW_KOTLIN_PACKAGE_REF);
 
     public static final String ROOT_PACKAGE_NAME = "_";
     public static final JsNameRef ROOT_PACKAGE_NAME_REF = new JsNameRef(ROOT_PACKAGE_NAME);

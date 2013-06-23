@@ -6,7 +6,6 @@
  *
  *--------------------------------------------------------------------------*/
 var Kotlin = {
-    modules: {},
     keys: Object.keys || function (o) {
         var result = [];
         var i = 0;

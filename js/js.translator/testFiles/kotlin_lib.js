@@ -20,7 +20,19 @@ var kotlin = {
         var error = new Error(message);
         error.name = name;
         return error;
-    }};
+    },
+    defineModule: function (id, moduleDependencies, definitionFunction) {
+        if (id in kotlin.modules) {
+            throw new Error("Module " + id + " is already defined");
+        }
+        kotlin.modules[id] = definitionFunction();
+    },
+    assignOwner: function (f, o) {
+        f.o = o;
+        return f;
+    },
+    modules: {}
+};
 
 (function () {
     Kotlin.equals = function (obj1, obj2) {
@@ -471,16 +483,4 @@ var kotlin = {
         }
         return obj1;
     };
-
-    Kotlin.defineModule = function (id, moduleDependencies, definitionFunction) {
-        if (id in Kotlin.modules) {
-            throw new Error("Module " + id + " is already defined");
-        }
-        Kotlin.modules[id] = definitionFunction();
-    };
 })();
-
-Kotlin.assignOwner = function(f, o) {
-  f.o = o;
-  return f;
-};
