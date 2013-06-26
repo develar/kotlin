@@ -32,8 +32,8 @@ import static org.jetbrains.jet.utils.ExceptionUtils.rethrow;
 import static org.jetbrains.k2js.test.BasicTest.pathToTestFilesRoot;
 
 public final class RhinoUtils {
-    private static final String KOTLIN_JS_LIB_ECMA_3 = pathToTestFilesRoot() + "kotlin_lib_ecma3.js";
-    private static final String KOTLIN_JS_LIB_ECMA_5 = pathToTestFilesRoot() + "kotlin_lib_ecma5.js";
+    private static final String KOTLIN_JS_LIB_ECMA_3 = pathToTestFilesRoot() + "../../kotlin_lib_ecma3.js";
+    private static final String KOTLIN_JS_LIB_ECMA_5 = pathToTestFilesRoot() + "../../kotlin_lib_ecma5.js";
 
     private static final Set<String> IGNORED_JSHINT_WARNINGS = Sets.newHashSet();
     
@@ -164,8 +164,8 @@ public final class RhinoUtils {
         ScriptableObject scope = context.initStandardObjects();
         try {
             runFileWithRhino(getKotlinLibFile(version), context, scope);
-            runFileWithRhino(pathToTestFilesRoot() + "kotlin_lib.js", context, scope);
-            runFileWithRhino(pathToTestFilesRoot() + "maps.js", context, scope);
+            runFileWithRhino(pathToTestFilesRoot() + "../../stdlib/kotlin_lib.js", context, scope);
+            runFileWithRhino(pathToTestFilesRoot() + "../../maps.js", context, scope);
             runFileWithRhino(pathToTestFilesRoot() + "jshint.js", context, scope);
             for (String jsLibrary : jsLibraries) {
                 runFileWithRhino(jsLibrary, context, scope);
