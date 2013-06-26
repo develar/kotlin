@@ -160,10 +160,11 @@ public class ErrorUtils {
             throw new IllegalStateException();
         }
 
-        @Nullable
         @Override
-        public NamespaceDescriptor getNamespace(@NotNull Name name) {
-            throw new IllegalStateException();
+        public <P extends Processor<NamespaceDescriptor>> boolean processNamespaces(
+                @NotNull Name name, @NotNull P processor
+        ) {
+            return false;
         }
 
         @NotNull

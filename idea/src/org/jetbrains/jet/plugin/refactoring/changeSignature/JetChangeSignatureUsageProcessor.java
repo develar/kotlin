@@ -56,13 +56,12 @@ import java.util.Set;
 public class JetChangeSignatureUsageProcessor implements ChangeSignatureUsageProcessor {
     @Override
     public UsageInfo[] findUsages(ChangeInfo info) {
-        Set<UsageInfo> result = new HashSet<UsageInfo>();
-
         if (info instanceof JetChangeInfo) {
+            Set<UsageInfo> result = new THashSet<UsageInfo>();
             findAllMethodUsages((JetChangeInfo)info, result);
+            return result.toArray(new UsageInfo[result.size()]);
         }
-
-        return result.toArray(new UsageInfo[result.size()]);
+        return UsageInfo.EMPTY_ARRAY;
     }
 
     private static void findAllMethodUsages(JetChangeInfo changeInfo, Set<UsageInfo> result) {
@@ -126,7 +125,7 @@ public class JetChangeSignatureUsageProcessor implements ChangeSignatureUsagePro
     @Override
     public MultiMap<PsiElement, String> findConflicts(ChangeInfo info, Ref<UsageInfo[]> refUsages) {
         if (!(info instanceof JetChangeInfo)) {
-            return MultiMap.EMPTY;
+            return MultiMap.emptyInstance();
         }
 
         MultiMap<PsiElement, String> result = new MultiMap<PsiElement, String>();
@@ -135,7 +134,7 @@ public class JetChangeSignatureUsageProcessor implements ChangeSignatureUsagePro
             return result;
         }
 
-        Set<String> parameterNames = new HashSet<String>();
+        Set<String> parameterNames = new THashSet<String>();
         JetChangeInfo changeInfo = (JetChangeInfo) info;
         PsiElement function = info.getMethod();
         PsiElement element = function != null ? function : changeInfo.getContext();
@@ -239,10 +238,8 @@ public class JetChangeSignatureUsageProcessor implements ChangeSignatureUsagePro
 
         PsiElement element = usageInfo.getElement();
 
-        if (element != null)
-            return usageInfo instanceof JetUsageInfo ? ((JetUsageInfo) usageInfo).processUsage((JetChangeInfo) changeInfo, element) : true;
-        else
-            return false;
+        return element != null && (!(usageInfo instanceof JetUsageInfo) ||
+                                   ((JetUsageInfo) usageInfo).processUsage((JetChangeInfo) changeInfo, element));
     }
 
     @Override
