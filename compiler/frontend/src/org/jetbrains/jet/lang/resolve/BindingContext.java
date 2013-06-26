@@ -133,6 +133,8 @@ public interface BindingContext {
 
     WritableSlice<VariableDescriptor, CaptureKind> CAPTURED_IN_CLOSURE = new BasicWritableSlice<VariableDescriptor, CaptureKind>(DO_NOTHING);
 
+    WritableSlice<CallableMemberDescriptor, Boolean> NEED_SYNTHETIC_ACCESSOR = new BasicWritableSlice<CallableMemberDescriptor, Boolean>(DO_NOTHING);
+
     //    enum DeferredTypeKey {DEFERRED_TYPE_KEY}
     //    WritableSlice<DeferredTypeKey, Collection<DeferredType>> DEFERRED_TYPES = Slices.createSimpleSlice();
 
@@ -258,12 +260,6 @@ public interface BindingContext {
 
     WritableSlice<ClassDescriptor, Boolean> INCOMPLETE_HIERARCHY = Slices.createCollectiveSetSlice();
 
-    WritableSlice<DeclarationDescriptor, List<String>> LOAD_FROM_JAVA_SIGNATURE_ERRORS =
-            new BasicWritableSlice<DeclarationDescriptor, List<String>>(Slices.ONLY_REWRITE_TO_EQUAL, true);
-
-    WritableSlice<CallableDescriptor, Boolean> IS_DECLARED_IN_JAVA = Slices.createSimpleSlice();
-    WritableSlice<SimpleFunctionDescriptor, ClassDescriptor> SAM_CONSTRUCTOR_TO_INTERFACE = Slices.createSimpleSlice();
-    WritableSlice<SimpleFunctionDescriptor, SimpleFunctionDescriptor> SAM_ADAPTER_FUNCTION_TO_ORIGINAL = Slices.createSimpleSlice();
     WritableSlice<CallableMemberDescriptor, DeclarationDescriptor> SOURCE_DESCRIPTOR_FOR_SYNTHESIZED = Slices.createSimpleSlice();
 
     @SuppressWarnings("UnusedDeclaration")

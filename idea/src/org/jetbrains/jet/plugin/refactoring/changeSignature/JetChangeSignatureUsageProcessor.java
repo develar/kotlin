@@ -56,12 +56,12 @@ import java.util.Set;
 public class JetChangeSignatureUsageProcessor implements ChangeSignatureUsageProcessor {
     @Override
     public UsageInfo[] findUsages(ChangeInfo info) {
-        if (!(info instanceof JetChangeInfo)) {
-            return UsageInfo.EMPTY_ARRAY;
+        Set<UsageInfo> result = new HashSet<UsageInfo>();
+
+        if (info instanceof JetChangeInfo) {
+            findAllMethodUsages((JetChangeInfo)info, result);
         }
 
-        Set<UsageInfo> result = new THashSet<UsageInfo>();
-        findAllMethodUsages((JetChangeInfo)info, result);
         return result.toArray(new UsageInfo[result.size()]);
     }
 
@@ -130,7 +130,12 @@ public class JetChangeSignatureUsageProcessor implements ChangeSignatureUsagePro
         }
 
         MultiMap<PsiElement, String> result = new MultiMap<PsiElement, String>();
-        Set<String> parameterNames = new THashSet<String>();
+
+        if (!(info instanceof JetChangeInfo)) {
+            return result;
+        }
+
+        Set<String> parameterNames = new HashSet<String>();
         JetChangeInfo changeInfo = (JetChangeInfo) info;
         PsiElement function = info.getMethod();
         PsiElement element = function != null ? function : changeInfo.getContext();

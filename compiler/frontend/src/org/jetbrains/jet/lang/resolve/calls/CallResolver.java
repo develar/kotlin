@@ -21,6 +21,7 @@ import com.google.common.collect.Lists;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.impl.FunctionDescriptorImpl;
 import org.jetbrains.jet.lang.descriptors.impl.FunctionDescriptorUtil;
@@ -30,10 +31,7 @@ import org.jetbrains.jet.lang.resolve.calls.autocasts.DataFlowInfo;
 import org.jetbrains.jet.lang.resolve.calls.context.*;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCallImpl;
 import org.jetbrains.jet.lang.resolve.calls.model.ResolvedCallWithTrace;
-import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResults;
-import org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResultsImpl;
-import org.jetbrains.jet.lang.resolve.calls.results.ResolutionDebugInfo;
-import org.jetbrains.jet.lang.resolve.calls.results.ResolutionResultsHandler;
+import org.jetbrains.jet.lang.resolve.calls.results.*;
 import org.jetbrains.jet.lang.resolve.calls.tasks.*;
 import org.jetbrains.jet.lang.resolve.calls.util.DelegatingCall;
 import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
@@ -58,6 +56,7 @@ import static org.jetbrains.jet.lang.diagnostics.Errors.*;
 import static org.jetbrains.jet.lang.resolve.BindingContext.NON_DEFAULT_EXPRESSION_DATA_FLOW;
 import static org.jetbrains.jet.lang.resolve.BindingContext.RESOLUTION_SCOPE;
 import static org.jetbrains.jet.lang.resolve.calls.CallResolverUtil.ResolveArgumentsMode.RESOLVE_FUNCTION_ARGUMENTS;
+import static org.jetbrains.jet.lang.resolve.calls.results.OverloadResolutionResults.Code.*;
 import static org.jetbrains.jet.lang.resolve.scopes.receivers.ReceiverValue.NO_RECEIVER;
 import static org.jetbrains.jet.lang.types.TypeUtils.NO_EXPECTED_TYPE;
 
@@ -70,6 +69,8 @@ public class CallResolver {
     private CandidateResolver candidateResolver;
     @NotNull
     private ArgumentTypeResolver argumentTypeResolver;
+    @Nullable
+    private CallResolverExtension extension;
 
     @Inject
     public void setExpressionTypingServices(@NotNull ExpressionTypingServices expressionTypingServices) {
@@ -89,6 +90,11 @@ public class CallResolver {
     @Inject
     public void setArgumentTypeResolver(@NotNull ArgumentTypeResolver argumentTypeResolver) {
         this.argumentTypeResolver = argumentTypeResolver;
+    }
+
+    @Inject
+    public void setExtension(@NotNull CallResolverExtension extension) {
+        this.extension = extension;
     }
 
     @NotNull
@@ -142,7 +148,7 @@ public class CallResolver {
         ProgressIndicatorProvider.checkCanceled();
 
         List<ResolutionTask<CallableDescriptor, FunctionDescriptor>> prioritizedTasks;
-        
+
         JetExpression calleeExpression = context.call.getCalleeExpression();
         JetReferenceExpression functionReference;
         if (calleeExpression instanceof JetSimpleNameExpression) {
@@ -177,8 +183,6 @@ public class CallResolver {
             if (calleeExpression instanceof JetConstructorCalleeExpression) {
                 assert !context.call.getExplicitReceiver().exists();
 
-                prioritizedTasks = Lists.newArrayList();
-
                 JetConstructorCalleeExpression expression = (JetConstructorCalleeExpression) calleeExpression;
                 functionReference = expression.getConstructorReferenceExpression();
                 if (functionReference == null) {
@@ -201,10 +205,8 @@ public class CallResolver {
                         return checkArgumentTypesAndFail(context);
                     }
                     Collection<ResolutionCandidate<CallableDescriptor>> candidates = TaskPrioritizer.<CallableDescriptor>convertWithImpliedThis(context.scope, Collections.<ReceiverValue>singletonList(NO_RECEIVER), constructors);
-                    for (ResolutionCandidate<CallableDescriptor> candidate : candidates) {
-                        candidate.setSafeCall(JetPsiUtil.isSafeCall(context.call));
-                    }
-                    prioritizedTasks.add(new ResolutionTask<CallableDescriptor, FunctionDescriptor>(candidates, functionReference, context));  // !! DataFlowInfo.EMPTY
+                    prioritizedTasks = TaskPrioritizer.<CallableDescriptor, FunctionDescriptor>computePrioritizedTasksFromCandidates(
+                            context, functionReference, candidates);
                 }
                 else {
                     context.trace.report(NOT_A_CLASS.on(calleeExpression));
@@ -239,7 +241,7 @@ public class CallResolver {
                     }
                     return checkArgumentTypesAndFail(context);
                 }
-                
+
                 FunctionDescriptorImpl functionDescriptor = new ExpressionAsFunctionDescriptor(context.scope.getContainingDeclaration(), Name.special("<for expression " + calleeExpression.getText() + ">"));
                 FunctionDescriptorUtil.initializeFromFunctionType(functionDescriptor, calleeType, NO_RECEIVER_PARAMETER, Modality.FINAL,
                                                                   Visibilities.LOCAL);
@@ -266,8 +268,8 @@ public class CallResolver {
 
     private <D extends CallableDescriptor, F extends D> OverloadResolutionResultsImpl<F> doResolveCallOrGetCachedResults(
             @NotNull ResolutionResultsCache.MemberType<F> memberType,
-            @NotNull final BasicCallResolutionContext context,
-            @NotNull final List<ResolutionTask<D, F>> prioritizedTasks,
+            @NotNull BasicCallResolutionContext context,
+            @NotNull List<ResolutionTask<D, F>> prioritizedTasks,
             @NotNull CallTransformer<D, F> callTransformer,
             @NotNull JetReferenceExpression reference
     ) {
@@ -296,12 +298,17 @@ public class CallResolver {
         }
         traceToResolveCall.commit();
 
-        if (prioritizedTasks.isEmpty()) {
-            return results;
+        if (prioritizedTasks.isEmpty() || context.resolveMode == ResolveMode.NESTED_CALL) {
+            //do nothing
+        } else {
+            results = completeTypeInferenceDependentOnExpectedType(context, results, tracing);
         }
-        if (context.resolveMode == ResolveMode.NESTED_CALL) return results;
 
-        return completeTypeInferenceDependentOnExpectedType(context, results, tracing);
+        if (extension != null) {
+            extension.run(results, context);
+        }
+
+        return results;
     }
 
     private <D extends CallableDescriptor> void completeTypeInferenceDependentOnFunctionLiterals(
@@ -310,7 +317,7 @@ public class CallResolver {
             @NotNull TracingStrategy tracing
     ) {
         if (!results.isSingleResult()) {
-            if (results.getResultCode() == OverloadResolutionResults.Code.INCOMPLETE_TYPE_INFERENCE) {
+            if (results.getResultCode() == INCOMPLETE_TYPE_INFERENCE) {
                 argumentTypeResolver.checkTypesWithNoCallee(context, RESOLVE_FUNCTION_ARGUMENTS);
             }
             return;
@@ -414,11 +421,14 @@ public class CallResolver {
                 resolveFunctionArguments(context, results);
                 return results;
             }
-            if (results.getResultCode() == OverloadResolutionResults.Code.INCOMPLETE_TYPE_INFERENCE) {
+            if (results.getResultCode() == INCOMPLETE_TYPE_INFERENCE) {
                 results.setTrace(taskTrace);
                 return results;
             }
-            if (traceForFirstNonemptyCandidateSet == null && !task.getCandidates().isEmpty() && !results.isNothing()) {
+            boolean updateResults = traceForFirstNonemptyCandidateSet == null
+                        || (resultsForFirstNonemptyCandidateSet.getResultCode() == CANDIDATES_WITH_WRONG_RECEIVER &&
+                            results.getResultCode() != CANDIDATES_WITH_WRONG_RECEIVER);
+            if (!task.getCandidates().isEmpty() && !results.isNothing() && updateResults) {
                 traceForFirstNonemptyCandidateSet = taskTrace;
                 resultsForFirstNonemptyCandidateSet = results;
             }
@@ -475,8 +485,8 @@ public class CallResolver {
         //      {...} // intended to be a returned from the outer literal
         //    }
         //  }
-        ImmutableSet<OverloadResolutionResults.Code> someFailed = ImmutableSet.of(OverloadResolutionResults.Code.MANY_FAILED_CANDIDATES,
-                                                                        OverloadResolutionResults.Code.SINGLE_CANDIDATE_ARGUMENT_MISMATCH);
+        ImmutableSet<OverloadResolutionResults.Code> someFailed = ImmutableSet.of(MANY_FAILED_CANDIDATES,
+                                                                        SINGLE_CANDIDATE_ARGUMENT_MISMATCH);
         if (someFailed.contains(results.getResultCode()) && !task.call.getFunctionLiteralArguments().isEmpty()
                 && task.resolveMode == ResolveMode.TOP_LEVEL_CALL) { //For nested calls there are no such cases
             // We have some candidates that failed for some reason

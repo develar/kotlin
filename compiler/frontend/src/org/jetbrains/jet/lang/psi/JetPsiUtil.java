@@ -553,6 +553,10 @@ public class JetPsiUtil {
         return getOutermostClassOrObject(classOrObject) == null;
     }
 
+    public static boolean isTrait(@NotNull JetClassOrObject classOrObject) {
+        return classOrObject instanceof JetClass && ((JetClass) classOrObject).isTrait();
+    }
+
     @Nullable
     public static JetClassOrObject getOutermostClassOrObject(@NotNull JetClassOrObject classOrObject) {
         JetClassOrObject current = classOrObject;
@@ -653,8 +657,9 @@ public class JetPsiUtil {
                JetTokens.ALL_ASSIGNMENTS.contains(((JetBinaryExpression) element).getOperationToken());
     }
 
-    public static boolean isBranchedExpression(@Nullable PsiElement element) {
-        return element instanceof JetIfExpression || element instanceof JetWhenExpression;
+    public static boolean isOrdinaryAssignment(@NotNull PsiElement element) {
+        return element instanceof JetBinaryExpression &&
+               ((JetBinaryExpression) element).getOperationToken().equals(JetTokens.EQ);
     }
 
     @Nullable
@@ -703,17 +708,6 @@ public class JetPsiUtil {
         }
 
         return false;
-    }
-
-    @NotNull
-    public static <C extends Collection<JetVariableDeclaration>> C getBlockVariableDeclarations(@NotNull JetBlockExpression block, @NotNull C collection) {
-        for (JetElement element : block.getStatements()) {
-            if (element instanceof JetVariableDeclaration) {
-                collection.add((JetVariableDeclaration) element);
-            }
-        }
-
-        return collection;
     }
 
     public static boolean checkWhenExpressionHasSingleElse(@NotNull JetWhenExpression whenExpression) {
@@ -837,6 +831,26 @@ public class JetPsiUtil {
         }
         if (expression instanceof JetBinaryExpression) {
             return ((JetBinaryExpression) expression).getOperationReference();
+        }
+        return null;
+    }
+
+    @Nullable
+    public static PsiElement skipSiblingsBackwardByPredicate(@Nullable PsiElement element, Predicate<PsiElement> elementsToSkip) {
+        if (element == null) return null;
+        for (PsiElement e = element.getPrevSibling(); e != null; e = e.getPrevSibling()) {
+            if (elementsToSkip.apply(e)) continue;
+            return e;
+        }
+        return null;
+    }
+
+    @Nullable
+    public static PsiElement skipSiblingsForwardByPredicate(@Nullable PsiElement element, Predicate<PsiElement> elementsToSkip) {
+        if (element == null) return null;
+        for (PsiElement e = element.getNextSibling(); e != null; e = e.getNextSibling()) {
+            if (elementsToSkip.apply(e)) continue;
+            return e;
         }
         return null;
     }

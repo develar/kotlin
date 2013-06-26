@@ -2282,9 +2282,24 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
                 doTest("compiler/testData/diagnostics/tests/extensions/kt2317.kt");
             }
             
+            @TestMetadata("kt3563.kt")
+            public void testKt3563() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/extensions/kt3563.kt");
+            }
+            
             @TestMetadata("kt819ExtensionProperties.kt")
             public void testKt819ExtensionProperties() throws Exception {
                 doTest("compiler/testData/diagnostics/tests/extensions/kt819ExtensionProperties.kt");
+            }
+            
+            @TestMetadata("throwOutCandidatesByReceiver.kt")
+            public void testThrowOutCandidatesByReceiver() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/extensions/throwOutCandidatesByReceiver.kt");
+            }
+            
+            @TestMetadata("throwOutCandidatesByReceiver2.kt")
+            public void testThrowOutCandidatesByReceiver2() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/extensions/throwOutCandidatesByReceiver2.kt");
             }
             
         }
@@ -3207,6 +3222,16 @@ public class JetDiagnosticsTestGenerated extends AbstractDiagnosticsTestWithEage
             
             public void testAllFilesPresentInJ_k() throws Exception {
                 JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/diagnostics/tests/j+k"), Pattern.compile("^(.+)\\.kt$"), true);
+            }
+            
+            @TestMetadata("ambiguousSamAdapters.kt")
+            public void testAmbiguousSamAdapters() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/j+k/ambiguousSamAdapters.kt");
+            }
+            
+            @TestMetadata("inheritAbstractSamAdapter.kt")
+            public void testInheritAbstractSamAdapter() throws Exception {
+                doTest("compiler/testData/diagnostics/tests/j+k/inheritAbstractSamAdapter.kt");
             }
             
             @TestMetadata("innerNestedClassFromJava.kt")

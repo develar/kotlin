@@ -472,7 +472,13 @@ Kotlin.ComplexHashMap = Kotlin.HashMap;
             this.map = {};
         },
         putAll: function (fromMap) {
-            throw Kotlin.$new(Kotlin.UnsupportedOperationException)();
+            var map = fromMap.map;
+            for (var key in map) {
+                if (map.hasOwnProperty(key)) {
+                    this.map[key] = map[key];
+                    this.$size++;
+                }
+            }
         },
         keySet: function () {
             var result = Kotlin.$new(Kotlin.PrimitiveHashSet)();
@@ -496,10 +502,7 @@ Kotlin.ComplexHashMap = Kotlin.HashMap;
 
 Kotlin.Set = Kotlin.$createClass(Kotlin.Collection);
 
-Kotlin.PrimitiveHashSet = Kotlin.$createClass(Kotlin.AbstractCollection, /** @lends Kotlin.PrimitiveHashSet.prototype */ {
-    /**
-     * @constructor
-     */
+Kotlin.PrimitiveHashSet = Kotlin.$createClass(Kotlin.AbstractCollection, {
     initialize: function () {
         this.$size = 0;
         this.map = {};
@@ -657,7 +660,9 @@ Kotlin.PrimitiveHashSet = Kotlin.$createClass(Kotlin.AbstractCollection, /** @le
         };
     }
 
-    Kotlin.ComplexHashSet = Kotlin.$createClass(Kotlin.Set, {initialize: function () {
+    Kotlin.HashSet = Kotlin.$createClass(Kotlin.Set, {initialize: function () {
         HashSet.call(this);
     }});
+
+    Kotlin.ComplexHashSet = Kotlin.HashSet;
 }());

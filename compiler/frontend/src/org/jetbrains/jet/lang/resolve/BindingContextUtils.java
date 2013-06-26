@@ -17,6 +17,7 @@
 package org.jetbrains.jet.lang.resolve;
 
 import com.google.common.collect.Lists;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -185,7 +186,8 @@ public class BindingContextUtils {
         Set<? extends CallableMemberDescriptor> overriddenDescriptors = callable.getOverriddenDescriptors();
         if (overriddenDescriptors.size() != 1) {
             throw new IllegalStateException(
-                    "cannot find declaration: fake descriptor has more than one overridden descriptor: " + callable);
+                    "Cannot find declaration: fake descriptor " + callable + " has more than one overridden descriptor:\n" +
+                    StringUtil.join(overriddenDescriptors, ",\n"));
         }
 
         return callableDescriptorToDeclaration(context, overriddenDescriptors.iterator().next());

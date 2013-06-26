@@ -403,6 +403,11 @@ public class BlackBoxWithStdlibCodegenTestGenerated extends AbstractBlackBoxCode
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/codegen/boxWithStdlib/ranges"), Pattern.compile("^(.+)\\.kt$"), true);
         }
         
+        @TestMetadata("forByteProgressionWithIntIncrement.kt")
+        public void testForByteProgressionWithIntIncrement() throws Exception {
+            doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/forByteProgressionWithIntIncrement.kt");
+        }
+        
         @TestMetadata("multiAssignmentIterationOverIntRange.kt")
         public void testMultiAssignmentIterationOverIntRange() throws Exception {
             doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/multiAssignmentIterationOverIntRange.kt");
@@ -424,6 +429,11 @@ public class BlackBoxWithStdlibCodegenTestGenerated extends AbstractBlackBoxCode
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/emptyRange.kt");
             }
             
+            @TestMetadata("inexactDownToMinValue.kt")
+            public void testInexactDownToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/inexactDownToMinValue.kt");
+            }
+            
             @TestMetadata("inexactSteppedDownTo.kt")
             public void testInexactSteppedDownTo() throws Exception {
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/inexactSteppedDownTo.kt");
@@ -434,9 +444,29 @@ public class BlackBoxWithStdlibCodegenTestGenerated extends AbstractBlackBoxCode
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/inexactSteppedRange.kt");
             }
             
+            @TestMetadata("inexactToMaxValue.kt")
+            public void testInexactToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/inexactToMaxValue.kt");
+            }
+            
             @TestMetadata("infiniteSteps.kt")
             public void testInfiniteSteps() throws Exception {
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/infiniteSteps.kt");
+            }
+            
+            @TestMetadata("maxValueMinusTwoToMaxValue.kt")
+            public void testMaxValueMinusTwoToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/maxValueMinusTwoToMaxValue.kt");
+            }
+            
+            @TestMetadata("maxValueToMaxValue.kt")
+            public void testMaxValueToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/maxValueToMaxValue.kt");
+            }
+            
+            @TestMetadata("maxValueToMinValue.kt")
+            public void testMaxValueToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/maxValueToMinValue.kt");
             }
             
             @TestMetadata("nanEnds.kt")
@@ -452,6 +482,31 @@ public class BlackBoxWithStdlibCodegenTestGenerated extends AbstractBlackBoxCode
             @TestMetadata("oneElementRange.kt")
             public void testOneElementRange() throws Exception {
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/oneElementRange.kt");
+            }
+            
+            @TestMetadata("progressionDownToMinValue.kt")
+            public void testProgressionDownToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/progressionDownToMinValue.kt");
+            }
+            
+            @TestMetadata("progressionMaxValueMinusTwoToMaxValue.kt")
+            public void testProgressionMaxValueMinusTwoToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/progressionMaxValueMinusTwoToMaxValue.kt");
+            }
+            
+            @TestMetadata("progressionMaxValueToMaxValue.kt")
+            public void testProgressionMaxValueToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/progressionMaxValueToMaxValue.kt");
+            }
+            
+            @TestMetadata("progressionMaxValueToMinValue.kt")
+            public void testProgressionMaxValueToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/progressionMaxValueToMinValue.kt");
+            }
+            
+            @TestMetadata("progressionMinValueToMinValue.kt")
+            public void testProgressionMinValueToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/expression/progressionMinValueToMinValue.kt");
             }
             
             @TestMetadata("reversedBackSequence.kt")
@@ -527,6 +582,11 @@ public class BlackBoxWithStdlibCodegenTestGenerated extends AbstractBlackBoxCode
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/emptyRange.kt");
             }
             
+            @TestMetadata("inexactDownToMinValue.kt")
+            public void testInexactDownToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/inexactDownToMinValue.kt");
+            }
+            
             @TestMetadata("inexactSteppedDownTo.kt")
             public void testInexactSteppedDownTo() throws Exception {
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/inexactSteppedDownTo.kt");
@@ -537,9 +597,29 @@ public class BlackBoxWithStdlibCodegenTestGenerated extends AbstractBlackBoxCode
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/inexactSteppedRange.kt");
             }
             
+            @TestMetadata("inexactToMaxValue.kt")
+            public void testInexactToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/inexactToMaxValue.kt");
+            }
+            
             @TestMetadata("infiniteSteps.kt")
             public void testInfiniteSteps() throws Exception {
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/infiniteSteps.kt");
+            }
+            
+            @TestMetadata("maxValueMinusTwoToMaxValue.kt")
+            public void testMaxValueMinusTwoToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/maxValueMinusTwoToMaxValue.kt");
+            }
+            
+            @TestMetadata("maxValueToMaxValue.kt")
+            public void testMaxValueToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/maxValueToMaxValue.kt");
+            }
+            
+            @TestMetadata("maxValueToMinValue.kt")
+            public void testMaxValueToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/maxValueToMinValue.kt");
             }
             
             @TestMetadata("nanEnds.kt")
@@ -555,6 +635,31 @@ public class BlackBoxWithStdlibCodegenTestGenerated extends AbstractBlackBoxCode
             @TestMetadata("oneElementRange.kt")
             public void testOneElementRange() throws Exception {
                 doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/oneElementRange.kt");
+            }
+            
+            @TestMetadata("progressionDownToMinValue.kt")
+            public void testProgressionDownToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/progressionDownToMinValue.kt");
+            }
+            
+            @TestMetadata("progressionMaxValueMinusTwoToMaxValue.kt")
+            public void testProgressionMaxValueMinusTwoToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/progressionMaxValueMinusTwoToMaxValue.kt");
+            }
+            
+            @TestMetadata("progressionMaxValueToMaxValue.kt")
+            public void testProgressionMaxValueToMaxValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/progressionMaxValueToMaxValue.kt");
+            }
+            
+            @TestMetadata("progressionMaxValueToMinValue.kt")
+            public void testProgressionMaxValueToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/progressionMaxValueToMinValue.kt");
+            }
+            
+            @TestMetadata("progressionMinValueToMinValue.kt")
+            public void testProgressionMinValueToMinValue() throws Exception {
+                doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/ranges/literal/progressionMinValueToMinValue.kt");
             }
             
             @TestMetadata("reversedBackSequence.kt")
@@ -652,6 +757,11 @@ public class BlackBoxWithStdlibCodegenTestGenerated extends AbstractBlackBoxCode
         @TestMetadata("kt1733.kt")
         public void testKt1733() throws Exception {
             doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/regressions/kt1733.kt");
+        }
+        
+        @TestMetadata("kt1770.kt")
+        public void testKt1770() throws Exception {
+            doTestWithStdlib("compiler/testData/codegen/boxWithStdlib/regressions/kt1770.kt");
         }
         
         @TestMetadata("kt1779.kt")
