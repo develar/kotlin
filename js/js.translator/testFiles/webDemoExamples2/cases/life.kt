@@ -4,7 +4,6 @@
  */
 
 import java.util.*
-import js.*;
 
 /*
  * A field where cells live. Effectively immutable

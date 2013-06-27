@@ -132,7 +132,7 @@ public class TranslationContext {
     }
 
     @NotNull
-    public String getName(@NotNull DeclarationDescriptor descriptor) {
+    public String getName(@NotNull CallableDescriptor descriptor) {
         return staticContext.getName(descriptor);
     }
 

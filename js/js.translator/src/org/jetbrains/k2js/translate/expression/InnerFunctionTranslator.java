@@ -43,7 +43,7 @@ class InnerFunctionTranslator extends InnerDeclarationTranslator {
             @NotNull TranslationContext outerContext,
             @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper
     ) {
-        return translate(nameRef, functionParameters, getThis(outerContext), namedFunctionTranslatorHelper);
+        return translate(nameRef, functionParameters, getThis(outerContext), namedFunctionTranslatorHelper, null);
     }
 
     @Override

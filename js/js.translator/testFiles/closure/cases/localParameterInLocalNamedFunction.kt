@@ -1,16 +1,16 @@
 package foo
 
-fun getLastFocused(callback:(window:Any?)->Unit) {
+fun getLastFocused(callback: (window: Any?)->Unit) {
     callback(null)
 }
 
-abstract class TabService(val ctorParam:String) {
-    abstract fun createTab(focusWindow:Boolean, callback: (tabs: String)->Unit)
+abstract class TabService(val ctorParam: String) {
+    abstract fun createTab(focusWindow: Boolean, callback: (tabs: String)->Unit)
 }
 
 abstract class PageManager(val tabService: TabService)
 
-class ChromePageManager(val expected: String): PageManager(object : TabService(expected) {
+class ChromePageManager(val expected: String) : PageManager(object : TabService(expected) {
     private fun postProcessCreatedTab() {
     }
 
@@ -43,6 +43,6 @@ fun box(): Boolean {
     return result == "result" && tabService.ctorParam == "result"
 }
 
-fun getAll(callback:(()->Unit)) {
+fun getAll(callback: (()->Unit)) {
     callback()
 }

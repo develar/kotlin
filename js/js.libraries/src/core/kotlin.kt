@@ -2,7 +2,7 @@ package kotlin
 
 import java.util.*
 
-public native("comparator", "Kotlin") fun comparator<T>(f: (T, T) -> Int): Comparator<T>
+public native("comparator", "stdlib") fun comparator<T>(f: (T, T) -> Int): Comparator<T>
 
 public fun <T> array(vararg value: T): Array<T>
 

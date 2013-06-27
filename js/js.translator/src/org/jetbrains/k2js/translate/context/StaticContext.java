@@ -124,11 +124,10 @@ public final class StaticContext {
     }
 
     @NotNull
-    public String getName(@NotNull DeclarationDescriptor descriptor) {
+    public String getName(@NotNull CallableDescriptor descriptor) {
         assert descriptor instanceof LocalVariableDescriptor ||
                descriptor instanceof ValueParameterDescriptor ||
                descriptor instanceof SimpleFunctionDescriptor /* only local named function */;
-
         String name = nameMap.get(descriptor);
         if (name == null) {
             String suggestedName = name = descriptor.getName().asString();
@@ -141,6 +140,7 @@ public final class StaticContext {
         return name;
     }
 
+    @Nullable
     private JsNameRef getNameIfNative(DeclarationDescriptor descriptor) {
         for (AnnotationDescriptor annotation : descriptor.getAnnotations()) {
             if (predefinedAnnotationManager.isNative(annotation)) {
@@ -206,11 +206,11 @@ public final class StaticContext {
             return new JsNameRef(Namer.generateNamespaceName(descriptor));
         }
 
-        return new JsNameRef(getName(descriptor));
+        return new JsNameRef(getName((CallableDescriptor) descriptor));
     }
 
     @Nullable
-    public static String getStandardObjectName(@NotNull ClassDescriptor descriptor) {
+    private static String getStandardObjectName(@NotNull ClassDescriptor descriptor) {
         DeclarationDescriptor containingDeclaration = descriptor.getContainingDeclaration();
         if (containingDeclaration instanceof NamespaceDescriptor &&
             DescriptorUtils.getModuleDescriptor(containingDeclaration) == KotlinBuiltIns.getInstance().getBuiltInsModule()) {
@@ -245,7 +245,12 @@ public final class StaticContext {
             if (qualifier == null) {
                 return null;
             }
-            return qualifier.equals(Namer.KOTLIN_OBJECT_NAME) ? Namer.KOTLIN_OBJECT_NAME_REF : new JsNameRef(qualifier);
+            if (qualifier.equals(Namer.KOTLIN_OBJECT_NAME)) {
+                return Namer.KOTLIN_OBJECT_NAME_REF;
+            }
+            else {
+                return qualifier.equals("stdlib") ? Namer.JS_STDLIB_PACKAGE_REF : new JsNameRef(qualifier);
+            }
         }
 
         ModuleDescriptor module = DescriptorUtils.getModuleDescriptor(namespace);

@@ -29,7 +29,7 @@ import java.util.Map;
 public class AliasingContext {
     private static final AliasingContext ROOT = new AliasingContext(null) {
         @Override
-        JsExpression getAliasForDescriptor(@NotNull DeclarationDescriptor descriptor, boolean fromChild) {
+        public JsExpression getAliasForDescriptor(@NotNull DeclarationDescriptor descriptor, boolean fromChild) {
             return null;
         }
 
@@ -81,7 +81,7 @@ public class AliasingContext {
         return new AliasingContext(this) {
             @Nullable
             @Override
-            JsExpression getAliasForDescriptor(@NotNull DeclarationDescriptor descriptor, boolean fromChild) {
+            public JsExpression getAliasForDescriptor(@NotNull DeclarationDescriptor descriptor, boolean fromChild) {
                 if (!fromChild && thisDescriptor == descriptor) {
                     return alias;
                 }
@@ -101,7 +101,7 @@ public class AliasingContext {
     }
 
     @Nullable
-    JsExpression getAliasForDescriptor(@NotNull DeclarationDescriptor descriptor, boolean fromChild) {
+    public JsExpression getAliasForDescriptor(@NotNull DeclarationDescriptor descriptor, boolean fromChild) {
         JsExpression alias = aliasesForDescriptors == null ? null : aliasesForDescriptors.get(descriptor.getOriginal());
         return alias != null || parent == null ? alias : parent.getAliasForDescriptor(descriptor, true);
     }

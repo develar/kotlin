@@ -50,8 +50,8 @@ fun box(): String {
     // todo spread operator support if (!testSpreadOperator(30, 10, 20, 0))
     //  return "failed when call function using spread operator"
 
-    if (!Bar(3, 30).test(10, 20, 0))
-        return "failed when call method"
+    //if (!Bar(3, 30).test(10, 20, 0))
+    //    return "failed when call method"
 
     //if (!spreadInMethodCall(2, 3, 1, 2))
     //    return "failed when call method using spread operator"

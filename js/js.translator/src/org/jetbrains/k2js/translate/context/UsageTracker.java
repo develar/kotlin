@@ -16,7 +16,7 @@
 package org.jetbrains.k2js.translate.context;
 
 import com.intellij.util.SmartList;
-import com.intellij.util.containers.OrderedSet;
+import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.*;
@@ -25,6 +25,11 @@ import java.util.List;
 
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isAncestor;
 
+/**
+ * We track info about direct or not captured, but don't use it.
+ * It was implemented but another solution was found - it is cheap, so we don't worry about it and this code is not removed.
+ * Feel free to simplify it, but it can be useful in the future (so, final decision is pending)
+ */
 public final class UsageTracker {
     @Nullable
     private final ClassDescriptor trackedClassDescriptor;
@@ -37,8 +42,12 @@ public final class UsageTracker {
     private List<UsageTracker> children;
 
     private boolean used;
+
     @Nullable
-    private OrderedSet<CallableDescriptor> capturedVariables;
+    // Boolean - true if direct, false if not (i.e. variable of parent local function/object)
+    private THashMap<CallableDescriptor, Boolean> capturedVariables;
+    private List<CallableDescriptor> orderedCapturedVariables;
+
     private ClassDescriptor outerClassDescriptor;
 
     public UsageTracker(@NotNull MemberDescriptor memberDescriptor, @Nullable UsageTracker parent, @Nullable ClassDescriptor trackedClassDescriptor) {
@@ -48,6 +57,15 @@ public final class UsageTracker {
         if (parent != null) {
             parent.addChild(this);
         }
+    }
+
+    public boolean isDirectFunOfClassFun() {
+        return memberDescriptor instanceof SimpleFunctionDescriptor &&
+               memberDescriptor.getContainingDeclaration().getContainingDeclaration() instanceof ClassDescriptor;
+    }
+
+    public boolean notBelongsToContainingScopeOfMyFun(CallableDescriptor descriptor) {
+        return !memberDescriptor.getContainingDeclaration().equals(descriptor.getContainingDeclaration());
     }
 
     public boolean isUsed() {
@@ -76,39 +94,54 @@ public final class UsageTracker {
         children.add(child);
     }
 
-    private void addCapturedMember(CallableDescriptor descriptor) {
+    private boolean addCapturedMemberToOwnOnly(CallableDescriptor descriptor, Boolean direct) {
         if (capturedVariables == null) {
-            capturedVariables = new OrderedSet<CallableDescriptor>();
+            capturedVariables = new THashMap<CallableDescriptor, Boolean>();
+            orderedCapturedVariables = new SmartList<CallableDescriptor>();
         }
-        if (capturedVariables.add(descriptor)) {
+        if (capturedVariables.put(descriptor, direct) == null) {
+            orderedCapturedVariables.add(descriptor);
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    private void addCapturedMember(CallableDescriptor descriptor) {
+        if (addCapturedMemberToOwnOnly(descriptor, true)) {
             UsageTracker p = parent;
             while (p != null) {
                 // track
-                boolean isLocalNamedFun = p.memberDescriptor instanceof SimpleFunctionDescriptor && p.memberDescriptor.getName().isSpecial();
-                if (isAncestor(p.memberDescriptor, descriptor, !isLocalNamedFun, true)) {
+                boolean isLocalNamedFun =
+                        p.memberDescriptor instanceof SimpleFunctionDescriptor && p.memberDescriptor.getName().isSpecial();
+                if (isAncestor(p.memberDescriptor, descriptor, !isLocalNamedFun, Boolean.TRUE)) {
                     break;
                 }
-                p.addCapturedMember(descriptor);
+                p.addCapturedMemberToOwnOnly(descriptor, Boolean.FALSE);
                 p = p.parent;
             }
         }
     }
 
-    public void triggerUsed(DeclarationDescriptor descriptor) {
+    public boolean triggerUsed(DeclarationDescriptor descriptor) {
         if ((descriptor instanceof PropertyDescriptor || descriptor instanceof PropertyAccessorDescriptor)) {
             checkOuterClass(descriptor);
         }
         else if (descriptor instanceof VariableDescriptor) {
             VariableDescriptor variableDescriptor = (VariableDescriptor) descriptor;
-            if ((capturedVariables == null || !capturedVariables.contains(variableDescriptor)) &&
-                !isAncestor(memberDescriptor, variableDescriptor, true, true)) {
+            if (capturedVariables != null && capturedVariables.contains(variableDescriptor)) {
+                return true;
+            }
+            if (!isAncestor(memberDescriptor, variableDescriptor, true, true)) {
                 addCapturedMember(variableDescriptor);
+                return true;
             }
         }
         else if (descriptor instanceof SimpleFunctionDescriptor) {
             CallableDescriptor callableDescriptor = (CallableDescriptor) descriptor;
             if (callableDescriptor.getReceiverParameter() != null) {
-                return;
+                return false;
             }
 
             DeclarationDescriptor containingDeclaration = descriptor.getContainingDeclaration();
@@ -118,18 +151,20 @@ public final class UsageTracker {
                     (callableDescriptor.getExpectedThisObject() == null || isAncestor(containingDeclaration, memberDescriptor, true, true))) {
                     outerClassDescriptor = (ClassDescriptor) containingDeclaration;
                 }
-                return;
+                return false;
             }
 
             // local named function
             if (!(containingDeclaration instanceof ClassOrNamespaceDescriptor) &&
                 !isAncestor(memberDescriptor, descriptor, true, true)) {
                 addCapturedMember(callableDescriptor);
+                return true;
             }
         }
         else if (descriptor instanceof ClassDescriptor && trackedClassDescriptor == descriptor) {
             used = true;
         }
+        return false;
     }
 
     private void checkOuterClass(DeclarationDescriptor descriptor) {
@@ -142,7 +177,7 @@ public final class UsageTracker {
     }
 
     @Nullable
-    public OrderedSet<CallableDescriptor> getCapturedVariables() {
-        return capturedVariables;
+    public List<CallableDescriptor> getCapturedVariables() {
+        return orderedCapturedVariables;
     }
 }

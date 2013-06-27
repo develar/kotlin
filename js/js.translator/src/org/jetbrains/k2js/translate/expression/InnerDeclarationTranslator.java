@@ -17,12 +17,13 @@
 package org.jetbrains.k2js.translate.expression;
 
 import com.google.dart.compiler.backend.js.ast.*;
-import com.intellij.util.containers.OrderedSet;
+import com.intellij.util.ThreeState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.k2js.translate.context.TranslationContext;
+import org.jetbrains.k2js.translate.context.UsageTracker;
 import org.jetbrains.k2js.translate.utils.JsAstUtils;
 
 import java.util.ArrayList;
@@ -40,22 +41,31 @@ abstract class InnerDeclarationTranslator {
             @NotNull JsNameRef nameRef,
             @NotNull List<JsParameter> functionParameters,
             @Nullable JsExpression self,
-            @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper
+            @Nullable LocalNamedFunctionTranslatorHelper namedFunctionTranslatorHelper,
+            @Nullable List<JsNode> constructorStatements
     ) {
-        //noinspection ConstantConditions
-        OrderedSet<CallableDescriptor> captured = context.usageTracker().getCapturedVariables();
+        UsageTracker usageTracker = context.usageTracker();
+        assert usageTracker != null;
+        List<CallableDescriptor> captured = usageTracker.getCapturedVariables();
         if (captured == null && self == JsLiteral.NULL) {
             return createExpression(nameRef, self, functionParameters);
         }
 
         HasArguments invocation = createInvocation(nameRef, functionParameters, self, captured == null ? 0 : captured.size());
         if (captured != null) {
+            ThreeState isDirectFunOfClassFun = constructorStatements == null ? ThreeState.UNSURE : ThreeState.NO;
             List<JsExpression> arguments = invocation.getArguments();
             for (CallableDescriptor descriptor : captured) {
                 String name;
                 JsExpression expression = null;
                 if (descriptor instanceof VariableDescriptor) {
-                    name = context.getName((VariableDescriptor) descriptor);
+                    name = context.getName(descriptor);
+                    if (isDirectFunOfClassFun == ThreeState.UNSURE) {
+                        isDirectFunOfClassFun = usageTracker.isDirectFunOfClassFun() ? ThreeState.YES : ThreeState.NO;
+                    }
+                    if (isDirectFunOfClassFun == ThreeState.YES && usageTracker.notBelongsToContainingScopeOfMyFun(descriptor)) {
+                        expression = new JsNameRef(name, JsLiteral.THIS);
+                    }
                 }
                 else {
                     JsNameRef aliasForDescriptor = (JsNameRef) context.getAliasForDescriptor(descriptor);
@@ -68,6 +78,9 @@ abstract class InnerDeclarationTranslator {
                 }
                 functionParameters.add(new JsParameter(name));
                 arguments.add(expression == null ? new JsNameRef(name) : expression);
+                if (constructorStatements != null) {
+                    constructorStatements.add(JsAstUtils.assignment(new JsNameRef(name, JsLiteral.THIS), new JsNameRef(name)));
+                }
             }
         }
         return invocation;

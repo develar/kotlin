@@ -145,6 +145,8 @@ public class LiteralFunctionTranslator extends AbstractTranslator {
         JsFunction constructor = classTranslator.getConstructor();
         assert constructor.getParameters().isEmpty();
         constructor.setParameters(new SmartList<JsParameter>());
-        return new InnerObjectTranslator(funContext).translate(classRef, constructor.getParameters(), usageTracker.isUsed() ? outerClassRef : null, null);
+        return new InnerObjectTranslator(funContext).translate(classRef, constructor.getParameters(),
+                                                               usageTracker.isUsed() ? outerClassRef : null, null,
+                                                               constructor.getBody().getStatements());
     }
 }
