@@ -185,10 +185,6 @@ public final class JsAstUtils {
         return result;
     }
 
-    public static String createNameForProperty(@NotNull PropertyDescriptor descriptor, @NotNull TranslationContext context) {
-        return createNameForProperty(descriptor, context.isEcma5());
-    }
-
     public static String createNameForProperty(@NotNull PropertyDescriptor descriptor, boolean isEcma5) {
         if (isEcma5 && !JsDescriptorUtils.isAsPrivate(descriptor)) {
             return descriptor.getName().asString();
@@ -219,15 +215,6 @@ public final class JsAstUtils {
             dataDescriptor.getPropertyInitializers().add(ENUMERABLE);
         }
         return dataDescriptor;
-    }
-
-    @NotNull
-    public static JsObjectLiteral createPropertyDataDescriptor(
-            @NotNull PropertyDescriptor descriptor,
-            @NotNull JsExpression value,
-            @NotNull TranslationContext context
-    ) {
-        return createPropertyDataDescriptor(descriptor, descriptor.isVar(), value, context);
     }
 
     @NotNull

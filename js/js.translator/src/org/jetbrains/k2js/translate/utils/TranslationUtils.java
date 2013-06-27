@@ -98,22 +98,9 @@ public final class TranslationUtils {
     }
 
     @NotNull
-    public static JsBinaryOperation isNotNullCheck(@NotNull JsExpression expressionToCheck) {
-        return nullCheck(expressionToCheck, true);
-    }
-
-    @NotNull
-    public static JsBinaryOperation notNullConditionalTestExpression(@NotNull TemporaryVariable cachedValue) {
-        return and(inequality(cachedValue.assignmentExpression(), JsLiteral.NULL),
-                   inequality(cachedValue.reference(), JsLiteral.UNDEFINED));
-    }
-
-    @NotNull
     public static JsBinaryOperation nullCheck(@NotNull JsExpression expressionToCheck, boolean isNegated) {
-        JsBinaryOperator operator = isNegated ? JsBinaryOperator.REF_NEQ : JsBinaryOperator.REF_EQ;
-        return new JsBinaryOperation(isNegated ? JsBinaryOperator.AND : JsBinaryOperator.OR,
-                                     new JsBinaryOperation(operator, expressionToCheck, JsLiteral.NULL),
-                                     new JsBinaryOperation(operator, expressionToCheck, JsLiteral.UNDEFINED));
+        JsBinaryOperator operator = isNegated ? JsBinaryOperator.NEQ : JsBinaryOperator.EQ;
+        return new JsBinaryOperation(operator, expressionToCheck, JsLiteral.NULL);
     }
 
     @NotNull
@@ -131,14 +118,13 @@ public final class TranslationUtils {
         JsExpression thenExpression;
         if (isCacheNeeded(expression)) {
             TemporaryVariable cachedValue = context.declareTemporary(expression);
-            testExpression = notNullConditionalTestExpression(cachedValue);
+            testExpression = new JsBinaryOperation(JsBinaryOperator.NEQ, cachedValue.assignmentExpression(), JsLiteral.NULL);
             thenExpression = cachedValue.reference();
         }
         else {
-            testExpression = isNotNullCheck(expression);
+            testExpression = nullCheck(expression, true);
             thenExpression = expression;
         }
-
         return new JsConditional(testExpression, thenExpression, elseExpression);
     }
 
