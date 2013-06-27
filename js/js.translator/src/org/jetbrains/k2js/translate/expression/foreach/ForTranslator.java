@@ -21,6 +21,7 @@ import com.google.dart.compiler.backend.js.ast.JsExpression;
 import com.google.dart.compiler.backend.js.ast.JsNode;
 import com.google.dart.compiler.backend.js.ast.JsStatement;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetForExpression;
 import org.jetbrains.jet.lang.psi.JetParameter;
 import org.jetbrains.jet.lang.resolve.BindingContext;
@@ -31,22 +32,22 @@ import org.jetbrains.k2js.translate.general.Translation;
 
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopBody;
+import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopRange;
 
 public abstract class ForTranslator extends AbstractTranslator {
-
     @NotNull
-    public static JsStatement translate(@NotNull JetForExpression expression,
-                                        @NotNull TranslationContext context) {
-        if (RangeLiteralForTranslator.isApplicable(expression, context)) {
-            return RangeLiteralForTranslator.doTranslate(expression, context);
+    public static JsStatement translate(@NotNull JetForExpression expression, @NotNull TranslationContext context) {
+        JetExpression loopRange = getLoopRange(expression);
+        if (RangeLiteralForTranslator.isApplicable(loopRange, context)) {
+            return new RangeLiteralForTranslator(expression, context).translate();
         }
-        if (RangeForTranslator.isApplicable(expression, context)) {
-            return RangeForTranslator.doTranslate(expression, context);
+        if (RangeForTranslator.isApplicable(loopRange, context)) {
+            return new RangeForTranslator(expression, context).translate();
         }
-        if (ArrayForTranslator.isApplicable(expression, context)) {
-            return ArrayForTranslator.doTranslate(expression, context);
+        if (ArrayForTranslator.isApplicable(loopRange, context)) {
+            return new ArrayForTranslator(expression, context).translate();
         }
-        return IteratorForTranslator.doTranslate(expression, context);
+        return new IteratorForTranslator(expression, context).translate();
     }
 
     @NotNull

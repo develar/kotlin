@@ -1,12 +1,68 @@
+<!DOCTYPE HTML>
 <!-- Only for developers -->
 <html>
 <head>
   <script src="kotlin_lib_ecma5.js"></script>
   <script src="kotlin_lib.js"></script>
   <script src="maps.js"></script>
-  <script src="closure/out/closureReferencingMember_v5.js"></script>
+  <!--<script src="/Users/develar/Documents/kotlin/js/js.translator/testFiles/native/native/kt_2388.js"></script>-->
+  <script src="/Users/develar/Documents/kotlin/js/js.translator/testFiles/object/out/objectInMethod_5.js"></script>
   <script>
-    console.assert(Kotlin.modules["JS_TESTS"].foo.box());
+    console.assert(kotlin.modules["JS_TESTS"].foo.box());
+    //console.assert(Kotlin.modules["JS_TESTS"].box());
+    function test() {
+      function Base() {
+
+      }
+
+      var cReal = {v: 234};
+
+      var $baseDescriptor$ = {
+        sayHello: {value: function () {
+          console.log('hello base');
+        }, writable: true},
+        c: {get: function () {return cReal.v}}
+      };
+      Base.prototype = Object.create(null, $baseDescriptor$);
+      Object.seal(Base.prototype);
+
+      var $personDescriptor$ = {
+        sayHello: {value: function () {
+          console.log('hello');
+        }},
+        b: {get: function () {
+          return 24
+        }}
+      };
+
+      function Person(gender) {
+        if ($personDescriptor$ !== null) {
+          var personProto = Object.create(null, $baseDescriptor$);
+          Object.defineProperties(personProto, $personDescriptor$);
+          Person.prototype = personProto;
+          Object.seal(Person.prototype);
+          $personDescriptor$ = null;
+          //return new Person(gender);
+          this.__proto__ = personProto
+        }
+
+        this.gender = gender;
+        console.log('Person instantiated');
+      }
+
+      var person = new Person("men");
+      console.log(person.b);
+      person.sayHello();
+      console.log(person.c);
+      cReal.v = 42;
+      console.log(person.c);
+
+      var person2 = new Person("whoAmI");
+      if (person2) {
+
+      }
+    }
+    //test()
   </script>
 </head>
 <body>

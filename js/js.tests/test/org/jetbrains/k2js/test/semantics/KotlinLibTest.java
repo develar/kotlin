@@ -39,7 +39,7 @@ public final class KotlinLibTest extends SingleFileTranslationTest {
 
 
     private void runJavascriptTest(@NotNull String filename) throws Exception {
-        runRhinoTest(withAdditionalFiles(cases(filename), EcmaVersion.v3),
+        runRhinoTest(withAdditionalFiles(cases(filename), EcmaVersion.v5),
                      new RhinoFunctionResultChecker("test", true));
     }
 

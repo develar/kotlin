@@ -42,7 +42,7 @@ public final class ArrayForTranslator extends ForTranslator {
     @NotNull
     private final Pair<JsVar, JsExpression> index;
 
-    private ArrayForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
+    ArrayForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
         super(forExpression, context);
 
         loopRange = TranslationUtils.createTemporaryIfNeed(Translation.translateAsExpression(getLoopRange(expression), context), context);
@@ -52,15 +52,7 @@ public final class ArrayForTranslator extends ForTranslator {
         index = context.dynamicContext().createTemporary(JsNumberLiteral.V_0);
     }
 
-    @NotNull
-    public static JsStatement doTranslate(@NotNull JetForExpression expression,
-                                          @NotNull TranslationContext context) {
-        return new ArrayForTranslator(expression, context).translate();
-    }
-
-    public static boolean isApplicable(@NotNull JetForExpression expression,
-            @NotNull TranslationContext context) {
-        JetExpression loopRange = getLoopRange(expression);
+    public static boolean isApplicable(@NotNull JetExpression loopRange, @NotNull TranslationContext context) {
         JetType rangeType = BindingUtils.getTypeForExpression(context.bindingContext(), loopRange);
         //TODO: better check
         //TODO: IMPORTANT!
@@ -69,7 +61,7 @@ public final class ArrayForTranslator extends ForTranslator {
     }
 
     @NotNull
-    private JsFor translate() {
+    JsFor translate() {
         return new JsFor(createInitExpression(), getCondition(), getIncrementExpression(), getBody());
     }
 

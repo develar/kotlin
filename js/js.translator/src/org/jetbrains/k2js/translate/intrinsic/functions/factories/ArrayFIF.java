@@ -74,9 +74,9 @@ public final class ArrayFIF extends CompositeFIF {
     public ArrayFIF(MostlySingularMultiMap<String, Pair<DescriptorPredicate, FunctionIntrinsic>> intrinsics) {
         super(intrinsics);
 
-        FunctionIntrinsic arrayFromFun = kotlinFunction("arrayFromFun");
-        FunctionIntrinsic arrayIndices = kotlinFunction("arrayIndices");
-        FunctionIntrinsic iterator = kotlinFunction("arrayIterator");
+        FunctionIntrinsic arrayFromFun = kotlinFunctionNewPackage("arrayFromFun");
+        FunctionIntrinsic arrayIndices = kotlinFunction("arrayIndices", Namer.JS_STDLIB_PACKAGE_REF);
+        FunctionIntrinsic iterator = kotlinFunction("arrayIterator", Namer.JS_STDLIB_PACKAGE_REF);
 
         FunctionIntrinsic array = new FunctionIntrinsic() {
             @NotNull
@@ -154,7 +154,7 @@ public final class ArrayFIF extends CompositeFIF {
         });
 
         add("equals", list, kotlinFunction("arrayEquals"));
-        add("toString", list, kotlinFunction("arrayToString"));
+        add("toString", list, kotlinFunctionNewPackage("arrayToString"));
 
         DescriptorPattern mutableList = new DescriptorPattern("jet", "MutableList").checkOverridden();
         add("set", mutableList, kotlinFunction("arraySet"));

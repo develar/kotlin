@@ -35,19 +35,13 @@ public final class IteratorForTranslator extends ForTranslator {
     @NotNull
     private final Pair<JsVar, JsExpression> iterator;
 
-    @NotNull
-    public static JsStatement doTranslate(@NotNull JetForExpression expression,
-            @NotNull TranslationContext context) {
-        return (new IteratorForTranslator(expression, context).translate());
-    }
-
-    private IteratorForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
+    IteratorForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
         super(forExpression, context);
         iterator = context.dynamicContext().createTemporary(iteratorMethodInvocation());
     }
 
     @NotNull
-    private JsBlock translate() {
+    JsBlock translate() {
         return new JsBlock(new JsVars(iterator.first), new JsWhile(hasNextMethodInvocation(), translateBody(nextMethodInvocation())));
     }
 

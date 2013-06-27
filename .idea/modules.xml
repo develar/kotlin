@@ -25,6 +25,7 @@
       <module fileurl="file://$PROJECT_DIR$/compiler/jet.as.java.psi/jet.as.java.psi.iml" filepath="$PROJECT_DIR$/compiler/jet.as.java.psi/jet.as.java.psi.iml" />
       <module fileurl="file://$PROJECT_DIR$/jps-plugin/jps-plugin.iml" filepath="$PROJECT_DIR$/jps-plugin/jps-plugin.iml" />
       <module fileurl="file://$PROJECT_DIR$/js/cli/js-cli.iml" filepath="$PROJECT_DIR$/js/cli/js-cli.iml" group="js" />
+      <module fileurl="file://$PROJECT_DIR$/js/stdlib/js-stdlib.iml" filepath="$PROJECT_DIR$/js/stdlib/js-stdlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/js/stubGenerator/js-stub-generator.iml" filepath="$PROJECT_DIR$/js/stubGenerator/js-stub-generator.iml" group="js" />
       <module fileurl="file://$PROJECT_DIR$/js/subCompiler/js-subCompiler.iml" filepath="$PROJECT_DIR$/js/subCompiler/js-subCompiler.iml" group="js" />
       <module fileurl="file://$PROJECT_DIR$/js/js.tests/js.tests.iml" filepath="$PROJECT_DIR$/js/js.tests/js.tests.iml" group="js" />
@@ -32,7 +33,6 @@
       <module fileurl="file://$PROJECT_DIR$/jps-plugin/kannotator-jps-plugin-test/kannotator-jps-plugin-test.iml" filepath="$PROJECT_DIR$/jps-plugin/kannotator-jps-plugin-test/kannotator-jps-plugin-test.iml" />
       <module fileurl="file://$PROJECT_DIR$/compiler/preloader/preloader.iml" filepath="$PROJECT_DIR$/compiler/preloader/preloader.iml" />
       <module fileurl="file://$PROJECT_DIR$/runtime/runtime.iml" filepath="$PROJECT_DIR$/runtime/runtime.iml" />
-      <module fileurl="file://$PROJECT_DIR$/js/stdlib/stdlib.iml" filepath="$PROJECT_DIR$/js/stdlib/stdlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/compiler/util/util.iml" filepath="$PROJECT_DIR$/compiler/util/util.iml" />
       <module fileurl="file://$PROJECT_DIR$/compiler/x-frontend/x-frontend.iml" filepath="$PROJECT_DIR$/compiler/x-frontend/x-frontend.iml" />
     </modules>

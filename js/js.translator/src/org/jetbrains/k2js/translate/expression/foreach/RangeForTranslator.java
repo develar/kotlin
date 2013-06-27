@@ -24,50 +24,49 @@ import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetForExpression;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-import org.jetbrains.k2js.translate.general.Translation;
 import org.jetbrains.k2js.translate.utils.BindingUtils;
 
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.getClassDescriptorForType;
+import static org.jetbrains.k2js.translate.general.Translation.translateAsExpression;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.addAssign;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.lessThanEq;
 import static org.jetbrains.k2js.translate.utils.PsiUtils.getLoopRange;
+import static org.jetbrains.k2js.translate.utils.TranslationUtils.createTemporaryIfNeed;
 
 public final class RangeForTranslator extends ForTranslator {
-    @NotNull
-    public static JsStatement doTranslate(@NotNull JetForExpression expression,
-                                          @NotNull TranslationContext context) {
-        return (new RangeForTranslator(expression, context).translate());
-    }
-
-    public static boolean isApplicable(@NotNull JetForExpression expression,
-                                       @NotNull TranslationContext context) {
-        JetExpression loopRange = getLoopRange(expression);
+    public static boolean isApplicable(@NotNull JetExpression loopRange, @NotNull TranslationContext context) {
         JetType rangeType = BindingUtils.getTypeForExpression(context.bindingContext(), loopRange);
         //TODO: better check
         //TODO: long range?
         return getClassDescriptorForType(rangeType).getName().asString().equals("IntRange");
     }
 
-    @NotNull
-    private final Pair<JsVar, JsExpression> rangeExpression;
-
-    private RangeForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
+    RangeForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
         super(forExpression, context);
-        rangeExpression = context().dynamicContext().createTemporary(Translation.translateAsExpression(getLoopRange(expression), context));
     }
 
     @NotNull
-    private JsStatement translate() {
-        Pair<JsVar, JsExpression> increment = context().dynamicContext().createTemporary(callFunction("get_increment"));
-        Pair<JsVar, JsExpression> end = context().dynamicContext().createTemporary(callFunction("get_end"));
-        return new JsFor(new JsVars(rangeExpression.first, new JsVar(parameterName, callFunction("get_start")), end.first, increment.first),
+    JsStatement translate() {
+        Pair<JsVar, JsExpression> rangeExpression =
+                createTemporaryIfNeed(translateAsExpression(getLoopRange(expression), context()), context());
+
+        JsExpression incrementExpression;
+        if (context().isEcma5()) {
+            incrementExpression = new JsNameRef("increment", rangeExpression.second);
+        }
+        else {
+            incrementExpression = new JsInvocation(new JsNameRef("get_increment", rangeExpression.second));
+        }
+        Pair<JsVar, JsExpression> increment = context().dynamicContext().createTemporary(incrementExpression);
+
+        Pair<JsVar, JsExpression> end = context().dynamicContext().createTemporary(new JsNameRef("end", rangeExpression.second));
+        JsVars initVars = new JsVars(rangeExpression.first,
+                                     new JsVar(parameterName, new JsNameRef("start", rangeExpression.second)),
+                                     end.first,
+                                     increment.first);
+        return new JsFor(initVars,
                          lessThanEq(new JsNameRef(parameterName), end.second),
                          addAssign(new JsNameRef(parameterName), increment.second),
                          translateOriginalBodyExpression());
-    }
-
-    @NotNull
-    private JsExpression callFunction(@NotNull String funName) {
-        return new JsInvocation(new JsNameRef(funName, rangeExpression.second));
     }
 }

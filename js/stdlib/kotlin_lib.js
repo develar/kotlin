@@ -31,6 +31,32 @@ var kotlin = {
         f.o = o;
         return f;
     },
+    throwNPE: function () {
+        var error = new ReferenceError();
+        error.name = "NullPointerException";
+        throw error;
+    },
+    arrayFromFun: function (size, initFun) {
+        var result = new Array(size);
+        for (var i = 0; i < size; i++) {
+            result[i] = initFun(i);
+        }
+        return result;
+    },
+    stringify: function (o) {
+        if (o === null || o === undefined) {
+            return "null";
+        }
+        else if (Array.isArray(o)) {
+            return kotlin.arrayToString(o);
+        }
+        else {
+            return o.toString();
+        }
+    },
+    arrayToString: function (a) {
+        return "[" + a.join(", ") + "]";
+    },
     modules: {}
 };
 
@@ -49,67 +75,17 @@ var kotlin = {
         }
         return obj1 === obj2;
     };
-    Kotlin.stringify = function (o) {
-        if (o === null || o === undefined) {
-            return "null";
-        }
-        else if (Array.isArray(o)) {
-            return Kotlin.arrayToString(o);
-        }
-        else {
-            return o.toString();
-        }
-    };
-    Kotlin.arrayToString = function(a) {
-        return "[" + a.join(", ") + "]";
-    };
-
-    Kotlin.intUpto = function (from, to) {
-        return Kotlin.$new(Kotlin.NumberRange)(from, to);
-    };
-
-    Kotlin.intDownto = function (from, to) {
-        return Kotlin.$new(Kotlin.NumberProgression)(from, to, -1);
-    };
-
-    Kotlin.throwNPE = function () {
-        var error = new ReferenceError();
-        error.name = "NullPointerException";
-        throw error;
-    };
 
     function throwAbstractFunctionInvocationError(funName) {
-        return function() {
-            var message;
-            if (funName !== undefined) {
-                message = "Function " + funName + " is abstract";
-            } else {
-                message = "Function is abstract";
-            }
-            throw new TypeError(message);
-        };
-    }
-
-    Kotlin.Iterator = Kotlin.$createClass({
-        initialize: function () {
-        },
-        next: throwAbstractFunctionInvocationError("Iterator#next"),
-        hasNext: throwAbstractFunctionInvocationError("Iterator#hasNext")
-    });
-
-    var ArrayIterator = Kotlin.$createClass(Kotlin.Iterator, {
-        initialize: function (array) {
-            this.array = array;
-            this.size = array.length;
-            this.index = 0;
-        },
-        next: function () {
-            return this.array[this.index++];
-        },
-        hasNext: function () {
-            return this.index < this.size;
+        var message;
+        if (funName !== undefined) {
+            message = "Function " + funName + " is abstract";
         }
-    });
+        else {
+            message = "Function is abstract";
+        }
+        throw new TypeError(message);
+    }
 
     Kotlin.Collection = Kotlin.$createClass();
 
@@ -163,24 +139,6 @@ var kotlin = {
         toJSON: function () {
             return this.toArray();
         }
-    });
-
-    Kotlin.Runnable = Kotlin.$createClass({
-        initialize: function () {
-        },
-        run: throwAbstractFunctionInvocationError("Runnable#run")
-    });
-
-    Kotlin.Comparable = Kotlin.$createClass({
-        initialize: function () {
-        },
-        compareTo: throwAbstractFunctionInvocationError("Comparable#compareTo")
-    });
-
-    Kotlin.Closeable = Kotlin.$createClass({
-        initialize: function () {
-        },
-        close: throwAbstractFunctionInvocationError("Closeable#close")
     });
 
     Kotlin.safeParseInt = function(str) {
@@ -337,94 +295,7 @@ var kotlin = {
         };
     }();
 
-    Kotlin.RangeIterator = Kotlin.$createClass(Kotlin.Iterator, {
-        initialize: function (start, end, increment) {
-            this.$start = start;
-            this.$end = end;
-            this.$increment = increment;
-            this.$i = start;
-        },
-        get_start: function () {
-            return this.$start;
-        },
-        get_end: function () {
-            return this.$end;
-        },
-        get_i: function () {
-            return this.$i;
-        },
-        set_i: function (tmp$0) {
-            this.$i = tmp$0;
-        },
-        next: function () {
-            var value = this.$i;
-            this.set_i(this.$i + this.$increment);
-            return value;
-        },
-        hasNext: function () {
-            return this.$increment > 0 ? this.$next <= this.$end : this.$next >= this.$end;
-        }
-    });
-
-    Kotlin.NumberRange = Kotlin.$createClass(null, {
-        initialize: function (start, end) {
-            this.$start = start;
-            this.$end = end;
-        },
-        get_start: function () {
-            return this.$start;
-        },
-        get_end: function () {
-            return this.$end;
-        },
-        get_increment: function () {
-            return 1;
-        },
-        contains: function (number) {
-            return this.$start <= number && number <= this.$end;
-        },
-        iterator: function () {
-            return Kotlin.$new(Kotlin.RangeIterator)(this.get_start(), this.get_end(), this.get_increment());
-        }
-    });
-
-    Kotlin.NumberProgression = Kotlin.$createClass(null, {
-        initialize: function (start, end, increment) {
-            this.$start = start;
-            this.$end = end;
-            this.$increment = increment;
-        },
-        get_start: function () {
-            return this.$start;
-        },
-        get_end: function () {
-            return this.$end;
-        },
-        get_increment: function () {
-            return this.$increment;
-        },
-        iterator: function () {
-            return Kotlin.$new(Kotlin.RangeIterator)(this.get_start(), this.get_end(), this.get_increment());
-        }
-    });
-
-    Kotlin.Comparator = Kotlin.$createClass({
-        initialize: function () {
-        },
-        compare: throwAbstractFunctionInvocationError("Comparator#compare")
-    });
-
-    var ComparatorImpl = Kotlin.$createClass(Kotlin.Comparator, {
-        initialize: function (comparator) {
-            this.compare = comparator;
-        }
-    });
-
-    Kotlin.comparator = function (f) {
-        return Kotlin.$new(ComparatorImpl)(f);
-    };
-
-    Kotlin.collectionsMax = function (c, comp) {
+    Kotlin.collectionsMax = function (c, comparator) {
         if (Kotlin.collectionIsEmpty(c)) {
             //TODO: which exception?
             throw new Error();
@@ -434,7 +305,7 @@ var kotlin = {
         var max = it.next();
         while (it.hasNext()) {
             var el = it.next();
-            if (comp.compare(max, el) < 0) {
+            if (comparator.compare(max, el) < 0) {
                 max = el;
             }
         }
@@ -446,23 +317,7 @@ var kotlin = {
     }
 
     Kotlin.arrayOfNulls = function (size) {
-        return Kotlin.arrayFromFun(size, nullFun);
-    };
-
-    Kotlin.arrayFromFun = function (size, initFun) {
-        var result = new Array(size);
-        for (var i = 0; i < size; i++) {
-            result[i] = initFun(i);
-        }
-        return result;
-    };
-
-    Kotlin.arrayIndices = function (array) {
-        return Kotlin.$new(Kotlin.NumberRange)(0, array.length - 1);
-    };
-
-    Kotlin.arrayIterator = function (array) {
-        return Kotlin.$new(ArrayIterator)(array);
+        return kotlin.arrayFromFun(size, nullFun);
     };
 
     Kotlin.jsonFromTuples = function (pairArr) {

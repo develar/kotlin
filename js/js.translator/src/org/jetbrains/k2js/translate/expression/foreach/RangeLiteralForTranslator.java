@@ -16,7 +16,6 @@
 
 package org.jetbrains.k2js.translate.expression.foreach;
 
-import com.google.common.collect.Lists;
 import com.google.dart.compiler.backend.js.ast.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetBinaryExpression;
@@ -25,8 +24,6 @@ import org.jetbrains.jet.lang.psi.JetForExpression;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.k2js.translate.context.TemporaryVariable;
 import org.jetbrains.k2js.translate.context.TranslationContext;
-
-import java.util.List;
 
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.inequality;
 import static org.jetbrains.k2js.translate.utils.JsAstUtils.newVar;
@@ -37,21 +34,12 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.translateRight
 
 // TODO: implement reverse semantics
 public final class RangeLiteralForTranslator extends ForTranslator {
-
-    @NotNull
-    public static JsStatement doTranslate(@NotNull JetForExpression expression,
-                                          @NotNull TranslationContext context) {
-        return (new RangeLiteralForTranslator(expression, context).translate());
-    }
-
-    public static boolean isApplicable(@NotNull JetForExpression expression,
-                                       @NotNull TranslationContext context) {
-        JetExpression loopRange = getLoopRange(expression);
+    public static boolean isApplicable(@NotNull JetExpression loopRange, @NotNull TranslationContext context) {
         if (!(loopRange instanceof JetBinaryExpression)) {
             return false;
         }
         boolean isRangeToOperation = ((JetBinaryExpression) loopRange).getOperationToken() == JetTokens.RANGE;
-        return isRangeToOperation && RangeForTranslator.isApplicable(expression, context);
+        return isRangeToOperation && RangeForTranslator.isApplicable(loopRange, context);
     }
 
     @NotNull
@@ -60,7 +48,7 @@ public final class RangeLiteralForTranslator extends ForTranslator {
     @NotNull
     private final TemporaryVariable rangeEnd;
 
-    private RangeLiteralForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
+    RangeLiteralForTranslator(@NotNull JetForExpression forExpression, @NotNull TranslationContext context) {
         super(forExpression, context);
         JetExpression loopRange = getLoopRange(expression);
         assert loopRange instanceof JetBinaryExpression;
@@ -76,16 +64,9 @@ public final class RangeLiteralForTranslator extends ForTranslator {
     }
 
     @NotNull
-    private JsBlock translate() {
-        List<JsNode> blockStatements = Lists.newArrayList();
-        blockStatements.add(temporariesInitialization(rangeEnd));
-        blockStatements.add(new JsFor(initExpression(), getCondition(), getIncrExpression(), translateOriginalBodyExpression()));
-        return new JsBlock(blockStatements);
-    }
-
-    @NotNull
-    private JsVars initExpression() {
-        return newVar(parameterName, rangeStart);
+    JsBlock translate() {
+        return new JsBlock(temporariesInitialization(rangeEnd),
+                           new JsFor(newVar(parameterName, rangeStart), getCondition(), getIncrExpression(), translateOriginalBodyExpression()));
     }
 
     @NotNull

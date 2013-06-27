@@ -155,7 +155,7 @@ public final class Translation {
             }
         }
 
-        return new JsInvocation(new JsNameRef("defineModule", Namer.KOTLIN_OBJECT_NAME_REF),
+        return new JsInvocation(new JsNameRef("defineModule", Namer.NEW_KOTLIN_PACKAGE_REF),
                                 new JsStringLiteral(config.getModule().getName()),
                                 moduleDependencies.isEmpty() ? JsLiteral.NULL : new JsArrayLiteral(moduleDependencies),
                                 definitionFunction);

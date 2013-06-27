@@ -1,9 +1,6 @@
 package foo
 
-import js.*
-
-fun box() : Boolean {
-
+fun box(): Boolean {
     var twoToFive = IntRange(2, 5)
 
     if (twoToFive.contains(6)) return false;
@@ -26,5 +23,4 @@ fun box() : Boolean {
     if (sum != 14) return false;
 
     return true;
-
 }

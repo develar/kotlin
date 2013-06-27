@@ -16,7 +16,9 @@
 
 package org.jetbrains.k2js.translate.context;
 
+import com.google.dart.compiler.backend.js.ast.JsArrayAccess;
 import com.google.dart.compiler.backend.js.ast.JsNameRef;
+import com.google.dart.compiler.backend.js.ast.JsStringLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
@@ -26,7 +28,7 @@ import org.jetbrains.jet.lang.resolve.DescriptorUtils;
  * Encapsulates different types of constants and naming conventions.
  */
 public final class Namer {
-    private static final JsNameRef NEW_KOTLIN_PACKAGE_REF = new JsNameRef("kotlin");
+    public static final JsNameRef NEW_KOTLIN_PACKAGE_REF = new JsNameRef("kotlin");
 
     public static final String CALLEE_NAME = "$fun";
     public static final String OUTER_CLASS_NAME = "$outer";
@@ -38,10 +40,11 @@ public final class Namer {
     public static final String KOTLIN_OBJECT_NAME = "Kotlin";
     public static final JsNameRef KOTLIN_OBJECT_NAME_REF = new JsNameRef(KOTLIN_OBJECT_NAME);
     private static final String RECEIVER_PARAMETER_NAME = "$receiver";
-    public static final JsNameRef THROW_NPE_FUN_NAME_REF = new JsNameRef("throwNPE", KOTLIN_OBJECT_NAME_REF);
+    public static final JsNameRef THROW_NPE_FUN_NAME_REF = new JsNameRef("throwNPE", NEW_KOTLIN_PACKAGE_REF);
     public static final JsNameRef NEW_EXCEPTION_FUN_NAME_REF = new JsNameRef("newException", NEW_KOTLIN_PACKAGE_REF);
     public static final JsNameRef ASSIGN_OWNER_FUN_NAME_REF = new JsNameRef("assignOwner", NEW_KOTLIN_PACKAGE_REF);
     public static final JsNameRef MODULES_NAME_REF = new JsNameRef("modules", NEW_KOTLIN_PACKAGE_REF);
+    public static final String MODULES_NAME_REF_AS_STRING = "kotlin.modules";
 
     public static final String ROOT_PACKAGE_NAME = "_";
     public static final JsNameRef ROOT_PACKAGE_NAME_REF = new JsNameRef(ROOT_PACKAGE_NAME);
@@ -49,6 +52,10 @@ public final class Namer {
     public static final JsNameRef IS_TYPE_FUN_NAME_REF = new JsNameRef("isType", NEW_KOTLIN_PACKAGE_REF);
 
     public static final JsNameRef DEFINE_PACKAGE = new JsNameRef("p", KOTLIN_OBJECT_NAME_REF);
+
+    public static final String JS_STDLIB_MODULE_NAME = "js-stdlib";
+    public static final JsNameRef JS_STDLIB_PACKAGE_REF = new JsNameRef("js_stdlib", new JsArrayAccess(MODULES_NAME_REF, new JsStringLiteral(
+            JS_STDLIB_MODULE_NAME)));
 
     private Namer() {
     }

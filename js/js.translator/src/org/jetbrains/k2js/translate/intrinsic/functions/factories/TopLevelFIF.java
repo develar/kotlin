@@ -102,7 +102,7 @@ public final class TopLevelFIF extends CompositeFIF {
         }
     };
 
-    public static final FunctionIntrinsic STRINGIFY = kotlinFunction("stringify");
+    public static final FunctionIntrinsic STRINGIFY = kotlinFunctionNewPackage("stringify");
 
     public static final DescriptorPredicate JAVA_EXCEPTION_PATTERN = new DescriptorPredicate() {
         @Override

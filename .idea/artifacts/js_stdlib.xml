@@ -1,8 +1,8 @@
 <component name="ArtifactManager">
   <artifact build-on-make="true" name="js-stdlib">
-    <output-path>$PROJECT_DIR$/out/js_stdlib</output-path>
+    <output-path>$PROJECT_DIR$/js/stdlib/out</output-path>
     <root id="root">
-      <element id="k2js-compiler-output" name="stdlib" />
+      <element id="k2js-compiler-output" name="js-stdlib" />
     </root>
   </artifact>
 </component>

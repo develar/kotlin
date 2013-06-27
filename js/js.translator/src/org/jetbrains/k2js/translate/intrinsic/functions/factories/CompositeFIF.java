@@ -68,6 +68,14 @@ public abstract class CompositeFIF {
     }
 
     protected static FunctionIntrinsic kotlinFunction(@NotNull String functionName) {
-        return new QualifiedInvocationFunctionIntrinsic(functionName, Namer.KOTLIN_OBJECT_NAME_REF);
+        return kotlinFunction(functionName, Namer.KOTLIN_OBJECT_NAME_REF);
+    }
+
+    protected static FunctionIntrinsic kotlinFunctionNewPackage(@NotNull String functionName) {
+        return kotlinFunction(functionName, Namer.NEW_KOTLIN_PACKAGE_REF);
+    }
+
+    protected static FunctionIntrinsic kotlinFunction(@NotNull String functionName, JsExpression qualifier) {
+        return new QualifiedInvocationFunctionIntrinsic(functionName, qualifier);
     }
 }

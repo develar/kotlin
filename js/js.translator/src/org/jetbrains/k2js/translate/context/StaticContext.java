@@ -250,7 +250,7 @@ public final class StaticContext {
 
         ModuleDescriptor module = DescriptorUtils.getModuleDescriptor(namespace);
         if (module == KotlinBuiltIns.getInstance().getBuiltInsModule()) {
-            return Namer.KOTLIN_OBJECT_NAME_REF;
+            return Namer.JS_STDLIB_PACKAGE_REF;
         }
 
         if (isNativeModule(module) || predefinedAnnotationManager.hasNative(descriptor)) {

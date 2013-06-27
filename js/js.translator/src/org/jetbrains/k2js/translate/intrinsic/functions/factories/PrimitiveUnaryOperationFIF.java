@@ -44,15 +44,15 @@ public class PrimitiveUnaryOperationFIF extends CompositeFIF {
     private static final FunctionIntrinsic RANGE_TO_INTRINSIC = new FunctionIntrinsic() {
         @NotNull
         @Override
-        public JsExpression apply(@Nullable JsExpression rangeStart, @NotNull List<JsExpression> arguments,
-                @NotNull TranslationContext context) {
+        public JsExpression apply(
+                @Nullable JsExpression rangeStart,
+                @NotNull List<JsExpression> arguments,
+                @NotNull TranslationContext context
+        ) {
             assert arguments.size() == 1 : "RangeTo must have one argument.";
             assert rangeStart != null;
-            JsExpression rangeEnd = arguments.get(0);
-            JsExpression nameRef = Namer.kotlin("NumberRange");
             //TODO: add tests and correct expression for reversed ranges.
-            List<JsExpression> args = Arrays.asList(rangeStart, rangeEnd);
-            return context.isEcma5() ? new JsInvocation(nameRef, args) : new JsNew(nameRef, args);
+            return new JsNew(new JsNameRef("NumberRange", Namer.JS_STDLIB_PACKAGE_REF), Arrays.asList(rangeStart, arguments.get(0)));
         }
     };
 
