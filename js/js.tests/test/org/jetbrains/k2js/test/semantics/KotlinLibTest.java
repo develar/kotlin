@@ -32,7 +32,6 @@ public final class KotlinLibTest extends SingleFileTranslationTest {
         runJavascriptTest("array.js");
     }
 
-
     public void testHashMap() throws Exception {
         runJavascriptTest("hashMap.js");
     }
@@ -40,7 +39,7 @@ public final class KotlinLibTest extends SingleFileTranslationTest {
 
     private void runJavascriptTest(@NotNull String filename) throws Exception {
         runRhinoTest(withAdditionalFiles(cases(filename), EcmaVersion.v5),
-                     new RhinoFunctionResultChecker("test", true));
+                     new RhinoFunctionResultChecker("test", true), EcmaVersion.v5);
     }
 
     @Override
