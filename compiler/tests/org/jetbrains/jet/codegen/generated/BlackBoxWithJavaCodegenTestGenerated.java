@@ -130,6 +130,7 @@ public class BlackBoxWithJavaCodegenTestGenerated extends AbstractBlackBoxCodege
     }
     
     @TestMetadata("compiler/testData/codegen/boxWithJava/samAdapters")
+    @InnerTestClasses({SamAdapters.Operators.class})
     public static class SamAdapters extends AbstractBlackBoxCodegenTest {
         public void testAllFilesPresentInSamAdapters() throws Exception {
             JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/codegen/boxWithJava/samAdapters"), Pattern.compile("^(.+)\\.kt$"), true);
@@ -190,6 +191,11 @@ public class BlackBoxWithJavaCodegenTestGenerated extends AbstractBlackBoxCodege
             doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/nonLiteralInConstructor.kt");
         }
         
+        @TestMetadata("nonLiteralNull.kt")
+        public void testNonLiteralNull() throws Exception {
+            doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/nonLiteralNull.kt");
+        }
+        
         @TestMetadata("nonLiteralRunnable.kt")
         public void testNonLiteralRunnable() throws Exception {
             doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/nonLiteralRunnable.kt");
@@ -225,6 +231,80 @@ public class BlackBoxWithJavaCodegenTestGenerated extends AbstractBlackBoxCodege
             doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/typeParameterOfOuterClass.kt");
         }
         
+        @TestMetadata("compiler/testData/codegen/boxWithJava/samAdapters/operators")
+        public static class Operators extends AbstractBlackBoxCodegenTest {
+            public void testAllFilesPresentInOperators() throws Exception {
+                JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("compiler/testData/codegen/boxWithJava/samAdapters/operators"), Pattern.compile("^(.+)\\.kt$"), true);
+            }
+            
+            @TestMetadata("augmentedAssignmentAndSquareBrackets.kt")
+            public void testAugmentedAssignmentAndSquareBrackets() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/augmentedAssignmentAndSquareBrackets.kt");
+            }
+            
+            @TestMetadata("augmentedAssignmentPure.kt")
+            public void testAugmentedAssignmentPure() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/augmentedAssignmentPure.kt");
+            }
+            
+            @TestMetadata("augmentedAssignmentViaSimpleBinary.kt")
+            public void testAugmentedAssignmentViaSimpleBinary() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/augmentedAssignmentViaSimpleBinary.kt");
+            }
+            
+            @TestMetadata("binary.kt")
+            public void testBinary() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/binary.kt");
+            }
+            
+            @TestMetadata("compareTo.kt")
+            public void testCompareTo() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/compareTo.kt");
+            }
+            
+            @TestMetadata("contains.kt")
+            public void testContains() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/contains.kt");
+            }
+            
+            @TestMetadata("get.kt")
+            public void testGet() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/get.kt");
+            }
+            
+            @TestMetadata("infixCall.kt")
+            public void testInfixCall() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/infixCall.kt");
+            }
+            
+            @TestMetadata("invoke.kt")
+            public void testInvoke() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/invoke.kt");
+            }
+            
+            @TestMetadata("multiGetSet.kt")
+            public void testMultiGetSet() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/multiGetSet.kt");
+            }
+            
+            @TestMetadata("multiInvoke.kt")
+            public void testMultiInvoke() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/multiInvoke.kt");
+            }
+            
+            @TestMetadata("set.kt")
+            public void testSet() throws Exception {
+                doTestWithJava("compiler/testData/codegen/boxWithJava/samAdapters/operators/set.kt");
+            }
+            
+        }
+        
+        public static Test innerSuite() {
+            TestSuite suite = new TestSuite("SamAdapters");
+            suite.addTestSuite(SamAdapters.class);
+            suite.addTestSuite(Operators.class);
+            return suite;
+        }
     }
     
     @TestMetadata("compiler/testData/codegen/boxWithJava/samWrappers")
@@ -401,7 +481,7 @@ public class BlackBoxWithJavaCodegenTestGenerated extends AbstractBlackBoxCodege
         suite.addTestSuite(Enum.class);
         suite.addTestSuite(Functions.class);
         suite.addTestSuite(Property.class);
-        suite.addTestSuite(SamAdapters.class);
+        suite.addTest(SamAdapters.innerSuite());
         suite.addTestSuite(SamWrappers.class);
         suite.addTestSuite(StaticFun.class);
         suite.addTest(Visibility.innerSuite());
