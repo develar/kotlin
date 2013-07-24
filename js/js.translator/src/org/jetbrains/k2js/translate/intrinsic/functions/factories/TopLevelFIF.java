@@ -52,7 +52,7 @@ import static org.jetbrains.k2js.translate.utils.TranslationUtils.generateInvoca
 
 public final class TopLevelFIF extends CompositeFIF {
     @NotNull
-    public static final FunctionIntrinsic EQUALS = kotlinFunction("equals");
+    public static final FunctionIntrinsic EQUALS = kotlinFunctionNewPackage("equals");
 
     private static final FunctionIntrinsic NATIVE_MAP_GET = new NativeMapGetSet() {
         @NotNull

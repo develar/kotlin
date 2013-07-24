@@ -2,7 +2,7 @@ package java.util
 
 import java.lang.*
 
-public native("collectionsMax", "Kotlin") fun max<T>(col: jet.Collection<T>, comp: Comparator<T>): T
+public native("collectionsMax", "kotlin") fun max<T>(col: jet.Collection<T>, comp: Comparator<T>): T
 
 public native(qualifier = "Kotlin") trait Comparator<T> {
     fun compare(obj1: T, obj2: T): Int;

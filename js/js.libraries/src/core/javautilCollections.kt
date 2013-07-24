@@ -3,7 +3,7 @@ package java.util.Collections
 import java.lang.*
 import java.util.*
 
-native("collectionsMax", "Kotlin")
+native("collectionsMax", "kotlin")
 public fun max<T>(col: Collection<T>, comp: Comparator<T>): T
 
 native("collectionsSort", "Kotlin")

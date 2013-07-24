@@ -129,8 +129,8 @@ public final class ArrayFIF extends CompositeFIF {
         add("get", list, kotlinFunction("arrayGet"));
         add("isEmpty", list, IS_EMPTY_INTRINSIC);
         add("iterator", list, iterator);
-        add("indexOf", list, kotlinFunction("arrayIndexOf"));
-        add("lastIndexOf", list, kotlinFunction("arrayLastIndexOf"));
+        add("indexOf", list, kotlinFunctionNewPackage("arrayIndexOf"));
+        add("lastIndexOf", list, kotlinFunctionNewPackage("arrayLastIndexOf"));
         add("toArray", list, new FunctionIntrinsic() {
             @NotNull
             @Override
@@ -148,24 +148,24 @@ public final class ArrayFIF extends CompositeFIF {
                     @Nullable JsExpression receiver, @NotNull List<JsExpression> arguments, @NotNull TranslationContext context
             ) {
                 assert receiver != null && arguments.size() == 1;
-                return inequality(new JsInvocation(Namer.kotlin("arrayIndexOf"), receiver, arguments.get(0)),
+                return inequality(new JsInvocation(new JsNameRef("arrayIndexOf", Namer.NEW_KOTLIN_PACKAGE_REF), receiver, arguments.get(0)),
                                   JsNumberLiteral.V_M1);
             }
         });
 
-        add("equals", list, kotlinFunction("arrayEquals"));
+        add("equals", list, kotlinFunctionNewPackage("arrayEquals"));
         add("toString", list, kotlinFunctionNewPackage("arrayToString"));
 
         DescriptorPattern mutableList = new DescriptorPattern("jet", "MutableList").checkOverridden();
         add("set", mutableList, kotlinFunction("arraySet"));
         // http://jsperf.com/push-vs-len
         add("add", new ValueParametersAwareDescriptorPredicate(mutableList, 1), new BuiltInFunctionIntrinsic("push"));
-        add("add", new ValueParametersAwareDescriptorPredicate(mutableList, 2), kotlinFunction("arrayAddAt"));
-        add("addAll", mutableList , kotlinFunction("arrayAddAll"));
+        add("add", new ValueParametersAwareDescriptorPredicate(mutableList, 2), kotlinFunctionNewPackage("arrayAddAt"));
+        add("addAll", mutableList , kotlinFunctionNewPackage("arrayAddAll"));
         add("remove", new ValueParametersAwareDescriptorPredicate(mutableList, Predicates.equalTo(KotlinBuiltIns.getInstance().getIntType())),
             kotlinFunction("arrayRemoveAt"));
         add("remove", new ValueParametersAwareDescriptorPredicate(mutableList, Predicates.equalTo(KotlinBuiltIns.getInstance().getNullableAnyType())),
-            kotlinFunction("arrayRemove"));
+            kotlinFunctionNewPackage("arrayRemove"));
         add("clear", mutableList , new FunctionIntrinsic() {
             @NotNull
             @Override
@@ -177,18 +177,18 @@ public final class ArrayFIF extends CompositeFIF {
             }
         });
 
-        add("iterator", new DescriptorPattern("jet", "Iterable").checkOverridden(), kotlinFunction("collectionIterator"));
+        add("iterator", new DescriptorPattern("jet", "Iterable").checkOverridden(), kotlinFunctionNewPackage("collectionIterator"));
 
         DescriptorPattern collection = new DescriptorPattern("jet", "Collection").checkOverridden();
-        add("size", collection, kotlinFunction("collectionSize"));
-        add("isEmpty", collection, kotlinFunction("collectionIsEmpty"));
-        add("contains", collection, kotlinFunction("collectionContains"));
+        add("size", collection, kotlinFunctionNewPackage("collectionSize"));
+        add("isEmpty", collection, kotlinFunctionNewPackage("collectionIsEmpty"));
+        add("contains", collection, kotlinFunctionNewPackage("collectionContains"));
 
         DescriptorPattern mutableCollection = new DescriptorPattern("jet", "MutableCollection").checkOverridden();
-        add("add", mutableCollection, kotlinFunction("collectionAdd"));
-        add("addAll", mutableCollection, kotlinFunction("collectionAddAll"));
-        add("remove", mutableCollection, kotlinFunction("collectionRemove"));
-        add("clear", mutableCollection, kotlinFunction("collectionClear"));
+        add("add", mutableCollection, kotlinFunctionNewPackage("collectionAdd"));
+        add("addAll", mutableCollection, kotlinFunctionNewPackage("collectionAddAll"));
+        add("remove", mutableCollection, kotlinFunctionNewPackage("collectionRemove"));
+        add("clear", mutableCollection, kotlinFunctionNewPackage("collectionClear"));
     }
 
     private final static class ValueParametersAwareDescriptorPredicate implements DescriptorPredicate {

@@ -56,14 +56,14 @@ fun box(): String {
     //if (!spreadInMethodCall(2, 3, 1, 2))
     //    return "failed when call method using spread operator"
 
-    if (!obj.test(5, 15, 1, 2, 3, 4, 5))
-        return "failed when call method of object"
+    //if (!obj.test(5, 15, 1, 2, 3, 4, 5))
+    //    return "failed when call method of object"
 
     //if (!spreadInObjectMethodCall(2, 3, 1, 2))
     //    return "failed when call method of object using spread operator"
 
-    if (!testVarargWithFunLit(1, 2, 3) { args -> args.size == 3 })
-        return "failed when call function with vararg and fun literal"
+    //if (!testVarargWithFunLit(1, 2, 3) { args -> args.size == 3 })
+    //    return "failed when call function with vararg and fun literal"
 
     return "OK"
 }

@@ -54,8 +54,8 @@ public final class Namer {
     public static final JsNameRef DEFINE_PACKAGE = new JsNameRef("p", KOTLIN_OBJECT_NAME_REF);
 
     public static final String JS_STDLIB_MODULE_NAME = "js-stdlib";
-    public static final JsNameRef JS_STDLIB_PACKAGE_REF = new JsNameRef("js_stdlib", new JsArrayAccess(MODULES_NAME_REF, new JsStringLiteral(
-            JS_STDLIB_MODULE_NAME)));
+    public static final JsNameRef JS_STDLIB_PACKAGE_REF =
+            new JsNameRef("js_stdlib", new JsArrayAccess(MODULES_NAME_REF, new JsStringLiteral(JS_STDLIB_MODULE_NAME)));
 
     private Namer() {
     }

@@ -40,7 +40,8 @@ import static org.jetbrains.k2js.test.utils.JsTestUtils.convertFileNameToDotJsFi
 
 public abstract class BasicTest extends KotlinTestWithEnvironmentManagement {
     // predictable order of ecma version in tests
-    protected static final Iterable<EcmaVersion> DEFAULT_ECMA_VERSIONS = Lists.newArrayList(EcmaVersion.v5, EcmaVersion.v3);
+    //protected static final Iterable<EcmaVersion> DEFAULT_ECMA_VERSIONS = Lists.newArrayList(EcmaVersion.v5, EcmaVersion.v3);
+    protected static final Iterable<EcmaVersion> DEFAULT_ECMA_VERSIONS = Lists.newArrayList(EcmaVersion.v5);
 
     private CompileContext compileContext;
 
