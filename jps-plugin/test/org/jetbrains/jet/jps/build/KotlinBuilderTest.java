@@ -128,7 +128,7 @@ public class KotlinBuilderTest extends ArtifactBuilderTestCase {
         rebuildAll();
 
         a.file("a.kt", "package com.example.a");
-        List<BuildMessage> errorMessages = makeAll().getErrorMessages();
+        List<BuildMessage> errorMessages = makeAll().getMessages(BuildMessage.Kind.ERROR);
         assertSize(2, errorMessages);
         assertEquals(errorMessages.get(0).getKind(), BuildMessage.Kind.ERROR);
         assertEquals(errorMessages.get(1).getKind(), BuildMessage.Kind.ERROR);

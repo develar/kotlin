@@ -21,6 +21,7 @@
         <fileset dir="${basedir}/lib" includes="**/*.jar"/>
         <fileset dir="${basedir}/dependencies" includes="jline.jar"/>
         <fileset dir="${basedir}/dependencies" includes="jansi.jar"/>
+        <fileset dir="${basedir}/dependencies" includes="cli-parser-1.1.1.jar"/>
         <fileset dir="${basedir}/js/js.translator/lib" includes="*.jar"/>
     </path>
 

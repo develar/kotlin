@@ -170,6 +170,17 @@ public class MockCompileContext implements CompileContextEx {
     }
 
     @Override
+    public boolean isRebuildRequested() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getRebuildReason() {
+        return null;
+    }
+
+    @Override
     public Module getModuleByFile(VirtualFile file) {
         return module;
     }

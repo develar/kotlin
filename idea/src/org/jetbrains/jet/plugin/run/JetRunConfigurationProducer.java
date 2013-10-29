@@ -21,7 +21,6 @@ import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.execution.actions.ConfigurationContext;
 import com.intellij.execution.junit.RuntimeConfigurationProducer;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -95,30 +94,6 @@ public class JetRunConfigurationProducer extends RuntimeConfigurationProducer im
         configuration.setName(StringUtil.trimEnd(fqName.asString(), "." + PackageClassUtils.getPackageClassName(fqName)));
         configuration.setRunClass(fqName.asString());
         return settings;
-    }
-
-    @Override
-    protected RunnerAndConfigurationSettings findExistingByElement(
-            Location location,
-            @NotNull RunnerAndConfigurationSettings[] existingConfigurations,
-            ConfigurationContext context
-    ) {
-        FqName startClassFQName = getStartClassFQName(location);
-        if (startClassFQName == null) {
-            return null;
-        }
-
-        for (RunnerAndConfigurationSettings existingConfiguration : existingConfigurations) {
-            if (existingConfiguration.getType() instanceof JetRunConfigurationType) {
-                JetRunConfiguration jetConfiguration = (JetRunConfiguration)existingConfiguration.getConfiguration();
-                if (Comparing.equal(jetConfiguration.getRunClass(), startClassFQName.asString())) {
-                    if (Comparing.equal(location.getModule(), jetConfiguration.getConfigurationModule().getModule())) {
-                        return existingConfiguration;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     @Override

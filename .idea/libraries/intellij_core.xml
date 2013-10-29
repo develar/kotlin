@@ -2,6 +2,7 @@
   <library name="intellij-core">
     <CLASSES>
       <root url="file://$PROJECT_DIR$/ideaSDK/core" />
+      <root url="jar://$PROJECT_DIR$/ideaSDK/lib/cli-parser-1.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>

@@ -6,7 +6,7 @@
   <version>@snapshot@</version>
   <vendor url="http://www.jetbrains.com">JetBrains Inc.</vendor>
 
-  <idea-version since-build="130.1" until-build="130.999" />
+  <idea-version since-build="132.500" />
 
   <depends optional="true">JUnit</depends>
   <depends optional="true" config-file="kotlin-copyright.xml">com.intellij.copyright</depends>
@@ -183,8 +183,8 @@
     <lang.documentationProvider language="JAVA" implementationClass="org.jetbrains.jet.plugin.JetQuickDocumentationProvider" order="first"/>
     <documentationProvider implementation="org.jetbrains.jet.plugin.JetQuickDocumentationProvider"/>
     <configurationType implementation="org.jetbrains.jet.plugin.run.JetRunConfigurationType"/>
-    <configurationType implementation="org.jetbrains.jet.plugin.k2jsrun.K2JSRunConfigurationType"/>
-    <programRunner implementation="org.jetbrains.jet.plugin.k2jsrun.K2JSBrowserProgramRunner"/>
+    <!--<configurationType implementation="org.jetbrains.jet.plugin.k2jsrun.K2JSRunConfigurationType"/>-->
+    <!--<programRunner implementation="org.jetbrains.jet.plugin.k2jsrun.K2JSBrowserProgramRunner"/>-->
     <configurationProducer implementation="org.jetbrains.jet.plugin.run.JetRunConfigurationProducer"/>
     <configurationProducer implementation="org.jetbrains.jet.plugin.run.JetJUnitConfigurationProducer"/>
     <codeInsight.lineMarkerProvider language="jet" implementationClass="org.jetbrains.jet.plugin.highlighter.JetLineMarkerProvider"/>

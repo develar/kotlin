@@ -29,6 +29,7 @@ import com.intellij.util.ArrayUtil;
 import com.intellij.util.Processor;
 import com.intellij.util.containers.HashSet;
 import com.intellij.util.containers.MultiMap;
+import com.intellij.util.indexing.IdFilter;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -398,6 +399,16 @@ public class JetShortNamesCache extends PsiShortNamesCache {
         return false;
     }
 
+    @Override
+    public boolean processMethodsWithName(
+            @NonNls @NotNull String name,
+            @NotNull Processor<? super PsiMethod> processor,
+            @NotNull GlobalSearchScope scope,
+            @Nullable IdFilter filter
+    ) {
+        return false;
+    }
+
     @NotNull
     @Override
     public String[] getAllMethodNames() {
@@ -423,5 +434,25 @@ public class JetShortNamesCache extends PsiShortNamesCache {
 
     @Override
     public void getAllFieldNames(@NotNull HashSet<String> set) {
+    }
+
+    @Override
+    public boolean processFieldsWithName(
+            @NotNull String name,
+            @NotNull Processor<? super PsiField> processor,
+            @NotNull GlobalSearchScope scope,
+            @Nullable IdFilter filter
+    ) {
+        return false;
+    }
+
+    @Override
+    public boolean processClassesWithName(
+            @NotNull String name,
+            @NotNull Processor<? super PsiClass> processor,
+            @NotNull GlobalSearchScope scope,
+            @Nullable IdFilter filter
+    ) {
+        return false;
     }
 }

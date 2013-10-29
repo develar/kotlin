@@ -75,7 +75,7 @@ public class KotlinDefinitionsSearcher extends QueryExecutorBase<PsiElement, Psi
         });
 
         if (psiMethod != null) {
-            ContainerUtil.process(MethodImplementationsSearch.getMethodImplementations(psiMethod), consumer);
+            ContainerUtil.process(MethodImplementationsSearch.getMethodImplementations(psiMethod, queryParameters.getUseScope()), consumer);
         }
     }
 
@@ -105,7 +105,7 @@ public class KotlinDefinitionsSearcher extends QueryExecutorBase<PsiElement, Psi
 
     public static void processPropertyImplementationsMethods(LightClassUtil.PropertyAccessorsPsiMethods accessors, @NotNull Processor<PsiElement> consumer) {
         for (PsiMethod method : accessors) {
-            PsiMethod[] implementations = MethodImplementationsSearch.getMethodImplementations(method);
+            PsiMethod[] implementations = MethodImplementationsSearch.getMethodImplementations(method, method.getUseScope());
             for (PsiMethod implementation : implementations) {
                 PsiElement mirrorElement = implementation instanceof JetClsMethod ? ((JetClsMethod) implementation).getOrigin() : null;
                 if (mirrorElement instanceof JetProperty || mirrorElement instanceof JetParameter) {

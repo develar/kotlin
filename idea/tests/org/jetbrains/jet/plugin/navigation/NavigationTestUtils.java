@@ -23,7 +23,6 @@ import com.intellij.codeInsight.navigation.GotoImplementationHandler;
 import com.intellij.codeInsight.navigation.GotoTargetHandler;
 import com.intellij.ide.util.gotoByName.GotoSymbolModel2;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.progress.util.ProgressIndicatorBase;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -86,7 +85,7 @@ public final class NavigationTestUtils {
         String[] names = model.getNames(false);
         for (String name : names) {
             if (name != null && name.startsWith(searchText)) {
-                elementsByName.addAll(Arrays.asList(model.getElementsByName(name, false, name + "*", new ProgressIndicatorBase())));
+                //elementsByName.addAll(Arrays.asList(model.getElementsByName(name, false, name + "*", new ProgressIndicatorBase())));
             }
         }
 
