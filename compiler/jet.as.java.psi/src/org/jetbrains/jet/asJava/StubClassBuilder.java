@@ -29,7 +29,6 @@ import org.jetbrains.asm4.FieldVisitor;
 import org.jetbrains.asm4.MethodVisitor;
 import org.jetbrains.jet.codegen.ClassBuilder;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.psi.JetNamedDeclaration;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
@@ -67,7 +66,7 @@ public class StubClassBuilder extends ClassBuilder {
     @Override
     public void defineClass(PsiElement origin, int version, int access, String name, @Nullable String signature, String superName, String[] interfaces) {
         assert v == null : "defineClass() called twice?";
-        v = new StubBuildingVisitor<Object>(null, EMPTY_STRATEGY, parent, access);
+        v = new StubBuildingVisitor<Object>(null, EMPTY_STRATEGY, parent, access, "");
 
         super.defineClass(origin, version, access, name, signature, superName, interfaces);
 

@@ -153,7 +153,7 @@ public abstract class AbstractJetFormatterTest extends LightIdeaTestCase {
                 ApplicationManager.getApplication().runWriteAction(new Runnable() {
                     @Override
                     public void run() {
-                        ((DocumentImpl)doc).stripTrailingSpaces();
+                        ((DocumentImpl)doc).stripTrailingSpaces(getProject());
                     }
                 });
             }

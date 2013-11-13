@@ -121,7 +121,7 @@ public class RenameInKotlinTest extends MultiFileTestCase {
                 new RenameProcessor(myProject, psiElement, newName, true, true).run();
                 PsiDocumentManager.getInstance(myProject).commitAllDocuments();
                 FileDocumentManager.getInstance().saveAllDocuments();
-                VirtualFileManager.getInstance().refresh(false);
+                //VirtualFileManager.getInstance().refresh(false);
             }
         });
     }

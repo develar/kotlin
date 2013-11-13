@@ -29,7 +29,6 @@ import org.jetbrains.jps.indices.ModuleExcludeIndex;
 import org.jetbrains.jps.model.JpsDummyElement;
 import org.jetbrains.jps.model.JpsElementChildRole;
 import org.jetbrains.jps.model.JpsModel;
-import org.jetbrains.jps.model.JpsSimpleElement;
 import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
@@ -86,7 +85,7 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
             JpsModel model, ModuleExcludeIndex index, IgnoredFileIndex ignoredFileIndex, BuildDataPaths dataPaths
     ) {
         List<BuildRootDescriptor> roots = new SmartList<BuildRootDescriptor>();
-        for (JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>> sourceRoot : module.getSourceRoots(JavaSourceRootType.SOURCE)) {
+        for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : module.getSourceRoots(JavaSourceRootType.SOURCE)) {
             roots.add(new MyBuildRootDescriptor(this, sourceRoot));
         }
         return roots;
@@ -134,7 +133,7 @@ public class KotlinBuildTarget extends BuildTarget<BuildRootDescriptor> {
     }
 
     private static class MyBuildRootDescriptor extends BuildRootDescriptorImpl {
-        public MyBuildRootDescriptor(KotlinBuildTarget target, JpsTypedModuleSourceRoot<JpsSimpleElement<JavaSourceRootProperties>> sourceRoot) {
+        public MyBuildRootDescriptor(KotlinBuildTarget target, JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot) {
             super(target, JpsPathUtil.urlToFile(sourceRoot.getUrl()), true);
         }
 

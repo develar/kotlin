@@ -1,5 +1,5 @@
 <project name="Update Dependencies" default="update">
-  <property name="jb.buildserver.build.id" value="2140315"/>
+  <property name="jb.buildserver.build.id" value="2192576"/>
   <property name="public.buildserver.build.id" value="97997"/>
 
   <condition property="os.tag" value="win.zip">
@@ -19,7 +19,7 @@
     </and>
   </condition>
 
-  <property name="idea.archive.name" value="ideaIC-132.SNAPSHOT.${os.tag}"/>
+  <property name="idea.archive.name" value="ideaIC-132.1062.${os.tag}"/>
 
   <property name="idea.sdk.fetch.needed" value="true"/>
 
