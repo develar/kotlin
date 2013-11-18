@@ -26,7 +26,6 @@ import com.intellij.openapi.util.NullableLazyValue;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.compiled.ClsFileImpl;
 import com.intellij.psi.impl.java.stubs.PsiJavaFileStub;
 import com.intellij.psi.impl.light.AbstractLightClass;
@@ -171,7 +170,7 @@ public class KotlinLightClassForExplicitDeclaration extends AbstractLightClass i
         protected PsiFile compute() {
             VirtualFile virtualFile = classOrObject.getContainingFile().getVirtualFile();
             assert virtualFile != null : "No virtual file for " + classOrObject.getText();
-            return new ClsFileImpl((PsiManagerImpl) getManager(), new ClassFileViewProvider(getManager(), virtualFile)) {
+            return new ClsFileImpl(getManager(), new ClassFileViewProvider(getManager(), virtualFile)) {
                 @NotNull
                 @Override
                 public String getPackageName() {
