@@ -33,7 +33,7 @@ public class KotlinCacheManager {
     private final Map<TargetPlatform, DeclarationsCacheProvider> cacheProviders = Maps.newHashMap();
 
     public KotlinCacheManager(@NotNull Project project) {
-        cacheProviders.put(TargetPlatform.JVM, new JvmDeclarationsCacheProvider(project));
+        //cacheProviders.put(TargetPlatform.JVM, new JvmDeclarationsCacheProvider(project));
         cacheProviders.put(TargetPlatform.JS, new JSDeclarationsCacheProvider(project));
     }
 

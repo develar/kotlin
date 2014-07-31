@@ -153,7 +153,7 @@ public class LightClassUtil {
     @NotNull
     private static List<PsiMethod> getPsiMethodWrappers(@NotNull JetDeclaration declaration, boolean collectAll) {
         PsiClass psiClass = getWrappingClass(declaration);
-        if (psiClass == null) {
+        if (psiClass == null || psiClass instanceof KotlinLightClassForExplicitDeclaration) {
             return Collections.emptyList();
         }
 
