@@ -17,8 +17,8 @@
 package org.jetbrains.jet.codegen.signature.kotlin;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.asm4.AnnotationVisitor;
-import org.jetbrains.asm4.MethodVisitor;
+import org.jetbrains.org.objectweb.asm.AnnotationVisitor;
+import org.jetbrains.org.objectweb.asm.MethodVisitor;
 import org.jetbrains.jet.lang.resolve.java.JvmStdlibNames;
 
 public class JetMethodAnnotationWriter {

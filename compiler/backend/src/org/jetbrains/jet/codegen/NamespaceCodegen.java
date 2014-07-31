@@ -23,10 +23,10 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.asm4.AnnotationVisitor;
-import org.jetbrains.asm4.MethodVisitor;
-import org.jetbrains.asm4.Type;
-import org.jetbrains.asm4.commons.InstructionAdapter;
+import org.jetbrains.org.objectweb.asm.AnnotationVisitor;
+import org.jetbrains.org.objectweb.asm.MethodVisitor;
+import org.jetbrains.org.objectweb.asm.Type;
+import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter;
 import org.jetbrains.jet.codegen.context.CodegenContext;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
@@ -42,7 +42,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-import static org.jetbrains.asm4.Opcodes.*;
+import static org.jetbrains.org.objectweb.asm.Opcodes.*;
 
 public class NamespaceCodegen extends MemberCodegen {
     @NotNull

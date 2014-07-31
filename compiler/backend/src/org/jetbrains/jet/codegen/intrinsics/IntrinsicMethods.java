@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.jetbrains.asm4.Opcodes.*;
+import static org.jetbrains.org.objectweb.asm.Opcodes.*;
 import static org.jetbrains.jet.lang.resolve.DescriptorUtils.*;
 
 public class IntrinsicMethods {

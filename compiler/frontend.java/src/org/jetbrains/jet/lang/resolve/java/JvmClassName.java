@@ -19,7 +19,7 @@ package org.jetbrains.jet.lang.resolve.java;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.asm4.Type;
+import org.jetbrains.org.objectweb.asm.Type;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.ClassifierDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;

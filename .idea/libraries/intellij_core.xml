@@ -3,10 +3,10 @@
     <CLASSES>
       <root url="file://$PROJECT_DIR$/ideaSDK/core" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/lib/cli-parser-1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/ideaSDK/lib/asm-all.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$PROJECT_DIR$/dependencies/jetbrains-asm-all-4.0-src.zip!/" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/groovy/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/groovy/rt/src" />
       <root url="jar://$PROJECT_DIR$/ideaSDK/sources/sources.zip!/plugins/groovy/test" />

@@ -18,7 +18,7 @@ package org.jetbrains.jet.codegen;
 
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.asm4.*;
+import org.jetbrains.org.objectweb.asm.*;
 
 public abstract class ClassBuilder {
     private String thisName;

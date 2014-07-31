@@ -18,7 +18,7 @@ package org.jetbrains.jet.codegen.signature;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.asm4.commons.Method;
+import org.jetbrains.org.objectweb.asm.commons.Method;
 
 import java.util.List;
 

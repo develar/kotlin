@@ -66,7 +66,12 @@ public class JetLiveTemplateCompletionContributor extends CompletionContributor 
         if (!templatesShown.get()) {
             templatesShown.set(true);
             for (TemplateImpl possible : templates) {
-                result.addElement(new LiveTemplateLookupElement(possible, false));
+                result.addElement(new LiveTemplateLookupElement(possible.getString(), null, false, false) {
+                    @Override
+                    public char getTemplateShortcut() {
+                        return 0;
+                    }
+                });
             }
         }
     }

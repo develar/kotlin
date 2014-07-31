@@ -16,7 +16,7 @@
 
 package org.jetbrains.jet.codegen;
 
-import org.jetbrains.asm4.commons.InstructionAdapter;
+import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter;
 
 public interface CodeChunk {
     void generate(InstructionAdapter v);

@@ -18,7 +18,6 @@ package org.jetbrains.jet.plugin.compiler;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.intellij.compiler.impl.javaCompiler.OutputItemImpl;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.TranslatingCompiler;
@@ -72,7 +71,7 @@ public final class TranslatingCompilerUtils {
                 VirtualFile virtualFileForSourceFile = LocalFileSystem.getInstance().findFileByIoFile(sourceFile);
 
                 sources.add(virtualFileForSourceFile);
-                outputs.add(new OutputItemImpl(output.getOutputFile().getPath(), virtualFileForSourceFile));
+                //outputs.add(new OutputItem(output.getOutputFile().getPath(), virtualFileForSourceFile));
             }
         }
 

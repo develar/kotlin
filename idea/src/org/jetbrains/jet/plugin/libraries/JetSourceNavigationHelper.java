@@ -40,7 +40,7 @@ import gnu.trove.THashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
-import org.jetbrains.asm4.Type;
+import org.jetbrains.org.objectweb.asm.Type;
 import org.jetbrains.jet.asJava.LightClassUtil;
 import org.jetbrains.jet.codegen.AsmUtil;
 import org.jetbrains.jet.codegen.binding.PsiCodegenPredictor;

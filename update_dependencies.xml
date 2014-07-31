@@ -1,5 +1,5 @@
 <project name="Update Dependencies" default="update">
-  <property name="jb.buildserver.build.id" value="2201670"/>
+  <property name="jb.buildserver.build.id" value="4333842"/>
   <property name="public.buildserver.build.id" value="97997"/>
 
   <condition property="os.tag" value="win.zip">
@@ -19,7 +19,7 @@
     </and>
   </condition>
 
-  <property name="idea.archive.name" value="ideaIC-134.SNAPSHOT.${os.tag}"/>
+  <property name="idea.archive.name" value="ideaIC-138.SNAPSHOT.${os.tag}"/>
 
   <property name="idea.sdk.fetch.needed" value="true"/>
 
@@ -189,7 +189,7 @@
         </patternset>
       </unzip>
 
-      <replaceregexp match="org\.objectweb\.asm" replace="org.jetbrains.asm4" flags="g">
+      <replaceregexp match="org\.objectweb\.asm" replace="org.jetbrains.org.objectweb.asm" flags="g">
         <fileset dir="dependencies/download/asm-src/">
           <include name="**/*.java"/>
         </fileset>
@@ -234,21 +234,26 @@
           <!--<get src="@{base.url}/core/snappy-java-1.0.5.jar" dest="${core}/snappy-java-1.0.5.jar" usetimestamp="true"/>-->
 
           <copy file="dependencies/jetbrains-asm-debug-all-4.0.jar" todir="${jps}"/>
-          <get src="@{base.url}/jps/groovy-jps-plugin.jar" dest="${jps}/groovy-jps-plugin.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/groovy_rt.jar" dest="${jps}/groovy_rt.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/jdom.jar" dest="${jps}/jdom.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/jgoodies-forms.jar" dest="${jps}/jgoodies-forms.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/jna.jar" dest="${jps}/jna.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/jps-builders.jar" dest="${jps}/jps-builders.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/jps-model.jar" dest="${jps}/jps-model.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/log4j.jar" dest="${jps}/log4j.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/nanoxml-2.2.3.jar" dest="${jps}/nanoxml-2.2.3.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/protobuf-2.5.0.jar" dest="${jps}/protobuf-2.5.0.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/trove4j.jar" dest="${jps}/trove4j.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/ui-designer-jps-plugin.jar" dest="${jps}/ui-designer-jps-plugin.jar" usetimestamp="true"/>
-          <get src="@{base.url}/jps/util.jar" dest="${jps}/util.jar" usetimestamp="true"/>
+          <!--<get src="@{base.url}/jps/groovy-jps-plugin.jar" dest="${jps}/groovy-jps-plugin.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/groovy_rt.jar" dest="${jps}/groovy_rt.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/jdom.jar" dest="${jps}/jdom.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/jgoodies-forms.jar" dest="${jps}/jgoodies-forms.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/jna.jar" dest="${jps}/jna.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/jps-builders.jar" dest="${jps}/jps-builders.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/jps-model.jar" dest="${jps}/jps-model.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/log4j.jar" dest="${jps}/log4j.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/nanoxml-2.2.3.jar" dest="${jps}/nanoxml-2.2.3.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/protobuf-2.5.0.jar" dest="${jps}/protobuf-2.5.0.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/trove4j.jar" dest="${jps}/trove4j.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/ui-designer-jps-plugin.jar" dest="${jps}/ui-designer-jps-plugin.jar" usetimestamp="true"/>-->
+          <!--<get src="@{base.url}/jps/util.jar" dest="${jps}/util.jar" usetimestamp="true"/>-->
 
-          <get src="@{base.url}/jps/test/jps-build-test.jar" dest="${jps-test}/jps-build-test.jar" usetimestamp="true"/>
+          <get src="@{base.url}/jps/standalone-jps-IC-138.SNAPSHOT.zip" dest="${jps}/standalone.jar" usetimestamp="true"/>
+          <unzip src="${jps}/standalone.jar" dest="${jps}">
+            <cutdirsmapper dirs="1"/>
+          </unzip>
+
+          <get src="@{base.url}/jps/jps-build-test-IC-138.SNAPSHOT.jar" dest="${jps-test}/jps-build-test.jar" usetimestamp="true"/>
 
           <get src="@{base.url}/@{build.zip}" dest="dependencies/download/@{build.zip}" usetimestamp="true"/>
 
@@ -266,7 +271,7 @@
           <os family="mac"/>
           <then>
             <unzip src="dependencies/download/@{build.zip}" dest="ideaSDK">
-              <cutdirsmapper dirs="1"/>
+              <cutdirsmapper dirs="2"/>
             </unzip>
             <!-- Java can't manipulate permissions -->
             <exec executable="chmod">
@@ -296,9 +301,9 @@
       <mkdir dir="ideaSDK/sources"/>
       <copy file="dependencies/download/idea-sdk-sources.zip" tofile="ideaSDK/sources/sources.zip"/>
 
-      <copy file="ideaSDK/lib/jdom.jar" todir="${core}"/>
-      <copy file="ideaSDK/lib/jna.jar" todir="${core}"/>
-      <copy file="ideaSDK/lib/log4j.jar" todir="${core}"/>
+      <copy file="ideaSDK/jps/jdom.jar" todir="${core}"/>
+      <copy file="ideaSDK/jps/jna.jar" todir="${core}"/>
+      <copy file="ideaSDK/jps/log4j.jar" todir="${core}"/>
       <copy file="ideaSDK/lib/xstream-1.4.3.jar" todir="${core}"/>
       <copy file="ideaSDK/lib/xpp3-1.1.4-min.jar" todir="${core}"/>
       <copy file="ideaSDK/lib/jsr166e.jar" todir="${core}" />

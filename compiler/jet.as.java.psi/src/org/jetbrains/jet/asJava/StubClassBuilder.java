@@ -23,10 +23,10 @@ import com.intellij.psi.stubs.StubBase;
 import com.intellij.psi.stubs.StubElement;
 import com.intellij.util.containers.Stack;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.asm4.ClassReader;
-import org.jetbrains.asm4.ClassVisitor;
-import org.jetbrains.asm4.FieldVisitor;
-import org.jetbrains.asm4.MethodVisitor;
+import org.jetbrains.org.objectweb.asm.ClassReader;
+import org.jetbrains.org.objectweb.asm.ClassVisitor;
+import org.jetbrains.org.objectweb.asm.FieldVisitor;
+import org.jetbrains.org.objectweb.asm.MethodVisitor;
 import org.jetbrains.jet.codegen.ClassBuilder;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
@@ -43,8 +43,7 @@ public class StubClassBuilder extends ClassBuilder {
         }
 
         @Override
-        public ClassReader readerForInnerClass(Object o) {
-            throw new UnsupportedOperationException("Shall not be called!");
+        public void accept(Object innerClass, StubBuildingVisitor<Object> visitor) {
         }
     };
     private final StubElement parent;
@@ -58,7 +57,7 @@ public class StubClassBuilder extends ClassBuilder {
     }
 
     @Override
-    public ClassVisitor getVisitor() {
+    public org.jetbrains.org.objectweb.asm.ClassVisitor getVisitor() {
         assert v != null : "Called before class is defined";
         return v;
     }

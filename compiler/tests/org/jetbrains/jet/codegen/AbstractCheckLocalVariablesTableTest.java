@@ -20,7 +20,7 @@ import com.google.common.io.Files;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.asm4.*;
+import org.jetbrains.org.objectweb.asm.*;
 import org.jetbrains.jet.JetTestUtils;
 import org.jetbrains.jet.cli.jvm.compiler.JetCoreEnvironment;
 import org.jetbrains.jet.lang.psi.JetFile;
