@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.cli.common.messages.OutputMessageUtil
 import org.jetbrains.kotlin.cli.common.modules.ModuleBuilder
 import org.jetbrains.kotlin.cli.common.output.writeAll
+import org.jetbrains.kotlin.cli.jvm.config.jvmClasspathNioRoots
 import org.jetbrains.kotlin.cli.jvm.config.jvmClasspathRoots
 import org.jetbrains.kotlin.cli.jvm.config.jvmModularRoots
 import org.jetbrains.kotlin.codegen.state.GenerationState
@@ -210,7 +211,7 @@ fun createLibraryListForJvm(
         JvmPlatforms.unspecifiedJvmPlatform,
     )
     val libraryList = DependencyListForCliModule.build(binaryModuleData) {
-        dependencies(configuration.jvmClasspathRoots.map { it.toPath() })
+        dependencies(configuration.jvmClasspathNioRoots().toList())
         dependencies(configuration.jvmModularRoots.map { it.toPath() })
         friendDependencies(configuration[JVMConfigurationKeys.FRIEND_PATHS] ?: emptyList())
         friendDependencies(friendPaths)
