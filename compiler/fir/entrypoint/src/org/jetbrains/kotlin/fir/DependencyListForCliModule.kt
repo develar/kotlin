@@ -89,12 +89,20 @@ class DependencyListForCliModule @PrivateSessionConstructor constructor(
                 dependencies(regular, paths)
             }
 
+            fun dependencies(paths: List<Path>) {
+                dependenciesAsPath(regular, paths, allRegularDependencies)
+            }
+
             fun friendDependencies(paths: Collection<String>) {
                 friendDependencies(friend, paths)
             }
 
             fun dependsOnDependencies(paths: Collection<String>) {
                 dependsOnDependencies(dependsOn, paths)
+            }
+
+            fun dependsOnDependencies(paths: List<Path>) {
+                dependenciesAsPath(dependsOn, paths, allDependsOnDependencies)
             }
         }
 
@@ -108,6 +116,19 @@ class DependencyListForCliModule @PrivateSessionConstructor constructor(
             val filterSet = filtersMap.getOrPut(moduleData) { mutableSetOf() }
             paths.mapTo(filterSet) {
                 Paths.get(it).toAbsolutePath()
+            }
+        }
+
+        private fun dependenciesAsPath(
+            moduleData: FirBinaryDependenciesModuleData,
+            paths: List<Path>,
+            destination: MutableSet<FirBinaryDependenciesModuleData>,
+        ) {
+            destination.add(moduleData)
+            if (paths.isEmpty()) return
+            val filterSet = filtersMap.computeIfAbsent(moduleData) { mutableSetOf() }
+            paths.mapTo(filterSet) {
+                it.toAbsolutePath()
             }
         }
 

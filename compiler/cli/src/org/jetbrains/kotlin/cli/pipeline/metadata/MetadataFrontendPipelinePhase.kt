@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.cli.jvm.compiler.legacy.pipeline.createIncrementalCo
 import org.jetbrains.kotlin.cli.jvm.compiler.toVfsBasedProjectEnvironment
 import org.jetbrains.kotlin.cli.jvm.config.JvmClasspathRoot
 import org.jetbrains.kotlin.cli.jvm.config.K2MetadataConfigurationKeys
+import org.jetbrains.kotlin.cli.jvm.config.jvmClasspathNioRoots
 import org.jetbrains.kotlin.cli.jvm.config.jvmClasspathRoots
 import org.jetbrains.kotlin.cli.jvm.config.jvmModularRoots
 import org.jetbrains.kotlin.cli.pipeline.CheckCompilationErrors
@@ -44,6 +45,8 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.util.PhaseType
 import org.jetbrains.kotlin.util.PotentiallyIncorrectPhaseTimeMeasurement
 import java.io.File
+import java.nio.file.Path
+import java.nio.file.Paths
 
 object MetadataFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, MetadataFrontendPipelineArtifact>(
     name = "MetadataFrontendPipelinePhase",
@@ -56,11 +59,11 @@ object MetadataFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifa
         val isLightTree = configuration.getBoolean(CommonConfigurationKeys.USE_LIGHT_TREE)
 
         val libraryList = DependencyListForCliModule.build(rootModuleName) {
-            val refinedPaths = configuration.get(K2MetadataConfigurationKeys.REFINES_PATHS)?.map { File(it) }.orEmpty()
-            dependencies(configuration.jvmClasspathRoots.filter { it !in refinedPaths }.map { it.absolutePath })
+            val refinedPaths = configuration.get(K2MetadataConfigurationKeys.REFINES_PATHS)?.map { Paths.get(it) }.orEmpty()
+            dependencies(configuration.jvmClasspathNioRoots().filter { it !in refinedPaths }.toList())
             dependencies(configuration.jvmModularRoots.map { it.absolutePath })
             friendDependencies(configuration[K2MetadataConfigurationKeys.FRIEND_PATHS] ?: emptyList())
-            dependsOnDependencies(refinedPaths.map { it.absolutePath })
+            dependsOnDependencies(refinedPaths)
         }
 
         val klibFiles = configuration.get(CLIConfigurationKeys.CONTENT_ROOTS).orEmpty()
