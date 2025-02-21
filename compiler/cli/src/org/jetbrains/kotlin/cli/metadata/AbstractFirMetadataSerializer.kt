@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.cli.jvm.compiler.legacy.pipeline.createIncrementalCo
 import org.jetbrains.kotlin.cli.jvm.compiler.toVfsBasedProjectEnvironment
 import org.jetbrains.kotlin.cli.jvm.config.JvmClasspathRoot
 import org.jetbrains.kotlin.cli.jvm.config.K2MetadataConfigurationKeys
+import org.jetbrains.kotlin.cli.jvm.config.jvmClasspathNioRoots
 import org.jetbrains.kotlin.cli.jvm.config.jvmClasspathRoots
 import org.jetbrains.kotlin.cli.jvm.config.jvmModularRoots
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
@@ -41,6 +42,8 @@ import org.jetbrains.kotlin.library.resolveSingleFileKlib
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.CommonPlatforms
 import java.io.File
+import java.nio.file.Path
+import java.nio.file.Paths
 
 internal abstract class AbstractFirMetadataSerializer(
     configuration: CompilerConfiguration,
@@ -60,11 +63,11 @@ internal abstract class AbstractFirMetadataSerializer(
             CommonPlatforms.defaultCommonPlatform,
         )
         val libraryList = DependencyListForCliModule.Companion.build(binaryModuleData) {
-            val refinedPaths = configuration.get(K2MetadataConfigurationKeys.REFINES_PATHS)?.map { File(it) }.orEmpty()
-            dependencies(configuration.jvmClasspathRoots.filter { it !in refinedPaths }.map { it.toPath() })
+            val refinedPaths = configuration.get(K2MetadataConfigurationKeys.REFINES_PATHS)?.map { Paths.get(it) }.orEmpty()
+            dependencies(configuration.jvmClasspathNioRoots().filter { it !in refinedPaths }.toList())
             dependencies(configuration.jvmModularRoots.map { it.toPath() })
             friendDependencies(configuration[K2MetadataConfigurationKeys.FRIEND_PATHS] ?: emptyList())
-            dependsOnDependencies(refinedPaths.map { it.toPath() })
+            dependsOnDependencies(refinedPaths)
         }
 
         val diagnosticsReporter = DiagnosticReporterFactory.createPendingReporter(messageCollector)

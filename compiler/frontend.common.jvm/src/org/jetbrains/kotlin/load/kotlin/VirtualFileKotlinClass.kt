@@ -16,6 +16,12 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.util.PerformanceCounter
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.nio.file.Path
+import java.nio.file.Paths
+
+interface LibraryContainerAwareVirtualFile {
+    fun getContainingLibraryPath(): Path
+}
 
 class VirtualFileKotlinClass private constructor(
     val file: VirtualFile,
@@ -30,6 +36,10 @@ class VirtualFileKotlinClass private constructor(
 
     override val containingLibrary: String?
         get() = file.path.split("!/").firstOrNull()
+
+    override val containingLibraryPath: Path?
+        // we should return not the file itself, but the root - LibraryPathFilter later uses `startsWith`
+        get() = if (file is LibraryContainerAwareVirtualFile) file.getContainingLibraryPath() else containingLibrary?.let { Paths.get(it) }
 
     override fun getFileContents(): ByteArray {
         try {
