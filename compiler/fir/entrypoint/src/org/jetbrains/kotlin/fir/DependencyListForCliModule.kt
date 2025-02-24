@@ -97,6 +97,10 @@ class DependencyListForCliModule @PrivateSessionConstructor constructor(
                 friendDependencies(friend, paths)
             }
 
+            fun friendDependencies(paths: List<Path>) {
+                dependenciesAsPath(friend, paths, allFriendDependencies)
+            }
+
             fun dependsOnDependencies(paths: Collection<String>) {
                 dependsOnDependencies(dependsOn, paths)
             }
