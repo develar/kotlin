@@ -189,18 +189,22 @@ fun createIncrementalCompilationScope(
     projectEnvironment: VfsBasedProjectEnvironment,
     incrementalExcludesScope: AbstractProjectFileSearchScope?
 ): AbstractProjectFileSearchScope? {
-    if (!needCreateIncrementalCompilationScope(configuration)) return null
+    if (configuration.get(JVMConfigurationKeys.MODULES) == null) {
+        return null
+    }
+
+    val incrementalCompilationComponents = configuration.get(JVMConfigurationKeys.INCREMENTAL_COMPILATION_COMPONENTS)
+    if (incrementalCompilationComponents == null) {
+        return null
+    } else if (!incrementalCompilationComponents.isOutputDirUsed()) {
+        return AbstractProjectFileSearchScope.EMPTY
+    }
+
     val dir = configuration[JVMConfigurationKeys.OUTPUT_DIRECTORY] ?: return null
     return projectEnvironment.getSearchScopeByDirectories(setOf(dir)).let {
         if (incrementalExcludesScope?.isEmpty != false) it
         else it - incrementalExcludesScope
     }
-}
-
-private fun needCreateIncrementalCompilationScope(configuration: CompilerConfiguration): Boolean {
-    if (configuration.get(JVMConfigurationKeys.MODULES) == null) return false
-    if (configuration.get(JVMConfigurationKeys.INCREMENTAL_COMPILATION_COMPONENTS) == null) return false
-    return true
 }
 
 fun createContextForIncrementalCompilation(
