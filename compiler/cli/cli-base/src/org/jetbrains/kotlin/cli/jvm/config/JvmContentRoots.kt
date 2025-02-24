@@ -44,7 +44,11 @@ data class JvmClasspathRoot(override val file: File, override val isSdkRoot: Boo
 }
 
 @Suppress("unused") // Might be useful for external tools which invoke kotlinc with their own file system, not based on java.io.File.
-data class VirtualJvmClasspathRoot(val file: VirtualFile, override val isSdkRoot: Boolean) : JvmClasspathRootBase {
+data class VirtualJvmClasspathRoot(
+    val file: VirtualFile,
+    override val isSdkRoot: Boolean,
+    val isFriend: Boolean = false,
+) : JvmClasspathRootBase {
     constructor(file: VirtualFile) : this(file, false)
 }
 
