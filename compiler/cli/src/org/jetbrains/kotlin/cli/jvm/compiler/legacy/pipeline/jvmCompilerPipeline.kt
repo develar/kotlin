@@ -196,8 +196,8 @@ fun createIncrementalCompilationScope(
     val incrementalCompilationComponents = configuration.get(JVMConfigurationKeys.INCREMENTAL_COMPILATION_COMPONENTS)
     if (incrementalCompilationComponents == null) {
         return null
-    } else if (!incrementalCompilationComponents.isOutputDirUsed()) {
-        return AbstractProjectFileSearchScope.EMPTY
+    } else if (incrementalCompilationComponents is ProjectFileSearchScopeProvider) {
+        return incrementalCompilationComponents.createSearchScope(projectEnvironment)
     }
 
     val dir = configuration[JVMConfigurationKeys.OUTPUT_DIRECTORY] ?: return null
@@ -205,6 +205,10 @@ fun createIncrementalCompilationScope(
         if (incrementalExcludesScope?.isEmpty != false) it
         else it - incrementalExcludesScope
     }
+}
+
+interface ProjectFileSearchScopeProvider {
+    fun createSearchScope(projectEnvironment: VfsBasedProjectEnvironment): AbstractProjectFileSearchScope
 }
 
 fun createContextForIncrementalCompilation(

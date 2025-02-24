@@ -20,6 +20,4 @@ import org.jetbrains.kotlin.modules.TargetId
 
 interface IncrementalCompilationComponents {
     fun getIncrementalCache(target: TargetId): IncrementalCache
-
-    fun isOutputDirUsed(): Boolean = true
 }
