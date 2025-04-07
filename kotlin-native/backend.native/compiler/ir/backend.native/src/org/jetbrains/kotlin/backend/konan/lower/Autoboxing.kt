@@ -107,8 +107,8 @@ private class AutoboxingTransformer(val context: Context) : AbstractValueUsageTr
         val actualType = when (this) {
             is IrGetField -> this.symbol.owner.type
             is IrCall -> when (this.symbol) {
-                symbols.reinterpret -> this.getTypeArgument(1)!!
-                else -> this.target.returnType
+                symbols.reinterpret -> this.typeArguments[1]!!
+                else -> this.type
             }
             is IrTypeOperatorCall -> when (this.operator) {
                 IrTypeOperator.CAST -> context.irBuiltIns.anyNType
