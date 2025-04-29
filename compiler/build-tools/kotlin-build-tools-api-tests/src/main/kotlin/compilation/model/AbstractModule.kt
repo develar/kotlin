@@ -10,9 +10,12 @@ import org.jetbrains.kotlin.buildtools.api.CompilerExecutionStrategyConfiguratio
 import org.jetbrains.kotlin.buildtools.api.jvm.JvmCompilationConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 private class CompilationOutcomeImpl(
     rawLogLines: Map<LogLevel, Collection<String>>,
+    override val actualResult: CompilationResult
 ) : CompilationOutcome {
     private val _logLines by lazy {
         rawLogLines.mapValues { (_, lines) -> lines.toList() }
@@ -88,7 +91,7 @@ abstract class AbstractModule(
     ): CompilationResult {
         val kotlinLogger = TestKotlinLogger()
         val result = compileImpl(strategyConfig, compilationConfigAction, kotlinLogger)
-        val outcome = CompilationOutcomeImpl(kotlinLogger.logMessagesByLevel)
+        val outcome = CompilationOutcomeImpl(kotlinLogger.logMessagesByLevel, result)
         try {
             assertions(outcome, this)
             assertEquals(outcome.expectedResult, result) {
@@ -114,6 +117,44 @@ abstract class AbstractModule(
         compilationConfigAction: (JvmCompilationConfiguration) -> Unit,
         kotlinLogger: TestKotlinLogger,
     ): CompilationResult
+
+    override fun executeCompiledClass(mainClassFqn: String, assertions: ExecutionOutcome.() -> Unit): ExecutionOutcome {
+        val executionProcess = prepareExecutionProcessBuilder(mainClassFqn)
+            .redirectErrorStream(true)
+            .start()
+
+        Runtime.getRuntime().addShutdownHook(Thread {
+            executionProcess.destroyForcibly()
+        })
+
+        var executionError: Throwable? = null
+        try {
+            if (!executionProcess.waitFor(Module.EXECUTION_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                executionProcess.destroyForcibly()
+                executionError = TimeoutException("process couldn't complete its work in time")
+            }
+        } catch (anyError: Throwable) {
+            executionError = anyError
+        }
+
+        val outcome = ExecutionOutcome(
+            output = executionProcess.inputStream.bufferedReader().readLines(),
+            isComplete = executionError == null && executionProcess.exitValue() == 0,
+            failureReason = executionError
+        )
+        try {
+            outcome.apply { assertions() }
+        } catch (e: AssertionError) {
+            println("Error on Test runner side: ${outcome.failureReason?.toString() ?: "None"}")
+            println("Full output of the execution process:\n${outcome.output.joinToString("\n")}")
+            throw e
+        }
+        return outcome
+    }
+
+    protected abstract fun prepareExecutionProcessBuilder(
+        mainClassFqn: String
+    ): ProcessBuilder
 
     override fun toString() = moduleName
 }
