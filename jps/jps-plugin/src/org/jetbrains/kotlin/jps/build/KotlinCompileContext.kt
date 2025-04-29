@@ -53,7 +53,10 @@ internal val CompileContext.kotlin: KotlinCompileContext
 
 internal val kotlinCompileContextKey = GlobalContextKey<KotlinCompileContext>("kotlin")
 
-class KotlinCompileContext(val jpsContext: CompileContext) {
+class KotlinCompileContext(
+    val jpsContext: CompileContext,
+    val shouldCheckCacheVersions: Boolean = System.getProperty(KotlinBuilder.SKIP_CACHE_VERSION_CHECK_PROPERTY) == null,
+) {
     val dataManager = jpsContext.projectDescriptor.dataManager
     val dataPaths = dataManager.dataPaths
     val testingLogger: TestingBuildLogger?
@@ -65,8 +68,6 @@ class KotlinCompileContext(val jpsContext: CompileContext) {
         get() = targetsIndex.byJpsTarget
 
     val lookupsCacheAttributesManager: CompositeLookupsCacheAttributesManager = makeLookupsCacheAttributesManager()
-
-    val shouldCheckCacheVersions = System.getProperty(KotlinBuilder.SKIP_CACHE_VERSION_CHECK_PROPERTY) == null
 
     val hasKotlinMarker = HasKotlinMarker(dataManager)
 
