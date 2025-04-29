@@ -50,7 +50,7 @@ internal val CompileContext.kotlin: KotlinCompileContext
         error(errorMessage)
     }
 
-internal val kotlinCompileContextKey = GlobalContextKey<KotlinCompileContext>("kotlin")
+val kotlinCompileContextKey: GlobalContextKey<KotlinCompileContext> = GlobalContextKey<KotlinCompileContext>("kotlin")
 
 class KotlinCompileContext(
     val jpsContext: CompileContext,
