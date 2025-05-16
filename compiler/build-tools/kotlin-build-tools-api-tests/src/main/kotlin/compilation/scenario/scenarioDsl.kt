@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.buildtools.api.tests.compilation.scenario
 
+import org.jetbrains.kotlin.buildtools.api.CompilationResult
 import org.jetbrains.kotlin.buildtools.api.CompilerExecutionStrategyConfiguration
 import org.jetbrains.kotlin.buildtools.api.SourcesChanges
 import org.jetbrains.kotlin.buildtools.api.jvm.IncrementalJvmCompilationConfiguration
@@ -76,6 +77,16 @@ internal abstract class BaseScenarioModule(
                 assertions(this, module, this@BaseScenarioModule)
             })
     }
+
+    override fun executeCompiledCode(
+        mainClassFqn: String,
+        assertions: ExecutionOutcome.() -> Unit
+    ) {
+        module.executeCompiledClass(
+            mainClassFqn,
+            assertions
+        )
+    }
 }
 
 internal class ExternallyTrackedScenarioModuleImpl(
@@ -113,6 +124,16 @@ internal class ExternallyTrackedScenarioModuleImpl(
 
     override fun getSourcesChanges() = sourcesChanges
 
+    override fun compile(forceOutput: LogLevel?, assertions: CompilationOutcome.(Module, ScenarioModule) -> Unit) {
+        super.compile(forceOutput) { module, scenarioModule ->
+            assertions(module, scenarioModule)
+
+            if (actualResult == CompilationResult.COMPILATION_SUCCESS) {
+                sourcesChanges = SourcesChanges.Known(emptyList(), emptyList())
+            }
+        }
+    }
+
     private fun addToModifiedFiles(file: Path) {
         sourcesChanges = SourcesChanges.Known(
             modifiedFiles = sourcesChanges.modifiedFiles + file.toFile(),
@@ -146,29 +167,32 @@ private class ScenarioDsl(
     override fun module(
         moduleName: String,
         dependencies: List<ScenarioModule>,
+        snapshotConfig: SnapshotConfig,
         additionalCompilationArguments: List<String>,
         compilationOptionsModifier: ((JvmCompilationConfiguration) -> Unit)?,
         incrementalCompilationOptionsModifier: ((IncrementalJvmCompilationConfiguration<*>) -> Unit)?,
     ): ScenarioModule {
         val transformedDependencies = dependencies.map { (it as BaseScenarioModule).module }
         val module =
-            project.module(moduleName, transformedDependencies, additionalCompilationArguments)
-        return GlobalCompiledProjectsCache.getProjectFromCache(module, strategyConfig, compilationOptionsModifier, incrementalCompilationOptionsModifier, false)
-            ?: GlobalCompiledProjectsCache.putProjectIntoCache(module, strategyConfig, compilationOptionsModifier, incrementalCompilationOptionsModifier, false)
+            project.module(moduleName, transformedDependencies, snapshotConfig, additionalCompilationArguments)
+        return GlobalCompiledProjectsCache.getProjectFromCache(module, strategyConfig, snapshotConfig, compilationOptionsModifier, incrementalCompilationOptionsModifier, false)
+            ?: GlobalCompiledProjectsCache.putProjectIntoCache(module, strategyConfig, snapshotConfig, compilationOptionsModifier, incrementalCompilationOptionsModifier, false)
     }
 
+    @Synchronized
     override fun trackedModule(
         moduleName: String,
         dependencies: List<ScenarioModule>,
+        snapshotConfig: SnapshotConfig,
         additionalCompilationArguments: List<String>,
         compilationOptionsModifier: ((JvmCompilationConfiguration) -> Unit)?,
         incrementalCompilationOptionsModifier: ((IncrementalJvmCompilationConfiguration<*>) -> Unit)?,
     ): ScenarioModule {
         val transformedDependencies = dependencies.map { (it as BaseScenarioModule).module }
         val module =
-            project.module(moduleName, transformedDependencies, additionalCompilationArguments)
-        return GlobalCompiledProjectsCache.getProjectFromCache(module, strategyConfig, compilationOptionsModifier, incrementalCompilationOptionsModifier, true)
-            ?: GlobalCompiledProjectsCache.putProjectIntoCache(module, strategyConfig, compilationOptionsModifier, incrementalCompilationOptionsModifier, true)
+            project.module(moduleName, transformedDependencies, snapshotConfig, additionalCompilationArguments)
+        return GlobalCompiledProjectsCache.getProjectFromCache(module, strategyConfig, snapshotConfig, compilationOptionsModifier, incrementalCompilationOptionsModifier, true)
+            ?: GlobalCompiledProjectsCache.putProjectIntoCache(module, strategyConfig, snapshotConfig, compilationOptionsModifier, incrementalCompilationOptionsModifier, true)
     }
 }
 

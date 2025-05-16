@@ -79,6 +79,37 @@ public enum StrangeEnum {
 
 
 /**
+ * package {
+ *
+ *   // field: id:Ljava/lang/String;
+ *   // getter: getId()Ljava/lang/String;
+ *   // setter: setId(Ljava/lang/String;)V
+ *   public final var id: kotlin/String
+ *     public final get
+ *     public final (* non-default *) set(<anonymous parameter 0>: kotlin/String)
+ *
+ *   // module name: main
+ * }
+ */
+@kotlin.Metadata()
+public final class StrangeIdentifiersKt {
+    @org.jetbrains.annotations.NotNull()
+    private static java.lang.String id;
+
+    @org.jetbrains.annotations.NotNull()
+    public static final java.lang.String getId() {
+        return null;
+    }
+
+    public static final void setId(@org.jetbrains.annotations.NotNull()
+    java.lang.String p0) {
+    }
+}
+
+////////////////////
+
+
+/**
  * public final class Test : kotlin/Any {
  *
  *   // signature: <init>()V
